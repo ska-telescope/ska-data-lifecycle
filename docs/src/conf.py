@@ -37,7 +37,7 @@ def setup(app):
 
 
 # -- Project information -----------------------------------------------------
-project = "SDP Data Product Metadata"
+project = "SDP Data Lifecycle"
 copyright = "2023, SKA SDP Developers"
 author = "SKA SDP Developers"
 
