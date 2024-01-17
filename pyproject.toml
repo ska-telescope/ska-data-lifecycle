@@ -2,7 +2,10 @@
 name = "ska_data_lifecycle"
 version = "0.0.1"
 description = "Services for managing the lifecycle of SKA data products"
-authors = ["Nadia Steyn <nadia.steyn@uwa.edu.au>"]
+authors = [
+    "Andreas Wicenec <andreas.wicenec@icrar.org>",
+    "James Strauss <james.strauss@icrar.org>",
+    ]
 repository = "https://gitlab.com/ska-telescope/sdp/ska-data-lifecycle"
 documentation = "https://developer.skao.int/projects/ska-data-lifecycle/en/latest/"
 license = "BSD-3-Clause"
