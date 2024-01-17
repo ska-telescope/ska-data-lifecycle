@@ -1,12 +1,12 @@
 """DLM package for ska-data-lifecycle."""
-from ska_dlm import DLMdb, DLMingest, DLMmigration, DLMrequest, DLMstorage
+from ska_dlm import dlm_db, dlm_ingest, dlm_migration, dlm_request, dlm_storage
 
 __all__ = [
-    "DLMdb",
-    "DLMingest",
-    "DLMmigration",
-    "DLMrequest",
-    "DLMstorage",
+    "dlm_db",
+    "dlm_ingest",
+    "dlm_migration",
+    "dlm_request",
+    "dlm_storage",
 ]
 
 __author__ = """Andreas Wicenec"""
