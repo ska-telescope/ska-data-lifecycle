@@ -2,7 +2,7 @@
 import benedict
 import os
 import yaml
-from ska_dlm import dlm_db, dlm_ingest, dlm_migration, dlm_request, dlm_storage
+from . import dlm_db
 
 __author__ = """Andreas Wicenec"""
 __email__ = "andreas.wicenec@icrar.org"
@@ -35,11 +35,7 @@ CONFIG = read_config()
 CONFIG.REST.cfg_file = CONFIG.REST.cfg_file.format(**locals())
 
 __all__ = [
-    "dlm_db",
-    "dlm_ingest",
-    "dlm_migration",
-    "dlm_request",
-    "dlm_storage",
-    "CONFIG",
     "DLM_PATH",
+    "CONFIG",
+    "dlm_db",
 ]

@@ -3,48 +3,23 @@ Convenience functions wrapping the most important postgREST API calls.
 """
 
 import requests
+from .. import CONFIG
 
 
-def init_data_item(item_name: str, **kwargs) -> str:
+def query_data_item(item_name: str = "", **kwargs) -> str:
     """
-    Intialize a new data_item by at least specifying an item_name.
+    Query a new data_item by at least specifying an item_name.
 
     Parameters:
-    item_name
+    item_name, could be empty, in which case the whole table is returned
     """
-    pass
-
-
-def set_uri(uid: str, uri: str):
-    """ """
-    pass
-
-
-def set_state(uid: str, state):
-    """ """
-    pass
-
-
-def set_oid_expiration(oid: str, expiration: str):
-    """ """
-    pass
-
-
-def set_uid_expiration(uid: str, expiration: str):
-    """ """
-    pass
-
-
-def set_user(oid: str = "", uid: str = "", user: str = "SKA"):
-    """ """
-    pass
-
-
-def set_group(oid: str = "", uid: str = "", group: str = "SKA"):
-    """ """
-    pass
-
-
-def set_acl(oid: str = "", uid: str = "", acl: str = "{}") -> uid:
-    """ """
-    pass
+    api_url = f"{CONFIG.REST.base_url}/{CONFIG.DLM.dlm_table}"
+    if item_name:
+        request_url = f"{api_url}?item_name=eq.{item_name}"
+    else:
+        request_url = api_url
+    r = requests.get(request_url)
+    if r.status_code == 200:
+        return r.json()
+    else:
+        print(f"Response status code: {r.status_code}")

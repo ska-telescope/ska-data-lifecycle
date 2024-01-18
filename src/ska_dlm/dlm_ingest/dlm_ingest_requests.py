@@ -1,8 +1,8 @@
 """
 Convenience functions wrapping the most important postgREST API calls. 
 """
-
 import requests
+from .. import CONFIG
 
 
 def init_data_item(item_name: str, **kwargs) -> str:
@@ -12,7 +12,8 @@ def init_data_item(item_name: str, **kwargs) -> str:
     Parameters:
     item_name
     """
-    api_url = f"https://{CONFIG.DB.host}:{CONFIG.DB.port}"
+    api_url = f"{CONFIG.REST.base_url}/{CONFIG.DLM.dlm_table}"
+    return api_url
 
 
 def set_uri(uid: str, uri: str):
