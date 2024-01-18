@@ -21,8 +21,32 @@ Please also refer to the DLM design description: https://confluence.skatelescope
 ## Installation
 TBD
 
-## Startup
-TBD
+## Startup as a test environment
+### Start the DB:
 
+`docker run --rm --name ska-dlm -p 5433:5432 -e POSTGRES_PASSWORD=mysecretpassword -d postgres`
+
+### Setup the ska-dlm DB:
+From inside the ska-data-lifecycle repo directory run
+
+`psql -U postgres -h localhost -p 5433 -f config/DB/ska_dlm_meta.sql`
+
+### Start the postgREST layer: 
+After the installation of postgREST the command `postgrest` should be available on the PATH. In that case you can run: 
+
+`postgrest config/postgREST/ska_dlm_meta.conf` 
+
+from inside the ska-data-lifecycle repo directory. _This will run in the terminal thus to start PostGUI you need to use another terminal._
+
+### Start the PostGUI:
+From inside the PostGUI repository directory run:
+
+`npm start`
+
+_This will also run inside the terminal._
 ## Shutdown
-TBD
+Just kill the processes inside the PostGUI and postgREST terminals and shut down the DB using the command:
+
+`docker stop ska-dlm`
+
+**_Note: Since we had specified `--rm` on the docker command line to start the DB this will also delete the container and thus all DB steup and data will be gone as well._**
