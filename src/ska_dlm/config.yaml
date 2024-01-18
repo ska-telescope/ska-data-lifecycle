@@ -1,0 +1,13 @@
+# Default values for the SKA Data Lifecycle Management system.
+# This is a YAML-formatted file.
+
+# The
+DB:
+  host: "localhost"
+  port: 5433
+  user: "postgres"
+  password: "!db_password"
+REST:
+  host: "localhost"
+  port: 3001
+  cfg_file: "{DLM_PATH}/postgREST.conf"

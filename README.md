@@ -29,12 +29,12 @@ TBD
 ### Setup the ska-dlm DB:
 From inside the ska-data-lifecycle repo directory run
 
-`psql -U postgres -h localhost -p 5433 -f config/DB/ska_dlm_meta.sql`
+`psql -U postgres -h localhost -p 5433 -f setup/DB/ska_dlm_meta.sql`
 
 ### Start the postgREST layer: 
 After the installation of postgREST the command `postgrest` should be available on the PATH. In that case you can run: 
 
-`postgrest config/postgREST/ska_dlm_meta.conf` 
+`postgrest setup/postgREST/postgREST.conf` 
 
 from inside the ska-data-lifecycle repo directory. _This will run in the terminal thus to start PostGUI you need to use another terminal._
 

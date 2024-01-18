@@ -23,6 +23,8 @@ url = 'https://artefact.skao.int/repository/pypi-internal/simple'
 python = "^3.10"
 ska-ser-logging = "^0.4.1+0a677a67"
 requests = "^2.31.0"
+pyyaml = "^6.0.1"
+python-benedict = "^0.33.1"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.3.0"

@@ -61,3 +61,4 @@ table.*
 **/.pytest_cache
 
 **/.eggs
+**/.secrets.yaml
