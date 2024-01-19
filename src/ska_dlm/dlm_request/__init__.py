@@ -1,8 +1,5 @@
 """DLMrequest module for ska-data-lifecycle."""
-from .dlm_request_requests import (
-    query_data_item,
-)
-from .. import CONFIG
+from .dlm_request_requests import query_data_item
 
 __all__ = [
     "query_data_item",

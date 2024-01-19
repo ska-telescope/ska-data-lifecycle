@@ -14,3 +14,5 @@ REST:
 DLM:
   dlm_db: "ska_dlm_meta"
   dlm_table: "data_item"
+  storage_table: "storage"
+  location_table: "location"

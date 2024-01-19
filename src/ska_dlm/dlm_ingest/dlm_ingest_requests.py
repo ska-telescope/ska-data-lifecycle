@@ -1,8 +1,8 @@
-"""
-Convenience functions wrapping the most important postgREST API calls. 
-"""
+"""Convenience functions wrapping the most important postgREST API calls."""
 import json
+
 import requests
+
 from .. import CONFIG
 
 
@@ -11,11 +11,12 @@ def init_data_item(item_name: str = "", json_data: str = "") -> str:
     Intialize a new data_item by at least specifying an item_name.
 
     Parameters:
-    item_name, the item_name, can be empty, but then json_data has to be
-               specified.
+    -----------
+    item_name, the item_name, can be empty, but then json_data has to be specified.
     json_data, provides to ability to specify all values.
 
     Returns:
+    --------
     uid,
     """
     request_url = f"{CONFIG.REST.base_url}/{CONFIG.DLM.dlm_table}"
@@ -39,8 +40,9 @@ def update_data_item(
     oid: str = "", uid: str = "", json_data: str = "", table: str = CONFIG.DLM.dlm_table
 ) -> str:
     """
-    Generic function to update fields of an existing data_item. This is
-    mostly used by the other convenience functions.
+    Update fields of an existing data_item.
+
+    This is mostly used by the other convenience functions.
 
     Parameters:
     -----------

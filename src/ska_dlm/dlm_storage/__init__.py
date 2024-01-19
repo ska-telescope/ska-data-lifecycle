@@ -1,6 +1,8 @@
 """DLMstorage module for ska-data-lifecycle."""
 
-__all__ = []
+from .dlm_storage_requests import init_location, init_storage, query_location
+
+__all__ = ["query_location", "init_storage", "init_location"]
 
 __author__ = """Andreas Wicenec"""
 __email__ = "andreas.wicenec@icrar.org"

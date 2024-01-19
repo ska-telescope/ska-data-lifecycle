@@ -1,8 +1,11 @@
 # pylint: disable=no-member
 """DLM package for ska-data-lifecycle."""
+
 import os
+
 import benedict
 import yaml
+
 from . import dlm_db
 
 __author__ = """Andreas Wicenec"""
@@ -13,9 +16,7 @@ DLM_PATH = os.path.dirname(__file__)
 
 
 def read_config(cfg_file: str = f"{DLM_PATH}/config.yaml") -> dict:
-    """
-    Read the config file and return the config dictionary
-    """
+    """Read the config file and return the config dictionary."""
     with open(cfg_file, "r", encoding="utf-8") as file:
         CONFIG = benedict.benedict(yaml.safe_load(file))
 

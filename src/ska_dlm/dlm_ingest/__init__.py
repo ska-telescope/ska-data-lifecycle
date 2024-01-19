@@ -1,5 +1,4 @@
 """DLMingest module for ska-data-lifecycle."""
-from .. import CONFIG
 from .dlm_ingest_requests import (
     init_data_item,
     set_uri,
