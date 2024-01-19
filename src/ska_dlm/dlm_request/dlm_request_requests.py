@@ -22,8 +22,8 @@ def query_data_item(item_name: str = "", query_string: str = "") -> str:
         request_url = f"{api_url}&{query_string}"
     else:
         request_url = f"{api_url}"
-    r = requests.get(request_url)
+    r = requests.get(request_url, timeout=10)
     if r.status_code == 200:
         return r.json()
-    else:
-        print(f"Response status code: {r.status_code}")
+    print(f"Response status code: {r.status_code}")
+    return None

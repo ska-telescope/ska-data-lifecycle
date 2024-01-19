@@ -1,6 +1,7 @@
+# pylint: disable=no-member
 """DLM package for ska-data-lifecycle."""
-import benedict
 import os
+import benedict
 import yaml
 from . import dlm_db
 
@@ -15,16 +16,16 @@ def read_config(cfg_file: str = f"{DLM_PATH}/config.yaml") -> dict:
     """
     Read the config file and return the config dictionary
     """
-    with open(cfg_file, "r") as file:
+    with open(cfg_file, "r", encoding="utf-8") as file:
         CONFIG = benedict.benedict(yaml.safe_load(file))
 
     # TODO: Check validity and defaults.
     # CONFIG.REST.cfg_file = CONFIG.REST.cfg_file.format(**locals())
     if CONFIG.DB.password.startswith("!"):
         try:
-            with open(f"{DLM_PATH}/../../.secrets.yaml", "r") as file:
+            with open(f"{DLM_PATH}/../../.secrets.yaml", "r", encoding="utf-8") as file:
                 secrets = benedict.benedict(yaml.safe_load(file))
-            if secrets.__contains__(CONFIG.DB.password[1:]):
+            if CONFIG.DB.password[1:] in secrets:
                 CONFIG.DB.password = secrets[CONFIG.DB.password[1:]]
         except FileNotFoundError:
             print("secrets file not found!")

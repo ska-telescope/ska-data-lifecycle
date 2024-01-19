@@ -33,6 +33,17 @@ def init_data_item(item_name: str = "", json_data: str = "") -> str:
     return r.json()[0]["uid"]
 
 
+def update_data_item(uid: str, json_data: str):
+    """
+    Generic function to update fields of an existing data_item. This is
+    mostly used by the other convenience functions.
+
+    Parameters:
+    uid, the uid of the data_item to be updated
+    json_data, the json formatted update data, compatible with postgREST
+    """
+
+
 def set_uri(uid: str, uri: str):
     """ """
     pass
