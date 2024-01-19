@@ -117,21 +117,10 @@ FOR EACH ROW EXECUTE PROCEDURE
 -- Table phase_change
 --
 
--- CREATE TABLE public.phase_change (
---     phase_change_ID bigint GENERATED always as IDENTITY PRIMARY KEY,
---     UID uuid NOT NULL,
---     requested_phase varchar DEFAULT 'gas',
---     request_creation timestamp without time zone DEFAULT now(),
--- );
--- ALTER TABLE public.data_item OWNER TO postgres;
--- --
--- -- Name: idx_fk_location_id; Type: INDEX; Schema: public; Owner: postgres
--- --
-
--- CREATE INDEX idx_fk_uid ON public.phase_change USING btree (uid);
--- --
--- -- Name: idx_unq_rental_rental_date_inventory_id_customer_id; Type: INDEX; Schema: public; Owner: postgres
--- --
-
--- CREATE UNIQUE INDEX idx_unq_OID_UID_item_version ON public.data_item USING btree (OID, UID, item_version);
--- --
+CREATE TABLE public.phase_change (
+    phase_change_ID bigint GENERATED always as IDENTITY PRIMARY KEY,
+    OID uuid NOT NULL,
+    requested_phase varchar DEFAULT 'gas',
+    request_creation timestamp without time zone DEFAULT now()
+);
+ALTER TABLE public.data_item OWNER TO postgres;

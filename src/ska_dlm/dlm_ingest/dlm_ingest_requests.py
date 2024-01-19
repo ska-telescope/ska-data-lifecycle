@@ -1,7 +1,6 @@
 """
 Convenience functions wrapping the most important postgREST API calls. 
 """
-import benedict
 import json
 import requests
 from .. import CONFIG
@@ -28,52 +27,200 @@ def init_data_item(item_name: str = "", json_data: str = "") -> str:
         print("Either item_name or json_data has to be specified!")
         return None
     r = requests.post(
-        request_url, json=post_data, headers={"Prefer": "missing=default, return=representation"}
+        request_url,
+        json=post_data,
+        headers={"Prefer": "missing=default, return=representation"},
+        timeout=10,
     )
     return r.json()[0]["uid"]
 
 
-def update_data_item(uid: str, json_data: str):
+def update_data_item(
+    oid: str = "", uid: str = "", json_data: str = "", table: str = CONFIG.DLM.dlm_table
+) -> str:
     """
     Generic function to update fields of an existing data_item. This is
     mostly used by the other convenience functions.
 
     Parameters:
-    uid, the uid of the data_item to be updated
-    json_data, the json formatted update data, compatible with postgREST
+    -----------
+    oid : the OID of the data_item to be updated
+    uid : the UID of the data_item to be updated
+    json_data : the json formatted update data, compatible with postgREST
+
+    Returns:
+    --------
+    string
     """
+    if oid:
+        req_ext = f"oid=eq.{oid}"
+    elif uid:
+        req_ext = f"uid=eq.{uid}"
+    else:
+        print("Either OID or UID should be specified!")
+        return None
+    request_url = f"{CONFIG.REST.base_url}/{table}?{req_ext}"
+    post_data = json_data
+    r = requests.patch(
+        request_url,
+        data=post_data,
+        headers={
+            "Content-type": "application/json",
+            "Prefer": "missing=default, return=representation",
+        },
+        timeout=10,
+    )
+    if len(r.json()) == 0 or r.status_code not in [200, 201]:
+        print(f"Nothing updated using this request: {request_url} {post_data}")
+        print(f"Status code: {r.status_code}")
+        result = ""
+    else:
+        result = r.json()[0]["uid"]
+    return result
 
 
-def set_uri(uid: str, uri: str):
-    """ """
-    pass
+def set_uri(uid: str, uri: str) -> str:
+    """
+    Set the URI field of the uid data_item.
+
+    Parameters:
+    -----------
+    uid : the uid of the data_item to be updated
+    uri : the access URI for the data_item
+
+    Returns:
+    --------
+    string
+    """
+    json_data = json.dumps({"uri": uri})
+    res = update_data_item(uid=uid, json_data=json_data)
+    return res
 
 
-def set_state(uid: str, state):
-    """ """
-    pass
+def set_state(uid: str, state: str) -> str:
+    """
+    Set the state field of the uid data_item.
+
+    Parameters:
+    -----------
+    uid : the uid of the data_item to be updated
+    state : the new state for the data_item
+
+    Returns:
+    --------
+    string
+    """
+    json_data = json.dumps({"state": state})
+    res = update_data_item(uid=uid, json_data=json_data)
+    return res
 
 
-def set_oid_expiration(oid: str, expiration: str):
-    """ """
-    pass
+def set_oid_expiration(oid: str, expiration: str) -> str:
+    """
+    Set the oid_expiration field of the data_items with the given OID.
+
+    Parameters:
+    -----------
+    oid : the oid of the data_item to be updated
+    expiration : the expiration date for the data_item
+
+    Returns:
+    --------
+    string
+    """
+    json_data = json.dumps({"oid_expiration": expiration})
+    res = update_data_item(oid=oid, json_data=json_data)
+    return res
 
 
 def set_uid_expiration(uid: str, expiration: str):
-    """ """
-    pass
+    """
+    Set the uid_expiration field of the data_item with the given UID.
+
+    Parameters:
+    -----------
+    uid : the UID of the data_item to be updated
+    expiration : the expiration date for the data_item
+
+    Returns:
+    --------
+    string
+    """
+    json_data = json.dumps({"uid_expiration": expiration})
+    res = update_data_item(uid=uid, json_data=json_data)
+    return res
 
 
 def set_user(oid: str = "", uid: str = "", user: str = "SKA"):
-    """ """
-    pass
+    """
+    Set the user field of the data_item(s) with the given OID or UID.
+
+    Parameters:
+    -----------
+    oid : the OID of the data_item to be updated
+    uid : the UID of the data_item to be updated
+    user : the user for the data_item
+
+    Returns:
+    --------
+    string
+    """
+    json_data = json.dumps({"user": user})
+    if uid:
+        res = update_data_item(uid=uid, json_data=json_data)
+    elif oid:
+        res = update_data_item(oid=oid, json_data=json_data)
+    else:
+        print("Either OID or UID should be specified!")
+        res = None
+    return res
 
 
 def set_group(oid: str = "", uid: str = "", group: str = "SKA"):
-    """ """
-    pass
+    """
+    Set the user field of the data_item(s) with the given OID or UID.
+
+    Parameters:
+    -----------
+    oid : the OID of the data_item to be updated
+    uid : the UID of the data_item to be updated
+    group : the group for the data_item
+
+    Returns:
+    --------
+    string
+    """
+    json_data = json.dumps({"group": group})
+    if uid:
+        res = update_data_item(uid=uid, json_data=json_data)
+    elif oid:
+        res = update_data_item(oid=oid, json_data=json_data)
+    else:
+        print("Either OID or UID should be specified!")
+        res = None
+    return res
 
 
 def set_acl(oid: str = "", uid: str = "", acl: str = "{}"):
-    """ """
-    pass
+    """
+    Set the user field of the data_item(s) with the given OID or UID.
+
+    Parameters:
+    -----------
+    oid : the OID of the data_item to be updated
+    uid : the UID of the data_item to be updated
+    acl : the acl dict for the data_item
+
+    Returns:
+    --------
+    string
+    """
+    json_data = json.dumps({"acl": acl})
+    if uid:
+        res = update_data_item(uid=uid, json_data=json_data)
+    elif oid:
+        res = update_data_item(oid=oid, json_data=json_data)
+    else:
+        print("Either OID or UID should be specified!")
+        res = None
+    return res

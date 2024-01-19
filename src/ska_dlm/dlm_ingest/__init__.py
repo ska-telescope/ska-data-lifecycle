@@ -2,10 +2,24 @@
 from .. import CONFIG
 from .dlm_ingest_requests import (
     init_data_item,
+    set_uri,
+    set_state,
+    set_oid_expiration,
+    set_uid_expiration,
+    set_user,
+    set_group,
+    set_acl,
 )
 
 __all__ = [
     "init_data_item",
+    "set_uri",
+    "set_state",
+    "set_oid_expiration",
+    "set_uid_expiration",
+    "set_user",
+    "set_group",
+    "set_acl",
 ]
 
 __author__ = """Andreas Wicenec"""
