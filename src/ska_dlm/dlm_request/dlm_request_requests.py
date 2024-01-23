@@ -1,4 +1,6 @@
 """Convenience functions wrapping the most important postgREST API calls."""
+from datetime import datetime
+from datetime import timedelta
 import logging
 
 import requests
@@ -19,7 +21,7 @@ def query_data_item(
     item_name: could be empty, in which case the first 1000 items are returned
     oid:    Return data_items referred to by the OID provided.
     uid:    Return data_item referred to by the UID provided.
-    query_string, an aribtrary postgREST query string
+    query_string: an aribtrary postgREST query string
 
     Returns:
     --------
@@ -46,3 +48,24 @@ def query_data_item(
         return request.json()
     logger.info("Response status code: %s", request.status_code)
     return None
+
+
+def query_expired(offset: timedelta = None):
+    """
+    Query for all expired data_items using the uid_expiration timestamp.
+
+    Parameters:
+    -----------
+    offset: optional offset for the query
+    """
+    now = datetime.now()
+    dt = now.isoformat()
+    if offset and isinstance(offset, timedelta):
+        dt = now + offset
+    elif offset and not isinstance(offset, timedelta):
+        logger.warning("Specified offset invalid type! Should be timedelta.")
+        return []
+    logger.info("Query for expired data_items older than %s", dt, exc_info=1)
+    query_string = f"uid_expiration=lt.{dt}&select=uid,uid_expiration"
+    result = query_data_item(query_string=query_string)
+    return result if result else []

@@ -64,7 +64,11 @@ CREATE TABLE public.storage (
     storage_available BOOLEAN DEFAULT True,
     storage_retired BOOLEAN DEFAULT False,
     storage_retire_date TIMESTAMP without time zone DEFAULT NULL,
-    storage_date timestamp without time zone DEFAULT now()
+    storage_date timestamp without time zone DEFAULT now(),
+    CONSTRAINT fk_location
+      FOREIGN KEY(location_id) 
+      REFERENCES public.location(location_id)
+      ON DELETE SET NULL
 );
 ALTER TABLE public.storage OWNER TO ska_dlm_admin;
 DROP TABLE IF EXISTS public.data_item;
@@ -86,9 +90,12 @@ CREATE TABLE public.data_item (
     item_state varchar DEFAULT 'initialized',
     UID_creation timestamp without time zone DEFAULT now(),
     OID_creation timestamp without time zone DEFAULT NULL,
-    OID_expiration timestamp without time zone DEFAULT '2099-12-31 23:59:59',
     UID_expiration timestamp without time zone DEFAULT now() + time '24:00',
+    OID_expiration timestamp without time zone DEFAULT '2099-12-31 23:59:59',
+    UID_deletion timestamp without time zone DEFAULT NULL,
+    OID_deletion timestamp without time zone DEFAULT NULL,
     expired boolean DEFAULT false,
+    deleted boolean DEFAULT false,
     last_access timestamp without time zone,
     item_checksum varchar,
     checksum_method varchar DEFAULT 'none',
@@ -101,7 +108,11 @@ CREATE TABLE public.data_item (
     decompressed_size integer DEFAULT NULL,
     compression_method varchar DEFAULT NULL,
     parents uuid DEFAULT NULL,
-    children uuid DEFAULT NULL
+    children uuid DEFAULT NULL,
+    CONSTRAINT fk_storage
+      FOREIGN KEY(storage_id)
+      REFERENCES public.storage(storage_id)
+      ON DELETE SET NULL
 );
 ALTER TABLE public.data_item OWNER TO ska_dlm_admin;
 CREATE INDEX idx_fk_storage_id ON public.data_item USING btree (storage_id);
@@ -137,6 +148,7 @@ FOR EACH ROW EXECUTE PROCEDURE
 -- Table phase_change
 --
 DROP TABLE IF EXISTS public.phase_change;
+DROP TABLE IF EXISTS public.phase_change;
 
 CREATE TABLE public.phase_change (
     phase_change_ID bigint GENERATED always as IDENTITY PRIMARY KEY,
@@ -144,4 +156,5 @@ CREATE TABLE public.phase_change (
     requested_phase varchar DEFAULT 'gas',
     request_creation timestamp without time zone DEFAULT now()
 );
+ALTER TABLE public.phase_change OWNER TO ska_dlm_admin;
 ALTER TABLE public.phase_change OWNER TO ska_dlm_admin;
