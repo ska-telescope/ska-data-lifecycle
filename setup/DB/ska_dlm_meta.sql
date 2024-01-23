@@ -36,6 +36,37 @@ SET row_security = off;
 SET default_tablespace = '';
 SET default_table_access_method = heap;
 
+DROP TABLE IF EXISTS public.location;
+CREATE TABLE public.location (
+    location_id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+    location_name varchar NOT NULL,
+    location_type varchar NOT NULL,
+    location_country varchar DEFAULT NULL,
+    location_place varchar DEFAULT NULL,
+    location_date timestamp without time zone DEFAULT now()
+);
+ALTER TABLE public.location OWNER TO ska_dlm_admin;
+
+
+
+DROP TABLE IF EXISTS public.storage;
+CREATE TABLE public.storage (
+    storage_id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+    location_id uuid NOT NULL,
+    storage_type varchar NOT NULL,
+    storage_interface varchar NOT NULL,
+    storage_capacity BIGINT DEFAULT -1,
+    storage_used NUMERIC(3,1) DEFAULT 0.0,
+    storage_checked BOOLEAN DEFAULT FALSE,
+    storage_checksum varchar DEFAULT NULL,
+    storage_last_checked TIMESTAMP without time zone DEFAULT NULL,
+    storage_num_objects BIGINT DEFAULT 0,
+    storage_available BOOLEAN DEFAULT True,
+    storage_retired BOOLEAN DEFAULT False,
+    storage_retire_date TIMESTAMP without time zone DEFAULT NULL,
+    storage_date timestamp without time zone DEFAULT now()
+);
+ALTER TABLE public.storage OWNER TO ska_dlm_admin;
 DROP TABLE IF EXISTS public.data_item;
 CREATE TABLE public.data_item (
     UID uuid DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -105,6 +136,7 @@ FOR EACH ROW EXECUTE PROCEDURE
 --
 -- Table phase_change
 --
+DROP TABLE IF EXISTS public.phase_change;
 
 CREATE TABLE public.phase_change (
     phase_change_ID bigint GENERATED always as IDENTITY PRIMARY KEY,
@@ -112,4 +144,4 @@ CREATE TABLE public.phase_change (
     requested_phase varchar DEFAULT 'gas',
     request_creation timestamp without time zone DEFAULT now()
 );
-ALTER TABLE public.data_item OWNER TO postgres;
+ALTER TABLE public.phase_change OWNER TO ska_dlm_admin;
