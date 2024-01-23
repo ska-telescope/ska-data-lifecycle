@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 def main():
     """Control the main execution of the program."""
-    print("main()")
+    logger.info("main()")
 
 
 if __name__ == "__main__":

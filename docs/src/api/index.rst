@@ -1,6 +1,6 @@
-ska_data_lifecycle Package
+ska_dlm Package
 ==================================
 
-.. automodule:: ska_data_lifecycle
+.. automodule:: ska_dlm
     :members:
     :special-members:

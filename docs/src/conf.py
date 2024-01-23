@@ -37,9 +37,9 @@ def setup(app):
 
 
 # -- Project information -----------------------------------------------------
-project = "SDP Data Lifecycle"
-copyright = "2023, SKA SDP Developers"
-author = "SKA SDP Developers"
+project = "SKA Data Lifecycle Management System"
+copyright = "2023, SKA Observatory"
+author = "SKA Observatory"
 
 
 # The version info for the project you're documenting, acts as replacement for
@@ -246,4 +246,4 @@ epub_exclude_files = ["search.html"]
 # -- Extension configuration -------------------------------------------------
 
 # Example configuration for intersphinx: refer to the Python standard library.
-intersphinx_mapping = {"python":("https://docs.python.org/", None)}
+intersphinx_mapping = {"python": ("https://docs.python.org/", None)}

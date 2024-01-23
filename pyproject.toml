@@ -2,15 +2,18 @@
 name = "ska_data_lifecycle"
 version = "0.0.1"
 description = "Services for managing the lifecycle of SKA data products"
-authors = ["Nadia Steyn <nadia.steyn@uwa.edu.au>"]
+authors = [
+    "Andreas Wicenec <andreas.wicenec@icrar.org>",
+    "James Strauss <james.strauss@icrar.org>",
+    ]
 repository = "https://gitlab.com/ska-telescope/sdp/ska-data-lifecycle"
 documentation = "https://developer.skao.int/projects/ska-data-lifecycle/en/latest/"
 license = "BSD-3-Clause"
 readme = "README.md"
-packages = [{include="ska_data_lifecycle", from="src"}]
+packages = [{include="ska_dlm", from="src"}]
 
 [tool.poetry.scripts]
-meta-gen = "ska_data_lifecycle.ska_data_lifecycle:main"
+meta-gen = "ska_dlm.ska_dlm:main"
 
 [[tool.poetry.source]]
 name = 'skao'
@@ -19,6 +22,11 @@ url = 'https://artefact.skao.int/repository/pypi-internal/simple'
 [tool.poetry.dependencies]
 python = "^3.10"
 ska-ser-logging = "^0.4.1+0a677a67"
+requests = "^2.31.0"
+pyyaml = "^6.0.1"
+python-benedict = "^0.33.1"
+inflect = "^7.0.0"
+ipython = "^8.20.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.3.0"
