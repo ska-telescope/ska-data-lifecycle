@@ -1,9 +1,12 @@
 """Convenience functions wrapping the most important postgREST API calls."""
 import json
+import logging
 
 import requests
 
 from .. import CONFIG
+
+logger = logging.getLogger(__name__)
 
 
 def init_data_item(item_name: str = "", json_data: str = "") -> str:
@@ -25,7 +28,7 @@ def init_data_item(item_name: str = "", json_data: str = "") -> str:
     elif json_data:
         post_data = json_data
     else:
-        print("Either item_name or json_data has to be specified!")
+        logger.error("Either item_name or json_data has to be specified!")
         return None
     r = requests.post(
         request_url,
@@ -59,7 +62,7 @@ def update_data_item(
     elif uid:
         req_ext = f"uid=eq.{uid}"
     else:
-        print("Either OID or UID should be specified!")
+        logger.error("Either OID or UID should be specified!")
         return None
     request_url = f"{CONFIG.REST.base_url}/{table}?{req_ext}"
     post_data = json_data
@@ -73,8 +76,8 @@ def update_data_item(
         timeout=10,
     )
     if len(r.json()) == 0 or r.status_code not in [200, 201]:
-        print(f"Nothing updated using this request: {request_url} {post_data}")
-        print(f"Status code: {r.status_code}")
+        logger.warning(f"Nothing updated using this request: {request_url} {post_data}")
+        logger.warning(f"Status code: {r.status_code}")
         result = ""
     else:
         result = r.json()[0]["uid"]
@@ -173,7 +176,7 @@ def set_user(oid: str = "", uid: str = "", user: str = "SKA"):
     elif oid:
         res = update_data_item(oid=oid, json_data=json_data)
     else:
-        print("Either OID or UID should be specified!")
+        logger.error("Either OID or UID should be specified!")
         res = None
     return res
 
@@ -198,7 +201,7 @@ def set_group(oid: str = "", uid: str = "", group: str = "SKA"):
     elif oid:
         res = update_data_item(oid=oid, json_data=json_data)
     else:
-        print("Either OID or UID should be specified!")
+        logger.error("Either OID or UID should be specified!")
         res = None
     return res
 
@@ -223,6 +226,6 @@ def set_acl(oid: str = "", uid: str = "", acl: str = "{}"):
     elif oid:
         res = update_data_item(oid=oid, json_data=json_data)
     else:
-        print("Either OID or UID should be specified!")
+        logger.error("Either OID or UID should be specified!")
         res = None
     return res

@@ -1,7 +1,11 @@
 """Convenience functions wrapping the most important postgREST API calls."""
+import logging
+
 import requests
 
 from .. import CONFIG
+
+logger = logging.getLogger(__name__)
 
 
 def query_data_item(
@@ -47,5 +51,5 @@ def query_data_item(
     r = requests.get(request_url, timeout=10)
     if r.status_code == 200:
         return r.json()
-    print(f"Response status code: {r.status_code}")
+    logger.info(f"Response status code: {r.status_code}")
     return None

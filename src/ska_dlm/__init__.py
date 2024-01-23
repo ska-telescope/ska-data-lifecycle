@@ -1,9 +1,11 @@
 # pylint: disable=no-member
 """DLM package for ska-data-lifecycle."""
 
+import logging
 import os
 
 import benedict
+import ska_ser_logging
 import yaml
 
 from . import dlm_db
@@ -13,6 +15,9 @@ __email__ = "andreas.wicenec@icrar.org"
 __version__ = "0.0.1"
 
 DLM_PATH = os.path.dirname(__file__)
+
+ska_ser_logging.configure_logging()
+logger = logging.getLogger(__name__)
 
 
 def read_config(cfg_file: str = f"{DLM_PATH}/config.yaml") -> dict:
@@ -29,7 +34,7 @@ def read_config(cfg_file: str = f"{DLM_PATH}/config.yaml") -> dict:
             if CONFIG.DB.password[1:] in secrets:
                 CONFIG.DB.password = secrets[CONFIG.DB.password[1:]]
         except FileNotFoundError:
-            print("secrets file not found!")
+            logger.error("secrets file not found!")
     return CONFIG
 
 
