@@ -10,16 +10,16 @@ from .. import CONFIG
 logger = logging.getLogger(__name__)
 
 
-def args_dict(f):
+def args_dict(func):
     """Get arguments of function inside the function. Used as decorator."""
 
     def wrapper(*args, **kwargs):
-        bound_args = inspect.signature(f).bind(*args, **kwargs)
+        bound_args = inspect.signature(func).bind(*args, **kwargs)
         bound_args.apply_defaults()
         logger.info(dict(bound_args.arguments))
         kwargs.update({"args": dict(bound_args.arguments)})
-        logger.info(f"Added args: {kwargs}")
-        return f(*args, **kwargs)
+        logger.info("Added args: %s", kwargs)
+        return func(*args, **kwargs)
 
     return wrapper
 
@@ -48,10 +48,10 @@ def query_location(location_name: str = "", location_id: str = "", query_string:
         request_url = f"{api_url}&{query_string}"
     else:
         request_url = f"{api_url}"
-    r = requests.get(request_url, timeout=10)
-    if r.status_code == 200:
-        return r.json()
-    logger.info(f"Response status code: {r.status_code}")
+    request = requests.get(request_url, timeout=10)
+    if request.status_code == 200:
+        return request.json()
+    logger.info("Response status code: %s", request.status_code)
     return []
 
 
@@ -88,10 +88,10 @@ def init_storage(  # pylint: disable=R0913, R0914
     ]
     post_data = {}
     if json_data:
-        jd = json.loads(json_data)
+        json_dict = json.loads(json_data)
         for k in mandatory_keys:
-            if k not in jd:
-                logger.error(f"Parameter {k} is required in json_data!")
+            if k not in json_dict:
+                logger.error("Parameter %s is required in json_data!", k)
                 return ""
         post_data = json_data
     else:
@@ -104,19 +104,19 @@ def init_storage(  # pylint: disable=R0913, R0914
             if k in provided_args:
                 post_data.update({k: provided_args[k]})
             else:
-                logger.error(f"Argument {k} is mandatory!")
+                logger.error("Argument %s is mandatory!", k)
                 complete = True
     if complete:
-        r = requests.post(
+        request = requests.post(
             request_url,
             json=post_data,
             headers={"Prefer": "missing=default, return=representation"},
             timeout=10,
         )
-        if r.status_code in [200, 201]:
-            return r.json()[0]["storage_id"]
-        logger.info(f"Status code: {r.status_code}")
-        logger.info(f"{r.json()}")
+        if request.status_code in [200, 201]:
+            return request.json()[0]["storage_id"]
+        logger.info("Status code: %s", request.status_code)
+        logger.info("%s", request.json())
     return ""
 
 
@@ -131,7 +131,7 @@ def init_location(
     request_url = f"{CONFIG.REST.base_url}/{CONFIG.DLM.location_table}?limit=1000"
     res = query_location(location_name)
     if len(res) != 0:
-        logger.warning(f"A location with this name exists already: {location_name}")
+        logger.warning("A location with this name exists already: %s", location_name)
         return ""
     if json_data:
         post_data = json_data
@@ -146,13 +146,13 @@ def init_location(
     else:
         logger.error("Location name is required if not specifying json_data!")
         return ""
-    r = requests.post(
+    request = requests.post(
         request_url,
         json=post_data,
         headers={"Prefer": "missing=default, return=representation"},
         timeout=10,
     )
-    return r.json()[0]["location_id"]
+    return request.json()[0]["location_id"]
 
 
 # def set_state(uid: str, state):

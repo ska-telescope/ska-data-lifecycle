@@ -37,19 +37,12 @@ def query_data_item(
             request_url = f"{api_url}&oid=eq.{oid}"
         elif uid:
             request_url = f"{api_url}&uid=eq.{uid}"
-    if item_name or oid or uid:
-        if item_name:
-            request_url = f"{api_url}&item_name=eq.{item_name}"
-        elif oid:
-            request_url = f"{api_url}&oid=eq.{oid}"
-        elif uid:
-            request_url = f"{api_url}&uid=eq.{uid}"
     elif query_string:
         request_url = f"{api_url}&{query_string}"
     else:
         request_url = f"{api_url}"
-    r = requests.get(request_url, timeout=10)
-    if r.status_code == 200:
-        return r.json()
-    logger.info(f"Response status code: {r.status_code}")
+    request = requests.get(request_url, timeout=10)
+    if request.status_code == 200:
+        return request.json()
+    logger.info("Response status code: %s", request.status_code)
     return None

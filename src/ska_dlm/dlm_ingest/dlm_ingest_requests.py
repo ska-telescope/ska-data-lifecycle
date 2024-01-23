@@ -30,13 +30,13 @@ def init_data_item(item_name: str = "", json_data: str = "") -> str:
     else:
         logger.error("Either item_name or json_data has to be specified!")
         return None
-    r = requests.post(
+    request = requests.post(
         request_url,
         json=post_data,
         headers={"Prefer": "missing=default, return=representation"},
         timeout=10,
     )
-    return r.json()[0]["uid"]
+    return request.json()[0]["uid"]
 
 
 def update_data_item(
@@ -66,7 +66,7 @@ def update_data_item(
         return None
     request_url = f"{CONFIG.REST.base_url}/{table}?{req_ext}"
     post_data = json_data
-    r = requests.patch(
+    request = requests.patch(
         request_url,
         data=post_data,
         headers={
@@ -75,12 +75,12 @@ def update_data_item(
         },
         timeout=10,
     )
-    if len(r.json()) == 0 or r.status_code not in [200, 201]:
-        logger.warning(f"Nothing updated using this request: {request_url} {post_data}")
-        logger.warning(f"Status code: {r.status_code}")
+    if len(request.json()) == 0 or request.status_code not in [200, 201]:
+        logger.warning("Nothing updated using this request: %s : %s", request_url, post_data)
+        logger.warning("Status code: %s", request.status_code)
         result = ""
     else:
-        result = r.json()[0]["uid"]
+        result = request.json()[0]["uid"]
     return result
 
 
