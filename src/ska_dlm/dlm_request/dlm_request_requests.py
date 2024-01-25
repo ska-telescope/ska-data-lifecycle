@@ -1,8 +1,10 @@
 """Convenience functions wrapping the most important postgREST API calls."""
-from datetime import datetime, timedelta
 import logging
-from .. import CONFIG
+from datetime import datetime, timedelta
+
 import requests
+
+from .. import CONFIG
 
 logger = logging.getLogger(__name__)
 
@@ -56,13 +58,39 @@ def query_expired(offset: timedelta = None):
     offset: optional offset for the query
     """
     now = datetime.now()
-    dat = now.isoformat()
+    iso_now = now.isoformat()
     if offset and isinstance(offset, timedelta):
-        dat = now + offset
+        iso_now = now + offset
     elif offset and not isinstance(offset, timedelta):
         logger.warning("Specified offset invalid type! Should be timedelta.")
         return []
-    logger.info("Query for expired data_items older than %s", dat, exc_info=1)
-    query_string = f"uid_expiration=lt.{dat}&select=uid,uid_expiration"
+    logger.info("Query for expired data_items older than %s", iso_now, exc_info=1)
+    query_string = f"uid_expiration=lt.{iso_now}&select=uid,uid_expiration"
     result = query_data_item(query_string=query_string)
+    return result if result else []
+
+
+def query_item_storage(item_name: str = "", oid: str = "", uid: str = "") -> str:
+    """
+    Query for the storage_ids of all backends holding a copy of a data_item.
+
+    Either an item_name or a OID have to be provided.
+
+    Parameters:
+    -----------
+    item_name: optional item_name
+    oid: optional, the oid to be searched for
+    uid: optional, this would return only one storage_id
+    """
+    # logger.info("Query for expired data_items older than %s", iso_now, exc_info=1)
+    if item_name:
+        query_string = f"uid=eq.{uid}&select=uid,storage_id"
+    elif oid:
+        query_string = f"oid=eq.{oid}&select=uid,storage_id"
+    elif uid:
+        query_string = f"uid=eq.{uid}&select=uid,storage_id"
+    else:
+        logger.error("Either an item_name or an OID or an UID have to be provided")
+        return []
+    result = query_data_item(item_name=item_name, oid=oid, uid=uid, query_string=query_string)
     return result if result else []

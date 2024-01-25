@@ -26,7 +26,7 @@ def args_dict(func):
 
 def query_location(location_name: str = "", location_id: str = "", query_string: str = "") -> list:
     """
-    Query a new data_item by at least specifying an item_name.
+    Query a location by at least specifying an location_name.
 
     Parameters:
     -----------
