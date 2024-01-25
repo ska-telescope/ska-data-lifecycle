@@ -27,7 +27,7 @@ TBD
 `docker run --rm --name ska-dlm -p 5433:5432 -e POSTGRES_PASSWORD=mysecretpassword -d postgres`
 
 ### Setup the ska-dlm DB:
-From inside the ska-data-lifecycle repo directory run
+From inside the ska-data-lifecycle repo directory run:
 
 `psql -U postgres -h localhost -p 5433 -f setup/DB/ska_dlm_meta.sql`
 
@@ -36,9 +36,11 @@ After the installation of postgREST the command `postgrest` should be available 
 
 `postgrest setup/postgREST/postgREST.conf`
 
-from inside the ska-data-lifecycle repo directory. _This will run in the terminal thus to start PostGUI you need to use another terminal._
+from inside the ska-data-lifecycle repo directory.\
+_This will run in the terminal thus to start PostGUI you need to use another terminal._
 
 ### Create or replace the file src/data/config.json with the following:
+```json
 {
   "databases": [
     {
@@ -72,16 +74,16 @@ from inside the ska-data-lifecycle repo directory. _This will run in the termina
 }
 
 ### Create a file in the main directory called .secrets.yaml with the following content:
-db_password: "mysecretpassword"
+`db_password: "mysecretpassword"`
 
 ### Create the PostGUI directory:
-git clone https://github.com/priyank-purohit/PostGUI
+`git clone https://github.com/priyank-purohit/PostGUI`
 
 ### Start the PostGUI:
 From inside the PostGUI repository directory run (for Unix):
 
-`npm install`
-`export NODE_OPTIONS=--openssl-legacy-provider`
+`npm install`\
+`export NODE_OPTIONS=--openssl-legacy-provider`\
 `npm start`
 
 _This will also run inside the terminal._
