@@ -72,6 +72,7 @@ _This will run in the terminal thus to start PostGUI you need to use another ter
   ],
   "errorMsg": "ERROR"
 }
+```
 
 ### Create a file in the main directory called .secrets.yaml with the following content:
 `db_password: "mysecretpassword"`
