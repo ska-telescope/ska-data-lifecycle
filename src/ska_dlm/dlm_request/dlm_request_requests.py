@@ -1,10 +1,8 @@
 """Convenience functions wrapping the most important postgREST API calls."""
-import logging
 from datetime import datetime, timedelta
-
-import requests
-
+import logging
 from .. import CONFIG
+import requests
 
 logger = logging.getLogger(__name__)
 
