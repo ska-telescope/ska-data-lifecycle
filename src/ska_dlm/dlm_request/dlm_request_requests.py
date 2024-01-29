@@ -1,7 +1,6 @@
 """Convenience functions wrapping the most important postgREST API calls."""
-from datetime import datetime
-from datetime import timedelta
 import logging
+from datetime import datetime, timedelta
 
 import requests
 
@@ -59,13 +58,13 @@ def query_expired(offset: timedelta = None):
     offset: optional offset for the query
     """
     now = datetime.now()
-    dt = now.isoformat()
+    dat = now.isoformat()
     if offset and isinstance(offset, timedelta):
-        dt = now + offset
+        dat = now + offset
     elif offset and not isinstance(offset, timedelta):
         logger.warning("Specified offset invalid type! Should be timedelta.")
         return []
-    logger.info("Query for expired data_items older than %s", dt, exc_info=1)
-    query_string = f"uid_expiration=lt.{dt}&select=uid,uid_expiration"
+    logger.info("Query for expired data_items older than %s", dat, exc_info=1)
+    query_string = f"uid_expiration=lt.{dat}&select=uid,uid_expiration"
     result = query_data_item(query_string=query_string)
     return result if result else []

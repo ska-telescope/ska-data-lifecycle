@@ -37,13 +37,20 @@ def init_data_item(item_name: str = "", json_data: str = "") -> str:
         timeout=10,
     )
     if request.status_code not in [200, 201]:
-        logger.warning("Ingest unsuccessful! Status code: %d", request.status_code, exc_info=1)
+        logger.warning(
+            "Ingest unsuccessful! Status code: %d",
+            request.status_code,
+            exc_info=1,
+        )
         return []
     return request.json()[0]["uid"]
 
 
 def update_data_item(
-    oid: str = "", uid: str = "", json_data: str = "", table: str = CONFIG.DLM.dlm_table
+    oid: str = "",
+    uid: str = "",
+    json_data: str = "",
+    table: str = CONFIG.DLM.dlm_table,
 ) -> str:
     """
     Update fields of an existing data_item.
@@ -79,7 +86,11 @@ def update_data_item(
         timeout=10,
     )
     if len(request.json()) == 0 or request.status_code not in [200, 201]:
-        logger.warning("Nothing updated using this request: %s : %s", request_url, post_data)
+        logger.warning(
+            "Nothing updated using this request: %s : %s",
+            request_url,
+            post_data,
+        )
         logger.warning("Status code: %s", request.status_code)
         result = ""
     else:
