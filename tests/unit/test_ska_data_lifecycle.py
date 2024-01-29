@@ -20,7 +20,7 @@ def test_example():
 
 
 def test_ingest():
-    """Test data_item init"""
+    """Test data_item init."""
     qry = inflect.engine()
     success = True
     for i in range(1, 51, 1):
@@ -32,14 +32,14 @@ def test_ingest():
 
 
 def test_query_expired_empty():
-    """Test the query expired returning an empty set"""
+    """Test the query expired returning an empty set."""
     result = dlm_request.query_expired()
     success = not result
     assert success
 
 
 def test_query_expired():
-    """Test the query expired returning records"""
+    """Test the query expired returning records."""
     offset = timedelta(days=1)
     result = dlm_request.query_expired(offset)
     success = len(result) > 0
