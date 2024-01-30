@@ -1,0 +1,13 @@
+# Keep in sync with .gitlab-ci.yml python-tests job services
+# Ideally we'd use this file to define our CI services, but that became
+# difficult so instead just duplicate the configuration since it is relatively
+# small.
+version: '3.7'
+services:
+
+  ska-dlm:
+    image: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: mysecretpassword

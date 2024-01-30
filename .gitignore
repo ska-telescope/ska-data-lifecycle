@@ -63,3 +63,4 @@ table.*
 **/.eggs
 **/.secrets.yaml
 **/.templ
+.postgrest.pid
