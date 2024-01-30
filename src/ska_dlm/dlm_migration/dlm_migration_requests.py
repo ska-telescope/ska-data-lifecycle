@@ -3,7 +3,6 @@ import logging
 
 import requests
 
-from .. import CONFIG
 from ..dlm_request import query_item_storage
 
 logger = logging.getLogger(__name__)
@@ -11,7 +10,8 @@ logger = logging.getLogger(__name__)
 
 def rclone_copy(src_fs: str, src_remote: str, dst_fs: str, dst_remote: str):
     """
-    Helper function copying a file from a one place to another.
+    Copy a file from one place to another.
+
     NOTE: This assumes a rclone server is running locally
     """
     request_url = "http://localhost:5572/operations/copyfile"
@@ -31,7 +31,6 @@ def copy_data_item(
 ) -> str:
     """
     Copy a data_item from source to destination.
-
 
     Parameters:
     -----------
@@ -60,7 +59,10 @@ def copy_data_item(
         return []
 
     rclone_copy(
-        storages[0]["backend"], storages[0]["path"], destination["backend"], destination["path"]
+        storages[0]["backend"],
+        storages[0]["path"],
+        destination["backend"],
+        destination["path"],
     )
 
     return []
