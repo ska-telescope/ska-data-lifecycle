@@ -98,7 +98,7 @@ def update_data_item(
     return result
 
 
-def set_uri(uid: str, uri: str, storage_id: str) -> str:
+def set_uri(uid: str, uri: str, storage_id: str) -> bool:
     """
     Set the URI field of the uid data_item.
 
@@ -110,14 +110,14 @@ def set_uri(uid: str, uri: str, storage_id: str) -> str:
 
     Returns:
     --------
-    string
+    boolean, True if successul
     """
     json_data = json.dumps({"uri": uri, "storage_id": storage_id})
     res = update_data_item(uid=uid, json_data=json_data)
-    return res
+    return res != ""
 
 
-def set_state(uid: str, state: str) -> str:
+def set_state(uid: str, state: str) -> bool:
     """
     Set the state field of the uid data_item.
 
@@ -128,11 +128,11 @@ def set_state(uid: str, state: str) -> str:
 
     Returns:
     --------
-    string
+    boolean, True if successful
     """
     json_data = json.dumps({"item_state": state})
     res = update_data_item(uid=uid, json_data=json_data)
-    return res
+    return res != ""
 
 
 def set_oid_expiration(oid: str, expiration: str) -> str:

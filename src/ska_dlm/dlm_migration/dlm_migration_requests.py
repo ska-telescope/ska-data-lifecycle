@@ -1,12 +1,12 @@
 """Convenience functions wrapping the most important postgREST API calls."""
 import json
+import json
 import logging
-import os
 
 import requests
 
 from .. import CONFIG
-from ..dlm_ingest import init_data_item, set_uri, set_state
+from ..dlm_ingest import init_data_item, set_state, set_uri
 from ..dlm_request import query_data_item, query_item_storage
 
 logger = logging.getLogger(__name__)
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 def rclone_config(config: str) -> bool:
     """
-    Creates a new rclone backend configuration entry on the rclone server.
+    Create a new rclone backend configuration entry on the rclone server.
 
     Parameters:
     -----------
@@ -51,8 +51,7 @@ def rclone_copy(src_fs: str, src_remote: str, dst_fs: str, dst_remote: str):
 
 def get_storage_config(storage_id: str, config_type="rclone") -> str:
     """
-    Get the storage configuration entry for a particular storage
-    backend.
+    Get the storage configuration entry for a particular storage backend.
 
     Parameters:
     -----------
@@ -72,48 +71,72 @@ def get_storage_config(storage_id: str, config_type="rclone") -> str:
     return []
 
 
-def copy_data_item(
-    item_name: str = "", oid: str = "", uid: str = "", destination_id: str = "", path: str = ""
-) -> str:
+def check_item_on_storage(
+    item_name: str = "", oid: str = "", uid: str = "", destination_id: str = ""
+) -> bool:
     """
-    Copy a data_item from source to destination.
+    Check whether item is on storage.
 
     Parameters:
     -----------
     item_name: could be empty, in which case the first 1000 items are returned
     oid:    Return data_items referred to by the OID provided.
     uid:    Return data_item referred to by the UID provided.
-    destination: the destination storage and path
+    destination_id: optional, the storage_id of a destination storage
 
-    Returns:
-    --------
-    str
     """
-    # Steps:
-    # (1) get the current storage_id(s) of the item
-    # (2) convert one(first) storage_id to a configured rclone backend
-    # (3) check whether item already exists on destination
-    # (4) initialize the new item with the same OID on the new storage
-    # (5) use the rclone copy command to copy it to the new location
-    # (6) make sure the copy was successful
-
-    if not item_name and not oid and not uid:
-        logger.error("Either an item_name or an OID or an UID has to be provided!")
-        return False
-    orig_item = query_data_item(item_name, oid, uid)[0]
-    # (1)
-    item_name = orig_item["item_name"]
     storages = query_item_storage(item_name, oid, uid)
     if not storages:
         logger.error("Unable to identify a source storage for this data_item!")
+        return []
+    # additional check if a storage_id is provided
+    if destination_id:
+        for storage in storages:
+            if storage["storage_id"] == destination_id:
+                logger.error("data_item '%s' already exists on destination storage!", item_name)
+                return []
+    return storages
+
+
+def copy_data_item(
+    item_name: str = "", oid: str = "", uid: str = "", destination_id: str = "", path: str = ""
+) -> bool:
+    """
+    Copy a data_item from source to destination.
+
+    Steps:
+    (1) get the current storage_id(s) of the item
+    (2) convert one(first) storage_id to a configured rclone backend
+    (3) check whether item already exists on destination
+    (4) initialize the new item with the same OID on the new storage
+    (5) use the rclone copy command to copy it to the new location
+    (6) make sure the copy was successful
+
+    Parameters:
+    -----------
+    item_name: could be empty, in which case the first 1000 items are returned
+    oid:    Return data_items referred to by the OID provided.
+    uid:    Return data_item referred to by the UID provided.
+    destination: the destination storage
+    path: the destination path
+
+    Returns:
+    --------
+    boolean, True if successful
+    """
+    if not item_name and not oid and not uid:
+        logger.error("Either an item_name or an OID or an UID has to be provided!")
         return False
-    for st in storages:
-        if st["storage_id"] == destination_id:
-            logger.error("data_item '%s' already exists on destination storage!", item_name)
-            return False
+    stat = True
+    orig_item = query_data_item(item_name, oid, uid)[0]
+    # (1)
+    item_name = orig_item["item_name"]
+    storages = check_item_on_storage(item_name, destination_id=destination_id)
     # we pick the first data_item returned record for now
-    storage = storages[0]
-    logger.info("Storage identified: %s", storage["storage_id"])
+    if storages:
+        storage = storages[0]
+    else:
+        return False
     # (2)
     s_config = get_storage_config(storage["storage_id"])
     if not s_config:
@@ -143,11 +166,7 @@ def copy_data_item(
         dest["path"],
     )
     # (6)
-    if not stat:
-        return False
-    if not set_uri(uid, dest["path"], destination_id):
-        return False
-    if not set_state(uid, "READY"):
-        return False
-
-    return True
+    stat = set_uri(uid, dest["path"], destination_id)
+    # all done! Set data_item state to READY
+    stat = set_state(uid, "READY")
+    return stat

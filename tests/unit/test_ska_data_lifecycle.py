@@ -2,12 +2,13 @@
 
 """Tests for `ska_data_lifecycle` package."""
 import logging
-from datetime import timedelta
 import os
+from datetime import timedelta
 from unittest import TestCase
 
 import inflect  # pylint disable E0401
 
+from ska_dlm import dlm_ingest, dlm_request, dlm_storage  # pylint disable E0401
 from ska_dlm import dlm_ingest, dlm_request, dlm_storage  # pylint disable E0401
 
 LOG = logging.getLogger("data-lifecycle-test")
@@ -16,7 +17,7 @@ LOG.setLevel(logging.DEBUG)
 
 class TestDlm(TestCase):
     """
-    Unit tests for the DLM
+    Unit tests for the DLM.
 
     NOTE: Currently some of them are dependent on each other.
     """
@@ -38,6 +39,12 @@ class TestDlm(TestCase):
         success = len(result) == 0
         assert success
 
+    def test_query_expired_empty(self):
+        """Test the query expired returning an empty set."""
+        result = dlm_request.query_expired()
+        success = len(result) == 0
+        assert success
+
     def test_query_expired(self):
         """Test the query expired returning records."""
         offset = timedelta(days=1)
@@ -46,7 +53,7 @@ class TestDlm(TestCase):
         assert success
 
     def test_location_init(self):
-        """Test initialisation on a location"""
+        """Test initialisation on a location."""
         # This returns an empty string if unsuccessful
         fail = dlm_storage.init_location() == ""
         assert fail
@@ -54,7 +61,7 @@ class TestDlm(TestCase):
         assert success
 
     def test_storage_init(self):
-        """Test initialisation on a storage"""
+        """Test initialisation on a storage."""
         # Without required parameters
         fail = dlm_storage.init_storage() == ""
         assert fail
@@ -72,8 +79,8 @@ class TestDlm(TestCase):
 
     def test_set_uri_and_state(self):
         """Update a data_item record with the pointer to a file."""
-        with open("dlm_test_file.txt", "w", encoding="UTF-8") as f:
-            f.write("Welcome to the great DLM world!")
+        with open("dlm_test_file.txt", "w", encoding="UTF-8") as tfile:
+            tfile.write("Welcome to the great DLM world!")
         fpath = os.path.abspath("dlm_test_file.txt")
         fpath = fpath.replace(f"{os.environ['HOME']}/", "")
         uid = dlm_request.query_data_item(item_name="this/is/the/first/test/item")[0]["uid"]
