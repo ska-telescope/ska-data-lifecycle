@@ -64,3 +64,4 @@ table.*
 **/.secrets.yaml
 **/.templ
 .postgrest.pid
+scripts/postgrest
