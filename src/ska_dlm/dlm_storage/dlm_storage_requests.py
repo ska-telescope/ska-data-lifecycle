@@ -41,9 +41,9 @@ def query_location(location_name: str = "", location_id: str = "", query_string:
     api_url = f"{CONFIG.REST.base_url}/{CONFIG.DLM.location_table}?limit=1000"
     if location_name or location_id:
         if location_name:
-            request_url = f"{api_url}&item_name=eq.{location_name}"
+            request_url = f"{api_url}&location_name=eq.{location_name}"
         elif location_id:
-            request_url = f"{api_url}&oid=eq.{location_id}"
+            request_url = f"{api_url}&location_id=eq.{location_id}"
     elif query_string:
         request_url = f"{api_url}&{query_string}"
     else:
@@ -120,12 +120,42 @@ def init_storage(  # pylint: disable=R0913, R0914
     return ""
 
 
+def create_storage_config(storage_id: str, config: str, config_type="rclone") -> str:
+    """
+    Create a new record in the storage_config table for a storage with the given id.
+
+    Parameters:
+    -----------
+    storage_id: the storage_id for which to create the entry.
+    config: the configuration entry. For rclone this is s JSON formatted string
+    config_type: default is rclone, but could be something else in the future.
+
+    Returns:
+    --------
+    str, the ID of the config entry or empty string
+    """
+    api_url = f"{CONFIG.REST.base_url}/storage_config"
+    request_url = f"{api_url}"
+    post_data = {"storage_id": storage_id, "config": config, "config_type": config_type}
+    request = requests.post(
+        request_url,
+        json=post_data,
+        headers={"Prefer": "missing=default, return=representation"},
+        timeout=10,
+    )
+    if request.status_code == 201:
+        return request.json()[0]["config_id"]
+    logger.info("Response status code: %s", request.status_code)
+    return ""
+
+
 def init_location(
     location_name: str = "",
+    location_type: str = "",
     location_country: str = "",
     location_city: str = "",
     location_facility: str = "",
-    json_data: str = "",
+    # json_data: str = "",
 ) -> str:
     """Initialize a new location for a stroage by specifying the location_name or location_id."""
     request_url = f"{CONFIG.REST.base_url}/{CONFIG.DLM.location_table}?limit=1000"
@@ -133,10 +163,10 @@ def init_location(
     if len(res) != 0:
         logger.warning("A location with this name exists already: %s", location_name)
         return ""
-    if json_data:
-        post_data = json_data
-    elif location_name:
-        post_data = {"location_name": location_name}
+    # if json_data:
+    #     post_data = json_data
+    if location_name and location_type:
+        post_data = {"location_name": location_name, "location_type": location_type}
         if location_country:
             post_data.update({"location_country": location_country})
         if location_city:
@@ -152,34 +182,38 @@ def init_location(
         headers={"Prefer": "missing=default, return=representation"},
         timeout=10,
     )
+    if request.status_code not in [200, 201]:
+        logger.error("Status code %s", request.status_code)
+        return ""
     return request.json()[0]["location_id"]
 
 
-# def set_state(uid: str, state):
-#     """ """
-#     pass
+def query_storage(storage_name: str = "", storage_id: str = "", query_string: str = "") -> list:
+    """
+    Query a storage by at least specifying an storage_name.
 
+    Parameters:
+    -----------
+    storage_name: could be empty, in which case the first 1000 items are returned
+    stoage_id:    Return locations referred to by the location_id provided.
+    query_string, an arbitrary postgREST query string
 
-# def set_oid_expiration(oid: str, expiration: str):
-#     """ """
-#     pass
-
-
-# def set_uid_expiration(uid: str, expiration: str):
-#     """ """
-#     pass
-
-
-# def set_user(oid: str = "", uid: str = "", user: str = "SKA"):
-#     """ """
-#     pass
-
-
-# def set_group(oid: str = "", uid: str = "", group: str = "SKA"):
-#     """ """
-#     pass
-
-
-# def set_acl(oid: str = "", uid: str = "", acl: str = "{}") -> uid:
-#     """ """
-#     pass
+    Returns:
+    --------
+    str
+    """
+    api_url = f"{CONFIG.REST.base_url}/{CONFIG.DLM.storage_table}?limit=1000"
+    if storage_name or storage_id:
+        if storage_name:
+            request_url = f"{api_url}&storage_name=eq.{storage_name}"
+        elif storage_id:
+            request_url = f"{api_url}&storage_id=eq.{storage_id}"
+    elif query_string:
+        request_url = f"{api_url}&{query_string}"
+    else:
+        request_url = f"{api_url}"
+    request = requests.get(request_url, timeout=10)
+    if request.status_code == 200:
+        return request.json()
+    logger.info("Response status code: %s", request.status_code)
+    return []

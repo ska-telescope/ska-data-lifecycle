@@ -70,6 +70,49 @@ def query_expired(offset: timedelta = None):
     return result if result else []
 
 
+def query_exists(item_name: str = "", oid: str = "", uid: str = "", ready: bool = False) -> bool:
+    """
+    Query to check for existence of a data_item.
+
+    Parameters:
+    -----------
+    item_name: optional item_name
+    oid: optional, the oid to be searched for
+    uid: optional, this returns only one storage_id
+    """
+    if item_name:
+        query_string = f"item_name=eq.{item_name}"
+    elif oid:
+        query_string = f"oid=eq.{oid}"
+    elif uid:
+        query_string = f"uid=eq.{uid}"
+    else:
+        logger.error("Either an item_name or an OID or an UID have to be provided")
+        return False
+    if ready is True:
+        query_string = f"{query_string}&item_state=eq.READY"
+    result = query_data_item(query_string=query_string)
+    if not result:
+        return False
+    return True
+
+
+def query_exists_and_ready(item_name: str = "", oid: str = "", uid: str = "") -> bool:
+    """
+    Check whether a data_item exists and is in ready state.
+
+    Parameters:
+    -----------
+    item_name: optional item_name
+    oid: optional, the oid to be searched for
+    uid: optional, this returns only one storage_id
+
+    Returns:
+    boolean
+    """
+    return query_exists(item_name, oid, uid, ready=True)
+
+
 def query_item_storage(item_name: str = "", oid: str = "", uid: str = "") -> str:
     """
     Query for the storage_ids of all backends holding a copy of a data_item.
@@ -80,17 +123,25 @@ def query_item_storage(item_name: str = "", oid: str = "", uid: str = "") -> str
     -----------
     item_name: optional item_name
     oid: optional, the oid to be searched for
-    uid: optional, this would return only one storage_id
+    uid: optional, this returns only one storage_id
     """
-    # logger.info("Query for expired data_items older than %s", iso_now, exc_info=1)
-    if item_name:
-        query_string = f"uid=eq.{uid}&select=uid,storage_id"
-    elif oid:
-        query_string = f"oid=eq.{oid}&select=uid,storage_id"
-    elif uid:
-        query_string = f"uid=eq.{uid}&select=uid,storage_id"
-    else:
-        logger.error("Either an item_name or an OID or an UID have to be provided")
+    if not query_exists_and_ready(item_name, oid, uid):
+        logger.error("data_item does not exists or is not READY!")
         return []
-    result = query_data_item(item_name=item_name, oid=oid, uid=uid, query_string=query_string)
-    return result if result else []
+    if item_name:
+        query_string = (
+            f"item_name=eq.{item_name}&item_state=eq.READY&select=oid,uid,item_name,storage_id,uri"
+        )
+    elif oid:
+        query_string = f"oid=eq.{oid}&item_state=eq.READY&select=oid,uid,item_name,storage_id,uri"
+    elif uid:
+        query_string = f"uid=eq.{uid}&item_state=eq.READY&select=oid,uid,item_name,storage_id,uri"
+    else:
+        logger.error("Either an item_name or an OID or an UID have to be provided!")
+        return []
+    result = query_data_item(query_string=query_string)
+    if not result or not [x["storage_id"] for x in result if x["storage_id"]]:
+        logger.info("Result: %s", result)
+        logger.error("This data_item has no valid storage or it is not in READY state!")
+        return []
+    return result

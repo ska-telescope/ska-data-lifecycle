@@ -98,7 +98,7 @@ def update_data_item(
     return result
 
 
-def set_uri(uid: str, uri: str) -> str:
+def set_uri(uid: str, uri: str, storage_id: str) -> str:
     """
     Set the URI field of the uid data_item.
 
@@ -106,12 +106,13 @@ def set_uri(uid: str, uri: str) -> str:
     -----------
     uid : the uid of the data_item to be updated
     uri : the access URI for the data_item
+    storage_id: the storage_id associated with the URI
 
     Returns:
     --------
     string
     """
-    json_data = json.dumps({"uri": uri})
+    json_data = json.dumps({"uri": uri, "storage_id": storage_id})
     res = update_data_item(uid=uid, json_data=json_data)
     return res
 
@@ -129,7 +130,7 @@ def set_state(uid: str, state: str) -> str:
     --------
     string
     """
-    json_data = json.dumps({"state": state})
+    json_data = json.dumps({"item_state": state})
     res = update_data_item(uid=uid, json_data=json_data)
     return res
 

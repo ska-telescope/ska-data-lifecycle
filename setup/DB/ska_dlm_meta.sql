@@ -43,6 +43,8 @@ CREATE TABLE public.location (
     location_type varchar NOT NULL,
     location_country varchar DEFAULT NULL,
     location_place varchar DEFAULT NULL,
+    location_check_url varchar DEFAULT NULL,
+    location_last_check TIMESTAMP without time zone DEFAULT NULL,
     location_date timestamp without time zone DEFAULT now()
 );
 ALTER TABLE public.location OWNER TO ska_dlm_admin;
@@ -53,12 +55,15 @@ DROP TABLE IF EXISTS public.storage;
 CREATE TABLE public.storage (
     storage_id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     location_id uuid NOT NULL,
+    storage_name varchar NOT NULL,
     storage_type varchar NOT NULL,
     storage_interface varchar NOT NULL,
+    storage_phase_level varchar DEFAULT 'Gas',
     storage_capacity BIGINT DEFAULT -1,
-    storage_used NUMERIC(3,1) DEFAULT 0.0,
+    storage_use_pct NUMERIC(3,1) DEFAULT 0.0,
+    storage_permissions varchar DEFAULT 'RW',
     storage_checked BOOLEAN DEFAULT FALSE,
-    storage_checksum varchar DEFAULT NULL,
+    storage_check_url varchar DEFAULT NULL,
     storage_last_checked TIMESTAMP without time zone DEFAULT NULL,
     storage_num_objects BIGINT DEFAULT 0,
     storage_available BOOLEAN DEFAULT True,
@@ -71,6 +76,27 @@ CREATE TABLE public.storage (
       ON DELETE SET NULL
 );
 ALTER TABLE public.storage OWNER TO ska_dlm_admin;
+
+--
+-- Table storage_config holds a JSON version of the configuration
+-- to access the storage using a specific mechanism (default rclone).
+-- If the mechanism requires something else than JSON this will be 
+-- converted by the storage_manager software. Being a separate table
+-- this allows for multiple configurations for different mechanisms.
+--
+DROP TABLE IF EXISTS public.storage_config;
+CREATE TABLE public.storage_config (
+    config_id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+    storage_id uuid NOT NULL,
+    config_type varchar DEFAULT 'rclone',
+    config json NOT NULL,
+    config_date timestamp without time zone DEFAULT now(),
+    CONSTRAINT fk_cfg_storage_id
+      FOREIGN KEY(storage_id) 
+      REFERENCES public.storage(storage_id)
+      ON DELETE SET NULL
+);
+ALTER TABLE public.storage_config OWNER TO ska_dlm_admin;
 DROP TABLE IF EXISTS public.data_item;
 CREATE TABLE public.data_item (
     UID uuid DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -87,7 +113,7 @@ CREATE TABLE public.data_item (
     item_mime_type varchar DEFAULT 'application/octet-stream',
     item_level smallint DEFAULT -1,
     item_phase varchar DEFAULT 'gas',
-    item_state varchar DEFAULT 'initialized',
+    item_state varchar DEFAULT 'INITIALIZED',
     UID_creation timestamp without time zone DEFAULT now(),
     OID_creation timestamp without time zone DEFAULT NULL,
     UID_expiration timestamp without time zone DEFAULT now() + time '24:00',

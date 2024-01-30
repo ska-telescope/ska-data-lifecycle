@@ -16,3 +16,6 @@ DLM:
   dlm_table: "data_item"
   storage_table: "storage"
   location_table: "location"
+
+RCLONE:
+  url: "http://localhost:5572"
