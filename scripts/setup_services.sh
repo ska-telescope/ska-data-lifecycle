@@ -1,7 +1,7 @@
 #!/bin/bash
 POSTGREST_PID_FILE=$1
 
-if ! command -v psql &; then
+if ! command -v psql; then
     apt-get update -qq
     apt-get install -y -qq postgresql-client
 fi
