@@ -15,7 +15,7 @@ while [[ $attempt -le $MAX_RETRIES ]]; do
     # successful connection
         break
     fi
-    echo "Attempt $attempt failed for postgres. Retrying in $DELAY_SECONDS seconds..."
+    echo "Attempt $attempt failed for postgres. Retrying in $DELAY_SECONDS second(s)..."
     sleep $DELAY_SECONDS
     ((attempt++))
 done
@@ -26,8 +26,13 @@ if [[ $attempt -gt $MAX_RETRIES ]]; then
 fi
 
 
-postgrest setup/postgREST/postgREST.conf &> /dev/null &
+# postgrest setup/postgREST/postgREST.conf &> /dev/null &
+postgrest setup/postgREST/postgREST.conf &> postgrest.log &
 echo "$!">$POSTGREST_PID_FILE
+# Check if postgREST is running
+ps aux | grep postgrest
+# Verify the port
+netstat -tuln | grep 3001
 
 attempt=1
 while [[ $attempt -le $MAX_RETRIES ]]; do
@@ -36,7 +41,7 @@ while [[ $attempt -le $MAX_RETRIES ]]; do
     # successful connection
         break
     fi
-    echo "Attempt $attempt failed for postgREST. Retrying in $DELAY_SECONDS seconds..."
+    echo "Attempt $attempt failed for postgREST. Retrying in $DELAY_SECONDS second(s)..."
     sleep $DELAY_SECONDS
     ((attempt++))
 done
