@@ -9,7 +9,6 @@ from unittest import TestCase
 import inflect  # pylint disable E0401
 
 from ska_dlm import dlm_ingest, dlm_request, dlm_storage  # pylint disable E0401
-from ska_dlm import dlm_ingest, dlm_request, dlm_storage  # pylint disable E0401
 
 LOG = logging.getLogger("data-lifecycle-test")
 LOG.setLevel(logging.DEBUG)
@@ -31,12 +30,6 @@ class TestDlm(TestCase):
             uid = dlm_ingest.init_data_item(f"this/is/the/{ordinal}/test/item")
             if uid is None:
                 success = False
-        assert success
-
-    def test_query_expired_empty(self):
-        """Test the query expired returning an empty set."""
-        result = dlm_request.query_expired()
-        success = len(result) == 0
         assert success
 
     def test_query_expired_empty(self):
