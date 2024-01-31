@@ -1,0 +1,13 @@
+apiVersion: v2
+name: ska-dlm
+version: 0.1.0
+appVersion: 0.1.0
+description: SKA Data Lifecycle Manager
+home: https://developer.skao.int/projects/
+sources:
+- https://gitlab.com/ska-telescope/ska-data-lifecycle
+maintainers:
+- name: Mark Boulton
+  email: mark.boulton@icrar.org
+- name: Andreas Wicenec
+  email: andreas.wicenec@icrar.org
