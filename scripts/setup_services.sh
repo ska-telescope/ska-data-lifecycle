@@ -25,25 +25,31 @@ if [[ $attempt -gt $MAX_RETRIES ]]; then
     exit 1
 fi
 
+# We only want to download if postgrest isn't already available AND an existing download isn't there
+if ! command -v postgrest &> /dev/null && [[ ! -e "scripts/postgrest" ]]; then
+    # Download and extract PostgREST binary release
+    curl -sSL https://github.com/PostgREST/postgrest/releases/download/v12.0.2/postgrest-v12.0.2-linux-static-x64.tar.xz | tar xJf - -C scripts
+fi
 
-postgrest setup/postgREST/postgREST.conf &
+PATH="$(pwd)/scripts:$PATH" postgrest setup/postgREST/postgREST.conf &
 echo "$!">$POSTGREST_PID_FILE
 # Check if postgREST is running
-ps aux | grep postgrest
+# ps aux | grep postgrest
 # Verify the port
-lsof -i :3001
+# lsof -i :3001
 
 attempt=1
 while [[ $attempt -le $MAX_RETRIES ]]; do
-    curl -s http://localhost:3001 >
+    curl -s http://localhost:3001 > /dev/null
     if [[ $? -eq 0 ]]; then
-    # successful connection
+        # successful connection
         break
     fi
     echo "Attempt $attempt failed for postgREST. Retrying in $DELAY_SECONDS second(s)..."
     sleep $DELAY_SECONDS
     ((attempt++))
 done
+
 
 if [[ $attempt -gt $MAX_RETRIES ]]; then
     echo "Max retries reached for postgREST. Unable to establish connection."

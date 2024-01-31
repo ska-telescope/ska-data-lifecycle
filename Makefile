@@ -23,13 +23,22 @@ python-pre-test:
 	scripts/setup_services.sh $(POSTGREST_PID_FILE)
 
 python-post-test:
-	kill $$(cat $(POSTGREST_PID_FILE))
+	if [ -f $(POSTGREST_PID_FILE) ]; then \
+		kill $$(cat $(POSTGREST_PID_FILE)); \
+		if [ $$? -eq 0 ]; then \
+			echo "postgREST process killed successfully"; \
+			rm $(POSTGREST_PID_FILE); \
+		else \
+			echo "Failed to kill postgREST process"; \
+		fi; \
+	else \
+		echo "$(POSTGREST_PID_FILE) not found, postgREST may not have been started"; \
+	fi
 
-	rm $(POSTGREST_PID_FILE)
-
-	[[ -z $$GITLAB_CI ]] \
+	[[ -z "$$GITLAB_CI" ]] \
 		&& $(MAKE) docker-compose-down \
 		|| echo "Not stopping docker-compose containers in CI"
+
 
 docker-compose-up:
 	$(DOCKER_COMPOSE) --file docker/test-services.docker-compose.yml up --detach
