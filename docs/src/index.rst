@@ -5,6 +5,7 @@ Welcome to ska-data-lifecycle's documentation!
    :maxdepth: 1
    :caption: Contents:
 
+   overview/index
    api/index
 
 

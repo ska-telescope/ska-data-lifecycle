@@ -39,7 +39,14 @@ include:
     # Build and push the docker image
   - project: 'ska-telescope/templates-repository'
     file: 'gitlab-ci/includes/oci-image.gitlab-ci.yml'
-    
+
     # .post step finalisers eg: badges
   - project: 'ska-telescope/templates-repository'
     file: 'gitlab-ci/includes/finaliser.gitlab-ci.yml'
+
+python-test:
+  services:
+  - alias: ska-dlm
+    name: postgres
+    variables:
+      POSTGRES_PASSWORD: mysecretpassword
