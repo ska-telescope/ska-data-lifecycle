@@ -23,7 +23,6 @@ python-pre-test:
 	scripts/setup_services.sh $(POSTGREST_PID_FILE)
 
 python-post-test:
-	export POSTGREST_PID_FILE=$(POSTGREST_PID_FILE); \
 	scripts/teardown_services.sh $(POSTGREST_PID_FILE)
 
 	[[ -z "$$GITLAB_CI" ]] \

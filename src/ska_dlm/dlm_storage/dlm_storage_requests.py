@@ -189,7 +189,7 @@ def init_location(
 
 def query_storage(storage_name: str = "", storage_id: str = "", query_string: str = "") -> list:
     """
-    Query a storage by at least specifying an storage_name.
+    Query a storage by at least specifying a storage_name.
 
     Parameters:
     -----------
