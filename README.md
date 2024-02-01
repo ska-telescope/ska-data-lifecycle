@@ -24,12 +24,12 @@ TBD
 ## Startup as a test environment
 ### Start the DB:
 
-`docker run --rm --name ska-dlm -p 5433:5432 -e POSTGRES_PASSWORD=mysecretpassword -d postgres`
+`docker run --rm --name ska-dlm -p 5432:5432 -e POSTGRES_PASSWORD=mysecretpassword -d postgres`
 
 ### Setup the ska-dlm DB:
 From inside the ska-data-lifecycle repo directory run:
 
-`psql -U postgres -h localhost -p 5433 -f setup/DB/ska_dlm_meta.sql`
+`psql -U postgres -h localhost -p 5432 -f setup/DB/ska_dlm_meta.sql`
 
 ### Start the postgREST layer:
 After the installation of postgREST the command `postgrest` should be available on the PATH. In that case you can run:
