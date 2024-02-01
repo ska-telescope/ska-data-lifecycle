@@ -7,7 +7,8 @@ from time import sleep
 
 from ska_dlm import dlm_request, dlm_storage
 
-SLEEP_DURATION = 2  # seconds
+SLEEP_DURATION = 2 # seconds
+STORAGE_WARNING_PERCENTAGE = 80.0
 
 logger = logging.getLogger(__name__)
 
@@ -25,10 +26,11 @@ def expire_uids():
 
 def check_storage_capacity():
     """Check remaining capacity of all storage items."""
-    capacity_limited_storage_items = dlm_storage.query_capacity_limited()
+    storage_items = dlm_storage.query_storage(query_string="")
 
-    for storage_item in capacity_limited_storage_items:
-        logger.info("storage_item %s nearing full capacity", {storage_item})
+    for storage_item in storage_items:
+        if storage_item['storage_use_pct'] >= STORAGE_WARNING_PERCENTAGE:
+            logger.warn("storage_item %s nearing full capacity (%s)", {storage_item['storage_name'], storage_item['storage_use_pct']})
 
 
 def perform_phase_transitions():
@@ -44,7 +46,7 @@ def main():
     while True:
         expire_uids()
         check_storage_capacity()
-        perform_phase_transitions()
+        #perform_phase_transitions()
 
         sleep(SLEEP_DURATION)
 
