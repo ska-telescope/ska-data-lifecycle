@@ -71,7 +71,7 @@ CREATE TABLE public.storage (
     storage_retire_date TIMESTAMP without time zone DEFAULT NULL,
     storage_date timestamp without time zone DEFAULT now(),
     CONSTRAINT fk_location
-      FOREIGN KEY(location_id) 
+      FOREIGN KEY(location_id)
       REFERENCES public.location(location_id)
       ON DELETE SET NULL
 );
@@ -80,7 +80,7 @@ ALTER TABLE public.storage OWNER TO ska_dlm_admin;
 --
 -- Table storage_config holds a JSON version of the configuration
 -- to access the storage using a specific mechanism (default rclone).
--- If the mechanism requires something else than JSON this will be 
+-- If the mechanism requires something else than JSON this will be
 -- converted by the storage_manager software. Being a separate table
 -- this allows for multiple configurations for different mechanisms.
 --
@@ -92,7 +92,7 @@ CREATE TABLE public.storage_config (
     config json NOT NULL,
     config_date timestamp without time zone DEFAULT now(),
     CONSTRAINT fk_cfg_storage_id
-      FOREIGN KEY(storage_id) 
+      FOREIGN KEY(storage_id)
       REFERENCES public.storage(storage_id)
       ON DELETE SET NULL
 );
@@ -174,7 +174,6 @@ FOR EACH ROW EXECUTE PROCEDURE
 -- Table phase_change
 --
 DROP TABLE IF EXISTS public.phase_change;
-DROP TABLE IF EXISTS public.phase_change;
 
 CREATE TABLE public.phase_change (
     phase_change_ID bigint GENERATED always as IDENTITY PRIMARY KEY,
@@ -182,5 +181,4 @@ CREATE TABLE public.phase_change (
     requested_phase varchar DEFAULT 'gas',
     request_creation timestamp without time zone DEFAULT now()
 );
-ALTER TABLE public.phase_change OWNER TO ska_dlm_admin;
 ALTER TABLE public.phase_change OWNER TO ska_dlm_admin;
