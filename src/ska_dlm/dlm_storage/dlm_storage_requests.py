@@ -155,7 +155,6 @@ def init_location(
     location_country: str = "",
     location_city: str = "",
     location_facility: str = "",
-    # json_data: str = "",
 ) -> str:
     """Initialize a new location for a stroage by specifying the location_name or location_id."""
     request_url = f"{CONFIG.REST.base_url}/{CONFIG.DLM.location_table}?limit=1000"

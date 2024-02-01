@@ -110,7 +110,7 @@ def set_uri(uid: str, uri: str, storage_id: str) -> bool:
 
     Returns:
     --------
-    boolean, True if successul
+    boolean, True if successful
     """
     json_data = json.dumps({"uri": uri, "storage_id": storage_id})
     res = update_data_item(uid=uid, json_data=json_data)

@@ -15,7 +15,6 @@ DOCKER_COMPOSE := docker compose
 POSTGREST_PID_FILE := .postgrest.pid
 
 # We use GitlabCI services in CI so only use docker compose locally
-.SILENT: python-pre-test
 python-pre-test:
 	[[ -z $$GITLAB_CI ]] \
 		&& $(MAKE) docker-compose-up \
@@ -23,7 +22,6 @@ python-pre-test:
 
 	scripts/setup_services.sh $(POSTGREST_PID_FILE)
 
-.SILENT: python-post-test
 python-post-test:
 	if [ -f $(POSTGREST_PID_FILE) ]; then \
 		kill $$(cat $(POSTGREST_PID_FILE)); \
