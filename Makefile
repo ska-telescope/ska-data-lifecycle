@@ -23,17 +23,8 @@ python-pre-test:
 	scripts/setup_services.sh $(POSTGREST_PID_FILE)
 
 python-post-test:
-	if [ -f $(POSTGREST_PID_FILE) ]; then \
-		kill $$(cat $(POSTGREST_PID_FILE)); \
-		if [ $$? -eq 0 ]; then \
-			echo "postgREST process killed successfully"; \
-			rm $(POSTGREST_PID_FILE); \
-		else \
-			echo "Failed to kill postgREST process"; \
-		fi; \
-	else \
-		echo "$(POSTGREST_PID_FILE) not found, postgREST may not have been started"; \
-	fi
+	export POSTGREST_PID_FILE=$(POSTGREST_PID_FILE); \
+	scripts/teardown_services.sh $(POSTGREST_PID_FILE)
 
 	[[ -z "$$GITLAB_CI" ]] \
 		&& $(MAKE) docker-compose-down \
