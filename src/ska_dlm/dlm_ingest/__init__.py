@@ -1,5 +1,6 @@
 """DLMingest module for ska-data-lifecycle."""
 from .dlm_ingest_requests import (
+    delete_data_item,
     init_data_item,
     set_acl,
     set_group,
@@ -12,6 +13,7 @@ from .dlm_ingest_requests import (
 
 __all__ = [
     "init_data_item",
+    "delete_data_item",
     "set_uri",
     "set_state",
     "set_oid_expiration",
