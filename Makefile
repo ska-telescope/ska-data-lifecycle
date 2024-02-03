@@ -13,6 +13,7 @@ docs-pre-build:
 
 DOCKER_COMPOSE := docker compose
 POSTGREST_PID_FILE := .postgrest.pid
+RCLONE_PID_FILE := .rclone.pid
 
 # We use GitlabCI services in CI so only use docker compose locally
 python-pre-test:
@@ -20,10 +21,10 @@ python-pre-test:
 		&& $(MAKE) docker-compose-up \
 		|| echo "Not starting docker-compose containers in CI"
 
-	scripts/setup_services.sh $(POSTGREST_PID_FILE)
+	scripts/setup_services.sh $(POSTGREST_PID_FILE) $(RCLONE_PID_FILE)
 
 python-post-test:
-	scripts/teardown_services.sh $(POSTGREST_PID_FILE)
+	scripts/teardown_services.sh $(POSTGREST_PID_FILE) $(RCLONE_PID_FILE)
 
 	[[ -z "$$GITLAB_CI" ]] \
 		&& $(MAKE) docker-compose-down \
