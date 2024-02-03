@@ -1,5 +1,5 @@
 """DLMmigration module for ska-data-lifecycle."""
-from .dlm_migration_requests import copy_data_item, get_storage_config, rclone_config, rclone_copy
+from .dlm_migration_requests import copy_data_item, rclone_config, rclone_copy
 
 __all__ = ["copy_data_item", "get_storage_config", "rclone_config", "rclone_copy"]
 
