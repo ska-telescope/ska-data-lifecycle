@@ -6,10 +6,7 @@ import requests
 
 from .. import CONFIG
 from ..dlm_request import query_data_item, query_exists
-from ..dlm_storage import (
-    check_storage_access,
-    query_storage,
-)
+from ..dlm_storage import check_storage_access, query_storage
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +32,6 @@ def init_data_item(item_name: str = "", json_data: str = "") -> str:
     else:
         logger.error("Either item_name or json_data has to be specified!")
         return None
-    print(f">>>> {post_data}")
     request = requests.post(
         request_url,
         json=post_data,
@@ -59,7 +55,6 @@ def ingest_data_item(
     Ingest a data_item.
 
     This high level function is a combination of init_data_item, set_uri and set_state(READY).
-
     It also checks whether a data_item is already registered in on the requested storage.
 
     (1) check whether requested storage is known and accessible
@@ -71,8 +66,7 @@ def ingest_data_item(
     -----------
     item_name: could be empty, in which case the first 1000 items are returned
     uri: the access path to the payload.
-    storage_name: the name of the configured storage volume (either the name or the ID
-                  are required).
+    storage_name: the name of the configured storage volume (name or ID required)
     storage_id: optional, the ID of the configured storage.
 
     Returns:

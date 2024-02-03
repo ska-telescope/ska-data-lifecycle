@@ -2,6 +2,7 @@
 from .dlm_ingest_requests import (
     ingest_data_item,
     init_data_item,
+    register_data_item,
     set_acl,
     set_group,
     set_oid_expiration,
@@ -9,7 +10,6 @@ from .dlm_ingest_requests import (
     set_uid_expiration,
     set_uri,
     set_user,
-    register_data_item,
 )
 
 __all__ = [

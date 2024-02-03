@@ -1,5 +1,4 @@
 """Convenience functions wrapping the most important postgREST API calls."""
-import json
 import logging
 
 import requests

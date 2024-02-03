@@ -213,10 +213,13 @@ def check_storage_access(storage_name: str = "", storage_id: str = "") -> bool:
     if not config:
         logger.error("No valid configuration for storage found! %s", storage_name)
         return False
-    return rclone_access(config["name"], "/")
+    rclone_fs = list(config.keys())[0]
+    return rclone_access(rclone_fs, "/")
 
 
-def rclone_access(fs: str = "", remote: str = "", config: str = ""):
+def rclone_access(
+    volume: str = "", remote: str = "", config: str = ""  # pylint disable C0103
+) -> bool:
     """
     Check whether a configured backend is accessible.
 
@@ -226,9 +229,9 @@ def rclone_access(fs: str = "", remote: str = "", config: str = ""):
     if config:
         post_data = {}
     else:
-        fs = f"{fs}:" if fs[-1] != ":" else fs
+        volume = f"{volume}:" if volume[-1] != ":" else volume
         post_data = {
-            "fs": fs,
+            "fs": volume,
             "remote": remote,
             # "opt": {"dirsOnly": True, "recurse": False},
         }
@@ -253,8 +256,6 @@ def init_location(
     if len(res) != 0:
         logger.warning("A location with this name exists already: %s", location_name)
         return ""
-    # if json_data:
-    #     post_data = json_data
     if location_name and location_type:
         post_data = {"location_name": location_name, "location_type": location_type}
         if location_country:
@@ -309,7 +310,7 @@ def query_storage(storage_name: str = "", storage_id: str = "", query_string: st
     return []
 
 
-def check_item_on_storage(
+def check_item_on_storage(  # pylint: disable=R0913
     item_name: str = "",
     oid: str = "",
     uid: str = "",
@@ -335,20 +336,11 @@ def check_item_on_storage(
             logger.error("Unable to identify a storage volume for this data_item!")
         return []
     # additional check if a storage_name or id is provided
-    if storage_name:
-        for storage in storages:
-            if storage["storage_name"] == storage_name:
-                if report:
-                    logger.error(
-                        "data_item '%s' already exists on destination storage!", item_name
-                    )
-                return []
-    if storage_id:
-        for storage in storages:
-            if storage["storage_id"] == storage_id:
-                if report:
-                    logger.error(
-                        "data_item '%s' already exists on destination storage!", item_name
-                    )
-                return []
+    for storage in storages:
+        if (storage_name and storage["storage_name"] == storage_name) or (
+            storage_id and storage["storage_id"] == storage_id
+        ):
+            if report:
+                logger.error("data_item '%s' already exists on destination storage!", item_name)
+            return []
     return storages
