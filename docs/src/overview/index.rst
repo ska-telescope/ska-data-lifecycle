@@ -18,7 +18,7 @@ The MVP implementation is built around the DB schema shown below. The DB also im
 
 The metadata in the DLM DB solely covers the needs of the data management. By design it does not directly include the product specific metadata. If required, such metadata will need to be defined and collected in separate, but closely related DBs. The link between the DLM meta-data and the product specific meta data is the OID and the item_name. The DLM allows for a plugin system to extract and synchronize such meta-data during ingest. For the MVP the DLM DB has been implemented in PostgreSQL, but we also have a schema for the Yugabyte DB. Unfortunately the Yugabyte schema is not exactly the same due to some limitations.
 
-.. image:: ../_static/img/DLM_DB_ERD.png
+.. image:: ../_static/img/DLM_DB_ERD.jpg
 
 The DLM DB REST Server
 ----------------------
