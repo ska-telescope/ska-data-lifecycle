@@ -33,6 +33,7 @@ nodeSelector: {}
 affinity: {}
 tolerations: []
 
+# NOTE: Password in plain text here for local testing only.
 postgresql:
   enabled: true
   postgresqlPassword: mysecretpassword
@@ -44,18 +45,13 @@ postgresql:
 postgrest:
   db_uri:
   db_schema: public
-  db_anon_role:
-  db_pool: 100
+  db_anon_role: ska_dlm_admin
+  db_pool: 10
   server_host: '*4'
-  server_port: 3000
-  server_proxy_uri:
-  jwt_secret:
   secret_is_base64: false
-  jwt_aud:
   max_rows:
   pre_request:
   role_claim_key: '.role'
   service:
     type: ClusterIP
     port: 80
-    annotations: { }
