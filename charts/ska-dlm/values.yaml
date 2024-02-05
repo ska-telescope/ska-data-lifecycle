@@ -1,8 +1,8 @@
-system: sdp
+system: dlm
 
 # Global parameters
 global:
-  minikube: false
+  minikube: true
 
 # Postgresql DB
 postgres:
@@ -16,22 +16,8 @@ postgres:
   replicas: 1
   logLevel: info
 
-# PVC (use existing or create new volumes for storing data products)
-#data-pvc:
-#  pod:
-#    enabled: false
-#    image: busybox:1.36
-#    command: [ "/bin/sh", "-c", "trap : TERM; sleep infinity & wait" ]
-#  create:
-#    enabled: false
-#    size: 5Gi
-#    storageClassName: standard
-
 nameOverride: ""
 fullnameOverride: ""
-nodeSelector: {}
-affinity: {}
-tolerations: []
 
 # NOTE: Password in plain text here for local testing only.
 postgresql:
