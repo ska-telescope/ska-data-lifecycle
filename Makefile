@@ -35,3 +35,9 @@ docker-compose-up:
 
 docker-compose-down:
 	$(DOCKER_COMPOSE) --file docker/test-services.docker-compose.yml down
+
+helm-start-services:
+	sh scripts/helm_start.sh
+
+helm-stop-services:
+	sh scripts/helm_stop.sh

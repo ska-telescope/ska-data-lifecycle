@@ -12,7 +12,6 @@ metadata:
     intent: production
 spec:
   type: NodePort
-  # publishNotReadyAddresses: true
   ports:
   - name: tcp-postgresql
     port: 5432
@@ -48,27 +47,6 @@ spec:
     component: {{ .Values.postgres.component }}
     subsystem: {{ .Values.postgres.subsystem }}
 ---
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{ include "ska-dlm.name" . }}-postgres-client
-  namespace: {{ .Release.Namespace }}
-  labels:
-    {{- include "ska-dlm.labels" . | indent 4 }}
-    component: {{ .Values.postgres.component }}
-    subsystem: {{ .Values.postgres.subsystem }}
-    function: {{ .Values.postgres.function }}
-    domain: {{ .Values.postgres.domain }}
-    intent: production
-spec:
-  ports:
-  - name: tcp-postgresql
-    port: 5432
-    targetPort: 5432
-  selector:
-    component: {{ .Values.postgres.component }}
-    subsystem: {{ .Values.postgres.subsystem }}
----
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -99,25 +77,31 @@ spec:
         domain: {{ .Values.postgres.domain }}
         intent: production
     spec:
-#      initContainers:
-#      - name: wait-for-dns
-#        image: {{ .Values.postgres.image }}:{{ .Values.postgres.version }}
-#        imagePullPolicy: {{ .Values.postgres.imagePullPolicy }}
-#        command: ["sleep", "10"]
       containers:
       - name: postgres
         image: {{ .Values.postgres.image }}:{{ .Values.postgres.version }}
         imagePullPolicy: {{ .Values.postgres.imagePullPolicy }}
-#        securityContext:
-#          readOnlyRootFilesystem: false
-#          runAsNonRoot: true
-#          runAsUser: 1001
-#          seLinuxOptions: { }
-#          seccompProfile:
-#            type: RuntimeDefault
         env:
           - name: POSTGRES_PASSWORD
             value: {{ .Values.postgresql.postgresqlPassword }}
+        livenessProbe:
+          tcpSocket:
+            port: 5432
+          initialDelaySeconds: 15
+          timeoutSeconds: 1
+        readinessProbe:
+          exec:
+            command:
+              - /bin/sh
+              - -c
+              - -e
+              - |
+                exec pg_isready -U "postgres" -h 127.0.0.1 -p 5432
+          failureThreshold: 6
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5
       - name: postgrest
         image: postgrest/postgrest:latest
         imagePullPolicy: {{ .Values.postgres.imagePullPolicy }}
@@ -150,21 +134,9 @@ spec:
           - name: PGRST_SERVER_HOST
             value: {{ .Values.postgrest.server_host | quote }}
           {{- end }}
-          {{- if .Values.postgrest.server_proxy_uri }}
-          - name: PGRST_SERVER_PROXY_URI
-            value: {{ .Values.postgrest.server_proxy_uri | quote }}
-          {{- end }}
-          {{- if .Values.postgrest.jwt_secret }}
-          - name: PGRST_JWT_SECRET
-            value: {{ .Values.postgrest.jwt_secret | quote }}
-          {{- end }}
           {{- if .Values.postgrest.secret_is_base64 }}
           - name: PGRST_SECRET_IS_BASE64
             value: {{ .Values.postgrest.secret_is_base64 | quote }}
-          {{- end }}
-          {{- if .Values.postgrest.jwt_aud }}
-          - name: PGRST_JWT_AUD
-            value: {{ .Values.postgrest.jwt_aud | quote }}
           {{- end }}
           {{- if .Values.postgrest.max_rows }}
           - name: PGRST_MAX_ROWS
