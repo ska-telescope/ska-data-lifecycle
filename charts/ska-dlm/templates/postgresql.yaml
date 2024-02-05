@@ -92,4 +92,6 @@ spec:
 #            type: RuntimeDefault
         env:
           - name: POSTGRES_PASSWORD
-            value: mysecretpassword
+            value: {{ .Values.postgresql.postgresqlPassword }}
+      - name: postgrest
+        image: postgrest/postgrest:latest
