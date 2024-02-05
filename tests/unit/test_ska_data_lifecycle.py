@@ -101,3 +101,7 @@ class TestDlm(TestCase):
         assert res != ""
         res = dlm_ingest.set_state(uid, "READY")
         assert res != ""
+
+    def test_delete_item_payload(self):
+        """Delete the payload of a data_item."""
+        assert False

@@ -136,19 +136,20 @@ def query_item_storage(item_name: str = "", oid: str = "", uid: str = "", report
         if report:
             logger.error("data_item does not exists or is not READY!")
         return []
-    select = "&select=oid,uid,item_name,storage_id,storage_name,uri"
+    select = "select=oid,uid,item_name,storage_id,uri"
     if item_name:
-        query_string = f"item_name=eq.{item_name}&item_state=eq.READY{select}"
+        query_string = f"item_name=eq.{item_name}&item_state=eq.READY&{select}"
     elif oid:
-        query_string = f"oid=eq.{oid}&item_state=eq.READYx{select}"
+        query_string = f"oid=eq.{oid}&item_state=eq.READY&{select}"
     elif uid:
-        query_string = f"uid=eq.{uid}&item_state=eq.READY{select}"
+        query_string = f"uid=eq.{uid}&item_state=eq.READY&{select}"
     else:
         logger.error("Either an item_name or an OID or an UID have to be provided!")
         return []
     result = query_data_item(query_string=query_string, report=report)
     if not result or not [x["storage_id"] for x in result if x["storage_id"]]:
         if report:
+            logger.info("Query string: %s", query_string)
             logger.info("Result: %s", result)
             logger.error("This data_item has no valid storage or it is not in READY state!")
         return []

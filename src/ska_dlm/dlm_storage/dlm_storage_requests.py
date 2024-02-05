@@ -225,7 +225,7 @@ def rclone_access(
 
     NOTE: This assumes a rclone server is running.
     """
-    request_url = f"{CONFIG.RCLONE.url}/operations/list"
+    request_url = f"{CONFIG.RCLONE.url}/operations/stat"
     if config:
         post_data = {}
     else:
@@ -233,10 +233,37 @@ def rclone_access(
         post_data = {
             "fs": volume,
             "remote": remote,
-            # "opt": {"dirsOnly": True, "recurse": False},
         }
     logger.info("rclone access check: %s, %s", request_url, post_data)
     request = requests.post(request_url, post_data, timeout=10)
+    if request.status_code != 200 or not request.json()["item"]:
+        return False
+    return True
+
+
+def rclone_delete(volume: str, fpath: str) -> bool:
+    """
+    Delete a file, referred to by fpath from a volume using rclone.
+
+    Parameters:
+    -----------
+    volume: the configured volume name hosting <fpath>.
+    fpath: the file path.
+
+    Returns:
+    bool, True if successful
+    """
+    volume = f"{volume}:" if volume[-1] != ":" else volume
+    if not rclone_access(volume, fpath):
+        logger.error("Can't access %s on %s!", fpath, volume)
+        return False
+    request_url = f"{CONFIG.RCLONE.url}/operations/deletefile"
+    post_data = {
+        "fs": volume,
+        "remote": fpath,
+    }
+    logger.info("rclone deletion: %s, %s", request_url, post_data)
+    request = requests.post(request_url, data=post_data, timeout=10)
     if request.status_code != 200:
         logger.info("Error response status code: %s", request.status_code)
         return False
@@ -344,3 +371,34 @@ def check_item_on_storage(  # pylint: disable=R0913
                 logger.error("data_item '%s' already exists on destination storage!", item_name)
             return []
     return storages
+
+
+def delete_data_item_payload(uid: str) -> bool:
+    """
+    Delete the payload of a data_item referred to by the provided UID.
+
+    Parameters:
+    -----------
+    uid: The UID of the data_item whose payload should be deleted.
+
+    Returns:
+    bool, True if successful
+    """
+    storages = query_item_storage(uid=uid)
+    if not storages:
+        logger.error("Unable to identify a storage volume for this UID: %s", uid)
+        return False
+    if len(storages) > 1:
+        logger.error("More than one storage volume keeping this UID: %s", uid)
+    storage = storages[0]
+    config = get_storage_config(storage["storage_id"])
+    print(config)
+    storage_name = list(config.keys())[0]
+    if not rclone_access(storage_name):
+        return False
+    if not rclone_delete(storage_name, storage["uri"]):
+        return False
+    # TODO: Need to set the state to DELETED, but that causes cyclic imports.
+    # if not set_state(uid, "DELETED"):
+    #     return False
+    return True
