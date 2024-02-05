@@ -32,3 +32,11 @@ fullnameOverride: ""
 nodeSelector: {}
 affinity: {}
 tolerations: []
+
+postgresql:
+  enabled: true
+  postgresqlPassword: mysecretpassword
+  postgresqlUsername: postgres
+  postgresqlDatabase: postgres
+  persistence:
+    enabled: false
