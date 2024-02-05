@@ -40,9 +40,9 @@ spec:
   # publishNotReadyAddresses: true
   ports:
     - name: tcp-postgrest
-      port: 3000
-      targetPort: 3000
-      nodePort: 30880
+      port: 80
+      targetPort: 80
+      nodePort: 30080
       protocol: TCP
   selector:
     component: {{ .Values.postgres.component }}
