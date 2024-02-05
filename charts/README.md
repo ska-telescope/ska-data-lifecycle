@@ -16,15 +16,15 @@ the basic setup needed at this time though.
 
 `eval $(minikube docker-env)`
 
-- Start the Postgres pod using helm
+- Start the minikube tunnel to get the node IP address to connect to postgrest
+- NOTE: This will not return so you will need a new window or run this in the background
 
-`helm install dlm-psql charts/ska-dlm/`
+`minikube tunnel --cleanup`
 
-- Confirm pod has started plus confirm its name for use in following kubectl command
+- Start the Postgres pod using helm, includes postgrest
 
-`kubectl get pod`
+`make helm-start-services`
 
-- Initialise the PostgreSQL DB (would be nice to do this with helm above)
+- To shutdown/uninstall/remove the services
 
-`kubectl exec --stdin --tty ska-dlm-postgres-0 -- psql -U postgres -h localhost -p 5432 < setup/DB/ska_dlm_meta.sql`
-
+`make helm-stop-services`
