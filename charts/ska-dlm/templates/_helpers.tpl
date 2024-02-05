@@ -63,3 +63,14 @@ system: {{ .Values.system }}
   - name: ETCDCTL_API
     value: "3"
 {{- end -}}
+
+{{/*
+Template to generate the Postgres URI
+*/}}
+{{- define "postgrest.postgresql.uri" -}}
+{{- $user := default "postgres" .Values.postgresql.postgresUser -}}
+{{- $pass := default "postgres" .Values.postgresql.postgresPassword -}}
+{{- $host := default "postgresql" .Values.postgresql.nameOverride -}}
+{{- $database := default "postgres" .Values.postgresql.postgresDatabase -}}
+{{- printf "postgres://%s:%s@%s/%s" $user $pass $host $database -}}
+{{- end -}}
