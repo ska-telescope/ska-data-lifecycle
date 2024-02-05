@@ -1,32 +1,14 @@
 """Convenience functions wrapping the most important postgREST API calls."""
-import json
 import logging
 
 import requests
 
 from .. import CONFIG
 from ..dlm_ingest import init_data_item, set_state, set_uri
-from ..dlm_request import query_data_item, query_item_storage
+from ..dlm_request import query_data_item
+from ..dlm_storage import check_item_on_storage, get_storage_config
 
 logger = logging.getLogger(__name__)
-
-
-def rclone_config(config: str) -> bool:
-    """
-    Create a new rclone backend configuration entry on the rclone server.
-
-    Parameters:
-    -----------
-    config: a json string containing the configuration
-    """
-    request_url = f"{CONFIG.RCLONE.url}/config/create"
-    post_data = config
-    logger.info("Creating new rclone config: %s %s", request_url, config)
-    request = requests.post(
-        request_url, post_data, headers={"Content-type": "application/json"}, timeout=10
-    )
-    logger.info("Response status code: %s", request.status_code)
-    return request.status_code == 200
 
 
 def rclone_copy(src_fs: str, src_remote: str, dst_fs: str, dst_remote: str):
@@ -46,55 +28,6 @@ def rclone_copy(src_fs: str, src_remote: str, dst_fs: str, dst_remote: str):
     request = requests.post(request_url, post_data, timeout=10)
     logger.info("Response status code: %s", request.status_code)
     return True
-
-
-def get_storage_config(storage_id: str, config_type="rclone") -> str:
-    """
-    Get the storage configuration entry for a particular storage backend.
-
-    Parameters:
-    -----------
-    storage_id: required
-    config_type: required, query only the specified type
-
-    Returns:
-    --------
-    json object
-    """
-    api_url = f"{CONFIG.REST.base_url}/storage_config?limit=1000"
-    request_url = f"{api_url}&storage_id=eq.{storage_id}&config_type=eq.{config_type}"
-    request = requests.get(request_url, timeout=10)
-    if request.status_code == 200:
-        return json.loads(request.json()[0]["config"])
-    logger.info("Response status code: %s", request.status_code)
-    return []
-
-
-def check_item_on_storage(
-    item_name: str = "", oid: str = "", uid: str = "", destination_id: str = ""
-) -> bool:
-    """
-    Check whether item is on storage.
-
-    Parameters:
-    -----------
-    item_name: could be empty, in which case the first 1000 items are returned
-    oid:    Return data_items referred to by the OID provided.
-    uid:    Return data_item referred to by the UID provided.
-    destination_id: optional, the storage_id of a destination storage
-
-    """
-    storages = query_item_storage(item_name, oid, uid)
-    if not storages:
-        logger.error("Unable to identify a source storage for this data_item!")
-        return []
-    # additional check if a storage_id is provided
-    if destination_id:
-        for storage in storages:
-            if storage["storage_id"] == destination_id:
-                logger.error("data_item '%s' already exists on destination storage!", item_name)
-                return []
-    return storages
 
 
 def copy_data_item(
@@ -130,7 +63,7 @@ def copy_data_item(
     orig_item = query_data_item(item_name, oid, uid)[0]
     # (1)
     item_name = orig_item["item_name"]
-    storages = check_item_on_storage(item_name, destination_id=destination_id)
+    storages = check_item_on_storage(item_name, storage_id=destination_id)
     # we pick the first data_item returned record for now
     if storages:
         storage = storages[0]

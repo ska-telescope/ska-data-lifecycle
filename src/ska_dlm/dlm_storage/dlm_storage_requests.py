@@ -6,6 +6,7 @@ import logging
 import requests
 
 from .. import CONFIG
+from ..dlm_request import query_item_storage
 
 logger = logging.getLogger(__name__)
 
@@ -149,6 +150,99 @@ def create_storage_config(storage_id: str, config: str, config_type="rclone") ->
     return ""
 
 
+def get_storage_config(storage_id: str, config_type="rclone") -> str:
+    """
+    Get the storage configuration entry for a particular storage backend.
+
+    Parameters:
+    -----------
+    storage_id: required
+    config_type: required, query only the specified type
+
+    Returns:
+    --------
+    json object
+    """
+    api_url = f"{CONFIG.REST.base_url}/storage_config?limit=1000"
+    request_url = f"{api_url}&storage_id=eq.{storage_id}&config_type=eq.{config_type}"
+    request = requests.get(request_url, timeout=10)
+    if request.status_code == 200:
+        return json.loads(request.json()[0]["config"])
+    logger.info("Response status code: %s", request.status_code)
+    return []
+
+
+def rclone_config(config: str) -> bool:
+    """
+    Create a new rclone backend configuration entry on the rclone server.
+
+    Parameters:
+    -----------
+    config: a json string containing the configuration
+    """
+    request_url = f"{CONFIG.RCLONE.url}/config/create"
+    post_data = config
+    logger.info("Creating new rclone config: %s %s", request_url, config)
+    request = requests.post(
+        request_url, post_data, headers={"Content-type": "application/json"}, timeout=10
+    )
+    logger.info("Response status code: %s", request.status_code)
+    return request.status_code == 200
+
+
+def check_storage_access(storage_name: str = "", storage_id: str = "") -> bool:
+    """
+    Check whether storage is accessible.
+
+    Parameters:
+    -----------
+    storage_name: The name of the storage volume (either name or ID are required)
+    storage_id: The ID of the storage volume.
+
+    Returns:
+    --------
+    True is accessible
+    """
+    storages = query_storage(storage_name=storage_name, storage_id=storage_id)
+    if not storages:
+        logger.error("The requested storage is unknown: %s [%s]", storage_name, storage_id)
+        return False
+    storage_id = storages[0]["storage_id"]
+    storage_name = storages[0]["storage_name"]
+    config = get_storage_config(storage_id=storage_id, config_type="rclone")
+    if not config:
+        logger.error("No valid configuration for storage found! %s", storage_name)
+        return False
+    rclone_fs = list(config.keys())[0]
+    return rclone_access(rclone_fs, "/")
+
+
+def rclone_access(
+    volume: str = "", remote: str = "", config: str = ""  # pylint disable C0103
+) -> bool:
+    """
+    Check whether a configured backend is accessible.
+
+    NOTE: This assumes a rclone server is running.
+    """
+    request_url = f"{CONFIG.RCLONE.url}/operations/list"
+    if config:
+        post_data = {}
+    else:
+        volume = f"{volume}:" if volume[-1] != ":" else volume
+        post_data = {
+            "fs": volume,
+            "remote": remote,
+            # "opt": {"dirsOnly": True, "recurse": False},
+        }
+    logger.info("rclone access check: %s, %s", request_url, post_data)
+    request = requests.post(request_url, post_data, timeout=10)
+    if request.status_code != 200:
+        logger.info("Error response status code: %s", request.status_code)
+        return False
+    return True
+
+
 def init_location(
     location_name: str = "",
     location_type: str = "",
@@ -162,8 +256,6 @@ def init_location(
     if len(res) != 0:
         logger.warning("A location with this name exists already: %s", location_name)
         return ""
-    # if json_data:
-    #     post_data = json_data
     if location_name and location_type:
         post_data = {"location_name": location_name, "location_type": location_type}
         if location_country:
@@ -216,3 +308,39 @@ def query_storage(storage_name: str = "", storage_id: str = "", query_string: st
         return request.json()
     logger.info("Response status code: %s", request.status_code)
     return []
+
+
+def check_item_on_storage(  # pylint: disable=R0913
+    item_name: str = "",
+    oid: str = "",
+    uid: str = "",
+    storage_name: str = "",
+    storage_id: str = "",
+    report=True,
+) -> bool:
+    """
+    Check whether item is on storage.
+
+    Parameters:
+    -----------
+    item_name: could be empty, in which case the first 1000 items are returned
+    oid:    Return data_items referred to by the OID provided.
+    uid:    Return data_item referred to by the UID provided.
+    storage_name: optional, the name of the storage device
+    storage_id: optional, the storage_id of a destination storage
+    report: Report error when item not found
+    """
+    storages = query_item_storage(item_name, oid, uid, report=report)
+    if not storages:
+        if report:
+            logger.error("Unable to identify a storage volume for this data_item!")
+        return []
+    # additional check if a storage_name or id is provided
+    for storage in storages:
+        if (storage_name and storage["storage_name"] == storage_name) or (
+            storage_id and storage["storage_id"] == storage_id
+        ):
+            if report:
+                logger.error("data_item '%s' already exists on destination storage!", item_name)
+            return []
+    return storages

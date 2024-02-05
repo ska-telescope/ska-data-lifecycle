@@ -6,10 +6,12 @@ import os
 from datetime import timedelta
 from unittest import TestCase
 
-import inflect  # pylint disable E0401
+import inflect  # pylint: disable=E0401
 import pytest
+import requests
 
-from ska_dlm import dlm_ingest, dlm_request, dlm_storage  # pylint disable E0401
+from ska_dlm import CONFIG  # pylint: disable=E0401
+from ska_dlm import dlm_ingest, dlm_request, dlm_storage  # pylint: disable=E0401
 
 LOG = logging.getLogger("data-lifecycle-test")
 LOG.setLevel(logging.DEBUG)
@@ -22,7 +24,28 @@ class TestDlm(TestCase):
     NOTE: Currently some of them are dependent on each other.
     """
 
-    def test_ingest(self):
+    @pytest.fixture(scope="class", autouse=True)
+    def setup_and_teardown(self):
+        """Initialze the tests."""
+        # we need a location to register the storage
+        location_id = dlm_storage.init_location("MyOwnStorage", "Server")
+        uuid = dlm_storage.init_storage(
+            storage_name="MyDisk",
+            location_id=location_id,
+            storage_type="disk",
+            storage_interface="posix",
+            storage_capacity=100000000,
+        )
+        dlm_storage.create_storage_config(uuid, config='{"MyHost": {"type": "local"}}')
+        yield
+        # Remove some records from the DB
+        request_url = f"{CONFIG.REST.base_url}"
+        requests.delete(f"{request_url}/storage_config", timeout=2)
+        requests.delete(f"{request_url}/data_item", timeout=2)
+        requests.delete(f"{request_url}/storage", timeout=2)
+        requests.delete(f"{request_url}/location", timeout=2)
+
+    def test_init(self):
         """Test data_item init."""
         engine = inflect.engine()
         success = True
@@ -32,6 +55,16 @@ class TestDlm(TestCase):
             if uid is None:
                 success = False
         assert success
+
+    def test_ingest_data_item(self):
+        """Test the ingest_data_item function."""
+        uid = dlm_ingest.ingest_data_item("/my/ingest/test/item", "/LICSENSE", "MyDisk")
+        assert len(uid) == 36
+
+    def test_register_data_item(self):
+        """Test the register_data_item function."""
+        uid = dlm_ingest.register_data_item("/my/ingest/test/item", "/LICSENSE", "MyDisk")
+        assert len(uid) == 36
 
     def test_query_expired_empty(self):
         """Test the query expired returning an empty set."""
@@ -53,25 +86,9 @@ class TestDlm(TestCase):
         assert fail
         success = dlm_storage.init_location("TestLocation", "SKAO Data Centre") != ""
         assert success
+        request_url = f"{CONFIG.REST.base_url}"
+        requests.delete(f"{request_url}/location", timeout=2)
 
-    def test_storage_init(self):
-        """Test initialisation on a storage."""
-        # Without required parameters
-        fail = dlm_storage.init_storage() == ""
-        assert fail
-        # we need a location to register the storage
-        location_id = dlm_storage.init_location("MyOwnStorage", "Server")
-        uuid = dlm_storage.init_storage(
-            storage_name="MyDisk",
-            location_id=location_id,
-            storage_type="disk",
-            storage_interface="posix",
-            storage_capacity=100000000,
-        )
-        success = len(uuid) == 36
-        assert success
-
-    @pytest.mark.skip(reason="Dependency issues. To be fixed in next merge")
     def test_set_uri_and_state(self):
         """Update a data_item record with the pointer to a file."""
         with open("dlm_test_file.txt", "w", encoding="UTF-8") as tfile:
