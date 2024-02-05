@@ -23,9 +23,10 @@ spec:
     component: {{ .Values.postgres.component }}
     subsystem: {{ .Values.postgres.subsystem }}
 ---
+apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "ska-dlm.name" . }}-postgres
+  name: {{ include "ska-dlm.name" . }}-postgrest
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "ska-dlm.labels" . | indent 4 }}
@@ -39,9 +40,9 @@ spec:
   # publishNotReadyAddresses: true
   ports:
     - name: tcp-postgrest
-      port: 8000
-      targetPort: 8000
-      nodePort: 8000
+      port: 3000
+      targetPort: 3000
+      nodePort: 30880
       protocol: TCP
   selector:
     component: {{ .Values.postgres.component }}
@@ -128,7 +129,7 @@ spec:
             value: {{ include "postgrest.postgresql.uri" . }}
           {{- end }}
           - name: PGRST_SERVER_PORT
-            value: {{ .Values.service.port | quote }}
+            value: {{ .Values.postgrest.service.port | quote }}
           - name: PGRST_DB_SCHEMA
           {{- if .Values.postgrest.db_schema }}
             value: {{ .Values.postgrest.db_schema | quote }}

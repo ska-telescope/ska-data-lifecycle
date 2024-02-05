@@ -68,9 +68,9 @@ system: {{ .Values.system }}
 Template to generate the Postgres URI
 */}}
 {{- define "postgrest.postgresql.uri" -}}
-{{- $user := default "postgres" .Values.postgresql.postgresUser -}}
+{{- $user := default "postgres" .Values.postgresql.postgresqlUsername -}}
 {{- $pass := default "postgres" .Values.postgresql.postgresPassword -}}
-{{- $host := default "postgresql" .Values.postgresql.nameOverride -}}
+{{- $host := default "localhost" .Values.postgresql.nameOverride -}}
 {{- $database := default "postgres" .Values.postgresql.postgresDatabase -}}
 {{- printf "postgres://%s:%s@%s/%s" $user $pass $host $database -}}
 {{- end -}}
