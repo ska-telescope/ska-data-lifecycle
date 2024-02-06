@@ -1,10 +1,12 @@
 """Convenience functions wrapping the most important postgREST API calls."""
+
 import logging
 
 import requests
 
 from .. import CONFIG
-from ..dlm_ingest import init_data_item, set_state, set_uri
+from ..data_item import set_state, set_uri
+from ..dlm_ingest import init_data_item
 from ..dlm_request import query_data_item
 from ..dlm_storage import check_item_on_storage, get_storage_config
 
