@@ -12,13 +12,6 @@ SLEEP_DURATION = 2  # seconds
 STORAGE_WARNING_PERCENTAGE = 80.0
 
 logger = logging.getLogger(__name__)
-last_new_data_item_query_time = ""
-
-
-def update_last_new_item_query_time():
-    """Update our record of the last time the database was queried for new items."""
-    global last_new_data_item_query_time
-    last_new_data_item_query_time = datetime.now().isoformat()
 
 
 def expire_uids():
@@ -35,15 +28,14 @@ def expire_uids():
         logger.info("Expired %s data items", len(expired_data_items))
 
 
-def check_for_new_data_items():
+def check_for_new_data_items(last_check_time):
     """Check for new data items (since the last query), if found, copy to a second location."""
     query = (
         "uid_creation=gt."
-        + last_new_data_item_query_time
+        + last_check_time
         + "&item_phase=eq.GAS&item_state=eq.READY&select=uid,item_name,uri"
     )
     new_data_items = dlm_request.query_data_item(query_string=query)
-    update_last_new_item_query_time()
 
     for new_data_item in new_data_items:
         logger.info("Found new data item %s", new_data_item["item_name"])
@@ -79,9 +71,12 @@ def perform_phase_transitions():
 
 def main():
     """Begin a long-running process."""
+    last_new_data_item_query_time = datetime.now().isoformat()
+
     while True:
         expire_uids()
-        check_for_new_data_items()
+        check_for_new_data_items(last_new_data_item_query_time)
+        last_new_data_item_query_time = datetime.now().isoformat()
         # check_storage_capacity()
         # perform_phase_transitions()
 
