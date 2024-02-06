@@ -98,14 +98,6 @@ def update_data_item(
     return result
 
 
-def delete_data_item(
-    oid: str = "",
-    uid: str = "",
-):
-    """Flag a data_item as deleted."""
-    logger.error("Incomplete method delete_data_item(%s %s)", oid, uid)
-
-
 def set_uri(uid: str, uri: str, storage_id: str) -> bool:
     """
     Set the URI field of the uid data_item.
