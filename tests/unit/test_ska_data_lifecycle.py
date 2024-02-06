@@ -40,10 +40,10 @@ class TestDlm(TestCase):
         yield
         # Remove some records from the DB
         request_url = f"{CONFIG.REST.base_url}"
-        requests.delete(f"{request_url}/storage_config", timeout=2)
-        requests.delete(f"{request_url}/data_item", timeout=2)
-        requests.delete(f"{request_url}/storage", timeout=2)
-        requests.delete(f"{request_url}/location", timeout=2)
+        # requests.delete(f"{request_url}/storage_config", timeout=2)
+        # requests.delete(f"{request_url}/data_item", timeout=2)
+        # requests.delete(f"{request_url}/storage", timeout=2)
+        # requests.delete(f"{request_url}/location", timeout=2)
 
     def test_init(self):
         """Test data_item init."""

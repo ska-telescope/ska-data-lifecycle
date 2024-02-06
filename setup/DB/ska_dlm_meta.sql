@@ -114,7 +114,7 @@ CREATE TABLE public.data_item (
     item_encoding varchar DEFAULT 'unknown',
     item_mime_type varchar DEFAULT 'application/octet-stream',
     item_level smallint DEFAULT -1,
-    item_phase varchar DEFAULT 'gas',
+    item_phase varchar DEFAULT 'GAS',
     item_state varchar DEFAULT 'INITIALIZED',
     UID_creation timestamp without time zone DEFAULT now(),
     OID_creation timestamp without time zone DEFAULT NULL,
