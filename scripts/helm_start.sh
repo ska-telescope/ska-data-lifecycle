@@ -36,3 +36,4 @@ echo
 echo Now make sure 'minikube tunnel' has been run \(to get a node IP address\)
 echo and got to the following URL to confirm it is running
 echo \\t http://\<tunnel IP address\>:30080
+echo NOTE: This is the interface to postgrest so the output will just be some json RESTful resturn string
