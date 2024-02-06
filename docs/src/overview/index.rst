@@ -1,5 +1,5 @@
 SKA DLM Overview
-==================================
+================
 As outlined in the design, the DLM consists of five main services (managers):
 
   - DLM Ingest Manager
@@ -11,6 +11,10 @@ As outlined in the design, the DLM consists of five main services (managers):
 These managers are bound together by a 'hidden' service, which is the DLM database. In operations, the DB engine is assumed to be provided, maintained and operated by other SKAO teams (and trains), but for the MVP we will start an engine locally. As a system the first thing which has to be up and running is the DLM DB. In operations this will require a HA DB setup and the load on this DB will be quite substantial. Actual numbers are dependent on the kind of data products from all over the organisation, which will eventually be managed by the DLM. There is now a process in place to collect such information.
 
 The DLM is designed to accept arbitrary types and categories of data. It also allows to register and track relationships between data items. The most important features are centred around the management of the lifecycle and resilience of data items as well as the distribution over and across multiple storage volumes offering heterogenous performance and interface features. The MVP initially targets posix based file systems as well as S3 storage. The end-user (system) does not need to know any of the details of these storage systems or even their existence. This separation will also allow the operators to add new types of systems and remove retired or broken ones. Such functionality is foreseen and reflected by the DLM DB schema, but the functionality is not implemented in the MVP. The MVP does implement pieces of each of the services mentioned above, but mostly only to the degree to fullfill the requirements of the MVP.
+
+At some stage in the future we may decide to split these services into separate repositories, but to get started everything is in one place. Also, the DLMdb service is not intended to be used in an operational deployment, but the DLM system will be a client of the observatory wide DB setup. The DLMingest and DLMrequest services are the main input and output services, respectively exposed to other subsystems and users. This will require APIs for subsystems and at least administrator and operator level user interfaces. Apart from the future Request Manager interface, end-users are not expected to access or use the DLM directly.
+
+Please also refer to the DLM design description: https://confluence.skatelescope.org/x/rCYLDw
 
 The DLM DB
 ----------
