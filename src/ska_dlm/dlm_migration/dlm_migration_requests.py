@@ -1,4 +1,5 @@
 """Convenience functions wrapping the most important postgREST API calls."""
+
 import logging
 
 import requests
@@ -72,7 +73,7 @@ def copy_data_item(
     # (2)
     s_config = get_storage_config(storage["storage_id"])
     if not s_config:
-        logger.error("No configuration for destination storage found!")
+        logger.error("No configuration for source storage found!")
         return False
     source = {"backend": f"{s_config['name']}:", "path": storage["uri"]}
     d_config = get_storage_config(destination_id)
