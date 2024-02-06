@@ -6,12 +6,11 @@ import os
 from datetime import timedelta
 from unittest import TestCase
 
-import inflect  # pylint: disable=E0401
+import inflect
 import pytest
 import requests
 
-from ska_dlm import CONFIG  # pylint: disable=E0401
-from ska_dlm import dlm_ingest, dlm_request, dlm_storage, data_item  # pylint: disable=E0401
+from ska_dlm import CONFIG, data_item, dlm_ingest, dlm_request, dlm_storage
 
 LOG = logging.getLogger("data-lifecycle-test")
 LOG.setLevel(logging.DEBUG)
@@ -40,10 +39,10 @@ class TestDlm(TestCase):
         yield
         # Remove some records from the DB
         request_url = f"{CONFIG.REST.base_url}"
-        # requests.delete(f"{request_url}/storage_config", timeout=2)
-        # requests.delete(f"{request_url}/data_item", timeout=2)
-        # requests.delete(f"{request_url}/storage", timeout=2)
-        # requests.delete(f"{request_url}/location", timeout=2)
+        requests.delete(f"{request_url}/storage_config", timeout=2)
+        requests.delete(f"{request_url}/data_item", timeout=2)
+        requests.delete(f"{request_url}/storage", timeout=2)
+        requests.delete(f"{request_url}/location", timeout=2)
 
     def test_init(self):
         """Test data_item init."""

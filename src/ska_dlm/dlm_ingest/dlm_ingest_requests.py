@@ -5,9 +5,9 @@ import logging
 import requests
 
 from .. import CONFIG
+from ..data_item import set_state, set_uri
 from ..dlm_request import query_data_item, query_exists
 from ..dlm_storage import check_storage_access, query_storage
-from ..data_item import set_state, set_uri
 
 logger = logging.getLogger(__name__)
 

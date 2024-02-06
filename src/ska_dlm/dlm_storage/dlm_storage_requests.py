@@ -7,8 +7,8 @@ import logging
 import requests
 
 from .. import CONFIG
-from ..dlm_request import query_item_storage
 from ..data_item import set_state
+from ..dlm_request import query_item_storage
 
 logger = logging.getLogger(__name__)
 

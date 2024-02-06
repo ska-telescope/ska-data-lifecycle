@@ -1,14 +1,11 @@
 """DLMingest module for ska-data-lifecycle."""
 
-from .dlm_ingest_requests import (
-    ingest_data_item,
-    init_data_item,
-    register_data_item,
-)
+from .dlm_ingest_requests import ingest_data_item, init_data_item, register_data_item
 
 __all__ = [
     "ingest_data_item",
     "init_data_item",
+    "register_data_item",
 ]
 
 __author__ = """Andreas Wicenec"""

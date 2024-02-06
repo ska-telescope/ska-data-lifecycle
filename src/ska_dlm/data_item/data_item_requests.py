@@ -1,7 +1,8 @@
-"""Convenience functions to update data_item records"""
+"""Convenience functions to update data_item records."""
 
 import json
 import logging
+
 import requests
 
 from .. import CONFIG
