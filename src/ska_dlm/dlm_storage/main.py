@@ -42,7 +42,7 @@ def perform_phase_transitions():
     required_phase_transitions = []  # dlm_storage.query_phase_transitions()
 
     for oid in required_phase_transitions:
-        logger.info("phase transition required for oid: %s", oid)
+        logger.warning("Incomplete implementation: phase transition required for oid: %s", oid)
 
 
 def main():
