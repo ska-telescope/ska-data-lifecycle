@@ -1,4 +1,5 @@
 """Wrap the most important postgREST API calls."""
+
 import inspect
 import json
 import logging
@@ -7,6 +8,7 @@ import requests
 
 from .. import CONFIG
 from ..dlm_request import query_item_storage
+from ..data_item import set_state
 
 logger = logging.getLogger(__name__)
 
@@ -399,6 +401,6 @@ def delete_data_item_payload(uid: str) -> bool:
     if not rclone_delete(storage_name, storage["uri"]):
         return False
     # TODO: Need to set the state to DELETED, but that causes cyclic imports.
-    # if not set_state(uid, "DELETED"):
-    #     return False
+    if not set_state(uid, "DELETED"):
+        return False
     return True

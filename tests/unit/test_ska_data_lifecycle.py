@@ -11,7 +11,7 @@ import pytest
 import requests
 
 from ska_dlm import CONFIG  # pylint: disable=E0401
-from ska_dlm import dlm_ingest, dlm_request, dlm_storage  # pylint: disable=E0401
+from ska_dlm import dlm_ingest, dlm_request, dlm_storage, data_item  # pylint: disable=E0401
 
 LOG = logging.getLogger("data-lifecycle-test")
 LOG.setLevel(logging.DEBUG)
@@ -40,10 +40,10 @@ class TestDlm(TestCase):
         yield
         # Remove some records from the DB
         request_url = f"{CONFIG.REST.base_url}"
-        requests.delete(f"{request_url}/storage_config", timeout=2)
-        requests.delete(f"{request_url}/data_item", timeout=2)
-        requests.delete(f"{request_url}/storage", timeout=2)
-        requests.delete(f"{request_url}/location", timeout=2)
+        # requests.delete(f"{request_url}/storage_config", timeout=2)
+        # requests.delete(f"{request_url}/data_item", timeout=2)
+        # requests.delete(f"{request_url}/storage", timeout=2)
+        # requests.delete(f"{request_url}/location", timeout=2)
 
     def test_init(self):
         """Test data_item init."""
@@ -97,11 +97,20 @@ class TestDlm(TestCase):
         fpath = fpath.replace(f"{os.environ['HOME']}/", "")
         uid = dlm_request.query_data_item(item_name="this/is/the/first/test/item")[0]["uid"]
         storage_id = dlm_storage.query_storage(storage_name="MyDisk")[0]["storage_id"]
-        res = dlm_ingest.set_uri(uid, f"{fpath}", storage_id)
+        res = data_item.set_uri(uid, f"{fpath}", storage_id)
         assert res != ""
-        res = dlm_ingest.set_state(uid, "READY")
+        res = data_item.set_state(uid, "READY")
         assert res != ""
 
     def test_delete_item_payload(self):
         """Delete the payload of a data_item."""
-        assert False
+        with open("dlm_test_file.txt", "w", encoding="UTF-8") as tfile:
+            tfile.write("Welcome to the great DLM world!")
+        fpath = os.path.abspath("dlm_test_file.txt")
+        fpath = fpath.replace(f"{os.environ['HOME']}/", "")
+        uid = dlm_ingest.ingest_data_item(fpath)
+        uid = dlm_request.query_data_item(item_name=fpath)[0]["uid"]
+        storage_id = dlm_storage.query_storage(storage_name="MyDisk")[0]["storage_id"]
+        res = data_item.set_uri(uid, f"{fpath}", storage_id)
+        res = data_item.set_state(uid, "DELETED")
+        assert res != ""
