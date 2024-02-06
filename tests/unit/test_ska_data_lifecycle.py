@@ -58,13 +58,16 @@ class TestDlm(TestCase):
 
     def test_ingest_data_item(self):
         """Test the ingest_data_item function."""
-        uid = dlm_ingest.ingest_data_item("/my/ingest/test/item", "/LICSENSE", "MyDisk")
+        uid = dlm_ingest.ingest_data_item("/my/ingest/test/item", "/LICENSE", "MyDisk")
         assert len(uid) == 36
 
     def test_register_data_item(self):
         """Test the register_data_item function."""
-        uid = dlm_ingest.register_data_item("/my/ingest/test/item", "/LICSENSE", "MyDisk")
+        uid = dlm_ingest.register_data_item("/my/ingest/test/item2", "/LICSENSE", "MyDisk")
         assert len(uid) == 36
+        # second time should fail since it exists already.
+        uid = dlm_ingest.register_data_item("/my/ingest/test/item2", "/LICSENSE", "MyDisk")
+        assert len(uid) == 0
 
     def test_query_expired_empty(self):
         """Test the query expired returning an empty set."""
