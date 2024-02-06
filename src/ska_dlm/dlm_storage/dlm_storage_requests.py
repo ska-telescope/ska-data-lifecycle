@@ -216,7 +216,7 @@ def check_storage_access(storage_name: str = "", storage_id: str = "") -> bool:
         logger.error("No valid configuration for storage found! %s", storage_name)
         return False
     rclone_fs = list(config.keys())[0]
-    return rclone_access(rclone_fs, "/")
+    return rclone_access(rclone_fs)
 
 
 def rclone_access(
@@ -239,6 +239,7 @@ def rclone_access(
     logger.info("rclone access check: %s, %s", request_url, post_data)
     request = requests.post(request_url, post_data, timeout=10)
     if request.status_code != 200 or not request.json()["item"]:
+        logger.info("rclone does not have access: %s, %s", request.status_code, request.json())
         return False
     return True
 
@@ -387,6 +388,7 @@ def delete_data_item_payload(uid: str) -> bool:
     bool, True if successful
     """
     storages = query_item_storage(uid=uid)
+    logger.info("Storage for this uid: %s", storages)
     if not storages:
         logger.error("Unable to identify a storage volume for this UID: %s", uid)
         return False
@@ -394,11 +396,10 @@ def delete_data_item_payload(uid: str) -> bool:
         logger.error("More than one storage volume keeping this UID: %s", uid)
     storage = storages[0]
     config = get_storage_config(storage["storage_id"])
-    print(config)
     storage_name = list(config.keys())[0]
     if not rclone_access(storage_name):
         return False
-    if not rclone_delete(storage_name, storage["uri"]):
+    if not rclone_delete(storage_name, storage["item_name"]):
         return False
     # TODO: Need to set the state to DELETED, but that causes cyclic imports.
     if not set_state(uid, "DELETED"):
