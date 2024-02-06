@@ -8,7 +8,7 @@ the basic setup needed at this time though.
 
 # For current setup
 
-- Start minikube (this is what was used during development)
+- Start minikube (this is what was used during development but have confirmed other smaller values work)
 
 `minikube start --disk-size 64g --cpus=6 --memory=16384`
 
