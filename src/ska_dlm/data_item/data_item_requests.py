@@ -207,3 +207,21 @@ def set_acl(oid: str = "", uid: str = "", acl: str = "{}"):
         logger.error("Either OID or UID should be specified!")
         res = None
     return res
+
+
+def set_phase(uid: str, phase: str) -> bool:
+    """
+    Set the phase field of the data_item(s) with given UID.
+
+    Parameters:
+    -----------
+    uid : the UID of the data_item to be updated
+    phase : the phase for the data_item
+
+    Returns:
+    --------
+    bool
+    """
+    json_data = json.dumps({"item_phase": phase})
+    res = update_data_item(uid=uid, json_data=json_data)
+    return res

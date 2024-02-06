@@ -89,7 +89,7 @@ class TestDlm(TestCase):
         request_url = f"{CONFIG.REST.base_url}"
         requests.delete(f"{request_url}/location", timeout=2)
 
-    def test_set_uri_and_state(self):
+    def test_set_uri_state_phase(self):
         """Update a data_item record with the pointer to a file."""
         fname = "dlm_test_file_1.txt"
         with open(fname, "w", encoding="UTF-8") as tfile:
@@ -101,8 +101,10 @@ class TestDlm(TestCase):
         res = data_item.set_uri(uid, f"{fpath}", storage_id)
         assert res != ""
         res = data_item.set_state(uid, "READY")
-        os.unlink(fname)
         assert res != ""
+        res = data_item.set_phase(uid, "PLASMA")
+        assert res != ""
+        os.unlink(fname)
 
     def test_delete_item_payload(self):
         """Delete the payload of a data_item."""
