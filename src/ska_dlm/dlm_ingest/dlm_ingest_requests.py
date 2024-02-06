@@ -56,7 +56,7 @@ def ingest_data_item(
     Ingest a data_item.
 
     This high level function is a combination of init_data_item, set_uri and set_state(READY).
-    It also checks whether a data_item is already registered in on the requested storage.
+    It also checks whether a data_item is already registered on the requested storage.
 
     (1) check whether requested storage is known and accessible
     (2) check whether item is already registered on that storage
