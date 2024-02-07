@@ -30,12 +30,11 @@ From inside the ska-data-lifecycle repo directory run:
 `psql -U postgres -h localhost -p 5432 -f setup/DB/ska_dlm_meta.sql`
 
 ### Start the postgREST layer:
-After the installation of postgREST the command `postgrest` should be available on the PATH. In that case you can run:
+After the installation of postgREST the command `postgrest` should be available on the PATH. In that case, from inside the ska-data-lifecycle repo directory, you can run:
 
 `postgrest setup/postgREST/postgREST.conf`
 
-from inside the ska-data-lifecycle repo directory.\
-_This will run interactively in the terminal._
+_This will run in the terminal, thus to start PostGUI you need to use another terminal._
 
 ### Create a file in the main directory called .secrets.yaml with the following content:
 `db_password: "mysecretpassword"`
