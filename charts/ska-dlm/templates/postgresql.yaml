@@ -11,12 +11,10 @@ metadata:
     domain: {{ .Values.postgres.domain }}
     intent: production
 spec:
-  type: NodePort
   ports:
   - name: tcp-postgresql
     port: 5432
     targetPort: 5432
-    nodePort: 30432
     protocol: TCP
   selector:
     component: {{ .Values.postgres.component }}
