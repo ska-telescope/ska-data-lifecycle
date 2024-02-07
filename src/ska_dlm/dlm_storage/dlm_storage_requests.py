@@ -168,7 +168,7 @@ def get_storage_config(storage_id: str, config_type="rclone") -> str:
     api_url = f"{CONFIG.REST.base_url}/storage_config?limit=1000"
     request_url = f"{api_url}&storage_id=eq.{storage_id}&config_type=eq.{config_type}"
     request = requests.get(request_url, timeout=10)
-    if request.status_code == 200:
+    if request.status_code == 200 and len(request.json()) != 0:
         return json.loads(request.json()[0]["config"])
     logger.info("Response status code: %s", request.status_code)
     return []

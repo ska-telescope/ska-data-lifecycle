@@ -18,14 +18,14 @@ def expire_uids():
     """Check for expired data items and trigger deletion."""
     expired_data_items = dlm_request.query_expired()
 
+    if len(expired_data_items) > 0:
+        logger.info("Found %s expired data items", len(expired_data_items))
+
     for uid in expired_data_items:
         success = dlm_storage.delete_data_item_payload(uid)
 
         if not success:
             logger.warning("Unable to delete data item payload: %s", uid)
-
-    if len(expired_data_items) > 0:
-        logger.info("Expired %s data items", len(expired_data_items))
 
 
 def check_for_new_data_items(last_check_time):

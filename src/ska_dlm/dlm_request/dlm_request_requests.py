@@ -65,7 +65,6 @@ def query_expired(offset: timedelta = None):
     elif offset and not isinstance(offset, timedelta):
         logger.warning("Specified offset invalid type! Should be timedelta.")
         return []
-    logger.info("Query for expired data_items older than %s", iso_now, exc_info=1)
     query_string = f"uid_expiration=lt.{iso_now}&select=uid,uid_expiration"
     result = query_data_item(query_string=query_string)
     return result if result else []
