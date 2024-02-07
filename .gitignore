@@ -65,4 +65,5 @@ dlm_test_file.txt
 **/.secrets.yaml
 **/.templ
 .postgrest.pid
+.rclone.pid
 scripts/postgrest

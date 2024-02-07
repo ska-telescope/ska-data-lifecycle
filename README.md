@@ -32,47 +32,11 @@ From inside the ska-data-lifecycle repo directory run:
 `psql -U postgres -h localhost -p 5432 -f setup/DB/ska_dlm_meta.sql`
 
 ### Start the postgREST layer:
-After the installation of postgREST the command `postgrest` should be available on the PATH. In that case you can run:
+After the installation of postgREST the command `postgrest` should be available on the PATH. In that case, from inside the ska-data-lifecycle repo directory, you can run:
 
 `postgrest setup/postgREST/postgREST.conf`
 
-from inside the ska-data-lifecycle repo directory.\
-_This will run in the terminal thus to start PostGUI you need to use another terminal._
-
-### Create or replace the file src/data/config.json with the following:
-```json
-{
-  "databases": [
-    {
-      "title": "SKA-DLM",
-      "url": "http://localhost:3001",
-      "publicDbAcessType": "read",
-      "foreignKeySearch": true,
-      "primaryKeyFunction": true,
-      "regexSupport": false
-    }
-  ],
-  "logoUrl": "https://jira.skatelescope.org/s/nfi585/940012/168qw7/_/jira-logo-scaled.png",
-  "seq_column_names": [
-    "alignment_sequence",
-    "nucleotide_sequence",
-    "aminoacid_sequence",
-    "nucleotide_seq",
-    "amino_acid_seq",
-    "nuc_seq",
-    "aa_seq",
-    "dna_seq",
-    "protein_seq",
-    "prot_seq",
-    "n_seq",
-    "p_seq",
-    "a_seq",
-    "seq",
-    "sequence"
-  ],
-  "errorMsg": "ERROR"
-}
-```
+_This will run in the terminal, thus to start PostGUI you need to use another terminal._
 
 ### Create a file in the main directory called .secrets.yaml with the following content:
 `db_password: "mysecretpassword"`
