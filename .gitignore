@@ -40,7 +40,8 @@ table.*
 *.fits
 *.png
 *.ms
-dlm_test_file.txt
+dlm_test_file*.txt
+.*.pid
 
 **/.cache
 **/.pytest_cache/

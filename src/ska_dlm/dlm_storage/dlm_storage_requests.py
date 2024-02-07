@@ -1,4 +1,5 @@
 """Wrap the most important postgREST API calls."""
+
 import inspect
 import json
 import logging
@@ -6,6 +7,7 @@ import logging
 import requests
 
 from .. import CONFIG
+from ..data_item import set_state
 from ..dlm_request import query_item_storage
 
 logger = logging.getLogger(__name__)
@@ -214,7 +216,7 @@ def check_storage_access(storage_name: str = "", storage_id: str = "") -> bool:
         logger.error("No valid configuration for storage found! %s", storage_name)
         return False
     rclone_fs = list(config.keys())[0]
-    return rclone_access(rclone_fs, "/")
+    return rclone_access(rclone_fs)
 
 
 def rclone_access(
@@ -225,7 +227,7 @@ def rclone_access(
 
     NOTE: This assumes a rclone server is running.
     """
-    request_url = f"{CONFIG.RCLONE.url}/operations/list"
+    request_url = f"{CONFIG.RCLONE.url}/operations/stat"
     if config:
         post_data = {}
     else:
@@ -233,10 +235,38 @@ def rclone_access(
         post_data = {
             "fs": volume,
             "remote": remote,
-            # "opt": {"dirsOnly": True, "recurse": False},
         }
     logger.info("rclone access check: %s, %s", request_url, post_data)
     request = requests.post(request_url, post_data, timeout=10)
+    if request.status_code != 200 or not request.json()["item"]:
+        logger.info("rclone does not have access: %s, %s", request.status_code, request.json())
+        return False
+    return True
+
+
+def rclone_delete(volume: str, fpath: str) -> bool:
+    """
+    Delete a file, referred to by fpath from a volume using rclone.
+
+    Parameters:
+    -----------
+    volume: the configured volume name hosting <fpath>.
+    fpath: the file path.
+
+    Returns:
+    bool, True if successful
+    """
+    volume = f"{volume}:" if volume[-1] != ":" else volume
+    if not rclone_access(volume, fpath):
+        logger.error("Can't access %s on %s!", fpath, volume)
+        return False
+    request_url = f"{CONFIG.RCLONE.url}/operations/deletefile"
+    post_data = {
+        "fs": volume,
+        "remote": fpath,
+    }
+    logger.info("rclone deletion: %s, %s", request_url, post_data)
+    request = requests.post(request_url, data=post_data, timeout=10)
     if request.status_code != 200:
         logger.info("Error response status code: %s", request.status_code)
         return False
@@ -344,3 +374,34 @@ def check_item_on_storage(  # pylint: disable=R0913
                 logger.error("data_item '%s' already exists on destination storage!", item_name)
             return []
     return storages
+
+
+def delete_data_item_payload(uid: str) -> bool:
+    """
+    Delete the payload of a data_item referred to by the provided UID.
+
+    Parameters:
+    -----------
+    uid: The UID of the data_item whose payload should be deleted.
+
+    Returns:
+    bool, True if successful
+    """
+    storages = query_item_storage(uid=uid)
+    logger.info("Storage for this uid: %s", storages)
+    if not storages:
+        logger.error("Unable to identify a storage volume for this UID: %s", uid)
+        return False
+    if len(storages) > 1:
+        logger.error("More than one storage volume keeping this UID: %s", uid)
+    storage = storages[0]
+    config = get_storage_config(storage["storage_id"])
+    storage_name = list(config.keys())[0]
+    if not rclone_access(storage_name):
+        return False
+    if not rclone_delete(storage_name, storage["item_name"]):
+        return False
+    # TODO: Need to set the state to DELETED, but that causes cyclic imports.
+    if not set_state(uid, "DELETED"):
+        return False
+    return True

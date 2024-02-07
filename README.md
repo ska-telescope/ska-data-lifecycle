@@ -14,14 +14,12 @@ The current design consists of five services and this repository is organised ac
 - Storage management service (DLMstorage)
 - Migration management service (DLMmigration)
 
-At some stage in the future we may decide to split these services into separate repositories, but to get started everything is in one place. Also, the DLMdb service is not intended to be used in an operational deployment, but the DLM system will be a client of the observatory wide DB setup. The DLMingest and DLMrequest services are the main input and output services, respectively exposed to other subsystems and users. This will require APIs for subsystems and at least administrator and operator level user interfaces. End-users are not expected to access or use the DLM directly.
-
-Please also refer to the DLM design description: https://confluence.skatelescope.org/x/rCYLDw
-
 ## Installation
-TBD
+The repository contains helm charts to install the services, including the DB. However, the DLM in operations is supposed to run continuously and use SKAO wide services like a HA DB service as well as the authentication system.
 
 ## Startup as a test environment
+To run the tests just execute `make python-test`. This will startup all services, run the tests and shutdown everything again. For a more permanent setup follow the steps below. In future we may implement a make target just starting the services and keep them alive until shutdown.
+
 ### Start the DB:
 
 `docker run --rm --name ska-dlm -p 5432:5432 -e POSTGRES_PASSWORD=mysecretpassword -d postgres`
@@ -41,17 +39,23 @@ _This will run in the terminal, thus to start PostGUI you need to use another te
 ### Create a file in the main directory called .secrets.yaml with the following content:
 `db_password: "mysecretpassword"`
 
-### Create the PostGUI directory:
-`git clone https://github.com/priyank-purohit/PostGUI`
+### Optional
+The DLM system is complete now, but in order to have a view into the DB you can run the nice PostGUI web interface, which talks to postgREST.
+#### Clone the PostGUI into a directory on the same level as the `ska-data-lifecycle` one:
+`git clone https://github.com/priyank-purohit/PostGUI`\
+`cd PostGUI`
 
-### Start the PostGUI:
+Replace the file src/data/config.json with the file `ska-data-lifecycle/setup/postgrest/config.json`
+
+
+#### Start the PostGUI:
 From inside the PostGUI repository directory run (for Unix):
 
 `npm install`\
 `export NODE_OPTIONS=--openssl-legacy-provider`\
 `npm start`
 
-_This will also run inside the terminal._
+_This will run interactively in the terminal._
 
 ### Test:
 
