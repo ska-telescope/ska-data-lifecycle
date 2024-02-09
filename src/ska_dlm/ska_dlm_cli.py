@@ -16,11 +16,13 @@ COMMAND_LIST = "list"
 
 def _add(args):
     """Add a data item."""
+    logger.info(args.command)
     dlm_ingest.ingest_data_item(args.item_name, "/LICENSE", args.storage_name)
 
 
 def _clear(args):
     """Clear the SKA DLM database."""
+    logger.info(args.command)
     request_url = f"{CONFIG.REST.base_url}"
     requests.delete(f"{request_url}/storage_config", timeout=2)
     requests.delete(f"{request_url}/data_item", timeout=2)
@@ -30,13 +32,24 @@ def _clear(args):
 
 def _list(args):
     """List data items in one or more storage location(s)."""
-    x = PrettyTable()
+    logger.info(args.command)
+    table = PrettyTable()
 
     data_items = dlm_request.query_data_item(item_name="")
-    x.field_names = ["Name", "oid", "uid", "Phase", "State", "Expired", "Deleted"]
-    for di in data_items:
-        x.add_row([di['item_name'], di['oid'][0:8]+'...', di['uid'][0:8]+'...', di['item_phase'], di['item_state'], di['expired'], di['deleted']])
-    print(x)
+    table.field_names = ["Name", "oid", "uid", "Phase", "State", "Expired", "Deleted"]
+    for data_item in data_items:
+        table.add_row(
+            [
+                data_item["item_name"],
+                data_item["oid"][0:8] + "...",
+                data_item["uid"][0:8] + "...",
+                data_item["item_phase"],
+                data_item["item_state"],
+                data_item["expired"],
+                data_item["deleted"],
+            ]
+        )
+    print(table)
 
 
 def main():
@@ -72,17 +85,12 @@ def main():
         parents=[parent_parser],
         help="add a data item to storage",
     )
-    parser_add_mode.add_argument(
-        "--item_name",
-        nargs="*",
-        help="The file to add",
-        required=True
-    )
+    parser_add_mode.add_argument("--item_name", nargs="*", help="The file to add", required=True)
     parser_add_mode.add_argument(
         "--storage-name",
         nargs="*",
         help="The destination storage location for the file",
-        required=True
+        required=True,
     )
 
     # clear
@@ -101,6 +109,7 @@ def main():
     args = parser.parse_args()
     print(args.command)
     commands[args.command](args)
+
 
 if __name__ == "__main__":
     main()
