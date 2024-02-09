@@ -11,3 +11,10 @@ maintainers:
   email: mark.boulton@icrar.org
 - name: Andreas Wicenec
   email: andreas.wicenec@icrar.org
+- name: Rodrigo Tobar
+  email: rtobar@icrar.org
+dependencies:
+- name: postgresql
+  version: 14.0.1
+  repository: https://charts.bitnami.com/bitnami
+  condition: postgresql.enabled
