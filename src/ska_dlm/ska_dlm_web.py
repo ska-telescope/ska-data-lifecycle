@@ -13,7 +13,6 @@ def get_locations(oid):
     # determine response type
     accept_header = request.headers.get("Accept")
     reply_with_html = "text/html" in accept_header
-    print("accept_header", accept_header, "reply_with_html", reply_with_html)
 
     # build location map
     location_map = {}
