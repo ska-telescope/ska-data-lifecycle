@@ -10,7 +10,14 @@ MAX_RETRIES=5
 DELAY_SECONDS=1
 attempt=1
 while [[ $attempt -le $MAX_RETRIES ]]; do
-    PGPASSWORD=mysecretpassword psql -U postgres -h localhost -p 5432 -f setup/DB/ska_dlm_meta.sql > /dev/null
+    PGPASSWORD=mysecretpassword \
+      psql -U postgres -h localhost -p 5432 \
+      -f setup/DB/create-roles.sql \
+      -f setup/DB/create-database.sql
+    PGPASSWORD=mysecretpassword PGOPTIONS=--search-path=public \
+      psql -U ska_dlm_admin -d ska_dlm_meta -h localhost -p 5432 \
+      -f setup/DB/drop-tables.sql \
+      -f setup/DB/create-tables.sql
     if [[ $? -eq 0 ]]; then
         # successful connection
         break
