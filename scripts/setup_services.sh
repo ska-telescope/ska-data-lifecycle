@@ -54,10 +54,10 @@ if [[ $attempt -gt $MAX_RETRIES ]]; then
 fi
 
 # We only want to download if rclone isn't available
-if ! command -v rclone &> /dev/null; then
-    apt-get update -qq
-    apt-get install -y -qq rclone
-fi
+# if ! command -v rclone &> /dev/null; then
+apt-get update -qq
+apt-get install -y -qq rclone
+# fi
 
 rclone rcd --rc-serve --rc-no-auth >/dev/null 2>&1 &
 echo "$!">$RCLONE_PID_FILE
