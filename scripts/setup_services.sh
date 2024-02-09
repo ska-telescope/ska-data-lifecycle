@@ -53,8 +53,14 @@ if [[ $attempt -gt $MAX_RETRIES ]]; then
     exit 1
 fi
 
+# We only want to download if unzip isn't available
+if ! command -v unzip &> /dev/null; then
+    apt-get update -qq
+    apt-get install -y -qq unzip
+fi
 
-curl https://rclone.org/install.sh | sudo bash
+echo "Installing rclone"
+curl https://rclone.org/install.sh | bash
 
 rclone rcd --rc-serve --rc-no-auth >/dev/null 2>&1 &
 echo "$!">$RCLONE_PID_FILE
