@@ -10,7 +10,7 @@ import inflect
 import pytest
 import requests
 
-from ska_dlm import CONFIG, data_item, dlm_ingest, dlm_request, dlm_storage, dlm_migration
+from ska_dlm import CONFIG, data_item, dlm_ingest, dlm_migration, dlm_request, dlm_storage
 
 LOG = logging.getLogger("data-lifecycle-test")
 LOG.setLevel(logging.DEBUG)
