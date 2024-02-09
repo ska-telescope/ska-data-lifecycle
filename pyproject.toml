@@ -27,6 +27,8 @@ pyyaml = "^6.0.1"
 python-benedict = "^0.33.1"
 inflect = "^7.0.0"
 ipython = "^8.20.0"
+prettytable = "^3.9.0"
+flask = "^3.0.2"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.3.0"
