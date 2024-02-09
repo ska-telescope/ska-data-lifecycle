@@ -46,31 +46,34 @@ heritage: {{ .Release.Service }}
 system: {{ .Values.system }}
 {{- end }}
 
-{{/* Etcd host */}}
-{{- define "ska-dlm.postgres-host" -}}
-{{ include "ska-dlm.name" . }}-postgres-client.{{ .Release.Namespace }}
-{{- end -}}
+{{/*
+Postgrest labels
+*/}}
+{{- define "ska-dlm.postgrest.labels" }}
+{{- include "ska-dlm.labels" . }}
+component: {{ .Values.postgrest.component }}
+subsystem: {{ .Values.postgrest.subsystem }}
+function: {{ .Values.postgrest.function }}
+domain: {{ .Values.postgrest.domain }}
+intent: production
+{{- end }}
 
-{{/* Init container to wait for configuration database availability */}}
-{{- define "ska-dlm.wait-for-postgres" -}}
-- name: wait-for-postgres
-  image: {{ .Values.postgres.image }}:{{ .Values.postgres.version }}
-  imagePullPolicy: {{ .Values.postgres.imagePullPolicy }}
-  command: ["/bin/sh", "-c", "while ( ! etcdctl endpoint health ); do sleep 1; done"]
-  env:
-  - name: ETCDCTL_ENDPOINTS
-    value: "http://{{ include "ska-dlm.postgres-host" . }}:2379"
-  - name: ETCDCTL_API
-    value: "3"
-{{- end -}}
+{{/* PostgreSQL service name */}}
+{{- define "ska-dlm.postgresql.name" }}
+{{- printf "%s-%s" .Release.Name .Values.postgresql.nameOverride -}}
+{{- end}}
 
 {{/*
-Template to generate the Postgres URI
+Template to generate the Postgresql URI
 */}}
-{{- define "postgrest.postgresql.uri" -}}
-{{- $user := default "postgres" .Values.postgresql.postgresqlUsername -}}
-{{- $pass := default "postgres" .Values.postgresql.postgresPassword -}}
-{{- $host := default "localhost" .Values.postgresql.nameOverride -}}
-{{- $database := default "postgres" .Values.postgresql.postgresDatabase -}}
-{{- printf "postgres://%s:%s@%s/%s" $user $pass $host $database -}}
+{{- define "ska-dlm.postgrest.postgresql.uri" -}}
+{{- if .Values.postgrest.db_uri }}
+{{ .Values.postgrest.db_uri }}
+{{- else }}
+{{- $user := .Values.postgresql.auth.username -}}
+{{- $pass := .Values.postgresql.auth.password -}}
+{{- $host := include "ska-dlm.postgresql.name" . -}}
+{{- $db := .Values.postgresql.auth.database -}}
+{{- printf "postgres://%s:%s@%s/%s" $user $pass $host $db -}}
+{{- end -}}
 {{- end -}}

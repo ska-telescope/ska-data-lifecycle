@@ -1,0 +1,136 @@
+{{- $rbac_name := printf "%s-postgrest" .Release.Name -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ska-dlm.name" . }}-postgrest
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ska-dlm.postgrest.labels" . | indent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: tcp-postgrest
+      port: 80
+      targetPort: 80
+      protocol: TCP
+  selector:
+    component: {{ .Values.postgrest.component }}
+    subsystem: {{ .Values.postgrest.subsystem }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "ska-dlm.name" . }}-postgrest
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ska-dlm.postgrest.labels" . | indent 4 }}
+spec:
+  replicas: {{ .Values.postgrest.replicas }}
+  podManagementPolicy: Parallel
+  selector:
+    matchLabels:
+      component: {{ .Values.postgrest.component }}
+      subsystem: {{ .Values.postgrest.subsystem }}
+  serviceName: {{ include "ska-dlm.name" . }}-postgrest
+  template:
+    metadata:
+      labels:
+        {{- include "ska-dlm.postgrest.labels" . | indent 8 }}
+    spec:
+      {{- if .Values.postgresql.enabled }}
+      initContainers:
+      - name: wait-for-postgresql
+        image: "bitnami/kubectl:latest"
+        imagePullPolicy: IfNotPresent
+        command:
+        - kubectl
+        - wait
+        - pod
+        - --for=condition=ready
+        - {{ include "ska-dlm.postgresql.name" . }}-0
+        - --timeout
+        - 120s
+      serviceAccountName: {{ $rbac_name }}
+      {{- end }}
+      containers:
+      - name: postgrest
+        image: {{ .Values.postgrest.image}}:{{ .Values.postgrest.version }}
+        imagePullPolicy: {{ .Values.postgrest.imagePullPolicy }}
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          periodSeconds: 5
+        env:
+          - name: PGRST_DB_URI
+            value: {{ include "ska-dlm.postgrest.postgresql.uri" . }}
+          - name: PGRST_SERVER_PORT
+            value: "80"
+          - name: PGRST_DB_SCHEMA
+          {{- if .Values.postgrest.db_schema }}
+            value: {{ .Values.postgrest.db_schema | quote }}
+          {{- else if .Values.postgresql.postgresDatabase }}
+            value: {{ .Values.postgresql.postgresDatabase | quote }}
+          {{- end }}
+          - name: PGRST_DB_ANON_ROLE
+          {{- if .Values.postgrest.db_anon_role }}
+            value: {{ .Values.postgrest.db_anon_role | quote }}
+          {{- else if .Values.postgresql.postgresUser }}
+            value: {{ .Values.postgrest.db_anon_role | quote }}
+          {{- end }}
+          {{- if .Values.postgrest.db_pool }}
+          - name: PGRST_DB_POOL
+            value: {{ .Values.postgrest.db_pool | quote }}
+          {{- end }}
+          {{- if .Values.postgrest.server_host }}
+          - name: PGRST_SERVER_HOST
+            value: {{ .Values.postgrest.server_host | quote }}
+          {{- end }}
+          {{- if .Values.postgrest.secret_is_base64 }}
+          - name: PGRST_SECRET_IS_BASE64
+            value: {{ .Values.postgrest.secret_is_base64 | quote }}
+          {{- end }}
+          {{- if .Values.postgrest.max_rows }}
+          - name: PGRST_MAX_ROWS
+            value: {{ .Values.postgrest.max_rows | quote }}
+          {{- end }}
+          {{- if .Values.postgrest.pre_request }}
+          - name: PGRST_PRE_REQUEST
+            value: {{ .Values.postgrest.pre_request | quote }}
+          {{- end }}
+          {{- if .Values.postgrest.role_claim_key }}
+          - name: PGRST_ROLE_CLAIM_KEY
+            value: {{ .Values.postgrest.role_claim_key | quote }}
+          {{- end }}
+{{- if .Values.postgresql.enabled }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $rbac_name }}
+  namespace: {{ .Release.Namespace }}
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ $rbac_name }}
+  namespace: {{ .Release.Namespace }}
+subjects:
+- kind: ServiceAccount
+  name: {{ $rbac_name }}
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: Role
+  name: {{ $rbac_name }}
+  apiGroup: rbac.authorization.k8s.io
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ $rbac_name }}
+  namespace: {{ .Release.Namespace }}
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch"]
+{{- end }}
