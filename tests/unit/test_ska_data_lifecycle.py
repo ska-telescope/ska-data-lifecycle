@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 """Tests for `ska_data_lifecycle` package."""
-import json
 import logging
 import os
 from datetime import timedelta
@@ -11,7 +10,7 @@ import inflect
 import pytest
 import requests
 
-from ska_dlm import CONFIG, data_item, dlm_ingest, dlm_request, dlm_storage
+from ska_dlm import CONFIG, data_item, dlm_ingest, dlm_request, dlm_storage, dlm_migration
 
 LOG = logging.getLogger("data-lifecycle-test")
 LOG.setLevel(logging.DEBUG)
@@ -24,7 +23,7 @@ class TestDlm(TestCase):
     NOTE: Currently some of them are dependent on each other.
     """
 
-    @pytest.fixture(scope="class", autouse=True)
+    @pytest.fixture(scope="function", autouse=True)
     def setup_and_teardown(self):
         """Initialze the tests."""
         # we need a location to register the storage
@@ -79,6 +78,7 @@ class TestDlm(TestCase):
 
     def test_query_expired(self):
         """Test the query expired returning records."""
+        self.test_init()
         offset = timedelta(days=1)
         result = dlm_request.query_expired(offset)
         success = len(result) != 0
@@ -101,7 +101,7 @@ class TestDlm(TestCase):
             tfile.write("Welcome to the great DLM world!")
         fpath = os.path.abspath("dlm_test_file.txt")
         fpath = fpath.replace(f"{os.environ['HOME']}/", "")
-        uid = dlm_request.query_data_item(item_name="this/is/the/first/test/item")[0]["uid"]
+        uid = dlm_ingest.init_data_item(item_name="this/is/the/first/test/item")
         storage_id = dlm_storage.query_storage(storage_name="MyDisk")[0]["storage_id"]
         res = data_item.set_uri(uid, f"{fpath}", storage_id)
         assert res != ""
@@ -126,7 +126,11 @@ class TestDlm(TestCase):
 
     def test_storage_config(self):
         """Add a new location, storage and configuration to the rclone server."""
-        location_id = dlm_storage.init_location("MyHost", "Server")
+        location = dlm_storage.query_location("MyHost")
+        if location:
+            location_id = location[0]["location_id"]
+        else:
+            location_id = dlm_storage.init_location("MyHost", "Server")
         assert len(location_id) == 36
         config = '{"name":"MyDisk2","type":"local", "parameters":{}}'
         uuid = dlm_storage.init_storage(
@@ -141,3 +145,15 @@ class TestDlm(TestCase):
         assert len(config_id) == 36
         # configure rclone
         assert dlm_storage.rclone_config(config) is True
+
+    def test_copy(self):
+        """Copy a test file from one storage to another."""
+        self.test_storage_config()
+        dest_id = dlm_storage.query_storage("MyDisk2")[0]["storage_id"]
+        uid = dlm_ingest.register_data_item("/my/ingest/test/item2", "/LICENSE", "MyDisk")
+        assert len(uid) == 36
+        assert (
+            dlm_migration.copy_data_item(uid=uid, destination_id=dest_id, path="LICENSE_copy")
+            is True
+        )
+        os.unlink("LICENSE_copy")
