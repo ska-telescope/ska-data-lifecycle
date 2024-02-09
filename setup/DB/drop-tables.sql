@@ -1,0 +1,7 @@
+DROP TABLE IF EXISTS phase_change;
+DROP TRIGGER IF EXISTS sync_oid_uid ON data_item;
+DROP FUNCTION IF EXISTS sync_oid_uid;
+DROP TABLE IF EXISTS data_item;
+DROP TABLE IF EXISTS storage_config;
+DROP TABLE IF EXISTS storage;
+DROP TABLE IF EXISTS location;
