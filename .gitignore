@@ -40,7 +40,9 @@ table.*
 *.fits
 *.png
 *.ms
-dlm_test_file.txt
+dlm_test_file*.txt
+.*.pid
+LICENSE_copy
 
 **/.cache
 **/.pytest_cache/
@@ -65,4 +67,5 @@ dlm_test_file.txt
 **/.secrets.yaml
 **/.templ
 .postgrest.pid
+.rclone.pid
 scripts/postgrest
