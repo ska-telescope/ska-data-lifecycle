@@ -215,7 +215,7 @@ def check_storage_access(storage_name: str = "", storage_id: str = "") -> bool:
     if not config:
         logger.error("No valid configuration for storage found! %s", storage_name)
         return False
-    rclone_fs = list(config.keys())[0]
+    rclone_fs = config["name"]
     return rclone_access(rclone_fs)
 
 
@@ -396,7 +396,7 @@ def delete_data_item_payload(uid: str) -> bool:
         logger.error("More than one storage volume keeping this UID: %s", uid)
     storage = storages[0]
     config = get_storage_config(storage["storage_id"])
-    storage_name = list(config.keys())[0]
+    storage_name = config["name"]
     if not rclone_access(storage_name):
         return False
     if not rclone_delete(storage_name, storage["item_name"]):
