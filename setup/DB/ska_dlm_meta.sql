@@ -36,7 +36,11 @@ SET row_security = off;
 SET default_tablespace = '';
 SET default_table_access_method = heap;
 
+DROP TABLE IF EXISTS public.data_item;
+DROP TABLE IF EXISTS public.storage_config;
+DROP TABLE IF EXISTS public.storage;
 DROP TABLE IF EXISTS public.location;
+DROP FUNCTION if EXISTS public.sync_oid_uid;
 CREATE TABLE public.location (
     location_id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     location_name varchar NOT NULL,
@@ -51,7 +55,6 @@ ALTER TABLE public.location OWNER TO ska_dlm_admin;
 
 
 
-DROP TABLE IF EXISTS public.storage;
 CREATE TABLE public.storage (
     storage_id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     location_id uuid NOT NULL,
@@ -84,7 +87,6 @@ ALTER TABLE public.storage OWNER TO ska_dlm_admin;
 -- converted by the storage_manager software. Being a separate table
 -- this allows for multiple configurations for different mechanisms.
 --
-DROP TABLE IF EXISTS public.storage_config;
 CREATE TABLE public.storage_config (
     config_id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     storage_id uuid NOT NULL,
@@ -112,7 +114,7 @@ CREATE TABLE public.data_item (
     item_encoding varchar DEFAULT 'unknown',
     item_mime_type varchar DEFAULT 'application/octet-stream',
     item_level smallint DEFAULT -1,
-    item_phase varchar DEFAULT 'gas',
+    item_phase varchar DEFAULT 'GAS',
     item_state varchar DEFAULT 'INITIALIZED',
     UID_creation timestamp without time zone DEFAULT now(),
     OID_creation timestamp without time zone DEFAULT NULL,
