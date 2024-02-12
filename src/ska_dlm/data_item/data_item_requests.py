@@ -6,6 +6,7 @@ import logging
 import requests
 
 from .. import CONFIG
+from ..dlm_request import query_data_item
 
 logger = logging.getLogger(__name__)
 
@@ -233,9 +234,10 @@ def set_phase(uid: str, phase: str) -> bool:
     return res
 
 
-def update_item_tags(item_name: str, oid: str, item_tags: dict) -> bool:
+def update_item_tags(item_name: str = "", oid: str = "", item_tags: dict = None) -> bool:
     """
     Update/set the item_tags field of a data_item with given item_name/OID.
+
     This will update all records for a data_item at the same time.
     Updating a single UID does not make sense.
 
@@ -249,6 +251,17 @@ def update_item_tags(item_name: str, oid: str, item_tags: dict) -> bool:
     --------
     bool
     """
-    json_data = json.dumps({"item_tags": item_tags})
+    if (not item_name and not oid) or not item_tags:
+        logger.error("Either item_name or OID or item_tags are missing")
+        return False
+
+    result = query_data_item(item_name, oid)
+    if not result:
+        return False
+    oid, existing_tags = (result[0]["oid"], result[0]["item_tags"])
+    tags = {} if not existing_tags else existing_tags
+    print(f"Existing tags: {tags}")
+    tags.update(item_tags)  # merge existing with new ones
+    json_data = json.dumps({"item_tags": tags})
     res = update_data_item(oid=oid, json_data=json_data)
-    return res
+    return res != ""
