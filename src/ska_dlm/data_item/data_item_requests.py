@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 def update_data_item(
+    item_name: str = "",
     oid: str = "",
     uid: str = "",
     json_data: str = "",
@@ -19,11 +20,13 @@ def update_data_item(
     """
     Update fields of an existing data_item.
 
-    This is mostly used by the other convenience functions.
+    This is mostly used by the other convenience functions. In general when specifying
+    an OID or an item_name, multiple entries will be updated at the same time.
 
     Parameters:
     -----------
-    oid : the OID of the data_item to be updated
+    item_name: the name of the data_items to be updated
+    oid : the OID of the data_items to be updated
     uid : the UID of the data_item to be updated
     json_data : the json formatted update data, compatible with postgREST
 
@@ -31,12 +34,14 @@ def update_data_item(
     --------
     string
     """
-    if oid:
+    if item_name:
+        req_ext = f"item_name=eq.{item_name}"
+    elif oid:
         req_ext = f"oid=eq.{oid}"
     elif uid:
         req_ext = f"uid=eq.{uid}"
     else:
-        logger.error("Either OID or UID should be specified!")
+        logger.error("Either item_name, OID or UID should be specified!")
         return None
     request_url = f"{CONFIG.REST.base_url}/{table}?{req_ext}"
     post_data = json_data
@@ -225,4 +230,25 @@ def set_phase(uid: str, phase: str) -> bool:
     """
     json_data = json.dumps({"item_phase": phase})
     res = update_data_item(uid=uid, json_data=json_data)
+    return res
+
+
+def update_item_tags(item_name: str, oid: str, item_tags: dict) -> bool:
+    """
+    Update/set the item_tags field of a data_item with given item_name/OID.
+    This will update all records for a data_item at the same time.
+    Updating a single UID does not make sense.
+
+    Parameters:
+    -----------
+    item_name: the name of the data_item
+    oid : the UID of the data_item to be updated
+    item_tags : dictionary of keyword/value pairs
+
+    Returns:
+    --------
+    bool
+    """
+    json_data = json.dumps({"item_tags": item_tags})
+    res = update_data_item(oid=oid, json_data=json_data)
     return res
