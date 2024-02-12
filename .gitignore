@@ -42,6 +42,7 @@ table.*
 *.ms
 dlm_test_file*.txt
 .*.pid
+LICENSE_copy
 
 **/.cache
 **/.pytest_cache/

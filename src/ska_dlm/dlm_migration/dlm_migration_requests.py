@@ -62,7 +62,11 @@ def copy_data_item(
         logger.error("Either an item_name or an OID or an UID has to be provided!")
         return False
     stat = True
-    orig_item = query_data_item(item_name, oid, uid)[0]
+    orig_item = query_data_item(item_name, oid, uid)
+    if orig_item:
+        orig_item = orig_item[0]
+    else:
+        return False
     # (1)
     item_name = orig_item["item_name"]
     storages = check_item_on_storage(item_name, storage_id=destination_id)
@@ -77,6 +81,8 @@ def copy_data_item(
         logger.error("No configuration for source storage found!")
         return False
     source = {"backend": f"{s_config['name']}:", "path": storage["uri"]}
+    if not path:
+        path = storage["uri"]
     d_config = get_storage_config(destination_id)
     if not d_config:
         logger.error("No configuration for destination storage found!")
