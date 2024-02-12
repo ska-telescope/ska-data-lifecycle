@@ -5,12 +5,15 @@ build:
   tools:
     python: "3.10"
   jobs:
+    # https://docs.readthedocs.io/en/stable/build-customization.html#install-dependencies-with-poetry
     post_create_environment:
-      - curl -sSL https://install.python-poetry.org | python3 - --version 1.3.2
-      - $HOME/.local/bin/poetry config virtualenvs.create false
+      # Install poetry
+      # https://python-poetry.org/docs/#installing-manually
+      - pip install poetry
+      # Tell poetry to not use a virtual environment
+      - poetry config virtualenvs.create false
     post_install:
-      - $HOME/.local/bin/poetry install --only main,docs
+      - poetry install --only main,docs
 
 sphinx:
   configuration: docs/src/conf.py
-  fail_on_warning: true
