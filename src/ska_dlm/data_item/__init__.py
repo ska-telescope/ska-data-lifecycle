@@ -9,6 +9,7 @@ from .data_item_requests import (
     set_uid_expiration,
     set_uri,
     set_user,
+    update_item_tags,
 )
 
 __all__ = [
@@ -20,6 +21,7 @@ __all__ = [
     "set_uid_expiration",
     "set_uri",
     "set_user",
+    "update_item_tags",
 ]
 
 __author__ = """Andreas Wicenec"""
