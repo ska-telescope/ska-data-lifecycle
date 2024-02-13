@@ -59,8 +59,12 @@ if ! command -v unzip &> /dev/null; then
     apt-get install -y -qq unzip
 fi
 
+# Install r-clone for GitlabCI
 echo "Installing rclone"
-curl https://rclone.org/install.sh | bash
+if [[ -n "$GITLAB_CI" ]]; then
+    echo "Installing rclone"
+    curl https://rclone.org/install.sh | bash
+fi
 
 rclone rcd --rc-serve --rc-no-auth >/dev/null 2>&1 &
 echo "$!">$RCLONE_PID_FILE
