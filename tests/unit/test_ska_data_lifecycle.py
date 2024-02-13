@@ -157,3 +157,27 @@ class TestDlm(TestCase):
             is True
         )
         os.unlink("LICENSE_copy")
+
+    def test_expired_by_storage_daemon(self):
+        """Test an expired data item is deleted by the storage manager."""
+        # test no expired items were found
+        result = dlm_request.query_expired()
+        assert len(result) == 0
+
+        # test no deleted items were found
+        result = dlm_request.query_deleted()
+        assert len(result) == 0
+
+        # add an item, and expire immediately
+        uid = dlm_ingest.ingest_data_item("/my/ingest/test/item", "/LICENSE", "MyDisk")
+        data_item.set_uid_expiration(uid, "2000-01-01T00:00:01.000000")
+
+        # wait?
+
+        # check the expired item was found
+        result = dlm_request.query_expired()
+        assert len(result) == 1
+
+        # check that the daemon deleted the item
+        result = dlm_request.query_deleted()
+        assert len(result) == 1

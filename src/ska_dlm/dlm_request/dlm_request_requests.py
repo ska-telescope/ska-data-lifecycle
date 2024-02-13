@@ -70,6 +70,13 @@ def query_expired(offset: timedelta = None):
     return result if result else []
 
 
+def query_deleted():
+    """Query for all deleted data_items using the deleted flag."""
+    query_string = "deleted=True&select=uid"
+    result = query_data_item(query_string=query_string)
+    return result if result else []
+
+
 def query_exists(
     item_name: str = "", oid: str = "", uid: str = "", ready: bool = False, report=True
 ) -> bool:
