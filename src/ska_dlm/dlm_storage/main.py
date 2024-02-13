@@ -14,14 +14,18 @@ STORAGE_WARNING_PERCENTAGE = 80.0
 logger = logging.getLogger(__name__)
 
 
-def expire_uids():
+def delete_uids():
     """Check for expired data items and trigger deletion."""
     expired_data_items = dlm_request.query_expired()
+    print(str(expired_data_items))
 
     if len(expired_data_items) > 0:
         logger.info("Found %s expired data items", len(expired_data_items))
 
-    for uid in expired_data_items:
+    for data_item in expired_data_items:
+        uid = data_item["uid"]
+        print("uid " + uid)
+
         success = dlm_storage.delete_data_item_payload(uid)
 
         if not success:
@@ -74,7 +78,7 @@ def main():
     last_new_data_item_query_time = datetime.now().isoformat()
 
     while True:
-        expire_uids()
+        delete_uids()
         check_for_new_data_items(last_new_data_item_query_time)
         last_new_data_item_query_time = datetime.now().isoformat()
         # check_storage_capacity()

@@ -169,10 +169,12 @@ class TestDlm(TestCase):
         assert len(result) == 0
 
         # add an item, and expire immediately
-        uid = dlm_ingest.ingest_data_item("/my/ingest/test/item", "/LICENSE", "MyDisk")
+        uid = dlm_ingest.ingest_data_item(item_name="/dlm_test_file.txt", storage_name="MyDisk")
         data_item.set_uid_expiration(uid, "2000-01-01T00:00:01.000000")
 
-        # wait?
+        # run storage daemon code
+        from ska_dlm.dlm_storage.main import delete_uids
+        delete_uids()
 
         # check the expired item was found
         result = dlm_request.query_expired()
