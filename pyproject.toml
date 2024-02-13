@@ -13,7 +13,7 @@ readme = "README.md"
 packages = [{include="ska_dlm", from="src"}]
 
 [tool.poetry.scripts]
-meta-gen = "ska_dlm.ska_dlm:main"
+ska-dlm = "ska_dlm.cli:main"
 
 [[tool.poetry.source]]
 name = 'skao'
