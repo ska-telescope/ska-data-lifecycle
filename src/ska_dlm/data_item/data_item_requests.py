@@ -244,7 +244,7 @@ def update_item_tags(item_name: str = "", oid: str = "", item_tags: dict = None)
     Parameters:
     -----------
     item_name: the name of the data_item
-    oid : the UID of the data_item to be updated
+    oid : the OID of the data_item to be updated
     item_tags : dictionary of keyword/value pairs
 
     Returns:
