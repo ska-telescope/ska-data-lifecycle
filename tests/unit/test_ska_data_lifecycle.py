@@ -174,6 +174,7 @@ class TestDlm(TestCase):
 
         # run storage daemon code
         from ska_dlm.dlm_storage.main import delete_uids
+
         delete_uids()
 
         # check the expired item was found
