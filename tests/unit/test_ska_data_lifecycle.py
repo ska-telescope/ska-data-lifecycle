@@ -11,6 +11,7 @@ import pytest
 import requests
 
 from ska_dlm import CONFIG, data_item, dlm_ingest, dlm_migration, dlm_request, dlm_storage
+from ska_dlm.dlm_storage.main import delete_uids
 
 LOG = logging.getLogger("data-lifecycle-test")
 LOG.setLevel(logging.DEBUG)
@@ -173,8 +174,6 @@ class TestDlm(TestCase):
         data_item.set_uid_expiration(uid, "2000-01-01T00:00:01.000000")
 
         # run storage daemon code
-        from ska_dlm.dlm_storage.main import delete_uids
-
         delete_uids()
 
         # check the expired item was found
