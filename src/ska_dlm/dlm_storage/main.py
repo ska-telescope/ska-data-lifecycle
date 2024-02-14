@@ -14,63 +14,46 @@ STORAGE_WARNING_PERCENTAGE = 80.0
 logger = logging.getLogger(__name__)
 
 
-def delete_uids():
-    """Check for expired data items and trigger deletion."""
-    expired_data_items = dlm_request.query_expired()
-    print(str(expired_data_items))
+def persist_new_data_items(last_check_time: str) -> bool:
+    """Check for new data items (since the last query), if found, copy to a second location.
 
-    if len(expired_data_items) > 0:
-        logger.info("Found %s expired data items", len(expired_data_items))
+    Parameters:
+    -----------
+    last_check_time: ISO formatted datetime string
 
-    for data_item in expired_data_items:
-        uid = data_item["uid"]
-        print("uid " + uid)
+    Returns:
+    --------
+    dict,
+    """
+    new_data_items = dlm_request.query_new(last_check_time)
+    item_names = [n["item_name"] for n in new_data_items]
+    stat = dict(zip(item_names, [False] * len(new_data_items)))
 
-        success = dlm_storage.delete_data_item_payload(uid)
-
-        if not success:
-            logger.warning("Unable to delete data item payload: %s", uid)
-
-
-def check_for_new_data_items(last_check_time):
-    """Check for new data items (since the last query), if found, copy to a second location."""
-    query = (
-        "uid_creation=gt."
-        + last_check_time
-        + "&item_phase=eq.GAS&item_state=eq.READY&select=uid,item_name,uri"
-    )
-    new_data_items = dlm_request.query_data_item(query_string=query)
-
+    storages = dlm_storage.query_storage()
+    if not storages:
+        logger.error("Could not find any storage volumes!")
+        return stat
     for new_data_item in new_data_items:
         logger.info("Found new data item %s", new_data_item["item_name"])
 
         # TODO: check phase?
 
-        # TODO: find a new location
+        new_storage = [s for s in storages if s["storage_id"] != new_data_item["storage_id"]]
+        if new_storage == []:
+            logger.error("Unable to identify a suitable new storage volume!")
 
-        # make a copy
-        dlm_migration.copy_data_item(uid=new_data_item["uid"])
-
-
-def check_storage_capacity():
-    """Check remaining capacity of all storage items."""
-    storage_items = dlm_storage.query_storage(query_string="")
-
-    for storage_item in storage_items:
-        if storage_item["storage_use_pct"] >= STORAGE_WARNING_PERCENTAGE:
-            logger.warning(
-                "storage_item %s nearing full capacity (%s)",
-                storage_item["storage_name"],
-                storage_item["storage_use_pct"],
-            )
-
-
-def perform_phase_transitions():
-    """Check for OIDs with insufficient phase, and trigger a phase transition."""
-    required_phase_transitions = []  # dlm_storage.query_phase_transitions()
-
-    for oid in required_phase_transitions:
-        logger.warning("Incomplete implementation: phase transition required for oid: %s", oid)
+            logger.info("Storage volumes found: %s", storages)
+            continue
+        new_storage = new_storage[0]
+        dest_id = new_storage["storage_id"]
+        result = dlm_migration.copy_data_item(uid=new_data_item["uid"], destination_id=dest_id)
+        if not result:
+            logger.error("Copy of data_item %s unsuccessful!", new_data_item["item_name"])
+        logger.info(
+            "Persisted %s to volume %s", new_data_item["item_name"], new_storage["storage_name"]
+        )
+        stat[new_data_item["item_name"]] = True
+    return stat
 
 
 def main():
@@ -78,8 +61,8 @@ def main():
     last_new_data_item_query_time = datetime.now().isoformat()
 
     while True:
-        delete_uids()
-        check_for_new_data_items(last_new_data_item_query_time)
+        dlm_storage.delete_uids()
+        persist_new_data_items(last_new_data_item_query_time)
         last_new_data_item_query_time = datetime.now().isoformat()
         # check_storage_capacity()
         # perform_phase_transitions()

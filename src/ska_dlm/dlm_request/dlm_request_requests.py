@@ -84,7 +84,29 @@ def query_deleted(uid: str = "") -> list:
     """
     query_string = "item_state=eq.DELETED&select=uid"
     if uid:
-        query_string += f"&uid=eq.{uid}"
+        query_string = f"uid=eq.{uid}&{query_string}"
+    result = query_data_item(query_string=query_string)
+    return result if result else []
+
+
+def query_new(check_date: str, uid: str = "") -> list:
+    """Query for all data_items newer than the date provided.
+
+    Parameters:
+    -----------
+    check_date: str, the starting date (exclusive)
+    uid: The UID to be checked, optional.
+
+    RETURNS:
+    --------
+    list of dictionaries with UID, UID_creation and storage_id of new items.
+    """
+    query_string = (
+        f"uid_creation=gt.{check_date}"
+        + "&item_phase=eq.GAS&item_state=eq.READY&select=uid,item_name,uid_creation,storage_id"
+    )
+    if uid:
+        query_string = f"uid=eq.{uid}&{query_string}"
     result = query_data_item(query_string=query_string)
     return result if result else []
 
