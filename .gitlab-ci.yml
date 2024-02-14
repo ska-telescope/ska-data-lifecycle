@@ -30,7 +30,7 @@ include:
 
     # Docs pages
   - project: 'ska-telescope/templates-repository'
-    file: 'gitlab-ci/includes/docs-pages.gitlab-ci.yml'
+    file: 'gitlab-ci/includes/docs.gitlab-ci.yml'
 
     # Tag Based GitLab Release Management
   - project: 'ska-telescope/templates-repository'
