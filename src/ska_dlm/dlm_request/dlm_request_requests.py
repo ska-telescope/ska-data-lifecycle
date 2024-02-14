@@ -1,4 +1,5 @@
 """Convenience functions wrapping the most important postgREST API calls."""
+
 import logging
 from datetime import datetime, timedelta
 
@@ -70,9 +71,20 @@ def query_expired(offset: timedelta = None):
     return result if result else []
 
 
-def query_deleted():
-    """Query for all deleted data_items using the deleted flag."""
-    query_string = "deleted=True&select=uid"
+def query_deleted(uid: str = "") -> list:
+    """Query for all deleted data_items using the deleted state.
+
+    Parameters:
+    -----------
+    uid: The UID to be checked, optional.
+
+    RETURNS:
+    --------
+    list of dictionaries with UIDs of deleted items.
+    """
+    query_string = "item_state=eq.DELETED&select=uid"
+    if uid:
+        query_string += f"&uid=eq.{uid}"
     result = query_data_item(query_string=query_string)
     return result if result else []
 

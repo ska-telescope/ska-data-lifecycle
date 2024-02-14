@@ -161,6 +161,9 @@ class TestDlm(TestCase):
 
     def test_expired_by_storage_daemon(self):
         """Test an expired data item is deleted by the storage manager."""
+        fname = "dlm_test_file_1.txt"
+        with open(fname, "w", encoding="UTF-8") as tfile:
+            tfile.write("Welcome to the great DLM world!")
         # test no expired items were found
         result = dlm_request.query_expired()
         assert len(result) == 0
@@ -170,7 +173,7 @@ class TestDlm(TestCase):
         assert len(result) == 0
 
         # add an item, and expire immediately
-        uid = dlm_ingest.ingest_data_item(item_name="/dlm_test_file.txt", storage_name="MyDisk")
+        uid = dlm_ingest.ingest_data_item(item_name=fname, storage_name="MyDisk")
         data_item.set_uid_expiration(uid, "2000-01-01T00:00:01.000000")
 
         # run storage daemon code
@@ -182,4 +185,4 @@ class TestDlm(TestCase):
 
         # check that the daemon deleted the item
         result = dlm_request.query_deleted()
-        assert len(result) == 1
+        assert result[0]["uid"] == uid
