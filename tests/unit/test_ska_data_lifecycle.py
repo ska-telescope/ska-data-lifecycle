@@ -3,7 +3,7 @@
 """Tests for `ska_data_lifecycle` package."""
 import logging
 import os
-from datetime import datetime, timedelta
+from datetime import timedelta
 from unittest import TestCase
 
 import inflect

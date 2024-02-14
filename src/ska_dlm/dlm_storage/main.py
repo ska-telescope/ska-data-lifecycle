@@ -8,8 +8,7 @@ from time import sleep
 
 from ska_dlm import dlm_migration, dlm_request, dlm_storage
 
-SLEEP_DURATION = 2  # seconds
-STORAGE_WARNING_PERCENTAGE = 80.0
+from .. import CONFIG
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +66,7 @@ def main():
         # check_storage_capacity()
         # perform_phase_transitions()
 
-        sleep(SLEEP_DURATION)
+        sleep(CONFIG.DLM.SLEEP_DURATION)
 
 
 if __name__ == "__main__":

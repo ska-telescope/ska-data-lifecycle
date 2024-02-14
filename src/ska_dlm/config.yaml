@@ -16,6 +16,8 @@ DLM:
   dlm_table: "data_item"
   storage_table: "storage"
   location_table: "location"
+  STORAGE_WARNING_PERCENTAGE: 80.0
+  SLEEP_DURATION: 2 # seconds
 
 RCLONE:
   url: "http://localhost:5572"
