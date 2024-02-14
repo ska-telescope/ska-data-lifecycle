@@ -13,7 +13,7 @@ from .. import CONFIG
 logger = logging.getLogger(__name__)
 
 
-def persist_new_data_items(last_check_time: str) -> bool:
+def persist_new_data_items(last_check_time: str) -> dict:
     """Check for new data items (since the last query), if found, copy to a second location.
 
     Parameters:
@@ -22,7 +22,7 @@ def persist_new_data_items(last_check_time: str) -> bool:
 
     Returns:
     --------
-    dict,
+    dict, with entries of the form {item_name:status}
     """
     new_data_items = dlm_request.query_new(last_check_time)
     item_names = [n["item_name"] for n in new_data_items]
