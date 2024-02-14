@@ -157,3 +157,17 @@ class TestDlm(TestCase):
             is True
         )
         os.unlink("LICENSE_copy")
+
+    def test_update_item_tags(self):
+        """Update the item_tags field of a data_item."""
+        _ = dlm_ingest.register_data_item("/my/ingest/test/item2", "/LICENSE", "MyDisk")
+        res = data_item.update_item_tags(
+            "/my/ingest/test/item2", item_tags={"a": "SKA", "b": "DLM", "c": "dummy"}
+        )
+        assert res is True
+        res = data_item.update_item_tags(
+            "/my/ingest/test/item2", item_tags={"c": "Hello", "d": "World"}
+        )
+        assert res is True
+        tags = dlm_request.query_data_item(item_name="/my/ingest/test/item2")[0]["item_tags"]
+        assert tags == {"a": "SKA", "b": "DLM", "c": "Hello", "d": "World"}
