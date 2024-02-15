@@ -8,7 +8,7 @@ import requests
 
 from .. import CONFIG
 from ..data_item import set_state
-from ..dlm_request import query_item_storage
+from ..dlm_request import query_expired, query_item_storage
 
 logger = logging.getLogger(__name__)
 
@@ -168,7 +168,7 @@ def get_storage_config(storage_id: str, config_type="rclone") -> str:
     api_url = f"{CONFIG.REST.base_url}/storage_config?limit=1000"
     request_url = f"{api_url}&storage_id=eq.{storage_id}&config_type=eq.{config_type}"
     request = requests.get(request_url, timeout=10)
-    if request.status_code == 200:
+    if request.status_code == 200 and len(request.json()) != 0:
         return json.loads(request.json()[0]["config"])
     logger.info("Response status code: %s", request.status_code)
     return []
@@ -405,3 +405,42 @@ def delete_data_item_payload(uid: str) -> bool:
     if not set_state(uid, "DELETED"):
         return False
     return True
+
+
+def delete_uids():
+    """Check for expired data items and trigger deletion."""
+    expired_data_items = query_expired()
+    print(str(expired_data_items))
+
+    if len(expired_data_items) > 0:
+        logger.info("Found %s expired data items", len(expired_data_items))
+
+    for data_item in expired_data_items:
+        uid = data_item["uid"]
+        print("uid " + uid)
+
+        success = delete_data_item_payload(uid)
+
+        if not success:
+            logger.warning("Unable to delete data item payload: %s", uid)
+
+
+def check_storage_capacity():
+    """Check remaining capacity of all storage items."""
+    storage_items = query_storage(query_string="")
+
+    for storage_item in storage_items:
+        if storage_item["storage_use_pct"] >= CONFIG.DLM.STORAGE_WARNING_PERCENTAGE:
+            logger.warning(
+                "storage_item %s nearing full capacity (%s)",
+                storage_item["storage_name"],
+                storage_item["storage_use_pct"],
+            )
+
+
+def perform_phase_transitions():
+    """Check for OIDs with insufficient phase, and trigger a phase transition."""
+    required_phase_transitions = []  # dlm_storage.query_phase_transitions()
+
+    for oid in required_phase_transitions:
+        logger.warning("Incomplete implementation: phase transition required for oid: %s", oid)

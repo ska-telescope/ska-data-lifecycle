@@ -1,4 +1,5 @@
 """Convenience functions wrapping the most important postgREST API calls."""
+
 import logging
 from datetime import datetime, timedelta
 
@@ -20,8 +21,7 @@ def query_data_item(
     item_name: could be empty, in which case the first 1000 items are returned
     oid:    Return data_items referred to by the OID provided.
     uid:    Return data_item referred to by the UID provided.
-    query_string: an aribtrary postgREST query string
-    report: If False info is not reported
+    query_string: an arbitrary postgREST query string
 
     Returns:
     --------
@@ -66,8 +66,47 @@ def query_expired(offset: timedelta = None):
     elif offset and not isinstance(offset, timedelta):
         logger.warning("Specified offset invalid type! Should be timedelta.")
         return []
-    logger.info("Query for expired data_items older than %s", iso_now, exc_info=1)
     query_string = f"uid_expiration=lt.{iso_now}&select=uid,uid_expiration"
+    result = query_data_item(query_string=query_string)
+    return result if result else []
+
+
+def query_deleted(uid: str = "") -> list:
+    """Query for all deleted data_items using the deleted state.
+
+    Parameters:
+    -----------
+    uid: The UID to be checked, optional.
+
+    RETURNS:
+    --------
+    list of dictionaries with UIDs of deleted items.
+    """
+    query_string = "item_state=eq.DELETED&select=uid"
+    if uid:
+        query_string = f"uid=eq.{uid}&{query_string}"
+    result = query_data_item(query_string=query_string)
+    return result if result else []
+
+
+def query_new(check_date: str, uid: str = "") -> list:
+    """Query for all data_items newer than the date provided.
+
+    Parameters:
+    -----------
+    check_date: str, the starting date (exclusive)
+    uid: The UID to be checked, optional.
+
+    RETURNS:
+    --------
+    list of dictionaries with UID, UID_creation and storage_id of new items.
+    """
+    query_string = (
+        f"uid_creation=gt.{check_date}"
+        + "&item_phase=eq.GAS&item_state=eq.READY&select=uid,item_name,uid_creation,storage_id"
+    )
+    if uid:
+        query_string = f"uid=eq.{uid}&{query_string}"
     result = query_data_item(query_string=query_string)
     return result if result else []
 

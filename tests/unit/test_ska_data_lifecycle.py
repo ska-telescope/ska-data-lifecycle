@@ -11,6 +11,7 @@ import pytest
 import requests
 
 from ska_dlm import CONFIG, data_item, dlm_ingest, dlm_migration, dlm_request, dlm_storage
+from ska_dlm.dlm_storage.main import persist_new_data_items
 
 LOG = logging.getLogger("data-lifecycle-test")
 LOG.setLevel(logging.DEBUG)
@@ -171,3 +172,52 @@ class TestDlm(TestCase):
         assert res is True
         tags = dlm_request.query_data_item(item_name="/my/ingest/test/item2")[0]["item_tags"]
         assert tags == {"a": "SKA", "b": "DLM", "c": "Hello", "d": "World"}
+
+    def test_expired_by_storage_daemon(self):
+        """Test an expired data item is deleted by the storage manager."""
+        fname = "dlm_test_file_1.txt"
+        with open(fname, "w", encoding="UTF-8") as tfile:
+            tfile.write("Welcome to the great DLM world!")
+        # test no expired items were found
+        result = dlm_request.query_expired()
+        assert len(result) == 0
+
+        # test no deleted items were found
+        result = dlm_request.query_deleted()
+        assert len(result) == 0
+
+        # add an item, and expire immediately
+        uid = dlm_ingest.ingest_data_item(item_name=fname, storage_name="MyDisk")
+        data_item.set_uid_expiration(uid, "2000-01-01T00:00:01.000000")
+
+        # run storage daemon code
+        dlm_storage.delete_uids()
+
+        # check the expired item was found
+        result = dlm_request.query_expired()
+        assert len(result) == 1
+
+        # check that the daemon deleted the item
+        result = dlm_request.query_deleted()
+        assert result[0]["uid"] == uid
+
+    def test_query_new(self):
+        """Test for newly created data_items."""
+        check_time = "2024-01-01"
+        _ = dlm_ingest.register_data_item("/my/ingest/test/item", "/LICENSE", "MyDisk")
+        result = dlm_request.query_new(check_time)
+        assert len(result) == 1
+
+    def test_persist_new_data_items(self):
+        """Test making new data items persistent."""
+        check_time = "2024-01-01"
+        _ = dlm_ingest.register_data_item("/my/ingest/test/item", "/LICENSE", "MyDisk")
+        result = persist_new_data_items(check_time)
+        # negative test, since there is only a single volume registered
+        assert result == {"/my/ingest/test/item": False}
+
+        # configure additional storage volume
+        self.test_storage_config()
+        # and run again...
+        result = persist_new_data_items(check_time)
+        assert result == {"/my/ingest/test/item": True}
