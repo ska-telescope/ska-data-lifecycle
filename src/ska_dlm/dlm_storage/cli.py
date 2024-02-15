@@ -1,4 +1,5 @@
 """CLI support for dlm_storage package."""
+
 import functools
 
 import typer
@@ -48,3 +49,21 @@ def init_storage(  # noqa: D103
             json_data,
         )
     )
+
+
+@app.command()
+# pylint: disable-next=missing-function-docstring
+def query_storage(storage_name: str = "", storage_id: str = ""):  # noqa: D103
+    rich_print(dlm_storage_requests.query_storage(storage_name, storage_id))
+
+
+@app.command()
+# pylint: disable-next=missing-function-docstring
+def query_location(location_name: str = "", location_id: str = ""):  # noqa: D103
+    rich_print(dlm_storage_requests.query_location(location_name, location_id))
+
+
+@app.command()
+# pylint: disable-next=missing-function-docstring
+def create_storage_config(storage_id: str, config: str):  # noqa: D103
+    rich_print(dlm_storage_requests.create_storage_config(storage_id, config))
