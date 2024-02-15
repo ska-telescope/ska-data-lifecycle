@@ -14,6 +14,7 @@ DLM:
   dlm_db: "ska_dlm_meta"
   dlm_table: "data_item"
   storage_table: "storage"
+  storage_config_table: "storage_config"
   location_table: "location"
   STORAGE_WARNING_PERCENTAGE: 80.0
   SLEEP_DURATION: 2 # seconds
