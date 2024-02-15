@@ -22,8 +22,7 @@ def args_dict(func):
         logger.info(dict(bound_args.arguments))
         kwargs.update({"args": dict(bound_args.arguments)})
         logger.info("Added args: %s", kwargs)
-        func = func(*args, **kwargs)
-        return func
+        return func(*args, **kwargs)
 
     return wrapper
 
