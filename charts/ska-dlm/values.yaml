@@ -1,0 +1,61 @@
+system: dlm
+
+# Global parameters
+global:
+  minikube: true
+
+nameOverride: ""
+fullnameOverride: ""
+
+# Postgresql DB
+postgresql:
+  enabled: true
+  initialise: false
+  nameOverride: ska-dlm-postgresql
+
+  # Custom user/password/db to create, has to match postgrest's config below
+  # and primary.initdb authentication
+  auth:
+    username: ska_dlm_admin
+    password: password
+    database: ska_dlm
+
+  image:
+    debug: true
+
+  primary:
+    # matches auth.database
+    name: ska_dlm
+    persistence:
+      enabled: true
+    initdb:
+      user: ska_dlm_admin
+      password: password
+      scriptsConfigMap: ska-dlm-postgresql-initdb-scripts
+    podLabels:
+      component: postgresql
+      subsystem: data-management-lifecycle
+
+postgrest:
+  component: postgrest
+  subsystem: data-management-lifecycle
+
+  image: postgrest/postgrest
+  version: v12.0.2
+  imagePullPolicy: Always
+
+  replicas: 1
+  db_uri: ""
+  db_schema: public
+  db_anon_role: ska_dlm_admin
+  db_pool: 10
+  server_host: '*4'
+  secret_is_base64: false
+  max_rows: ""
+  pre_request: ""
+  role_claim_key: '.role'
+
+kubectl:
+  image: bitnami/kubectl
+  version: 1.28.6
+  imagePullPolicy: Always

@@ -30,6 +30,8 @@ python-post-test:
 		&& $(MAKE) docker-compose-down \
 		|| echo "Not stopping docker-compose containers in CI"
 
+kill-test-processes:
+	scripts/kill_test_processes.sh
 
 docker-compose-up:
 	$(DOCKER_COMPOSE) --file docker/test-services.docker-compose.yml up --detach

@@ -1,0 +1,14 @@
+{{/* vim: set filetype=mustache: */}}
+{{- if .Values.postgresql.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ska-dlm-postgresql-initdb-scripts
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ska-dlm.postgrest.labels" . | indent 4 }}
+data:
+{{- if .Values.postgresql.initialise }}
+{{ (.Files.Glob "initdb-scripts/*.sql").AsConfig | indent 2 }}
+{{- end }}
+{{- end }}
