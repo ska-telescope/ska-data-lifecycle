@@ -8,47 +8,46 @@ SKA Burnt Sun:   rgb(236, 134, 35)
 SKA Earth Green: rgb(166, 206, 57)
 */
 
-.wy-nav-side {
-	background-color: rgb(0, 84, 164);
-	color: white;
+.wy-nav-side{
+        background-color: rgb(0, 84, 164);
+        color: white;
 }
 
-.wy-side-nav-search {
-	padding-top: 0px;
-	/*background-color: rgb(0, 174, 239);*/
-	background-color: rgb(0, 84, 164);
-	text-align: center;
+.wy-side-nav-search{
+        padding-top: 0px;
+        /*background-color: rgb(0, 174, 239);*/
+        background-color: rgb(0, 84, 164);
+        text-align: center;
 }
 
-.wy-menu-vertical p.caption {
-	color: rgb(236, 134, 35);
+.wy-menu-vertical p.caption{
+        color: rgb(236, 134, 35);
 }
 
 .wy-menu {
-	color: white;
+        color: white;
 }
 
-.wy-menu-vertical a {
-	color: white;
+.wy-menu-vertical a{
+  color: white;
 }
 
 .local-toc ul li a:hover {
-	background-color: rgb(0, 174, 239);
+        background-color: rgb(0, 174, 239);
 }
 
-.wy-side-nav-search a {
-	padding-top: 0px;
+.wy-side-nav-search a{
+    padding-top: 0px;
 }
 
-.wy-side-nav-search a img.logo {
+.wy-side-nav-search a img.logo{
 	background-color: rgb(255, 255, 255);
 	border-bottom-left-radius: 6px;
 	border-bottom-right-radius: 6px;
-	padding-top: 40px;
+      padding-top: 40px;
 }
 
-.ska-logo,
-ska-logo:hover {
+.ska-logo, ska-logo:hover{
 	background-attachment: scroll;
 	background-clip: border-box;
 	background-color: rgb(255, 255, 255);
@@ -76,8 +75,4 @@ ska-logo:hover {
 	margin-top: 0px;
 	width: 186px;
 	height: 135px;
-}
-
-.wy-nav-content {
-	max-width: None;
 }
