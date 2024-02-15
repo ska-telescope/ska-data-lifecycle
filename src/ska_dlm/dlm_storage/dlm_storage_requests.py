@@ -340,13 +340,12 @@ def query_storage(storage_name: str = "", storage_id: str = "", query_string: st
     return []
 
 
-def check_item_on_storage(  # pylint: disable=R0913
+def check_item_on_storage(
     item_name: str = "",
     oid: str = "",
     uid: str = "",
     storage_name: str = "",
     storage_id: str = "",
-    report=True,
 ) -> bool:
     """
     Check whether item is on storage.
@@ -358,20 +357,17 @@ def check_item_on_storage(  # pylint: disable=R0913
     uid:    Return data_item referred to by the UID provided.
     storage_name: optional, the name of the storage device
     storage_id: optional, the storage_id of a destination storage
-    report: Report error when item not found
     """
-    storages = query_item_storage(item_name, oid, uid, report=report)
+    storages = query_item_storage(item_name, oid, uid)
     if not storages:
-        if report:
-            logger.error("Unable to identify a storage volume for this data_item!")
+        logger.error("Unable to identify a storage volume for this data_item!")
         return []
     # additional check if a storage_name or id is provided
     for storage in storages:
         if (storage_name and storage["storage_name"] == storage_name) or (
             storage_id and storage["storage_id"] == storage_id
         ):
-            if report:
-                logger.error("data_item '%s' already exists on destination storage!", item_name)
+            logger.error("data_item '%s' already exists on destination storage!", item_name)
             return []
     return storages
 

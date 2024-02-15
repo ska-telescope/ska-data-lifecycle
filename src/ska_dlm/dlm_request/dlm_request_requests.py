@@ -6,12 +6,13 @@ from datetime import datetime, timedelta
 import requests
 
 from .. import CONFIG
+from ..exceptions import InvalidQueryParameters
 
 logger = logging.getLogger(__name__)
 
 
 def query_data_item(
-    item_name: str = "", oid: str = "", uid: str = "", query_string: str = "", report=True
+    item_name: str = "", oid: str = "", uid: str = "", query_string: str = ""
 ) -> str:
     """
     Query a new data_item by at least specifying an item_name.
@@ -46,8 +47,7 @@ def query_data_item(
     request = requests.get(request_url, timeout=10)
     if request.status_code == 200:
         return request.json()
-    if report:
-        logger.info("Response status code: %s", request.status_code)
+    logger.info("Response status code: %s", request.status_code)
     return None
 
 
@@ -111,9 +111,7 @@ def query_new(check_date: str, uid: str = "") -> list:
     return result if result else []
 
 
-def query_exists(
-    item_name: str = "", oid: str = "", uid: str = "", ready: bool = False, report=True
-) -> bool:
+def query_exists(item_name: str = "", oid: str = "", uid: str = "", ready: bool = False) -> bool:
     """
     Query to check for existence of a data_item.
 
@@ -122,18 +120,15 @@ def query_exists(
     item_name: optional item_name
     oid: optional, the oid to be searched for
     uid: optional, this returns only one storage_id
-    report: If False do not report error
     """
+    if not item_name and not oid and not uid:
+        raise InvalidQueryParameters("Either an item_name or an OID or an UID have to be provided")
     if item_name:
         query_string = f"item_name=eq.{item_name}"
     elif oid:
         query_string = f"oid=eq.{oid}"
     elif uid:
         query_string = f"uid=eq.{uid}"
-    else:
-        if report:
-            logger.error("Either an item_name or an OID or an UID have to be provided")
-        return False
     if ready is True:
         query_string = f"{query_string}&item_state=eq.READY"
     result = query_data_item(query_string=query_string)
@@ -142,7 +137,7 @@ def query_exists(
     return True
 
 
-def query_exists_and_ready(item_name: str = "", oid: str = "", uid: str = "", report=True) -> bool:
+def query_exists_and_ready(item_name: str = "", oid: str = "", uid: str = "") -> bool:
     """
     Check whether a data_item exists and is in ready state.
 
@@ -151,15 +146,14 @@ def query_exists_and_ready(item_name: str = "", oid: str = "", uid: str = "", re
     item_name: optional item_name
     oid: optional, the oid to be searched for
     uid: optional, this returns only one storage_id
-    report: If set to false it does not report errors.
 
     Returns:
     boolean
     """
-    return query_exists(item_name, oid, uid, ready=True, report=report)
+    return query_exists(item_name, oid, uid, ready=True)
 
 
-def query_item_storage(item_name: str = "", oid: str = "", uid: str = "", report=True) -> str:
+def query_item_storage(item_name: str = "", oid: str = "", uid: str = "") -> str:
     """
     Query for the storage_ids of all backends holding a copy of a data_item.
 
@@ -171,25 +165,16 @@ def query_item_storage(item_name: str = "", oid: str = "", uid: str = "", report
     oid: optional, the oid to be searched for
     uid: optional, this returns only one storage_id
     """
-    if not query_exists_and_ready(item_name, oid, uid, report=report):
-        if report:
-            logger.error("data_item does not exists or is not READY!")
+    if not query_exists_and_ready(item_name, oid, uid):
+        logger.warning("data_item does not exists or is not READY!")
         return []
     select = "select=oid,uid,item_name,storage_id,uri"
+    if not item_name and not oid and not uid:
+        raise InvalidQueryParameters("Either an item_name or an OID or an UID have to be provided")
     if item_name:
         query_string = f"item_name=eq.{item_name}&item_state=eq.READY&{select}"
     elif oid:
         query_string = f"oid=eq.{oid}&item_state=eq.READY&{select}"
     elif uid:
         query_string = f"uid=eq.{uid}&item_state=eq.READY&{select}"
-    else:
-        logger.error("Either an item_name or an OID or an UID have to be provided!")
-        return []
-    result = query_data_item(query_string=query_string, report=report)
-    if not result or not [x["storage_id"] for x in result if x["storage_id"]]:
-        if report:
-            logger.info("Query string: %s", query_string)
-            logger.info("Result: %s", result)
-            logger.error("This data_item has no valid storage or it is not in READY state!")
-        return []
-    return result
+    return query_data_item(query_string=query_string)
