@@ -36,7 +36,6 @@ def read_config(cfg_file: str = f"{DLM_PATH}/config.yaml") -> dict:
 
 
 CONFIG = read_config()
-CONFIG.REST.cfg_file = CONFIG.REST.cfg_file.format(**locals())
 
 __all__ = [
     "DLM_PATH",

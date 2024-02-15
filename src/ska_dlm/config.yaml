@@ -9,7 +9,6 @@ DB:
 
 REST:
   base_url: "http://localhost:3001"
-  cfg_file: "{DLM_PATH}/postgREST.conf"
 
 DLM:
   dlm_db: "ska_dlm_meta"
