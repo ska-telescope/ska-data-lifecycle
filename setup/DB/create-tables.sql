@@ -2,60 +2,22 @@
 -- ska_dlm_adminQL DDL for SKA Data Life Cycle management DB setup
 --
 
-SET statement_timeout = 0;
-SET lock_timeout = 0;
-SET idle_in_transaction_session_timeout = 0;
-SET client_encoding = 'UTF8';
-SET standard_conforming_strings = on;
-SELECT pg_catalog.set_config('search_path', '', false);
-SET check_function_bodies = false;
-SET xmloption = content;
-SET client_min_messages = warning;
-SET row_security = off;
-
---
--- Name: ska_dlm_meta; Type: DATABASE; Schema: -; Owner: ska_dlm_admin
--- TODO: create user for DLM
-CREATE GROUP ska_dlm;
-CREATE USER ska_dlm_admin WITH CREATEDB CREATEROLE IN GROUP ska_dlm PASSWORD 'mysecretpassword';
-
-
-CREATE DATABASE ska_dlm_meta WITH TEMPLATE = template0 ENCODING = 'UTF8' LOCALE = 'en_US.utf8';
-ALTER DATABASE ska_dlm_meta OWNER TO ska_dlm_admin;
-\c ska_dlm_meta
-SET statement_timeout = 0;
-SET lock_timeout = 0;
-SET idle_in_transaction_session_timeout = 0;
-SET client_encoding = 'UTF8';
-SET standard_conforming_strings = on;
-SELECT pg_catalog.set_config('search_path', '', false);
-SET check_function_bodies = false;
-SET xmloption = content;
-SET client_min_messages = warning;
-SET row_security = off;
-SET default_tablespace = '';
-SET default_table_access_method = heap;
-
-DROP TABLE IF EXISTS public.data_item;
-DROP TABLE IF EXISTS public.storage_config;
-DROP TABLE IF EXISTS public.storage;
-DROP TABLE IF EXISTS public.location;
-DROP FUNCTION if EXISTS public.sync_oid_uid;
-CREATE TABLE public.location (
+CREATE TABLE location (
     location_id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     location_name varchar NOT NULL,
     location_type varchar NOT NULL,
     location_country varchar DEFAULT NULL,
-    location_place varchar DEFAULT NULL,
+    location_city varchar DEFAULT NULL,
+    location_facility varchar DEFAULT NULL,
     location_check_url varchar DEFAULT NULL,
     location_last_check TIMESTAMP without time zone DEFAULT NULL,
     location_date timestamp without time zone DEFAULT now()
 );
-ALTER TABLE public.location OWNER TO ska_dlm_admin;
+ALTER TABLE location OWNER TO ska_dlm_admin;
 
 
 
-CREATE TABLE public.storage (
+CREATE TABLE storage (
     storage_id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     location_id uuid NOT NULL,
     storage_name varchar NOT NULL,
@@ -75,10 +37,10 @@ CREATE TABLE public.storage (
     storage_date timestamp without time zone DEFAULT now(),
     CONSTRAINT fk_location
       FOREIGN KEY(location_id)
-      REFERENCES public.location(location_id)
+      REFERENCES location(location_id)
       ON DELETE SET NULL
 );
-ALTER TABLE public.storage OWNER TO ska_dlm_admin;
+ALTER TABLE storage OWNER TO ska_dlm_admin;
 
 --
 -- Table storage_config holds a JSON version of the configuration
@@ -87,7 +49,7 @@ ALTER TABLE public.storage OWNER TO ska_dlm_admin;
 -- converted by the storage_manager software. Being a separate table
 -- this allows for multiple configurations for different mechanisms.
 --
-CREATE TABLE public.storage_config (
+CREATE TABLE storage_config (
     config_id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     storage_id uuid NOT NULL,
     config_type varchar DEFAULT 'rclone',
@@ -95,12 +57,13 @@ CREATE TABLE public.storage_config (
     config_date timestamp without time zone DEFAULT now(),
     CONSTRAINT fk_cfg_storage_id
       FOREIGN KEY(storage_id)
-      REFERENCES public.storage(storage_id)
+      REFERENCES storage(storage_id)
       ON DELETE SET NULL
 );
-ALTER TABLE public.storage_config OWNER TO ska_dlm_admin;
-DROP TABLE IF EXISTS public.data_item;
-CREATE TABLE public.data_item (
+ALTER TABLE storage_config OWNER TO ska_dlm_admin;
+
+
+CREATE TABLE data_item (
     UID uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     OID uuid DEFAULT NULL,
     item_version integer DEFAULT 1,
@@ -139,14 +102,14 @@ CREATE TABLE public.data_item (
     children uuid DEFAULT NULL,
     CONSTRAINT fk_storage
       FOREIGN KEY(storage_id)
-      REFERENCES public.storage(storage_id)
+      REFERENCES storage(storage_id)
       ON DELETE SET NULL
 );
-ALTER TABLE public.data_item OWNER TO ska_dlm_admin;
-CREATE INDEX idx_fk_storage_id ON public.data_item USING btree (storage_id);
+ALTER TABLE data_item OWNER TO ska_dlm_admin;
+CREATE INDEX idx_fk_storage_id ON data_item USING btree (storage_id);
 
-CREATE UNIQUE INDEX idx_unq_OID_UID_item_version ON public.data_item USING btree (OID, UID, item_version);
-CREATE FUNCTION public.sync_oid_uid() RETURNS trigger AS $$
+CREATE UNIQUE INDEX idx_unq_OID_UID_item_version ON data_item USING btree (OID, UID, item_version);
+CREATE FUNCTION sync_oid_uid() RETURNS trigger AS $$
   DECLARE oidc RECORD;
   DECLARE tnow timestamp DEFAULT now();
   BEGIN
@@ -168,19 +131,18 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER
   sync_oid_uid
 BEFORE INSERT ON
-  public.data_item
+  data_item
 FOR EACH ROW EXECUTE PROCEDURE
-  public.sync_oid_uid();
+  sync_oid_uid();
 
 --
 -- Table phase_change
 --
-DROP TABLE IF EXISTS public.phase_change;
 
-CREATE TABLE public.phase_change (
+CREATE TABLE phase_change (
     phase_change_ID bigint GENERATED always as IDENTITY PRIMARY KEY,
     OID uuid NOT NULL,
     requested_phase varchar DEFAULT 'gas',
     request_creation timestamp without time zone DEFAULT now()
 );
-ALTER TABLE public.phase_change OWNER TO ska_dlm_admin;
+ALTER TABLE phase_change OWNER TO ska_dlm_admin;
