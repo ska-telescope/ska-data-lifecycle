@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 """Tests for `ska_data_lifecycle` package."""
-import logging
 import os
 from datetime import timedelta
 from unittest import TestCase
@@ -12,9 +11,6 @@ import requests
 
 from ska_dlm import CONFIG, data_item, dlm_ingest, dlm_migration, dlm_request, dlm_storage
 from ska_dlm.dlm_storage.main import persist_new_data_items
-
-LOG = logging.getLogger("data-lifecycle-test")
-LOG.setLevel(logging.DEBUG)
 
 
 class TestDlm(TestCase):

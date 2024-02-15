@@ -4,7 +4,6 @@ import logging
 import os
 
 import benedict
-import ska_ser_logging
 import yaml
 
 from . import dlm_db
@@ -15,7 +14,6 @@ __version__ = "0.0.1"
 
 DLM_PATH = os.path.dirname(__file__)
 
-ska_ser_logging.configure_logging()
 logger = logging.getLogger(__name__)
 
 
