@@ -7,10 +7,18 @@ from unittest import TestCase
 
 import inflect
 import pytest
-import requests
 
 from ska_dlm import CONFIG, data_item, dlm_ingest, dlm_migration, dlm_request, dlm_storage
+from ska_dlm.dlm_db.db_access import DB
 from ska_dlm.dlm_storage.main import persist_new_data_items
+from ska_dlm.exceptions import InvalidQueryParameters, ValueAlreadyInDB
+
+
+def _clear_database():
+    DB.delete(CONFIG.DLM.dlm_table)
+    DB.delete(CONFIG.DLM.storage_config_table)
+    DB.delete(CONFIG.DLM.storage_table)
+    DB.delete(CONFIG.DLM.location_table)
 
 
 class TestDlm(TestCase):
@@ -23,6 +31,8 @@ class TestDlm(TestCase):
     @pytest.fixture(scope="function", autouse=True)
     def setup_and_teardown(self):
         """Initialze the tests."""
+        _clear_database()
+
         # we need a location to register the storage
         location_id = dlm_storage.init_location("MyOwnStorage", "Server")
         uuid = dlm_storage.init_storage(
@@ -37,12 +47,7 @@ class TestDlm(TestCase):
         # configure rclone
         dlm_storage.rclone_config(config)
         yield
-        # Remove some records from the DB
-        request_url = f"{CONFIG.REST.base_url}"
-        requests.delete(f"{request_url}/storage_config", timeout=2)
-        requests.delete(f"{request_url}/data_item", timeout=2)
-        requests.delete(f"{request_url}/storage", timeout=2)
-        requests.delete(f"{request_url}/location", timeout=2)
+        _clear_database()
 
     def test_init(self):
         """Test data_item init."""
@@ -64,8 +69,8 @@ class TestDlm(TestCase):
         """Test the register_data_item function."""
         uid = dlm_ingest.register_data_item("/my/ingest/test/item2", "/LICENSE", "MyDisk")
         assert len(uid) == 36
-        uid = dlm_ingest.register_data_item("/my/ingest/test/item2", "/LICENSE", "MyDisk")
-        assert len(uid) == 0
+        with pytest.raises(ValueAlreadyInDB, match="Item is already registered"):
+            dlm_ingest.register_data_item("/my/ingest/test/item2", "/LICENSE", "MyDisk")
 
     def test_query_expired_empty(self):
         """Test the query expired returning an empty set."""
@@ -84,12 +89,11 @@ class TestDlm(TestCase):
     def test_location_init(self):
         """Test initialisation on a location."""
         # This returns an empty string if unsuccessful
-        fail = dlm_storage.init_location() == ""
-        assert fail
-        success = dlm_storage.init_location("TestLocation", "SKAO Data Centre") != ""
-        assert success
-        request_url = f"{CONFIG.REST.base_url}"
-        requests.delete(f"{request_url}/location", timeout=2)
+        with pytest.raises(InvalidQueryParameters):
+            dlm_storage.init_location()
+        dlm_storage.init_location("TestLocation", "SKAO Data Centre")
+        location = dlm_storage.query_location(location_name="TestLocation")[0]
+        assert location["location_type"] == "SKAO Data Centre"
 
     def test_set_uri_state_phase(self):
         """Update a data_item record with the pointer to a file."""
@@ -100,12 +104,14 @@ class TestDlm(TestCase):
         fpath = fpath.replace(f"{os.environ['HOME']}/", "")
         uid = dlm_ingest.init_data_item(item_name="this/is/the/first/test/item")
         storage_id = dlm_storage.query_storage(storage_name="MyDisk")[0]["storage_id"]
-        res = data_item.set_uri(uid, f"{fpath}", storage_id)
-        assert res != ""
-        res = data_item.set_state(uid, "READY")
-        assert res != ""
-        res = data_item.set_phase(uid, "PLASMA")
-        assert res != ""
+        data_item.set_uri(uid, fpath, storage_id)
+        assert dlm_request.query_data_item(uid=uid)[0]["uri"] == fpath
+        data_item.set_state(uid, "READY")
+        data_item.set_phase(uid, "PLASMA")
+        items = dlm_request.query_data_item(uid=uid)
+        assert len(items) == 1
+        assert items[0]["item_state"] == "READY"
+        assert items[0]["item_phase"] == "PLASMA"
         os.unlink(fname)
 
     def test_delete_item_payload(self):
@@ -115,11 +121,13 @@ class TestDlm(TestCase):
             tfile.write("Welcome to the great DLM world!")
         storage_id = dlm_storage.query_storage(storage_name="MyDisk")[0]["storage_id"]
         uid = dlm_ingest.ingest_data_item(fpath)
-        uid = dlm_request.query_data_item(item_name=fpath)[0]["uid"]
-        assert dlm_storage.delete_data_item_payload(uid) is True
-        res = data_item.set_uri(uid, f"{fpath}", storage_id)
-        res = data_item.set_state(uid, "DELETED")
-        assert res
+        queried_uid = dlm_request.query_data_item(item_name=fpath)[0]["uid"]
+        assert uid == queried_uid
+        dlm_storage.delete_data_item_payload(uid)
+        data_item.set_uri(uid, fpath, storage_id)
+        data_item.set_state(uid, "DELETED")
+        assert dlm_request.query_data_item(item_name=fpath)[0]["uri"] == fpath
+        assert dlm_request.query_data_item(item_name=fpath)[0]["item_state"] == "DELETED"
 
     def test_storage_config(self):
         """Add a new location, storage and configuration to the rclone server."""
@@ -149,10 +157,7 @@ class TestDlm(TestCase):
         dest_id = dlm_storage.query_storage("MyDisk2")[0]["storage_id"]
         uid = dlm_ingest.register_data_item("/my/ingest/test/item2", "/LICENSE", "MyDisk")
         assert len(uid) == 36
-        assert (
-            dlm_migration.copy_data_item(uid=uid, destination_id=dest_id, path="LICENSE_copy")
-            is True
-        )
+        dlm_migration.copy_data_item(uid=uid, destination_id=dest_id, path="LICENSE_copy")
         os.unlink("LICENSE_copy")
 
     def test_update_item_tags(self):

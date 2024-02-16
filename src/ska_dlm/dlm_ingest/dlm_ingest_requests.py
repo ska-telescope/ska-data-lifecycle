@@ -2,12 +2,12 @@
 
 import logging
 
-import requests
-
 from .. import CONFIG
 from ..data_item import set_state, set_uri
+from ..dlm_db.db_access import DB
 from ..dlm_request import query_data_item, query_exists
 from ..dlm_storage import check_storage_access, query_storage
+from ..exceptions import InvalidQueryParameters, UnmetPreconditionForOperation, ValueAlreadyInDB
 
 logger = logging.getLogger(__name__)
 
@@ -25,28 +25,13 @@ def init_data_item(item_name: str = "", json_data: str = "") -> str:
     --------
     uid,
     """
-    request_url = f"{CONFIG.REST.base_url}/{CONFIG.DLM.dlm_table}"
     if item_name:
         post_data = {"item_name": item_name}
     elif json_data:
         post_data = json_data
     else:
-        logger.error("Either item_name or json_data has to be specified!")
-        return None
-    request = requests.post(
-        request_url,
-        json=post_data,
-        headers={"Prefer": "missing=default, return=representation"},
-        timeout=10,
-    )
-    if request.status_code not in [200, 201]:
-        logger.warning(
-            "Ingest unsuccessful! Status code: %d",
-            request.status_code,
-            exc_info=1,
-        )
-        return []
-    return request.json()[0]["uid"]
+        raise InvalidQueryParameters("Either item_name or json_data has to be specified!")
+    return DB.insert(CONFIG.DLM.dlm_table, json=post_data)[0]["uid"]
 
 
 def ingest_data_item(
@@ -74,21 +59,22 @@ def ingest_data_item(
     --------
     str, data_item UID
     """
-    cont = True
     # (1)
     storages = query_storage(storage_name=storage_name, storage_id=storage_id)
     if not storages:
-        cont = False
+        raise UnmetPreconditionForOperation(
+            f"No storages found for {storage_name=}, {storage_id=}"
+        )
     storage_id = storages[0]["storage_id"]
-    if cont and not check_storage_access(storage_name=storage_name, storage_id=storage_id):
-        logger.error("Requested storage volume is not accessible by DLM! %s", storage_name)
-        cont = False
+    if not check_storage_access(storage_name=storage_name, storage_id=storage_id):
+        raise UnmetPreconditionForOperation(
+            f"Requested storage volume is not accessible by DLM! {storage_name}"
+        )
     # (2)
-    if cont and query_exists(item_name):
+    if query_exists(item_name):
         ex_storage_id = query_data_item(item_name)[0]["storage_id"]
         if storage_id == ex_storage_id:
-            logger.error("Item is already registered on storage! %s", item_name)
-            return ""
+            raise ValueAlreadyInDB(f"Item is already registered on storage! {item_name=}")
     # (3)
     init_item = {
         "item_name": item_name,
@@ -96,10 +82,10 @@ def ingest_data_item(
     }
     uid = init_data_item(json_data=init_item)
     # (4)
-    stat = set_uri(uid, uri, storage_id)
+    set_uri(uid, uri, storage_id)
     # all done! Set data_item state to READY
-    stat = set_state(uid, "READY")
-    return uid if stat else ""
+    set_state(uid, "READY")
+    return uid
 
 
 # just for convenience we also define the ingest function as register_data_item.
