@@ -67,7 +67,6 @@ if ! command -v unzip &> /dev/null; then
 fi
 
 # Install r-clone for GitlabCI
-echo "Installing rclone"
 if [[ -n "$GITLAB_CI" ]]; then
     echo "Installing rclone"
     curl https://rclone.org/install.sh | bash

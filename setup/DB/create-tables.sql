@@ -7,7 +7,8 @@ CREATE TABLE location (
     location_name varchar NOT NULL,
     location_type varchar NOT NULL,
     location_country varchar DEFAULT NULL,
-    location_place varchar DEFAULT NULL,
+    location_city varchar DEFAULT NULL,
+    location_facility varchar DEFAULT NULL,
     location_check_url varchar DEFAULT NULL,
     location_last_check TIMESTAMP without time zone DEFAULT NULL,
     location_date timestamp without time zone DEFAULT now()
