@@ -1,11 +1,11 @@
 """Convenience functions to update data_item records."""
 
-import json
 import logging
 
-import requests
+from ska_dlm.exceptions import InvalidQueryParameters
 
 from .. import CONFIG
+from ..dlm_db.db_access import DB
 from ..dlm_request import query_data_item
 
 logger = logging.getLogger(__name__)
@@ -15,8 +15,7 @@ def update_data_item(
     item_name: str = "",
     oid: str = "",
     uid: str = "",
-    json_data: str = "",
-    table: str = CONFIG.DLM.dlm_table,
+    post_data: dict | list[dict] = "",
 ) -> str:
     """
     Update fields of an existing data_item.
@@ -29,46 +28,25 @@ def update_data_item(
     item_name: the name of the data_items to be updated
     oid : the OID of the data_items to be updated
     uid : the UID of the data_item to be updated
-    json_data : the json formatted update data, compatible with postgREST
+    post_data : the json formatted update data, compatible with postgREST
 
     Returns:
     --------
     string
     """
+    if not (item_name or oid or uid):
+        raise InvalidQueryParameters("Either item_name, oid or uid must be given")
+    params = {}
     if item_name:
-        req_ext = f"item_name=eq.{item_name}"
+        params["item_name"] = f"eq.{item_name}"
     elif oid:
-        req_ext = f"oid=eq.{oid}"
+        params["oid"] = f"eq.{oid}"
     elif uid:
-        req_ext = f"uid=eq.{uid}"
-    else:
-        logger.error("Either item_name, OID or UID should be specified!")
-        return None
-    request_url = f"{CONFIG.REST.base_url}/{table}?{req_ext}"
-    post_data = json_data
-    request = requests.patch(
-        request_url,
-        data=post_data,
-        headers={
-            "Content-type": "application/json",
-            "Prefer": "missing=default, return=representation",
-        },
-        timeout=10,
-    )
-    if len(request.json()) == 0 or request.status_code not in [200, 201]:
-        logger.warning(
-            "Nothing updated using this request: %s : %s",
-            request_url,
-            post_data,
-        )
-        logger.warning("Status code: %s", request.status_code)
-        result = ""
-    else:
-        result = request.json()[0]["uid"]
-    return result
+        params["uid"] = f"eq.{uid}"
+    return DB.update(CONFIG.DLM.dlm_table, params=params, json=post_data)[0]["uid"]
 
 
-def set_uri(uid: str, uri: str, storage_id: str) -> bool:
+def set_uri(uid: str, uri: str, storage_id: str):
     """
     Set the URI field of the uid data_item.
 
@@ -77,14 +55,8 @@ def set_uri(uid: str, uri: str, storage_id: str) -> bool:
     uid : the uid of the data_item to be updated
     uri : the access URI for the data_item
     storage_id: the storage_id associated with the URI
-
-    Returns:
-    --------
-    boolean, True if successful
     """
-    json_data = json.dumps({"uri": uri, "storage_id": storage_id})
-    res = update_data_item(uid=uid, json_data=json_data)
-    return res != ""
+    update_data_item(uid=uid, post_data={"uri": uri, "storage_id": storage_id})
 
 
 def set_state(uid: str, state: str) -> bool:
@@ -95,14 +67,8 @@ def set_state(uid: str, state: str) -> bool:
     -----------
     uid : the uid of the data_item to be updated
     state : the new state for the data_item
-
-    Returns:
-    --------
-    boolean, True if successful
     """
-    json_data = json.dumps({"item_state": state})
-    res = update_data_item(uid=uid, json_data=json_data)
-    return res != ""
+    update_data_item(uid=uid, post_data={"item_state": state})
 
 
 def set_oid_expiration(oid: str, expiration: str) -> str:
@@ -118,9 +84,7 @@ def set_oid_expiration(oid: str, expiration: str) -> str:
     --------
     string
     """
-    json_data = json.dumps({"oid_expiration": expiration})
-    res = update_data_item(oid=oid, json_data=json_data)
-    return res
+    return update_data_item(oid=oid, post_data={"oid_expiration": expiration})
 
 
 def set_uid_expiration(uid: str, expiration: str):
@@ -136,9 +100,7 @@ def set_uid_expiration(uid: str, expiration: str):
     --------
     string
     """
-    json_data = json.dumps({"uid_expiration": expiration})
-    res = update_data_item(uid=uid, json_data=json_data)
-    return res
+    return update_data_item(uid=uid, post_data={"uid_expiration": expiration})
 
 
 def set_user(oid: str = "", uid: str = "", user: str = "SKA"):
@@ -155,14 +117,13 @@ def set_user(oid: str = "", uid: str = "", user: str = "SKA"):
     --------
     string
     """
-    json_data = json.dumps({"user": user})
+    if not (uid or oid):
+        raise InvalidQueryParameters("Either oid or uid should be specified")
+    post_data = {"user": user}
     if uid:
-        res = update_data_item(uid=uid, json_data=json_data)
+        res = update_data_item(uid=uid, post_data=post_data)
     elif oid:
-        res = update_data_item(oid=oid, json_data=json_data)
-    else:
-        logger.error("Either OID or UID should be specified!")
-        res = None
+        res = update_data_item(oid=oid, post_data=post_data)
     return res
 
 
@@ -180,14 +141,13 @@ def set_group(oid: str = "", uid: str = "", group: str = "SKA"):
     --------
     string
     """
-    json_data = json.dumps({"group": group})
+    if not (uid or oid):
+        raise InvalidQueryParameters("Either oid or uid should be specified")
+    post_data = {"group": group}
     if uid:
-        res = update_data_item(uid=uid, json_data=json_data)
+        res = update_data_item(uid=uid, post_data=post_data)
     elif oid:
-        res = update_data_item(oid=oid, json_data=json_data)
-    else:
-        logger.error("Either OID or UID should be specified!")
-        res = None
+        res = update_data_item(oid=oid, post_data=post_data)
     return res
 
 
@@ -205,14 +165,13 @@ def set_acl(oid: str = "", uid: str = "", acl: str = "{}"):
     --------
     string
     """
-    json_data = json.dumps({"acl": acl})
+    if not (uid or oid):
+        raise InvalidQueryParameters("Either oid or uid should be specified")
+    post_data = {"acl": acl}
     if uid:
-        res = update_data_item(uid=uid, json_data=json_data)
+        res = update_data_item(uid=uid, post_data=post_data)
     elif oid:
-        res = update_data_item(oid=oid, json_data=json_data)
-    else:
-        logger.error("Either OID or UID should be specified!")
-        res = None
+        res = update_data_item(oid=oid, post_data=post_data)
     return res
 
 
@@ -229,9 +188,7 @@ def set_phase(uid: str, phase: str) -> bool:
     --------
     bool
     """
-    json_data = json.dumps({"item_phase": phase})
-    res = update_data_item(uid=uid, json_data=json_data)
-    return res
+    return update_data_item(uid=uid, post_data={"item_phase": phase})
 
 
 def update_item_tags(item_name: str = "", oid: str = "", item_tags: dict = None) -> bool:
@@ -262,6 +219,4 @@ def update_item_tags(item_name: str = "", oid: str = "", item_tags: dict = None)
     tags = {} if not existing_tags else existing_tags
     print(f"Existing tags: {tags}")
     tags.update(item_tags)  # merge existing with new ones
-    json_data = json.dumps({"item_tags": tags})
-    res = update_data_item(oid=oid, json_data=json_data)
-    return res != ""
+    return bool(update_data_item(oid=oid, post_data={"item_tags": tags}))
