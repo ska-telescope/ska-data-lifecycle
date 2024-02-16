@@ -124,8 +124,8 @@ html_theme_options = {
 
 html_context = {
     "display_github": True,  # Integrate GitHub
-    "favicon": "img/favicon.ico",
-    "logo": "img/logo.jpg",
+    "favicon": "_static/img/favicon.ico",
+    "logo": "_static/img/logo.jpg",
     "theme_logo_only": True,
     "github_user": "",  # Username
     "github_repo": "",  # Repo name
