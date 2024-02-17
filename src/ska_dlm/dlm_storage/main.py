@@ -7,6 +7,7 @@ from datetime import datetime
 from time import sleep
 
 from ska_dlm import dlm_migration, dlm_request, dlm_storage
+from ska_dlm.exceptions import DataLifecycleError
 
 from .. import CONFIG
 
@@ -45,9 +46,10 @@ def persist_new_data_items(last_check_time: str) -> dict:
             continue
         new_storage = new_storage[0]
         dest_id = new_storage["storage_id"]
-        result = dlm_migration.copy_data_item(uid=new_data_item["uid"], destination_id=dest_id)
-        if not result:
-            logger.error("Copy of data_item %s unsuccessful!", new_data_item["item_name"])
+        try:
+            dlm_migration.copy_data_item(uid=new_data_item["uid"], destination_id=dest_id)
+        except DataLifecycleError:
+            logger.exception("Copy of data_item %s unsuccessful!", new_data_item["item_name"])
         logger.info(
             "Persisted %s to volume %s", new_data_item["item_name"], new_storage["storage_name"]
         )

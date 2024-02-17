@@ -4,11 +4,14 @@ import logging
 
 import requests
 
+from ska_dlm.exceptions import InvalidQueryParameters
+
 from .. import CONFIG
 from ..data_item import set_state, set_uri
 from ..dlm_ingest import init_data_item
 from ..dlm_request import query_data_item
 from ..dlm_storage import check_item_on_storage, get_storage_config
+from ..exceptions import UnmetPreconditionForOperation
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +37,7 @@ def rclone_copy(src_fs: str, src_remote: str, dst_fs: str, dst_remote: str):
 
 def copy_data_item(
     item_name: str = "", oid: str = "", uid: str = "", destination_id: str = "", path: str = ""
-) -> bool:
+):
     """
     Copy a data_item from source to destination.
 
@@ -53,40 +56,33 @@ def copy_data_item(
     uid:    Return data_item referred to by the UID provided.
     destination: the destination storage
     path: the destination path
-
-    Returns:
-    --------
-    boolean, True if successful
     """
     if not item_name and not oid and not uid:
-        logger.error("Either an item_name or an OID or an UID has to be provided!")
-        return False
-    stat = True
+        raise InvalidQueryParameters("Either an item_name or an OID or an UID has to be provided!")
     orig_item = query_data_item(item_name, oid, uid)
     if orig_item:
         orig_item = orig_item[0]
     else:
-        return False
+        raise UnmetPreconditionForOperation("No data item found for copying")
     # (1)
     item_name = orig_item["item_name"]
+    # TODO: this seems wrong? we should pick a storage that is *not* the destination, I assume
     storages = check_item_on_storage(item_name, storage_id=destination_id)
     # we pick the first data_item returned record for now
     if storages:
         storage = storages[0]
     else:
-        return False
+        raise UnmetPreconditionForOperation("Data item not in specified storage")
     # (2)
     s_config = get_storage_config(storage["storage_id"])
     if not s_config:
-        logger.error("No configuration for source storage found!")
-        return False
+        raise UnmetPreconditionForOperation("No configuration for source storage found!")
     source = {"backend": f"{s_config['name']}:", "path": storage["uri"]}
     if not path:
         path = storage["uri"]
     d_config = get_storage_config(destination_id)
     if not d_config:
-        logger.error("No configuration for destination storage found!")
-        return False
+        raise UnmetPreconditionForOperation("No configuration for destination storage found!")
     dest = {"backend": f"{d_config['name']}:", "path": path}
     # (3)
     init_item = {
@@ -99,14 +95,13 @@ def copy_data_item(
     # TODO: abstract the actual function called away to allow for different
     # mechansims to perform the copy
     logger.info("source: %s", source)
-    stat = rclone_copy(
+    rclone_copy(
         source["backend"],
         source["path"],
         dest["backend"],
         dest["path"],
     )
     # (6)
-    stat = set_uri(uid, dest["path"], destination_id)
+    set_uri(uid, dest["path"], destination_id)
     # all done! Set data_item state to READY
-    stat = set_state(uid, "READY")
-    return stat
+    set_state(uid, "READY")
