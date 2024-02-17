@@ -1,6 +1,7 @@
 ska_dlm Package
-==================================
+===============
+.. autosummary::
+   :toctree: _autosummary
+   :recursive:
 
-.. automodule:: ska_dlm
-    :members:
-    :special-members:
+   ska_dlm

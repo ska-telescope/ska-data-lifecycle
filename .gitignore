@@ -10,6 +10,7 @@
 **/junit.xml
 **/htmlcov/
 counter_*.txt
+**/_autosummary
 
 # Python temp files
 **/__pycache__/
