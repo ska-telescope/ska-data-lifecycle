@@ -11,7 +11,7 @@ from ska_dlm.dlm_db.db_access import DB
 from .. import CONFIG
 from ..data_item import set_state
 from ..dlm_request import query_expired, query_item_storage
-from ..exceptions import InvalidQueryParameters, ValueAlreadyInDB
+from ..exceptions import InvalidQueryParameters, UnmetPreconditionForOperation, ValueAlreadyInDB
 
 logger = logging.getLogger(__name__)
 
@@ -94,7 +94,7 @@ def init_storage(  # pylint: disable=R0913
         if location_name and not location_id:
             result = query_location(location_name)
             if result:
-                location_id = result[0]["location_id"]
+                provided_args["location_id"] = result[0]["location_id"]
         for k in mandatory_keys:
             if k in provided_args:
                 post_data.update({k: provided_args[k]})
@@ -103,30 +103,36 @@ def init_storage(  # pylint: disable=R0913
     return DB.insert(CONFIG.DLM.storage_table, json=post_data)[0]["storage_id"]
 
 
-def create_storage_config(storage_id: str, config: str, config_type="rclone") -> str:
+def create_storage_config(storage_name:str = "", storage_id: str="", config: str="", config_type="rclone") -> str:
     """
     Create a new record in the storage_config table for a storage with the given id.
 
     Parameters:
     -----------
+    storage_name: the name of the storage for which the config is provided.
     storage_id: the storage_id for which to create the entry.
     config: the configuration entry. For rclone this is s JSON formatted string
     config_type: default is rclone, but could be something else in the future.
 
     Returns:
     --------
-    str, the ID of the config entry or empty string
+    str, the ID of the configuration entry.
     """
+    if not storage_name and not storage_id:
+        raise UnmetPreconditionForOperation
+    if storage_name:
+        storage_id = query_storage(storage_name=storage_name)[0]["storage_id"]
     post_data = {"storage_id": storage_id, "config": config, "config_type": config_type}
     return DB.insert(CONFIG.DLM.storage_config_table, json=post_data)[0]["config_id"]
 
 
-def get_storage_config(storage_id: str, config_type="rclone") -> str:
+def get_storage_config(storage_name:str="",storage_id: str="", config_type="rclone") -> str:
     """
     Get the storage configuration entry for a particular storage backend.
 
     Parameters:
     -----------
+    storage_name: the name of the storage volume
     storage_id: required
     config_type: required, query only the specified type
 
@@ -134,7 +140,13 @@ def get_storage_config(storage_id: str, config_type="rclone") -> str:
     --------
     json object
     """
-    params = {
+    params = {}
+    if not storage_name and not storage_id:
+        # raise UnmetPreconditionForOperation("Either storage_name or storage_id is required.")
+        params = {"limit": 1000}
+    elif storage_name:
+        storage_id = query_storage(storage_name=storage_name)[0]["storage_id"]
+    if not params: params = {
         "limit": 1000,
         "storage_id": f"eq.{storage_id}",
         "config_type": f"eq.{config_type}",

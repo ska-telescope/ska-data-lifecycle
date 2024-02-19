@@ -1,6 +1,7 @@
 """CLI support for dlm_storage package."""
 
-from urllib.error import HTTPError
+
+from requests import HTTPError
 import typer
 from rich import print as rich_print
 
