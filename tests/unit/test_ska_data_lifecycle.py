@@ -83,7 +83,7 @@ class TestDlm(TestCase):
         self.test_init()
         uid = dlm_request.query_data_item()[0]["uid"]
         offset = timedelta(days=1)
-        _ = data_item.set_state(uid=uid, state="READY")
+        data_item.set_state(uid=uid, state="READY")
         result = dlm_request.query_expired(offset)
         success = len(result) != 0
         assert success

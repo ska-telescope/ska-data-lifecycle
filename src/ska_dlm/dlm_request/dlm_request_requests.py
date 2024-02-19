@@ -62,7 +62,7 @@ def query_expired(offset: timedelta = None):
     params = {
         "select": "uid,uid_expiration",
         "uid_expiration": f"lt.{iso_now}",
-        "item_state": "eq.READY"
+        "item_state": "eq.READY",
     }
     return query_data_item(params=params)
 

@@ -103,7 +103,9 @@ def init_storage(  # pylint: disable=R0913
     return DB.insert(CONFIG.DLM.storage_table, json=post_data)[0]["storage_id"]
 
 
-def create_storage_config(storage_id: str="", config: str="", storage_name:str = "", config_type="rclone") -> str:
+def create_storage_config(
+    storage_id: str = "", config: str = "", storage_name: str = "", config_type="rclone"
+) -> str:
     """
     Create a new record in the storage_config table for a storage with the given id.
 
@@ -125,11 +127,10 @@ def create_storage_config(storage_id: str="", config: str="", storage_name:str =
     post_data = {"storage_id": storage_id, "config": config, "config_type": config_type}
     if rclone_config(config):
         return DB.insert(CONFIG.DLM.storage_config_table, json=post_data)[0]["config_id"]
-    else:
-        raise UnmetPreconditionForOperation("Configuring rclone server failed!")
+    raise UnmetPreconditionForOperation("Configuring rclone server failed!")
 
 
-def get_storage_config(storage_id: str="", storage_name:str="",config_type="rclone") -> str:
+def get_storage_config(storage_id: str = "", storage_name: str = "", config_type="rclone") -> str:
     """
     Get the storage configuration entry for a particular storage backend.
 
@@ -158,7 +159,7 @@ def get_storage_config(storage_id: str="", storage_name:str="",config_type="rclo
             "limit": 1000,
             "storage_id": f"eq.{storage_id}",
             "config_type": f"eq.{config_type}",
-    }
+        }
     return json.loads(DB.select(CONFIG.DLM.storage_config_table, params=params)[0]["config"])
 
 
@@ -201,7 +202,9 @@ def check_storage_access(storage_name: str = "", storage_id: str = "") -> bool:
     storage_name = storages[0]["storage_name"]
     config = get_storage_config(storage_id=storage_id, config_type="rclone")
     if not config:
-        raise UnmetPreconditionForOperation("No valid configuration for storage found! %s", storage_name)
+        raise UnmetPreconditionForOperation(
+            "No valid configuration for storage found!", storage_name
+        )
     rclone_fs = config["name"]
     return rclone_access(rclone_fs)
 

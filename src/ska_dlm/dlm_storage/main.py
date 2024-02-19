@@ -10,7 +10,9 @@ from ska_dlm import dlm_migration, dlm_request, dlm_storage
 from ska_dlm.exceptions import DataLifecycleError
 
 from .. import CONFIG
+
 logger = logging.getLogger(__name__)
+
 
 def persist_new_data_items(last_check_time: str) -> dict:
     """Check for new data items (since the last query), if found, copy to a second location.
@@ -23,7 +25,6 @@ def persist_new_data_items(last_check_time: str) -> dict:
     --------
     dict, with entries of the form {item_name:status}
     """
-
     new_data_items = dlm_request.query_new(last_check_time)
     item_names = [n["item_name"] for n in new_data_items]
     stat = dict(zip(item_names, [False] * len(new_data_items)))
@@ -58,11 +59,12 @@ def persist_new_data_items(last_check_time: str) -> dict:
 
 def main():
     """Begin a long-running process."""
-
     while True:
         last_new_data_item_query_time = datetime.now(timezone.utc).isoformat()
-        logger.info("Running new/expired checks with timestamp: %s UTC", last_new_data_item_query_time)
-        _ = dlm_storage.delete_uids()
+        logger.info(
+            "Running new/expired checks with timestamp: %s UTC", last_new_data_item_query_time
+        )
+        dlm_storage.delete_uids()
         _ = persist_new_data_items(last_new_data_item_query_time)
         # check_storage_capacity()
         # perform_phase_transitions()

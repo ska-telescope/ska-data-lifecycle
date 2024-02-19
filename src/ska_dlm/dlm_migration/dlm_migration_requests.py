@@ -35,8 +35,13 @@ def rclone_copy(src_fs: str, src_remote: str, dst_fs: str, dst_remote: str):
     return True
 
 
-def copy_data_item(
-    item_name: str = "", oid: str = "", uid: str = "", destination_name:str="", destination_id: str = "", path: str = ""
+def copy_data_item(  # pylint: disable=R0913
+    item_name: str = "",
+    oid: str = "",
+    uid: str = "",
+    destination_name: str = "",
+    destination_id: str = "",
+    path: str = "",
 ):
     """
     Copy a data_item from source to destination.
@@ -84,9 +89,10 @@ def copy_data_item(
     if destination_name:
         destination = query_storage(storage_name=destination_name)
         if not destination:
-            raise UnmetPreconditionForOperation(f"Unable to get ID of destination volume: {destination_name}.")
-        else:
-            destination_id = destination[0]["storage_id"]
+            raise UnmetPreconditionForOperation(
+                f"Unable to get ID of destination volume: {destination_name}."
+            )
+        destination_id = destination[0]["storage_id"]
     d_config = get_storage_config(storage_id=destination_id)
     if not d_config:
         raise UnmetPreconditionForOperation("Unable to get configuration for destination volume!")

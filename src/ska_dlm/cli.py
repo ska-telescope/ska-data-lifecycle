@@ -6,9 +6,9 @@ import typer
 
 from .data_item.cli import app as item_app
 from .dlm_ingest.cli import app as ingest_app
+from .dlm_migration.cli import app as migration_app
 from .dlm_request.cli import app as request_app
 from .dlm_storage.cli import app as storage_app
-from .dlm_migration.cli import app as migration_app
 
 logger = logging.getLogger(__name__)
 

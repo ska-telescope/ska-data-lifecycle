@@ -2,8 +2,8 @@
 
 import functools
 
-from requests import HTTPError
 import typer
+from requests import HTTPError
 from rich import print as rich_print
 
 from ska_dlm.dlm_db.db_access import DBQueryError
@@ -16,8 +16,7 @@ app = typer.Typer()
 
 @app.command()
 @functools.wraps(dlm_storage_requests.init_location)
-# pylint: disable-next=missing-function-docstring
-def init_location(  # noqa: D103
+def init_location(  # noqa: D103, pylint: disable=C0116
     location_name: str = "",
     location_type: str = "",
     location_country: str = "",
@@ -30,13 +29,12 @@ def init_location(  # noqa: D103
                 location_name, location_type, location_country, location_city, location_facility
             )
         )
-    except (HTTPError, UnmetPreconditionForOperation, DBQueryError) as e:
-        rich_print(f"[bold red]ERROR![/bold red]: {e}")
+    except (HTTPError, UnmetPreconditionForOperation, DBQueryError) as error:
+        rich_print(f"[bold red]ERROR![/bold red]: {error}")
 
 
 @app.command()
-# pylint: disable-next=missing-function-docstring,too-many-arguments
-def init_storage(  # noqa: D103
+def init_storage(  # noqa: D103, pylint: disable=R0913,C0116
     storage_name: str = "",
     location_name: str = "",
     location_id: str = "",
@@ -57,41 +55,58 @@ def init_storage(  # noqa: D103
                 json_data,
             )
         )
-    except (HTTPError, UnmetPreconditionForOperation, DBQueryError) as e:
-        rich_print(f"[bold red]ERROR![/bold red]: {e}")
+    except (HTTPError, UnmetPreconditionForOperation, DBQueryError) as error:
+        rich_print(f"[bold red]ERROR![/bold red]: {error}")
 
 
 @app.command()
-# pylint: disable-next=missing-function-docstring
-def query_storage(storage_name: str = "", storage_id: str = ""):  # noqa: D103
+def query_storage(  # noqa: D103, pylint: disable=C0116
+    storage_name: str = "", storage_id: str = ""
+):
     try:
-        rich_print(dlm_storage_requests.query_storage(storage_name=storage_name, storage_id=storage_id))
-    except (HTTPError, UnmetPreconditionForOperation, DBQueryError) as e:
-        rich_print(f"[bold red]ERROR![/bold red]: {e}")
+        rich_print(
+            dlm_storage_requests.query_storage(storage_name=storage_name, storage_id=storage_id)
+        )
+    except (HTTPError, UnmetPreconditionForOperation, DBQueryError) as error:
+        rich_print(f"[bold red]ERROR![/bold red]: {error}")
 
 
 @app.command()
-# pylint: disable-next=missing-function-docstring
-def query_location(location_name: str = "", location_id: str = ""):  # noqa: D103
+def query_location(  # noqa: D103, pylint: disable=C0116
+    location_name: str = "", location_id: str = ""
+):
     try:
         rich_print(dlm_storage_requests.query_location(location_name, location_id))
-    except (HTTPError, UnmetPreconditionForOperation, DBQueryError) as e:
-        rich_print(f"[bold red]ERROR![/bold red]: {e}")
+    except (HTTPError, UnmetPreconditionForOperation, DBQueryError) as error:
+        rich_print(f"[bold red]ERROR![/bold red]: {error}")
 
 
 @app.command()
-# pylint: disable-next=missing-function-docstring
-def create_storage_config(storage_name: str="", storage_id: str="", config: str=""):  # noqa: D103
+def create_storage_config(  # noqa: D103, pylint: disable=C0116
+    storage_name: str = "",
+    storage_id: str = "",
+    config: str = "",
+):  # noqa: D103
     try:
-        rich_print(dlm_storage_requests.create_storage_config(storage_name=storage_name, storage_id=storage_id, config=config))
-    except (HTTPError, UnmetPreconditionForOperation, DBQueryError) as e:
-        rich_print(f"[bold red]ERROR![/bold red]: {e}")
+        rich_print(
+            dlm_storage_requests.create_storage_config(
+                storage_name=storage_name, storage_id=storage_id, config=config
+            )
+        )
+    except (HTTPError, UnmetPreconditionForOperation, DBQueryError) as error:
+        rich_print(f"[bold red]ERROR![/bold red]: {error}")
 
 
 @app.command()
-# pylint: disable-next=missing-function-docstring
-def get_storage_config(storage_name: str="", storage_id: str="", config: str=""):  # noqa: D103
+def get_storage_config(  # noqa: D103, pylint: disable=C0116
+    storage_name: str = "",
+    storage_id: str = "",
+):
     try:
-        rich_print(dlm_storage_requests.get_storage_config(storage_name=storage_name, storage_id=storage_id))
-    except (HTTPError, UnmetPreconditionForOperation, DBQueryError) as e:
-        rich_print(f"[bold red]ERROR![/bold red]: {e}")
+        rich_print(
+            dlm_storage_requests.get_storage_config(
+                storage_name=storage_name, storage_id=storage_id
+            )
+        )
+    except (HTTPError, UnmetPreconditionForOperation, DBQueryError) as error:
+        rich_print(f"[bold red]ERROR![/bold red]: {error}")
