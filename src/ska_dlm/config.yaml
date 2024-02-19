@@ -11,7 +11,7 @@ DLM:
   storage_config_table: "storage_config"
   location_table: "location"
   STORAGE_WARNING_PERCENTAGE: 80.0
-  SLEEP_DURATION: 2 # seconds
+  SLEEP_DURATION: 10 # seconds
 
 RCLONE:
   url: "http://localhost:5572"

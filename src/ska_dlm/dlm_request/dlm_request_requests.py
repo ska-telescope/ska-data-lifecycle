@@ -62,6 +62,7 @@ def query_expired(offset: timedelta = None):
     params = {
         "select": "uid,uid_expiration",
         "uid_expiration": f"lt.{iso_now}",
+        "item_state": "eq.READY"
     }
     return query_data_item(params=params)
 
@@ -88,7 +89,7 @@ def query_new(check_date: str, uid: str = "") -> list:
 
     Parameters:
     -----------
-    check_date: str, the starting date (exclusive)
+    check_date: str, the UTC starting date (exclusive)
     uid: The UID to be checked, optional.
 
     RETURNS:

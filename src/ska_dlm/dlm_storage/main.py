@@ -1,18 +1,16 @@
 """Storage Manager Daemon."""
 
-import logging
+import logging.config
 import os
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from time import sleep
 
 from ska_dlm import dlm_migration, dlm_request, dlm_storage
 from ska_dlm.exceptions import DataLifecycleError
 
 from .. import CONFIG
-
 logger = logging.getLogger(__name__)
-
 
 def persist_new_data_items(last_check_time: str) -> dict:
     """Check for new data items (since the last query), if found, copy to a second location.
@@ -25,6 +23,7 @@ def persist_new_data_items(last_check_time: str) -> dict:
     --------
     dict, with entries of the form {item_name:status}
     """
+
     new_data_items = dlm_request.query_new(last_check_time)
     item_names = [n["item_name"] for n in new_data_items]
     stat = dict(zip(item_names, [False] * len(new_data_items)))
@@ -47,7 +46,7 @@ def persist_new_data_items(last_check_time: str) -> dict:
         new_storage = new_storage[0]
         dest_id = new_storage["storage_id"]
         try:
-            dlm_migration.copy_data_item(uid=new_data_item["uid"], destination_id=dest_id)
+            _ = dlm_migration.copy_data_item(uid=new_data_item["uid"], destination_id=dest_id)
         except DataLifecycleError:
             logger.exception("Copy of data_item %s unsuccessful!", new_data_item["item_name"])
         logger.info(
@@ -59,12 +58,12 @@ def persist_new_data_items(last_check_time: str) -> dict:
 
 def main():
     """Begin a long-running process."""
-    last_new_data_item_query_time = datetime.now().isoformat()
 
     while True:
-        dlm_storage.delete_uids()
-        persist_new_data_items(last_new_data_item_query_time)
-        last_new_data_item_query_time = datetime.now().isoformat()
+        last_new_data_item_query_time = datetime.now(timezone.utc).isoformat()
+        logger.info("Running new/expired checks with timestamp: %s UTC", last_new_data_item_query_time)
+        _ = dlm_storage.delete_uids()
+        _ = persist_new_data_items(last_new_data_item_query_time)
         # check_storage_capacity()
         # perform_phase_transitions()
 
@@ -72,6 +71,7 @@ def main():
 
 
 if __name__ == "__main__":
+    logging.basicConfig(stream=sys.stdout, level=logging.INFO, format="%(asctime)s: %(message)s")
     try:
         main()
     except KeyboardInterrupt:

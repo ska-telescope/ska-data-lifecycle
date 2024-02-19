@@ -103,7 +103,7 @@ def init_storage(  # pylint: disable=R0913
     return DB.insert(CONFIG.DLM.storage_table, json=post_data)[0]["storage_id"]
 
 
-def create_storage_config(storage_name:str = "", storage_id: str="", config: str="", config_type="rclone") -> str:
+def create_storage_config(storage_id: str="", config: str="", storage_name:str = "", config_type="rclone") -> str:
     """
     Create a new record in the storage_config table for a storage with the given id.
 
@@ -119,14 +119,17 @@ def create_storage_config(storage_name:str = "", storage_id: str="", config: str
     str, the ID of the configuration entry.
     """
     if not storage_name and not storage_id:
-        raise UnmetPreconditionForOperation
+        raise UnmetPreconditionForOperation("Neither storage_name or ID specified.")
     if storage_name:
         storage_id = query_storage(storage_name=storage_name)[0]["storage_id"]
     post_data = {"storage_id": storage_id, "config": config, "config_type": config_type}
-    return DB.insert(CONFIG.DLM.storage_config_table, json=post_data)[0]["config_id"]
+    if rclone_config(config):
+        return DB.insert(CONFIG.DLM.storage_config_table, json=post_data)[0]["config_id"]
+    else:
+        raise UnmetPreconditionForOperation("Configuring rclone server failed!")
 
 
-def get_storage_config(storage_name:str="",storage_id: str="", config_type="rclone") -> str:
+def get_storage_config(storage_id: str="", storage_name:str="",config_type="rclone") -> str:
     """
     Get the storage configuration entry for a particular storage backend.
 
@@ -145,11 +148,16 @@ def get_storage_config(storage_name:str="",storage_id: str="", config_type="rclo
         # raise UnmetPreconditionForOperation("Either storage_name or storage_id is required.")
         params = {"limit": 1000}
     elif storage_name:
-        storage_id = query_storage(storage_name=storage_name)[0]["storage_id"]
-    if not params: params = {
-        "limit": 1000,
-        "storage_id": f"eq.{storage_id}",
-        "config_type": f"eq.{config_type}",
+        storage = query_storage(storage_name=storage_name)
+        if storage:
+            storage_id = storage[0]["storage_id"]
+        else:
+            raise UnmetPreconditionForOperation(f"Can't get storage_id for {storage_name}")
+    if not params:
+        params = {
+            "limit": 1000,
+            "storage_id": f"eq.{storage_id}",
+            "config_type": f"eq.{config_type}",
     }
     return json.loads(DB.select(CONFIG.DLM.storage_config_table, params=params)[0]["config"])
 
@@ -193,8 +201,7 @@ def check_storage_access(storage_name: str = "", storage_id: str = "") -> bool:
     storage_name = storages[0]["storage_name"]
     config = get_storage_config(storage_id=storage_id, config_type="rclone")
     if not config:
-        logger.error("No valid configuration for storage found! %s", storage_name)
-        return False
+        raise UnmetPreconditionForOperation("No valid configuration for storage found! %s", storage_name)
     rclone_fs = config["name"]
     return rclone_access(rclone_fs)
 
@@ -351,25 +358,25 @@ def delete_data_item_payload(uid: str) -> bool:
     storage_name = config["name"]
     if not rclone_access(storage_name):
         return False
-    if not rclone_delete(storage_name, storage["item_name"]):
+    if not rclone_delete(storage_name, storage["uri"]):
+        logger.warning("rclone unable to delete data item payload: %s", uid)
         return False
-    # TODO: Need to set the state to DELETED, but that causes cyclic imports.
-    if not set_state(uid, "DELETED"):
+    if set_state(uid, "DELETED") is not None:
+        logger.warning("Unable to set_state for: %s", uid)
         return False
+    logger.info("Deleted %s from %s", uid, storage_name)
     return True
 
 
 def delete_uids():
     """Check for expired data items and trigger deletion."""
     expired_data_items = query_expired()
-    print(str(expired_data_items))
 
     if len(expired_data_items) > 0:
         logger.info("Found %s expired data items", len(expired_data_items))
 
     for data_item in expired_data_items:
         uid = data_item["uid"]
-        print("uid " + uid)
 
         success = delete_data_item_payload(uid)
 

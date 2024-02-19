@@ -65,7 +65,7 @@ def init_storage(  # noqa: D103
 # pylint: disable-next=missing-function-docstring
 def query_storage(storage_name: str = "", storage_id: str = ""):  # noqa: D103
     try:
-        rich_print(dlm_storage_requests.query_storage(storage_name, storage_id))
+        rich_print(dlm_storage_requests.query_storage(storage_name=storage_name, storage_id=storage_id))
     except (HTTPError, UnmetPreconditionForOperation, DBQueryError) as e:
         rich_print(f"[bold red]ERROR![/bold red]: {e}")
 
@@ -83,7 +83,7 @@ def query_location(location_name: str = "", location_id: str = ""):  # noqa: D10
 # pylint: disable-next=missing-function-docstring
 def create_storage_config(storage_name: str="", storage_id: str="", config: str=""):  # noqa: D103
     try:
-        rich_print(dlm_storage_requests.create_storage_config(storage_name, storage_id, config))
+        rich_print(dlm_storage_requests.create_storage_config(storage_name=storage_name, storage_id=storage_id, config=config))
     except (HTTPError, UnmetPreconditionForOperation, DBQueryError) as e:
         rich_print(f"[bold red]ERROR![/bold red]: {e}")
 
@@ -92,6 +92,6 @@ def create_storage_config(storage_name: str="", storage_id: str="", config: str=
 # pylint: disable-next=missing-function-docstring
 def get_storage_config(storage_name: str="", storage_id: str="", config: str=""):  # noqa: D103
     try:
-        rich_print(dlm_storage_requests.get_storage_config(storage_name, storage_id))
+        rich_print(dlm_storage_requests.get_storage_config(storage_name=storage_name, storage_id=storage_id))
     except (HTTPError, UnmetPreconditionForOperation, DBQueryError) as e:
         rich_print(f"[bold red]ERROR![/bold red]: {e}")

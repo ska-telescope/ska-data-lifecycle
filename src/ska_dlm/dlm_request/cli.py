@@ -20,3 +20,11 @@ def query_data_item(item_name: str = "", oid: str = "", uid: str = ""):  # noqa:
         rich_print(dlm_request_requests.query_data_item(item_name, oid, uid))
     except (HTTPError, UnmetPreconditionForOperation, DBQueryError) as e:
         rich_print(f"[bold red]ERROR![/bold red]: {e}")
+
+@app.command()
+# pylint: disable-next=missing-function-docstring
+def query_new(check_date:str, uid: str = ""):  # noqa: D103
+    try:
+        rich_print(dlm_request_requests.query_new(check_date, uid))
+    except (HTTPError, UnmetPreconditionForOperation, DBQueryError) as e:
+        rich_print(f"[bold red]ERROR![/bold red]: {e}")
