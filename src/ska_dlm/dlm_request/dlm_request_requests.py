@@ -1,7 +1,7 @@
 """Convenience functions wrapping the most important postgREST API calls."""
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from ska_dlm.dlm_db.db_access import DB
 
@@ -53,7 +53,7 @@ def query_expired(offset: timedelta = None):
     -----------
     offset: optional offset for the query
     """
-    now = datetime.now()
+    now = datetime.now(timezone.utc)
     iso_now = now.isoformat()
     if offset:
         if not isinstance(offset, timedelta):

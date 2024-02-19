@@ -81,7 +81,9 @@ class TestDlm(TestCase):
     def test_query_expired(self):
         """Test the query expired returning records."""
         self.test_init()
+        uid = dlm_request.query_data_item()[0]["uid"]
         offset = timedelta(days=1)
+        _ = data_item.set_state(uid=uid, state="READY")
         result = dlm_request.query_expired(offset)
         success = len(result) != 0
         assert success
@@ -188,15 +190,16 @@ class TestDlm(TestCase):
         assert len(result) == 0
 
         # add an item, and expire immediately
-        uid = dlm_ingest.ingest_data_item(item_name=fname, storage_name="MyDisk")
-        data_item.set_uid_expiration(uid, "2000-01-01T00:00:01.000000")
-
-        # run storage daemon code
-        dlm_storage.delete_uids()
+        uid = dlm_ingest.ingest_data_item(item_name=fname, uri=fname, storage_name="MyDisk")
+        data_item.set_state(uid=uid, state="READY")
+        data_item.set_uid_expiration(uid, "2000-01-01")
 
         # check the expired item was found
         result = dlm_request.query_expired()
         assert len(result) == 1
+
+        # run storage daemon code
+        dlm_storage.delete_uids()
 
         # check that the daemon deleted the item
         result = dlm_request.query_deleted()
