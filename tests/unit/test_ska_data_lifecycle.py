@@ -123,11 +123,11 @@ class TestDlm(TestCase):
             tfile.write("Welcome to the great DLM world!")
         storage_id = dlm_storage.query_storage(storage_name="MyDisk")[0]["storage_id"]
         uid = dlm_ingest.ingest_data_item(fpath)
+        data_item.set_state(uid, "READY")
+        data_item.set_uri(uid, fpath, storage_id)
         queried_uid = dlm_request.query_data_item(item_name=fpath)[0]["uid"]
         assert uid == queried_uid
         dlm_storage.delete_data_item_payload(uid)
-        data_item.set_uri(uid, fpath, storage_id)
-        data_item.set_state(uid, "DELETED")
         assert dlm_request.query_data_item(item_name=fpath)[0]["uri"] == fpath
         assert dlm_request.query_data_item(item_name=fpath)[0]["item_state"] == "DELETED"
 
