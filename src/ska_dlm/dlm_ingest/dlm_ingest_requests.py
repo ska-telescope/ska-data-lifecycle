@@ -38,7 +38,7 @@ def ingest_data_item(
     item_name: str, uri: str = "", storage_name: str = "", storage_id: str = ""
 ) -> str:
     """
-    Ingest a data_item.
+    Ingest a data_item (register function is an alias).
 
     This high level function is a combination of init_data_item, set_uri and set_state(READY).
     It also checks whether a data_item is already registered on the requested storage.
