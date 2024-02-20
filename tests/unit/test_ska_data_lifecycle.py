@@ -122,7 +122,7 @@ class TestDlm(TestCase):
         with open(fpath, "w", encoding="UTF-8") as tfile:
             tfile.write("Welcome to the great DLM world!")
         storage_id = dlm_storage.query_storage(storage_name="MyDisk")[0]["storage_id"]
-        uid = dlm_ingest.ingest_data_item(fpath)
+        uid = dlm_ingest.ingest_data_item(fpath, fpath, "MyDisk")
         data_item.set_state(uid, "READY")
         data_item.set_uri(uid, fpath, storage_id)
         queried_uid = dlm_request.query_data_item(item_name=fpath)[0]["uid"]
