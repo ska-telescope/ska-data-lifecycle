@@ -98,7 +98,7 @@ def copy_data_item(  # pylint: disable=too-many-arguments
         destination_id = destination[0]["storage_id"]
     d_config = get_storage_config(storage_id=destination_id)
     if not d_config:
-        raise UnmetPreconditionForOperation("Unable to get configuration for destination volume!")
+        raise UnmetPreconditionForOperation("Unable to get configuration for destination storage!")
     dest = {"backend": f"{d_config['name']}:", "path": path}
     # (3)
     init_item = {
