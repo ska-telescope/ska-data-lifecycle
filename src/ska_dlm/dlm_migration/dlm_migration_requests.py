@@ -62,6 +62,9 @@ def copy_data_item(  # pylint: disable=too-many-arguments
     destination_name: the name of the destination storage volume.
     destination_id: the destination storage
     path: the destination path
+    Returns
+    -------
+    The uid of the new item copy.
     """
     if not item_name and not oid and not uid:
         raise InvalidQueryParameters("Either an item_name or an OID or an UID has to be provided!")
