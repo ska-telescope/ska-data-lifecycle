@@ -270,7 +270,7 @@ def query_storage(storage_name: str = "", storage_id: str = "") -> list:
     Parameters:
     -----------
     storage_name: could be empty, in which case the first 1000 items are returned
-    stoage_id:    Return locations referred to by the location_id provided.
+    storage_id:    Return locations referred to by the location_id provided.
 
     Returns:
     --------
