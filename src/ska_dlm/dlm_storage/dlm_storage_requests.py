@@ -160,7 +160,8 @@ def get_storage_config(storage_id: str = "", storage_name: str = "", config_type
             "storage_id": f"eq.{storage_id}",
             "config_type": f"eq.{config_type}",
         }
-    return json.loads(DB.select(CONFIG.DLM.storage_config_table, params=params)[0]["config"])
+    result = DB.select(CONFIG.DLM.storage_config_table, params=params)
+    return [json.loads(entry["config"]) for entry in result] if result else ""
 
 
 def rclone_config(config: str) -> bool:
