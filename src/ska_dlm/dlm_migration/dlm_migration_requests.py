@@ -42,7 +42,7 @@ def copy_data_item(  # pylint: disable=too-many-arguments
     destination_name: str = "",
     destination_id: str = "",
     path: str = "",
-):
+) -> str:
     """
     Copy a data_item from source to destination.
 
