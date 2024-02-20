@@ -393,7 +393,10 @@ def check_storage_capacity():
     storage_items = query_storage()
 
     for storage_item in storage_items:
-        if storage_item["storage_use_pct"] >= CONFIG.DLM.STORAGE_WARNING_PERCENTAGE:
+        if (
+            storage_item["storage_use_pct"]
+            >= CONFIG.DLM.storage_manager.storage_warning_percentage
+        ):
             logger.warning(
                 "storage_item %s nearing full capacity (%s)",
                 storage_item["storage_name"],

@@ -6,9 +6,10 @@ import sys
 from datetime import datetime, timezone
 from time import sleep
 
+import ska_ser_logging
+
 from ska_dlm import data_item, dlm_migration, dlm_request, dlm_storage
 from ska_dlm.exceptions import DataLifecycleError
-import ska_ser_logging
 
 from .. import CONFIG
 
@@ -79,7 +80,7 @@ def main():
         # perform_phase_transitions()
 
         last_new_data_item_query_time = datetime.now(timezone.utc).isoformat()[:19]
-        sleep(CONFIG.DLM.SLEEP_DURATION)
+        sleep(CONFIG.DLM.storage_manager.polling_interval)
 
 
 if __name__ == "__main__":
