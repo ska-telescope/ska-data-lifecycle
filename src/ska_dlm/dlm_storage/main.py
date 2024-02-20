@@ -8,6 +8,7 @@ from time import sleep
 
 from ska_dlm import data_item, dlm_migration, dlm_request, dlm_storage
 from ska_dlm.exceptions import DataLifecycleError
+import ska_ser_logging
 
 from .. import CONFIG
 
@@ -66,6 +67,7 @@ def persist_new_data_items(last_check_time: str) -> dict:
 
 def main():
     """Begin a long-running process."""
+    ska_ser_logging.configure_logging(level=logging.INFO)
     last_new_data_item_query_time = "2024-01-01"
     while True:
         logger.info(
@@ -81,7 +83,6 @@ def main():
 
 
 if __name__ == "__main__":
-    logging.basicConfig(stream=sys.stdout, level=logging.INFO, format="%(asctime)s: %(message)s")
     try:
         main()
     except KeyboardInterrupt:
