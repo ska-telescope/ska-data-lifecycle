@@ -106,6 +106,7 @@ def create_storage_config(  # noqa: D103, pylint: disable=C0116
 def get_storage_config(  # noqa: D103, pylint: disable=C0116
     storage_name: str = "",
     storage_id: str = "",
+    config_type: str = "rclone"
 ):
     try:
         rich_print(
