@@ -94,7 +94,7 @@ if [[ $attempt -gt $MAX_RETRIES ]]; then
     exit 1
 fi
 
-python -m ska_dlm.dlm_storage.main  >/dev/null 2>&1 &
+dlm-sm-service  >/dev/null 2>&1 &
 DLM_SM_PID=$!
 echo "$DLM_SM_PID">$DLM_SM_PID_FILE
 
@@ -102,22 +102,3 @@ if ps -p $DLM_SM_PID > /dev/null
 then
    echo "DLM Storage Manager service is running"
 fi
-
-# TODO: Need to have the DLM_SM reply to a status request.
-# attempt=1
-# while [[ $attempt -le $MAX_RETRIES ]]; do
-#     curl -s http://localhost:5572 > /dev/null
-#     if [[ $? -eq 0 ]]; then
-#         # successful connection
-#         break
-#     fi
-#     echo "Attempt $attempt failed for rclone server. Retrying in $DELAY_SECONDS second(s)..."
-#     sleep $DELAY_SECONDS
-#     ((attempt++))
-# done
-
-
-# if [[ $attempt -gt $MAX_RETRIES ]]; then
-#     echo "Max retries reached for rclone server. Unable to establish connection."
-#     exit 1
-# fi

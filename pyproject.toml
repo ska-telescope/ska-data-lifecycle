@@ -14,6 +14,7 @@ packages = [{include="ska_dlm", from="src"}]
 
 [tool.poetry.scripts]
 ska-dlm = "ska_dlm.cli:main"
+dlm-sm-service = "ska_dlm.dlm_storage.main"
 
 [[tool.poetry.source]]
 name = 'skao'

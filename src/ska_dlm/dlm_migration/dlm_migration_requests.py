@@ -75,7 +75,6 @@ def copy_data_item(  # pylint: disable=too-many-arguments
         raise UnmetPreconditionForOperation("No data item found for copying")
     # (1)
     item_name = orig_item["item_name"]
-    # TODO: this seems wrong? we should pick a storage that is *not* the destination, I assume
     storages = check_item_on_storage(item_name)
     # we pick the first data_item returned record for now
     if storages:
