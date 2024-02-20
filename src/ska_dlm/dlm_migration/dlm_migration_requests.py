@@ -35,7 +35,7 @@ def rclone_copy(src_fs: str, src_remote: str, dst_fs: str, dst_remote: str):
     return True
 
 
-def copy_data_item(  # pylint: disable=R0913
+def copy_data_item(  # pylint: disable=too-many-arguments
     item_name: str = "",
     oid: str = "",
     uid: str = "",
