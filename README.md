@@ -41,12 +41,10 @@ _This will run in the terminal, thus to start PostGUI you need to use another te
 
 ### Optional
 The DLM system is complete now, but in order to have a view into the DB you can run the nice PostGUI web interface, which talks to postgREST.
+
 #### Clone the PostGUI into a directory on the same level as the `ska-data-lifecycle` one:
 `git clone https://github.com/priyank-purohit/PostGUI`\
 `cd PostGUI`
-
-Replace the file src/data/config.json with the file `ska-data-lifecycle/setup/postgrest/config.json`
-
 
 #### Start the PostGUI:
 From inside the PostGUI repository directory run (for Unix):
