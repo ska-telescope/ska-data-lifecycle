@@ -50,7 +50,7 @@ def persist_new_data_items(last_check_time: str) -> dict:
         dest_id = new_storage["storage_id"]
         try:
             copy_uid = dlm_migration.copy_data_item(
-                uid=new_data_item["uid"], destination_id=dest_id
+                uid=new_data_item["uid"], destination_id=dest_id,
             )
         except DataLifecycleError:
             logger.exception("Copy of data_item %s unsuccessful!", new_data_item["item_name"])
