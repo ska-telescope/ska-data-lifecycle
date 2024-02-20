@@ -85,8 +85,8 @@ def copy_data_item(  # pylint: disable=too-many-arguments
     s_config = get_storage_config(storage_id=storage["storage_id"])
     if not s_config:
         raise UnmetPreconditionForOperation("No configuration for source storage found!")
-    else:
-        s_config = s_config[0]
+
+    s_config = s_config[0]
     source = {"backend": f"{s_config['name']}:", "path": storage["uri"]}
     if not path:
         path = storage["uri"]
@@ -100,8 +100,7 @@ def copy_data_item(  # pylint: disable=too-many-arguments
     d_config = get_storage_config(storage_id=destination_id)
     if not d_config:
         raise UnmetPreconditionForOperation("Unable to get configuration for destination storage!")
-    else:
-        d_config = d_config[0]
+    d_config = d_config[0]
     dest = {"backend": f"{d_config['name']}:", "path": path}
     # (3)
     init_item = {

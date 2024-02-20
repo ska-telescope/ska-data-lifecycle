@@ -1,9 +1,12 @@
 """CLI support for dlm_storage package."""
 
+import functools
+
 import typer
 from requests import HTTPError
 from rich import print as rich_print
 
+from ska_dlm import data_item
 from ska_dlm.dlm_db.db_access import DBQueryError
 from ska_dlm.exceptions import UnmetPreconditionForOperation
 
@@ -13,6 +16,7 @@ app = typer.Typer()
 
 
 @app.command()
+@functools.wraps(data_item.set_state)
 # pylint: disable-next=missing-function-docstring
 def set_state(uid: str = "", state: str = ""):  # noqa: D103
     try:
@@ -22,6 +26,7 @@ def set_state(uid: str = "", state: str = ""):  # noqa: D103
 
 
 @app.command()
+@functools.wraps(data_item.set_uri)
 # pylint: disable-next=missing-function-docstring
 def set_uri(uid: str = "", uri: str = "", storage_id: str = ""):  # noqa: D103
     try:
@@ -31,6 +36,7 @@ def set_uri(uid: str = "", uri: str = "", storage_id: str = ""):  # noqa: D103
 
 
 @app.command()
+@functools.wraps(data_item.set_uid_expiration)
 # pylint: disable-next=missing-function-docstring
 def set_uid_expiration(uid: str, expiration: str):  # noqa: D103
     try:
@@ -40,6 +46,7 @@ def set_uid_expiration(uid: str, expiration: str):  # noqa: D103
 
 
 @app.command()
+@functools.wraps(data_item.set_oid_expiration)
 # pylint: disable-next=missing-function-docstring
 def set_oid_expiration(oid: str, expiration: str):  # noqa: D103
     try:

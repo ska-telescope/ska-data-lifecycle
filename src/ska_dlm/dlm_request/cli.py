@@ -1,5 +1,6 @@
 """CLI support for dlm_storage package."""
 
+import functools
 
 import typer
 from requests import HTTPError
@@ -14,6 +15,7 @@ app = typer.Typer()
 
 
 @app.command()
+@functools.wraps(dlm_request_requests.query_data_item)
 # pylint: disable-next=missing-function-docstring
 def query_data_item(item_name: str = "", oid: str = "", uid: str = ""):  # noqa: D103
     try:
@@ -23,6 +25,7 @@ def query_data_item(item_name: str = "", oid: str = "", uid: str = ""):  # noqa:
 
 
 @app.command()
+@functools.wraps(dlm_request_requests.query_new)
 # pylint: disable-next=missing-function-docstring
 def query_new(check_date: str, uid: str = ""):  # noqa: D103
     try:

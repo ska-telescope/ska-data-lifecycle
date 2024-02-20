@@ -34,6 +34,7 @@ def init_location(  # noqa: D103, pylint: disable=C0116
 
 
 @app.command()
+@functools.wraps(dlm_storage_requests.init_storage)
 def init_storage(  # noqa: D103, pylint: disable=R0913,C0116
     storage_name: str = "",
     location_name: str = "",
@@ -60,6 +61,7 @@ def init_storage(  # noqa: D103, pylint: disable=R0913,C0116
 
 
 @app.command()
+@functools.wraps(dlm_storage_requests.query_storage)
 def query_storage(  # noqa: D103, pylint: disable=C0116
     storage_name: str = "", storage_id: str = ""
 ):
@@ -72,6 +74,7 @@ def query_storage(  # noqa: D103, pylint: disable=C0116
 
 
 @app.command()
+@functools.wraps(dlm_storage_requests.query_location)
 def query_location(  # noqa: D103, pylint: disable=C0116
     location_name: str = "", location_id: str = ""
 ):
@@ -82,6 +85,7 @@ def query_location(  # noqa: D103, pylint: disable=C0116
 
 
 @app.command()
+@functools.wraps(dlm_storage_requests.create_storage_config)
 def create_storage_config(  # noqa: D103, pylint: disable=C0116
     storage_name: str = "",
     storage_id: str = "",
@@ -98,6 +102,7 @@ def create_storage_config(  # noqa: D103, pylint: disable=C0116
 
 
 @app.command()
+@functools.wraps(dlm_storage_requests.get_storage_config)
 def get_storage_config(  # noqa: D103, pylint: disable=C0116
     storage_name: str = "",
     storage_id: str = "",
