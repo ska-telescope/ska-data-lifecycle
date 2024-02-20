@@ -58,7 +58,7 @@ def query_expired(offset: timedelta = None):
     if offset:
         if not isinstance(offset, timedelta):
             raise InvalidQueryParameters("Specified offset invalid type! Should be timedelta.")
-        iso_now = now + offset
+        now += offset
     params = {
         "select": "uid,uid_expiration",
         "uid_expiration": f"lt.{iso_now}",
