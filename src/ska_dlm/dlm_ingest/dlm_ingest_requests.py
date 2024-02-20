@@ -2,6 +2,8 @@
 
 import logging
 
+from ska_dlm.dlm_storage.dlm_storage_requests import rclone_access
+
 from .. import CONFIG
 from ..data_item import set_state, set_uri
 from ..dlm_db.db_access import DB
@@ -44,9 +46,10 @@ def ingest_data_item(
     It also checks whether a data_item is already registered on the requested storage.
 
     (1) check whether requested storage is known and accessible
-    (2) check whether item is already registered on that storage
-    (3) initialize the new item with the same OID on the new storage
-    (4) set state to READY
+    (2) check whether item is accessible/exists on that storage
+    (3) check whether item is already registered on that storage
+    (4) initialize the new item with the same OID on the new storage
+    (5) set state to READY
 
     Parameters:
     -----------
@@ -71,6 +74,8 @@ def ingest_data_item(
             f"Requested storage volume is not accessible by DLM! {storage_name}"
         )
     # (2)
+    if not rclone_access(storage_name, uri):
+        raise UnmetPreconditionForOperation(f"File {uri} does not exist on {storage_name}")
     if query_exists(item_name):
         ex_storage_id = query_data_item(item_name)[0]["storage_id"]
         if storage_id == ex_storage_id:

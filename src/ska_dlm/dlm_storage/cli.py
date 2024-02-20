@@ -34,7 +34,7 @@ def init_location(  # noqa: D103, pylint: disable=C0116
 
 
 @app.command()
-@functools.wraps(dlm_storage_requests.init_storage)
+# @functools.wraps(dlm_storage_requests.init_storage)
 def init_storage(  # noqa: D103, pylint: disable=R0913,C0116
     storage_name: str = "",
     location_name: str = "",
@@ -90,11 +90,12 @@ def create_storage_config(  # noqa: D103, pylint: disable=C0116
     storage_name: str = "",
     storage_id: str = "",
     config: str = "",
+    config_type = "rclone"
 ):  # noqa: D103
     try:
         rich_print(
             dlm_storage_requests.create_storage_config(
-                storage_name=storage_name, storage_id=storage_id, config=config
+                storage_name=storage_name, storage_id=storage_id, config=config, config_type=config_type
             )
         )
     except (HTTPError, UnmetPreconditionForOperation, DBQueryError) as error:
