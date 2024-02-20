@@ -93,7 +93,7 @@ def copy_data_item(  # pylint: disable=too-many-arguments
         destination = query_storage(storage_name=destination_name)
         if not destination:
             raise UnmetPreconditionForOperation(
-                f"Unable to get ID of destination volume: {destination_name}."
+                f"Unable to get ID of destination storage: {destination_name}."
             )
         destination_id = destination[0]["storage_id"]
     d_config = get_storage_config(storage_id=destination_id)
