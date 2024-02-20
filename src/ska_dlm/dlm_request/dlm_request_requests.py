@@ -54,11 +54,11 @@ def query_expired(offset: timedelta = None):
     offset: optional offset for the query
     """
     now = datetime.now(timezone.utc)
-    iso_now = now.isoformat()
     if offset:
         if not isinstance(offset, timedelta):
             raise InvalidQueryParameters("Specified offset invalid type! Should be timedelta.")
         now += offset
+    iso_now = now.replace(tzinfo=None).isoformat()
     params = {
         "select": "uid,uid_expiration",
         "uid_expiration": f"lt.{iso_now}",

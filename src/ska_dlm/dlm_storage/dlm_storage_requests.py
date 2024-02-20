@@ -161,7 +161,7 @@ def get_storage_config(storage_id: str = "", storage_name: str = "", config_type
             "config_type": f"eq.{config_type}",
         }
     result = DB.select(CONFIG.DLM.storage_config_table, params=params)
-    return [json.loads(entry["config"]) for entry in result] if result else ""
+    return [json.loads(entry["config"]) for entry in result] if result else []
 
 
 def rclone_config(config: str) -> bool:
@@ -206,7 +206,7 @@ def check_storage_access(storage_name: str = "", storage_id: str = "") -> bool:
         raise UnmetPreconditionForOperation(
             "No valid configuration for storage found!", storage_name
         )
-    rclone_fs = config["name"]
+    rclone_fs = config[0]["name"]
     return rclone_access(rclone_fs)
 
 
@@ -358,7 +358,7 @@ def delete_data_item_payload(uid: str) -> bool:
     if len(storages) > 1:
         logger.error("More than one storage volume keeping this UID: %s", uid)
     storage = storages[0]
-    config = get_storage_config(storage["storage_id"])
+    config = get_storage_config(storage["storage_id"])[0]
     storage_name = config["name"]
     if not rclone_access(storage_name):
         return False
