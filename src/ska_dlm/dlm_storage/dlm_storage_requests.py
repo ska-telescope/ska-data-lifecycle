@@ -1,7 +1,5 @@
 """Wrap the most important postgREST API calls."""
 
-import functools
-import inspect
 import json
 import logging
 
@@ -15,21 +13,6 @@ from ..dlm_request import query_expired, query_item_storage
 from ..exceptions import InvalidQueryParameters, UnmetPreconditionForOperation, ValueAlreadyInDB
 
 logger = logging.getLogger(__name__)
-
-
-def args_dict(func):
-    """Get arguments of function inside the function. Used as decorator."""
-
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        bound_args = inspect.signature(func).bind(*args, **kwargs)
-        bound_args.apply_defaults()
-        logger.info(dict(bound_args.arguments))
-        kwargs.update({"args": dict(bound_args.arguments)})
-        logger.info("Added args: %s", kwargs)
-        return func(*args, **kwargs)
-
-    return wrapper
 
 
 def query_location(location_name: str = "", location_id: str = "") -> list:
@@ -54,7 +37,6 @@ def query_location(location_name: str = "", location_id: str = "") -> list:
     return DB.select(CONFIG.DLM.location_table, params=params)
 
 
-@args_dict
 def init_storage(  # pylint: disable=R0913
     storage_name: str = "",  # pylint: disable=W0613
     location_name: str = "",
@@ -63,7 +45,6 @@ def init_storage(  # pylint: disable=R0913
     storage_interface: str = "",  # pylint: disable=W0613
     storage_capacity: int = -1,  # pylint: disable=W0613
     json_data: str = "",
-    **kwargs,
 ) -> str:
     """
     Intialize a new storage by at least specifying an item_name.
@@ -76,6 +57,7 @@ def init_storage(  # pylint: disable=R0913
     --------
     Either a storage_ID or an empty string
     """
+    provided_args = dict(locals())
     mandatory_keys = [
         "storage_name",
         "location_id",
@@ -92,7 +74,6 @@ def init_storage(  # pylint: disable=R0913
                 return ""
         post_data = json_dict
     else:
-        provided_args = kwargs["args"]
         if location_name and not location_id:
             result = query_location(location_name)
             if result:
