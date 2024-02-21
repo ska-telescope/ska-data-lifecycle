@@ -1,10 +1,8 @@
 """Storage Manager Daemon."""
 
-import logging.config
-import os
-import sys
+import logging
+import signal
 from datetime import datetime, timezone
-from time import sleep
 
 import ska_ser_logging
 
@@ -68,9 +66,27 @@ def persist_new_data_items(last_check_time: str) -> dict:
 
 def main():
     """Begin a long-running process."""
+    # We use signal.pause() at the end of the main loop to continue with the next
+    # iteration. A SIGARLM is scheduled before that, and indicates that the loop
+    # should continue, while SIGINT/SIGTERM will indicate that the program needs
+    # to exit
+    run_main_loop = True
+
+    def handle_signal(signo, _frame):
+        nonlocal run_main_loop
+        if signo in (signal.SIGINT, signal.SIGTERM):
+            logger.info("Received %s, ending program now", signal.Signals(signo).name)
+            run_main_loop = False
+            return
+        assert signo == signal.SIGALRM
+
+    signal.signal(signal.SIGTERM, handle_signal)
+    signal.signal(signal.SIGINT, handle_signal)
+    signal.signal(signal.SIGALRM, handle_signal)
+
     ska_ser_logging.configure_logging(level=logging.INFO)
     last_new_data_item_query_time = "2024-01-01"
-    while True:
+    while run_main_loop:
         logger.info(
             "Running new/expired checks with timestamp: %s UTC", last_new_data_item_query_time
         )
@@ -80,14 +96,9 @@ def main():
         # perform_phase_transitions()
 
         last_new_data_item_query_time = datetime.now(timezone.utc).isoformat()[:19]
-        sleep(CONFIG.DLM.storage_manager.polling_interval)
+        signal.alarm(CONFIG.DLM.storage_manager.polling_interval)
+        signal.pause()
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        try:
-            sys.exit(130)
-        except SystemExit:
-            os._exit(130)
+    main()
