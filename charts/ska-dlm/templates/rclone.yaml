@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ska-dlm.name" . }}-rclone
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ska-dlm.rclone.labels" . | indent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: tcp-rclone
+      port: 80
+      targetPort: 80
+      protocol: TCP
+  selector:
+    component: {{ .Values.rclone.component }}
+    subsystem: {{ .Values.rclone.subsystem }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ska-dlm.name" . }}-rclone
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ska-dlm.rclone.labels" . | indent 4 }}
+spec:
+  replicas: {{ .Values.rclone.replicas }}
+  selector:
+    matchLabels:
+      component: {{ .Values.rclone.component }}
+      subsystem: {{ .Values.rclone.subsystem }}
+  template:
+    metadata:
+      labels:
+        {{- include "ska-dlm.rclone.labels" . | indent 8 }}
+    spec:
+      containers:
+      - name: rclone
+        image: {{ .Values.rclone.image}}:{{ .Values.rclone.version }}
+        imagePullPolicy: {{ .Values.rclone.imagePullPolicy }}
+        command:
+          - rclone
+          - rcd
+          - --rc-serve
+          - --rc-addr
+          - :80
+          - --rc-no-auth
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          periodSeconds: 5

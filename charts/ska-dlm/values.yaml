@@ -55,6 +55,16 @@ postgrest:
   pre_request: ""
   role_claim_key: '.role'
 
+rclone:
+  component: rclone
+  subsystem: data-management-lifecycle
+
+  image: rclone/rclone
+  version: "1.65"
+  imagePullPolicy: Always
+
+  replicas: 1
+
 kubectl:
   image: bitnami/kubectl
   version: 1.28.6

@@ -77,3 +77,15 @@ Template to generate the Postgresql URI
 {{- printf "postgres://%s:%s@%s/%s" $user $pass $host $db -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+RClone labels
+*/}}
+{{- define "ska-dlm.rclone.labels" }}
+{{- include "ska-dlm.labels" . }}
+component: {{ .Values.rclone.component }}
+subsystem: {{ .Values.rclone.subsystem }}
+function: {{ .Values.rclone.function }}
+domain: {{ .Values.rclone.domain }}
+intent: production
+{{- end }}

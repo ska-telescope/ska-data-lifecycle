@@ -19,3 +19,23 @@ spec:
             name: {{ include "ska-dlm.name" . }}-postgrest
             port:
               number: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "ska-dlm.name" . }}-rclone
+  namespace: {{ .Release.Namespace }}
+  annotations:
+      nginx.ingress.kubernetes.io/rewrite-target: /$1
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+        - path: /{{ .Release.Namespace }}/rclone/(.*)
+          pathType: ImplementationSpecific
+          backend:
+           service:
+            name: {{ include "ska-dlm.name" . }}-rclone
+            port:
+              number: 80
