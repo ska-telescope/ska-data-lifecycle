@@ -248,7 +248,7 @@ def init_location(
     location_city: str = "",
     location_facility: str = "",
 ) -> str:
-    """Initialize a new location for a stroage by specifying the location_name or location_id."""
+    """Initialize a new location for a storage by specifying the location_name or location_id."""
     if not (location_name and location_type):
         raise InvalidQueryParameters("Location_name and location_type must be given")
     if query_location(location_name):
