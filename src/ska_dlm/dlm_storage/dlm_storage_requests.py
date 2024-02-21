@@ -1,5 +1,6 @@
 """Wrap the most important postgREST API calls."""
 
+import functools
 import inspect
 import json
 import logging
@@ -19,6 +20,7 @@ logger = logging.getLogger(__name__)
 def args_dict(func):
     """Get arguments of function inside the function. Used as decorator."""
 
+    @functools.wraps(func)
     def wrapper(*args, **kwargs):
         bound_args = inspect.signature(func).bind(*args, **kwargs)
         bound_args.apply_defaults()
