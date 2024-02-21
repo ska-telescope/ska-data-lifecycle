@@ -30,7 +30,7 @@ def rclone_copy(src_fs: str, src_remote: str, dst_fs: str, dst_remote: str):
         "dstRemote": dst_remote,
     }
     logger.info("rclone copy request: %s, %s", request_url, post_data)
-    request = requests.post(request_url, post_data, timeout=10)
+    request = requests.post(request_url, post_data, timeout=1800)
     logger.info("Response status code: %s", request.status_code)
     return True
 
