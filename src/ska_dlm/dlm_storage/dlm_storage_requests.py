@@ -273,7 +273,7 @@ def init_location(
     location_city: str = "",
     location_facility: str = "",
 ) -> str:
-    """Initialize a new location for a stroage by specifying the location_name or location_id."""
+    """Initialize a new location for a storage by specifying the location_name or location_id."""
     if not (location_name and location_type):
         raise InvalidQueryParameters("Location_name and location_type must be given")
     if query_location(location_name):
@@ -295,7 +295,7 @@ def query_storage(storage_name: str = "", storage_id: str = "") -> list:
     Parameters:
     -----------
     storage_name: could be empty, in which case the first 1000 items are returned
-    stoage_id:    Return locations referred to by the location_id provided.
+    storage_id:    Return locations referred to by the location_id provided.
 
     Returns:
     --------

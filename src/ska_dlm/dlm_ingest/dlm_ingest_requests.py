@@ -22,7 +22,7 @@ def init_data_item(item_name: str = "", json_data: str = "") -> str:
     Parameters:
     -----------
     item_name, the item_name, can be empty, but then json_data has to be specified.
-    json_data, provides to ability to specify all values.
+    json_data, provides the ability to specify all values.
 
     Returns:
     --------
