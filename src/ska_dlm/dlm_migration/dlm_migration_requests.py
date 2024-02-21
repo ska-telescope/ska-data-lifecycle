@@ -1,5 +1,5 @@
 """Convenience functions wrapping the most important postgREST API calls."""
-
+import json
 import logging
 
 import requests
@@ -108,7 +108,7 @@ def copy_data_item(  # pylint: disable=too-many-arguments
         "oid": orig_item["oid"],
         "storage_id": destination_id,
     }
-    uid = init_data_item(json_data=init_item)
+    uid = init_data_item(json_data=json.dumps(init_item))
     # (5)
     # TODO: abstract the actual function called away to allow for different
     # mechansims to perform the copy

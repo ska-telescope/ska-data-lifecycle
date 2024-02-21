@@ -90,7 +90,7 @@ def init_storage(  # pylint: disable=R0913
             if k not in json_dict:
                 logger.error("Parameter %s is required in json_data!", k)
                 return ""
-        post_data = json_data
+        post_data = json_dict
     else:
         provided_args = kwargs["args"]
         if location_name and not location_id:
@@ -102,6 +102,7 @@ def init_storage(  # pylint: disable=R0913
                 post_data.update({k: provided_args[k]})
             else:
                 raise InvalidQueryParameters(f"Argument {k} is mandatory!")
+    print(post_data)
     return DB.insert(CONFIG.DLM.storage_table, json=post_data)[0]["storage_id"]
 
 

@@ -1,5 +1,6 @@
 """Convenience functions wrapping the most important postgREST API calls."""
 
+import json
 import logging
 
 from ska_dlm.dlm_storage.dlm_storage_requests import rclone_access
@@ -30,7 +31,7 @@ def init_data_item(item_name: str = "", json_data: str = "") -> str:
     if item_name:
         post_data = {"item_name": item_name}
     elif json_data:
-        post_data = json_data
+        post_data = json.loads(json_data)
     else:
         raise InvalidQueryParameters("Either item_name or json_data has to be specified!")
     return DB.insert(CONFIG.DLM.dlm_table, json=post_data)[0]["uid"]
@@ -85,7 +86,7 @@ def ingest_data_item(
         "item_name": item_name,
         "storage_id": storage_id,
     }
-    uid = init_data_item(json_data=init_item)
+    uid = init_data_item(json_data=json.dumps(init_item))
     # (4)
     set_uri(uid, uri, storage_id)
     # all done! Set data_item state to READY
