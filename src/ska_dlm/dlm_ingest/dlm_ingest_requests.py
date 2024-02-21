@@ -1,5 +1,6 @@
 """Convenience functions wrapping the most important postgREST API calls."""
 
+import functools
 import json
 import logging
 
@@ -95,4 +96,7 @@ def ingest_data_item(
 
 
 # just for convenience we also define the ingest function as register_data_item.
-register_data_item = ingest_data_item
+@functools.wraps(ingest_data_item, assigned=set(functools.WRAPPER_ASSIGNMENTS) - {"__name__"})
+# pylint: disable-next=missing-function-docstring
+def register_data_item(*args, **kwargs) -> str:  # noqa: D103
+    return ingest_data_item(*args, **kwargs)
