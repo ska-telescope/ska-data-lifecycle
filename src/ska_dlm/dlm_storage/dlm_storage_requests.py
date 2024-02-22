@@ -44,6 +44,7 @@ def init_storage(  # pylint: disable=R0913
     storage_type: str = "",  # pylint: disable=W0613
     storage_interface: str = "",  # pylint: disable=W0613
     storage_capacity: int = -1,  # pylint: disable=W0613
+    storage_phase_level: str = "GAS",  # pylint: disable=W0613
     json_data: str = "",
 ) -> str:
     """
@@ -64,6 +65,7 @@ def init_storage(  # pylint: disable=R0913
         "storage_type",
         "storage_interface",
         "storage_capacity",
+        "storage_phase_level"
     ]
     post_data = {}
     if json_data:

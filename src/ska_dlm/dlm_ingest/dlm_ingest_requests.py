@@ -16,7 +16,7 @@ from ..exceptions import InvalidQueryParameters, UnmetPreconditionForOperation, 
 logger = logging.getLogger(__name__)
 
 
-def init_data_item(item_name: str = "", phase:str = "GAS", json_data: str = "") -> str:
+def init_data_item(item_name: str = "", phase: str = "GAS", json_data: str = "") -> str:
     """
     Intialize a new data_item by at least specifying an item_name.
 
@@ -31,7 +31,7 @@ def init_data_item(item_name: str = "", phase:str = "GAS", json_data: str = "") 
     uid,
     """
     if item_name:
-        post_data = {"item_name": item_name}
+        post_data = {"item_name": item_name, "item_phase": phase}
     elif json_data:
         post_data = json.loads(json_data)
     else:
@@ -87,7 +87,7 @@ def ingest_data_item(
     init_item = {
         "item_name": item_name,
         "storage_id": storage_id,
-        "item_phase": storages[0]["storage_phase_level"]
+        "item_phase": storages[0]["storage_phase_level"],
     }
     uid = init_data_item(json_data=json.dumps(init_item))
     # (4)
