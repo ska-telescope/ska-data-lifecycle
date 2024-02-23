@@ -1,5 +1,5 @@
 """Convenience functions wrapping the most important postgREST API calls."""
-
+import json
 import logging
 
 import requests
@@ -10,7 +10,7 @@ from .. import CONFIG
 from ..data_item import set_state, set_uri
 from ..dlm_ingest import init_data_item
 from ..dlm_request import query_data_item
-from ..dlm_storage import check_item_on_storage, get_storage_config
+from ..dlm_storage import check_item_on_storage, get_storage_config, query_storage
 from ..exceptions import UnmetPreconditionForOperation
 
 logger = logging.getLogger(__name__)
@@ -30,14 +30,19 @@ def rclone_copy(src_fs: str, src_remote: str, dst_fs: str, dst_remote: str):
         "dstRemote": dst_remote,
     }
     logger.info("rclone copy request: %s, %s", request_url, post_data)
-    request = requests.post(request_url, post_data, timeout=10)
+    request = requests.post(request_url, post_data, timeout=1800)
     logger.info("Response status code: %s", request.status_code)
     return True
 
 
-def copy_data_item(
-    item_name: str = "", oid: str = "", uid: str = "", destination_id: str = "", path: str = ""
-):
+def copy_data_item(  # pylint: disable=too-many-arguments
+    item_name: str = "",
+    oid: str = "",
+    uid: str = "",
+    destination_name: str = "",
+    destination_id: str = "",
+    path: str = "",
+) -> str:
     """
     Copy a data_item from source to destination.
 
@@ -54,8 +59,12 @@ def copy_data_item(
     item_name: could be empty, in which case the first 1000 items are returned
     oid:    Return data_items referred to by the OID provided.
     uid:    Return data_item referred to by the UID provided.
-    destination: the destination storage
+    destination_name: the name of the destination storage volume.
+    destination_id: the destination storage
     path: the destination path
+    Returns
+    -------
+    The uid of the new item copy.
     """
     if not item_name and not oid and not uid:
         raise InvalidQueryParameters("Either an item_name or an OID or an UID has to be provided!")
@@ -66,23 +75,32 @@ def copy_data_item(
         raise UnmetPreconditionForOperation("No data item found for copying")
     # (1)
     item_name = orig_item["item_name"]
-    # TODO: this seems wrong? we should pick a storage that is *not* the destination, I assume
-    storages = check_item_on_storage(item_name, storage_id=destination_id)
+    storages = check_item_on_storage(item_name)
     # we pick the first data_item returned record for now
     if storages:
         storage = storages[0]
     else:
         raise UnmetPreconditionForOperation("Data item not in specified storage")
     # (2)
-    s_config = get_storage_config(storage["storage_id"])
+    s_config = get_storage_config(storage_id=storage["storage_id"])
     if not s_config:
         raise UnmetPreconditionForOperation("No configuration for source storage found!")
+
+    s_config = s_config[0]
     source = {"backend": f"{s_config['name']}:", "path": storage["uri"]}
     if not path:
         path = storage["uri"]
-    d_config = get_storage_config(destination_id)
+    if destination_name:
+        destination = query_storage(storage_name=destination_name)
+        if not destination:
+            raise UnmetPreconditionForOperation(
+                f"Unable to get ID of destination storage: {destination_name}."
+            )
+        destination_id = destination[0]["storage_id"]
+    d_config = get_storage_config(storage_id=destination_id)
     if not d_config:
-        raise UnmetPreconditionForOperation("No configuration for destination storage found!")
+        raise UnmetPreconditionForOperation("Unable to get configuration for destination storage!")
+    d_config = d_config[0]
     dest = {"backend": f"{d_config['name']}:", "path": path}
     # (3)
     init_item = {
@@ -90,7 +108,7 @@ def copy_data_item(
         "oid": orig_item["oid"],
         "storage_id": destination_id,
     }
-    uid = init_data_item(json_data=init_item)
+    uid = init_data_item(json_data=json.dumps(init_item))
     # (5)
     # TODO: abstract the actual function called away to allow for different
     # mechansims to perform the copy
@@ -105,3 +123,4 @@ def copy_data_item(
     set_uri(uid, dest["path"], destination_id)
     # all done! Set data_item state to READY
     set_state(uid, "READY")
+    return uid

@@ -15,13 +15,14 @@ class DBQueryError(DataLifecycleError):
 
     def __init__(self, url: str, method: str, params: dict | tuple | None, json: object | None):
         """Create a DBQueryError."""
-        # Don't pass the json data up as it might be too big when stringifying
-        # this object
-        super().__init__(url, method, params)
         self.url = url
         self.method = method
         self.params = params
         self.json = json
+
+    def __str__(self):
+        """Convert to string."""
+        return f"DBQueryError(url='{self.url}', method='{self.method}', params={self.params})"
 
 
 _DEFAULT_HEADERS = {"Prefer": "missing=default, return=representation"}
@@ -47,7 +48,8 @@ class PostgRESTAccess(contextlib.AbstractContextManager):
 
     def update(self, table: str, *, json: object | None, params: dict | list | None = None):
         """Perform an update query, returning the JSON-encoded result as an object."""
-        return self._query(table, "PATCH", params=params, json=json)
+        result = self._query(table, "PATCH", params=params, json=json)
+        return True if result is None else result
 
     def select(self, table: str, *, params: dict | list | None = None):
         """Perform a selection query, returning the JSON-encoded result as an object."""

@@ -1,15 +1,13 @@
 """CLI support for dlm_ingest package."""
 import typer
-from rich import print as rich_print
 
-from . import dlm_ingest_requests
+from ska_dlm import dlm_ingest
+from ska_dlm.cli_utils import add_as_typer_command
+
+from .. import exceptions
 
 app = typer.Typer()
-
-
-@app.command()
-# pylint: disable-next=missing-function-docstring
-def ingest_data_item(  # noqa: D103
-    item_name: str, uri: str = "", storage_name: str = "", storage_id: str = ""
-):
-    rich_print(dlm_ingest_requests.ingest_data_item(item_name, uri, storage_name, storage_id))
+add_as_typer_command(app, dlm_ingest.ingest_data_item, include_excs=[exceptions.ValueAlreadyInDB])
+add_as_typer_command(
+    app, dlm_ingest.register_data_item, include_excs=[exceptions.ValueAlreadyInDB]
+)

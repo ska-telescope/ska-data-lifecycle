@@ -1,12 +1,12 @@
 """Storage Manager Daemon."""
 
 import logging
-import os
-import sys
-from datetime import datetime
-from time import sleep
+import signal
+from datetime import datetime, timezone
 
-from ska_dlm import dlm_migration, dlm_request, dlm_storage
+import ska_ser_logging
+
+from ska_dlm import data_item, dlm_migration, dlm_request, dlm_storage
 from ska_dlm.exceptions import DataLifecycleError
 
 from .. import CONFIG
@@ -26,6 +26,8 @@ def persist_new_data_items(last_check_time: str) -> dict:
     dict, with entries of the form {item_name:status}
     """
     new_data_items = dlm_request.query_new(last_check_time)
+    if not new_data_items:
+        logger.info("No new data items found.")
     item_names = [n["item_name"] for n in new_data_items]
     stat = dict(zip(item_names, [False] * len(new_data_items)))
 
@@ -47,35 +49,56 @@ def persist_new_data_items(last_check_time: str) -> dict:
         new_storage = new_storage[0]
         dest_id = new_storage["storage_id"]
         try:
-            dlm_migration.copy_data_item(uid=new_data_item["uid"], destination_id=dest_id)
+            copy_uid = dlm_migration.copy_data_item(
+                uid=new_data_item["uid"],
+                destination_id=dest_id,
+            )
         except DataLifecycleError:
             logger.exception("Copy of data_item %s unsuccessful!", new_data_item["item_name"])
         logger.info(
             "Persisted %s to volume %s", new_data_item["item_name"], new_storage["storage_name"]
         )
+        data_item.set_phase(uid=new_data_item["uid"], phase="LIQUID")
+        data_item.set_phase(uid=copy_uid, phase="LIQUID")
         stat[new_data_item["item_name"]] = True
     return stat
 
 
 def main():
     """Begin a long-running process."""
-    last_new_data_item_query_time = datetime.now().isoformat()
+    # We use signal.pause() at the end of the main loop to continue with the next
+    # iteration. A SIGARLM is scheduled before that, and indicates that the loop
+    # should continue, while SIGINT/SIGTERM will indicate that the program needs
+    # to exit
+    run_main_loop = True
 
-    while True:
+    def handle_signal(signo, _frame):
+        nonlocal run_main_loop
+        if signo in (signal.SIGINT, signal.SIGTERM):
+            logger.info("Received %s, ending program now", signal.Signals(signo).name)
+            run_main_loop = False
+            return
+        assert signo == signal.SIGALRM
+
+    signal.signal(signal.SIGTERM, handle_signal)
+    signal.signal(signal.SIGINT, handle_signal)
+    signal.signal(signal.SIGALRM, handle_signal)
+
+    ska_ser_logging.configure_logging(level=logging.INFO)
+    last_new_data_item_query_time = "2024-01-01"
+    while run_main_loop:
+        logger.info(
+            "Running new/expired checks with timestamp: %s UTC", last_new_data_item_query_time
+        )
         dlm_storage.delete_uids()
-        persist_new_data_items(last_new_data_item_query_time)
-        last_new_data_item_query_time = datetime.now().isoformat()
+        _ = persist_new_data_items(last_new_data_item_query_time)
         # check_storage_capacity()
         # perform_phase_transitions()
 
-        sleep(CONFIG.DLM.SLEEP_DURATION)
+        last_new_data_item_query_time = datetime.now(timezone.utc).isoformat()[:19]
+        signal.alarm(CONFIG.DLM.storage_manager.polling_interval)
+        signal.pause()
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        try:
-            sys.exit(130)
-        except SystemExit:
-            os._exit(130)
+    main()

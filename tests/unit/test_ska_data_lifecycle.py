@@ -81,7 +81,9 @@ class TestDlm(TestCase):
     def test_query_expired(self):
         """Test the query expired returning records."""
         self.test_init()
+        uid = dlm_request.query_data_item()[0]["uid"]
         offset = timedelta(days=1)
+        data_item.set_state(uid=uid, state="READY")
         result = dlm_request.query_expired(offset)
         success = len(result) != 0
         assert success
@@ -120,12 +122,12 @@ class TestDlm(TestCase):
         with open(fpath, "w", encoding="UTF-8") as tfile:
             tfile.write("Welcome to the great DLM world!")
         storage_id = dlm_storage.query_storage(storage_name="MyDisk")[0]["storage_id"]
-        uid = dlm_ingest.ingest_data_item(fpath)
+        uid = dlm_ingest.ingest_data_item(fpath, fpath, "MyDisk")
+        data_item.set_state(uid, "READY")
+        data_item.set_uri(uid, fpath, storage_id)
         queried_uid = dlm_request.query_data_item(item_name=fpath)[0]["uid"]
         assert uid == queried_uid
         dlm_storage.delete_data_item_payload(uid)
-        data_item.set_uri(uid, fpath, storage_id)
-        data_item.set_state(uid, "DELETED")
         assert dlm_request.query_data_item(item_name=fpath)[0]["uri"] == fpath
         assert dlm_request.query_data_item(item_name=fpath)[0]["item_state"] == "DELETED"
 
@@ -188,15 +190,16 @@ class TestDlm(TestCase):
         assert len(result) == 0
 
         # add an item, and expire immediately
-        uid = dlm_ingest.ingest_data_item(item_name=fname, storage_name="MyDisk")
-        data_item.set_uid_expiration(uid, "2000-01-01T00:00:01.000000")
-
-        # run storage daemon code
-        dlm_storage.delete_uids()
+        uid = dlm_ingest.ingest_data_item(item_name=fname, uri=fname, storage_name="MyDisk")
+        data_item.set_state(uid=uid, state="READY")
+        data_item.set_uid_expiration(uid, "2000-01-01")
 
         # check the expired item was found
         result = dlm_request.query_expired()
         assert len(result) == 1
+
+        # run storage daemon code
+        dlm_storage.delete_uids()
 
         # check that the daemon deleted the item
         result = dlm_request.query_deleted()

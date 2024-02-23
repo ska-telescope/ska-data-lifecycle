@@ -1,6 +1,7 @@
 #!/bin/bash
 POSTGREST_PID_FILE=$1
 RCLONE_PID_FILE=$2
+DLM_SM_PID_FILE=$3
 
 if ! command -v psql &> /dev/null; then
     apt-get update -qq
@@ -93,3 +94,11 @@ if [[ $attempt -gt $MAX_RETRIES ]]; then
     exit 1
 fi
 
+dlm-sm-service  >/dev/null 2>&1 &
+DLM_SM_PID=$!
+echo "$DLM_SM_PID">$DLM_SM_PID_FILE
+
+if ps -p $DLM_SM_PID > /dev/null
+then
+   echo "DLM Storage Manager service is running"
+fi

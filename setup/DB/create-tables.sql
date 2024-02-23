@@ -23,7 +23,7 @@ CREATE TABLE storage (
     storage_name varchar NOT NULL,
     storage_type varchar NOT NULL,
     storage_interface varchar NOT NULL,
-    storage_phase_level varchar DEFAULT 'Gas',
+    storage_phase_level varchar DEFAULT 'GAS',
     storage_capacity BIGINT DEFAULT -1,
     storage_use_pct NUMERIC(3,1) DEFAULT 0.0,
     storage_permissions varchar DEFAULT 'RW',
@@ -142,7 +142,7 @@ FOR EACH ROW EXECUTE PROCEDURE
 CREATE TABLE phase_change (
     phase_change_ID bigint GENERATED always as IDENTITY PRIMARY KEY,
     OID uuid NOT NULL,
-    requested_phase varchar DEFAULT 'gas',
+    requested_phase varchar DEFAULT 'GAS',
     request_creation timestamp without time zone DEFAULT now()
 );
 ALTER TABLE phase_change OWNER TO ska_dlm_admin;

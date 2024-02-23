@@ -90,7 +90,7 @@ CREATE TABLE public.data_item (
     item_encoding varchar DEFAULT 'unknown',
     item_mime_type varchar DEFAULT 'application/octet-stream',
     item_level smallint DEFAULT -1,
-    item_phase varchar DEFAULT 'gas',
+    item_phase varchar DEFAULT 'GAS',
     item_state varchar DEFAULT 'initialized',
     UID_creation timestamp without time zone DEFAULT now(),
     OID_creation timestamp without time zone DEFAULT NULL,
@@ -157,7 +157,7 @@ DROP TABLE IF EXISTS public.phase_change;
 CREATE TABLE public.phase_change (
     phase_change_ID bigint GENERATED always as IDENTITY PRIMARY KEY,
     OID bigint NOT NULL,
-    requested_phase varchar DEFAULT 'gas',
+    requested_phase varchar DEFAULT 'GAS',
     request_creation timestamp without time zone DEFAULT now()
 );
 ALTER TABLE public.phase_change OWNER TO ska_dlm_admin;

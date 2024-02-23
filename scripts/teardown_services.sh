@@ -2,7 +2,7 @@
 
 POSTGREST_PID_FILE=$1
 RCLONE_PID_FILE=$2
-
+DLM_SM_PID_FILE=$3
 # Function to stop a process using its PID file
 stop_process() {
     local pid_file="$1"
@@ -25,3 +25,4 @@ stop_process() {
 
 stop_process "$POSTGREST_PID_FILE" "postgREST"
 stop_process "$RCLONE_PID_FILE" "rclone server"
+stop_process "$DLM_SM_PID_FILE" "dlm sm service"

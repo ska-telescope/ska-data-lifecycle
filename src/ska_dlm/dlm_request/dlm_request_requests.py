@@ -1,7 +1,7 @@
 """Convenience functions wrapping the most important postgREST API calls."""
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from ska_dlm.dlm_db.db_access import DB
 
@@ -11,9 +11,7 @@ from ..exceptions import InvalidQueryParameters
 logger = logging.getLogger(__name__)
 
 
-def query_data_item(
-    item_name: str = "", oid: str = "", uid: str = "", params: list | dict | None = None
-) -> str:
+def query_data_item(item_name: str = "", oid: str = "", uid: str = "", params: str = None) -> str:
     """
     Query a new data_item by at least specifying an item_name.
 
@@ -22,7 +20,7 @@ def query_data_item(
     item_name: could be empty, in which case the first 1000 items are returned
     oid:    Return data_items referred to by the OID provided.
     uid:    Return data_item referred to by the UID provided.
-    query_string: an arbitrary postgREST query string
+    params: specify the query parameters
 
     Returns:
     --------
@@ -53,15 +51,16 @@ def query_expired(offset: timedelta = None):
     -----------
     offset: optional offset for the query
     """
-    now = datetime.now()
-    iso_now = now.isoformat()
+    now = datetime.now(timezone.utc)
     if offset:
         if not isinstance(offset, timedelta):
             raise InvalidQueryParameters("Specified offset invalid type! Should be timedelta.")
-        iso_now = now + offset
+        now += offset
+    iso_now = now.replace(tzinfo=None).isoformat()
     params = {
         "select": "uid,uid_expiration",
         "uid_expiration": f"lt.{iso_now}",
+        "item_state": "eq.READY",
     }
     return query_data_item(params=params)
 
@@ -88,7 +87,7 @@ def query_new(check_date: str, uid: str = "") -> list:
 
     Parameters:
     -----------
-    check_date: str, the starting date (exclusive)
+    check_date: str, the UTC starting date (exclusive)
     uid: The UID to be checked, optional.
 
     RETURNS:
