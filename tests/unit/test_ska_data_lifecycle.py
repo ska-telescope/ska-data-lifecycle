@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 """Tests for `ska_data_lifecycle` package."""
-import os
 from datetime import timedelta
 from unittest import TestCase
 
@@ -12,6 +11,15 @@ from ska_dlm import CONFIG, data_item, dlm_ingest, dlm_migration, dlm_request, d
 from ska_dlm.dlm_db.db_access import DB
 from ska_dlm.dlm_storage.main import persist_new_data_items
 from ska_dlm.exceptions import InvalidQueryParameters, ValueAlreadyInDB
+from tests.common_k8s import (
+    clear_rclone_data,
+    get_rclone_local_file_content,
+    write_rclone_file_content,
+)
+
+RCLONE_TEST_FILE_PATH = "/LICENSE"
+"""A file that is available locally in the rclone container"""
+RCLONE_TEST_FILE_CONTENT = "license content"
 
 
 def _clear_database():
@@ -33,6 +41,8 @@ class TestDlm(TestCase):
         """Initialze the tests."""
         _clear_database()
 
+        write_rclone_file_content(RCLONE_TEST_FILE_PATH, RCLONE_TEST_FILE_CONTENT)
+
         # we need a location to register the storage
         location_id = dlm_storage.init_location("MyOwnStorage", "Server")
         uuid = dlm_storage.init_storage(
@@ -48,6 +58,7 @@ class TestDlm(TestCase):
         dlm_storage.rclone_config(config)
         yield
         _clear_database()
+        clear_rclone_data()
 
     def test_init(self):
         """Test data_item init."""
@@ -62,15 +73,17 @@ class TestDlm(TestCase):
 
     def test_ingest_data_item(self):
         """Test the ingest_data_item function."""
-        uid = dlm_ingest.ingest_data_item("/my/ingest/test/item", "/LICENSE", "MyDisk")
+        uid = dlm_ingest.ingest_data_item("/my/ingest/test/item", RCLONE_TEST_FILE_PATH, "MyDisk")
         assert len(uid) == 36
 
     def test_register_data_item(self):
         """Test the register_data_item function."""
-        uid = dlm_ingest.register_data_item("/my/ingest/test/item2", "/LICENSE", "MyDisk")
+        uid = dlm_ingest.register_data_item(
+            "/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, "MyDisk"
+        )
         assert len(uid) == 36
         with pytest.raises(ValueAlreadyInDB, match="Item is already registered"):
-            dlm_ingest.register_data_item("/my/ingest/test/item2", "/LICENSE", "MyDisk")
+            dlm_ingest.register_data_item("/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, "MyDisk")
 
     def test_query_expired_empty(self):
         """Test the query expired returning an empty set."""
@@ -99,28 +112,20 @@ class TestDlm(TestCase):
 
     def test_set_uri_state_phase(self):
         """Update a data_item record with the pointer to a file."""
-        fname = "dlm_test_file_1.txt"
-        with open(fname, "w", encoding="UTF-8") as tfile:
-            tfile.write("Welcome to the great DLM world!")
-        fpath = os.path.abspath("dlm_test_file.txt")
-        fpath = fpath.replace(f"{os.environ['HOME']}/", "")
         uid = dlm_ingest.init_data_item(item_name="this/is/the/first/test/item")
         storage_id = dlm_storage.query_storage(storage_name="MyDisk")[0]["storage_id"]
-        data_item.set_uri(uid, fpath, storage_id)
-        assert dlm_request.query_data_item(uid=uid)[0]["uri"] == fpath
+        data_item.set_uri(uid, RCLONE_TEST_FILE_PATH, storage_id)
+        assert dlm_request.query_data_item(uid=uid)[0]["uri"] == RCLONE_TEST_FILE_PATH
         data_item.set_state(uid, "READY")
         data_item.set_phase(uid, "PLASMA")
         items = dlm_request.query_data_item(uid=uid)
         assert len(items) == 1
         assert items[0]["item_state"] == "READY"
         assert items[0]["item_phase"] == "PLASMA"
-        os.unlink(fname)
 
     def test_delete_item_payload(self):
         """Delete the payload of a data_item."""
-        fpath = "dlm_test_file_2.txt"
-        with open(fpath, "w", encoding="UTF-8") as tfile:
-            tfile.write("Welcome to the great DLM world!")
+        fpath = RCLONE_TEST_FILE_PATH
         storage_id = dlm_storage.query_storage(storage_name="MyDisk")[0]["storage_id"]
         uid = dlm_ingest.ingest_data_item(fpath, fpath, "MyDisk")
         data_item.set_state(uid, "READY")
@@ -157,14 +162,17 @@ class TestDlm(TestCase):
         """Copy a test file from one storage to another."""
         self.test_storage_config()
         dest_id = dlm_storage.query_storage("MyDisk2")[0]["storage_id"]
-        uid = dlm_ingest.register_data_item("/my/ingest/test/item2", "/LICENSE", "MyDisk")
+
+        uid = dlm_ingest.register_data_item(
+            "/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, "MyDisk"
+        )
         assert len(uid) == 36
-        dlm_migration.copy_data_item(uid=uid, destination_id=dest_id, path="LICENSE_copy")
-        os.unlink("LICENSE_copy")
+        dlm_migration.copy_data_item(uid=uid, destination_id=dest_id, path="/LICENSE_copy")
+        assert RCLONE_TEST_FILE_CONTENT == get_rclone_local_file_content("LICENSE_copy")
 
     def test_update_item_tags(self):
         """Update the item_tags field of a data_item."""
-        _ = dlm_ingest.register_data_item("/my/ingest/test/item2", "/LICENSE", "MyDisk")
+        _ = dlm_ingest.register_data_item("/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, "MyDisk")
         res = data_item.update_item_tags(
             "/my/ingest/test/item2", item_tags={"a": "SKA", "b": "DLM", "c": "dummy"}
         )
@@ -178,9 +186,7 @@ class TestDlm(TestCase):
 
     def test_expired_by_storage_daemon(self):
         """Test an expired data item is deleted by the storage manager."""
-        fname = "dlm_test_file_1.txt"
-        with open(fname, "w", encoding="UTF-8") as tfile:
-            tfile.write("Welcome to the great DLM world!")
+        fname = RCLONE_TEST_FILE_PATH
         # test no expired items were found
         result = dlm_request.query_expired()
         assert len(result) == 0
@@ -208,14 +214,14 @@ class TestDlm(TestCase):
     def test_query_new(self):
         """Test for newly created data_items."""
         check_time = "2024-01-01"
-        _ = dlm_ingest.register_data_item("/my/ingest/test/item", "/LICENSE", "MyDisk")
+        _ = dlm_ingest.register_data_item("/my/ingest/test/item", RCLONE_TEST_FILE_PATH, "MyDisk")
         result = dlm_request.query_new(check_time)
         assert len(result) == 1
 
     def test_persist_new_data_items(self):
         """Test making new data items persistent."""
         check_time = "2024-01-01"
-        _ = dlm_ingest.register_data_item("/my/ingest/test/item", "/LICENSE", "MyDisk")
+        _ = dlm_ingest.register_data_item("/my/ingest/test/item", RCLONE_TEST_FILE_PATH, "MyDisk")
         result = persist_new_data_items(check_time)
         # negative test, since there is only a single volume registered
         assert result == {"/my/ingest/test/item": False}

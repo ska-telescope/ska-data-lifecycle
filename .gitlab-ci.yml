@@ -74,11 +74,6 @@ k8s-test-setup:
 
 python-test:
   extends: .k8s-test
-  services:
-  - alias: ska-dlm
-    name: postgres
-    variables:
-      POSTGRES_PASSWORD: mysecretpassword
 
 k8s-test-cleanup:
   extends: .k8s-test

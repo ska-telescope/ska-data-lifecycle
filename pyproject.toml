@@ -43,6 +43,7 @@ flake8-docstrings = "^1.7.0"
 flake8-rst-docstrings = "^0.3.0"
 flake8-pyproject = "^1.2.3"
 ipykernel = "^6.29.2"
+kubernetes = "^29.0.0"
 
 [tool.poetry.group.docs.dependencies]
 Sphinx = "^7.2.0"

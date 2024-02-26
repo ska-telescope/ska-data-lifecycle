@@ -18,26 +18,23 @@ The current design consists of five services and this repository is organised ac
 The repository contains helm charts to install the services, including the DB. However, the DLM in operations is supposed to run continuously and use SKAO wide services like a HA DB service as well as the authentication system.
 
 ## Startup as a test environment
-To run the tests just execute `make python-test`. This will startup all services, run the tests and shutdown everything again. For a more permanent setup follow the steps below. In future we may implement a make target just starting the services and keep them alive until shutdown.
+To run the tests you will need to install [minikube](https://minikube.sigs.k8s.io/docs/), then start it and enable the ingress plugin:
 
-### Start the DB:
+``` bash
+minikube start
+minikube addons enable ingress
+```
 
-`docker run --rm --name ska-dlm -p 5432:5432 -e POSTGRES_PASSWORD=mysecretpassword -d postgres`
+Then spin up the DLM environment, making sure to download helm dependencies and initialise the database:
+``` bash
+make k8s-namespace
+make update-chart-dependencies
+make install-and-init-dlm
+```
 
-### Setup the ska-dlm DB:
-From inside the ska-data-lifecycle repo directory run:
+On some systems you will also need to start `minikube tunnel` in separate terminal. The most notable case of this is M1 Macs (see [here](https://github.com/kubernetes/minikube/issues/13510) for more details), though there may be others. It is unknown if Intel Macs need this step (if you are running one please test it and update these docs!).
 
-`psql -U postgres -h localhost -p 5432 -f setup/DB/ska_dlm_meta.sql`
-
-### Start the postgREST layer:
-After the installation of postgREST the command `postgrest` should be available on the PATH. In that case, from inside the ska-data-lifecycle repo directory, you can run:
-
-`postgrest setup/postgREST/postgREST.conf`
-
-_This will run in the terminal, thus to start PostGUI you need to use another terminal._
-
-### Create a file in the main directory called .secrets.yaml with the following content:
-`db_password: "mysecretpassword"`
+Finally you are ready to run the tests! Just execute `make python-test` and the tests will run against the running deployment.
 
 ### Optional
 The DLM system is complete now, but in order to have a view into the DB you can run the nice PostGUI web interface, which talks to postgREST.
@@ -45,6 +42,8 @@ The DLM system is complete now, but in order to have a view into the DB you can 
 #### Clone the PostGUI into a directory on the same level as the `ska-data-lifecycle` one:
 `git clone https://github.com/priyank-purohit/PostGUI`\
 `cd PostGUI`
+
+Replace the file src/data/config.json with the file `setup/postgrest/config.json`, replacing `$(minikube ip)` in the url with the result from your terminal, and `$(KUBE_NAMESPACE)` with the namespace you deployed to (by default in the Makefile: `ska-dlm`).
 
 #### Start the PostGUI:
 From inside the PostGUI repository directory run (for Unix):
@@ -62,8 +61,4 @@ from the ska-data-lifecycle directory, run `pytest`
 _This will populate the data_item table in the GUI_
 
 ## Shutdown
-Just kill the processes inside the PostGUI and postgREST terminals and shut down the DB using the command:
-
-`docker stop ska-dlm`
-
-**_Note: Since we had specified `--rm` on the docker command line to start the DB this will also delete the container and thus all DB setup and data will be gone as well._**
+To take down the DLM retaining the data in the database (i.e. the persistent volume claim) run `make uninstall-dlm`. You can then bring it back up using `make install-dlm`. To delete everything, including all data, run `make k8s-delete-namespace`.
