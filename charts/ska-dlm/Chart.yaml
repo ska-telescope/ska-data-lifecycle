@@ -1,7 +1,7 @@
 apiVersion: v2
 name: ska-dlm
-version: 0.1.0
-appVersion: 0.1.0
+version: 0.0.1
+appVersion: 0.0.1
 description: SKA Data Lifecycle Manager
 home: https://developer.skao.int/projects/
 sources:
