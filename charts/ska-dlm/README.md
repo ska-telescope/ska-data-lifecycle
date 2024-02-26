@@ -16,23 +16,18 @@ The main options of interest are:
 
   `minikube start --disk-size 64g --cpus=6 --memory=16384`
 
-- Depending on your version of minikube and operating system,
-  you might need to start a minikube tunnel (in a separate terminal):
+- If not already done, you will need to enable the
+  ingress plugin:
 
-  `minikube tunnel --cleanup`
+  `minikube addons enable ingress`
 
 - Install a release of this chart.
   In this example the chart is being installed under the `test` namespace,
   the release is called `ska-dlm`.
 
-  You may first need to add the bitnami repo:
+  First get chart dependencies:
 
-  `cd charts/ska-dlm`\
-  `helm repo add bitnami https://charts.bitnami.com/bitnami`
-
-  Then fetch missing chart dependencies:
-
-  `helm dependency build`
+  `helm dependency update`
 
   From the top-level directory of this repository, create the namespace `test`
 (if you do not already have it):

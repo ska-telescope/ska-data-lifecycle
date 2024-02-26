@@ -10,7 +10,7 @@ spec:
   ports:
     - name: tcp-rclone
       port: 80
-      targetPort: 80
+      targetPort: 5572
       protocol: TCP
   selector:
     component: {{ .Values.rclone.component }}
@@ -43,10 +43,10 @@ spec:
           - rcd
           - --rc-serve
           - --rc-addr
-          - :80
+          - :5572
           - --rc-no-auth
         readinessProbe:
           httpGet:
             path: /
-            port: 80
+            port: 5572
           periodSeconds: 5
