@@ -43,6 +43,7 @@ flake8-docstrings = "^1.7.0"
 flake8-rst-docstrings = "^0.3.0"
 flake8-pyproject = "^1.2.3"
 ipykernel = "^6.29.2"
+kubernetes = "^29.0.0"
 
 [tool.poetry.group.docs.dependencies]
 Sphinx = "^7.2.0"
@@ -68,8 +69,18 @@ rst-roles = [
 enable = "DAR104"
 max-complexity = 10
 
-# E203 and W503 conflict with black
-ignore = ["E203", "W503"]
+ignore = [
+    # Black handles formatting for us
+    "E203", # Whitespace before ':'
+    "W503", # Line break occurred before a binary operator
+    "E501", # line too long
+
+    # These hinder adoption of documentation
+    "D400", # First line should end with a period
+    "D401", # First line should be in imperative mood; try rephrasing
+    "D202", # No blank lines allowed after function docstring
+    "D205", # 1 blank line required between summary line and description
+]
 
 [tool.pylint.messages_control]
 disable = ["duplicate-code", "fixme"]

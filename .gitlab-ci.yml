@@ -7,6 +7,8 @@ default:
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  # Ensure TEST_INGRESS is defined so that we don't try to evaluate `minikube ip` in the Makefile
+  TEST_INGRESS: ""
 
 # Enable caching for python
 cache:
@@ -17,7 +19,9 @@ cache:
 stages:
   - lint
   - build
+  - pre-test
   - test
+  - post-test
   - publish
   - pages
   - scan
@@ -48,9 +52,33 @@ include:
   - project: 'ska-telescope/templates-repository'
     file: 'gitlab-ci/includes/finaliser.gitlab-ci.yml'
 
+.k8s-test:
+  tags:
+    - k8srunner
+  variables:
+    KUBE_NAMESPACE: ci-$CI_PROJECT_NAME-$CI_COMMIT_SHORT_SHA
+  environment:
+    name: test/$CI_COMMIT_REF_NAME
+    kubernetes:
+      namespace: $KUBE_NAMESPACE
+
+k8s-test-setup:
+  extends: .k8s-test
+  stage: pre-test
+  variables:
+    HELM_VALUES: resources/initialised-dlm.yaml resources/gitlab-cluster.yaml
+  script:
+    - make k8s-namespace
+    - make update-chart-dependencies
+    - make install-dlm
+
 python-test:
-  services:
-  - alias: ska-dlm
-    name: postgres
-    variables:
-      POSTGRES_PASSWORD: mysecretpassword
+  extends: .k8s-test
+
+k8s-test-cleanup:
+  extends: .k8s-test
+  stage: post-test
+  rules:
+    - when: always
+  script:
+    - make k8s-delete-namespace

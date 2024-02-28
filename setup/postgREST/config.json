@@ -2,7 +2,7 @@
   "databases": [
     {
       "title": "SKA-DLM",
-      "url": "http://localhost:3001",
+      "url": "http://$(minikube ip)/$(KUBE_NAMESPACE)/postgrest",
       "publicDbAcessType": "read",
       "foreignKeySearch": true,
       "primaryKeyFunction": true,

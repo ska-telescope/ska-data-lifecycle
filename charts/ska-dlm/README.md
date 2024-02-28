@@ -12,36 +12,41 @@ The main options of interest are:
 
 ## Running in Minikube
 
+Ensuring you are in the root directory of the repository:
+
 - Start minikube (this is what was used during development but have confirmed other smaller values work)
 
   `minikube start --disk-size 64g --cpus=6 --memory=16384`
 
-- Depending on your version of minikube and operating system,
-  you might need to start a minikube tunnel (in a separate terminal):
+- If not already done, you will need to enable the
+  ingress plugin:
 
-  `minikube tunnel --cleanup`
+  `minikube addons enable ingress`
+
+- Depending on you system you may also need to run `minikube tunnel`
+  in a separate terminal
+  (notably [M1 Macs](https://github.com/kubernetes/minikube/issues/13510)).
+  In this case, you can access ingress services via `localhost` instead
+  of `minikube ip`.
 
 - Install a release of this chart.
   In this example the chart is being installed under the `test` namespace,
   the release is called `ska-dlm`.
 
-  You may first need to add the bitnami repo:
+  First, make a note of the chart directory. e.g. `CHART="charts/ska-dlm"`.
 
-  `cd charts/ska-dlm`\
-  `helm repo add bitnami https://charts.bitnami.com/bitnami`
+  Then get chart dependencies:
 
-  Then fetch missing chart dependencies:
-
-  `helm dependency build`
+  `helm dependency update "$CHART"`
 
   From the top-level directory of this repository, create the namespace `test`
-(if you do not already have it):
+  (if you do not already have it):
 
   `kubectl create namespace test`
 
   Finally, install the chart:
 
-  `helm install -n test ska-dlm charts/ska-dlm`
+  `helm install -n test ska-dlm "$CHART"`
 
 - To uninstall the previously installed release
   (again, using the same names as in the previous example):
