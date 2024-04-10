@@ -9,6 +9,7 @@ variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
   # Ensure TEST_INGRESS is defined so that we don't try to evaluate `minikube ip` in the Makefile
   TEST_INGRESS: ""
+  CI_POETRY_VERSION: 1.8.2
 
 # Enable caching for python
 cache:
