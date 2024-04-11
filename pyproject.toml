@@ -17,6 +17,10 @@ ska-dlm = "ska_dlm.cli:main"
 dlm-sm-service = "ska_dlm.dlm_storage.main:main"
 
 [[tool.poetry.source]]
+name = 'PyPI'
+priority = 'primary'
+
+[[tool.poetry.source]]
 name = 'skao'
 url = 'https://artefact.skao.int/repository/pypi-internal/simple'
 
@@ -91,7 +95,7 @@ min-similarity-lines = 7
 ignore-imports = "yes"
 
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry>=1.8.2"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.black]
