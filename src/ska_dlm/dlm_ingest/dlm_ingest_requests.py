@@ -4,6 +4,8 @@ import functools
 import json
 import logging
 
+import requests
+
 from ska_dlm.dlm_storage.dlm_storage_requests import rclone_access
 
 from .. import CONFIG
@@ -53,6 +55,8 @@ def ingest_data_item(
     (3) check whether item is already registered on that storage
     (4) initialize the new item with the same OID on the new storage
     (5) set state to READY
+    (6) generate metadata
+    (7) notify the data dashboard
 
     Parameters:
     -----------
@@ -90,11 +94,37 @@ def ingest_data_item(
         "item_phase": storages[0]["storage_phase_level"],
     }
     uid = init_data_item(json_data=json.dumps(init_item))
+
     # (4)
     set_uri(uid, uri, storage_id)
-    # all done! Set data_item state to READY
+
+    # (5) all done! Set data_item state to READY
     set_state(uid, "READY")
+
+    # (6)
+
+    # (7)
+    _notify_data_dashboard({})
+    # _notify_data_dashboard(metadata)
+
     return uid
+
+
+# TODO: add type hint for input param
+def _notify_data_dashboard(metadata) -> None:
+    """HTTP POST a MetaData object to the Data Product Dashboard"""
+    headers = {"Content-Type": "application/json"}
+    # payload = metadata.get_data().to_json()
+    payload = "{}"
+    url = "/ingestnewmetadata"
+
+    try:
+        requests.request("POST", url, headers=headers, data=payload, timeout=2)
+        logger.info("POSTed metadata (%s) to %s", metadata.get_data().execution_block, url)
+    except requests.Timeout:
+        logger.exception("Timeout POSTing file path to: %s", url)
+    except requests.ConnectionError:
+        logger.exception("Connection Error POSTing file path to: %s", url)
 
 
 # just for convenience we also define the ingest function as register_data_item.
