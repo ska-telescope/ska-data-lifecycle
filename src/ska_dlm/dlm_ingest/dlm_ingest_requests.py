@@ -5,6 +5,8 @@ import json
 import logging
 
 import requests
+import ska_sdp_metadata_generator
+import ska_sdp_metadata_generator.ska_sdp_metadata_generator
 
 from ska_dlm.dlm_storage.dlm_storage_requests import rclone_access
 
@@ -13,7 +15,8 @@ from ..data_item import set_state, set_uri
 from ..dlm_db.db_access import DB
 from ..dlm_request import query_data_item, query_exists
 from ..dlm_storage import check_storage_access, query_storage
-from ..exceptions import InvalidQueryParameters, UnmetPreconditionForOperation, ValueAlreadyInDB
+from ..exceptions import (InvalidQueryParameters,
+                          UnmetPreconditionForOperation, ValueAlreadyInDB)
 
 logger = logging.getLogger(__name__)
 
@@ -102,10 +105,14 @@ def ingest_data_item(
     set_state(uid, "READY")
 
     # (6)
+    # TODO: The following relies on the uri being a local file rather than being a remote file
+    # accessible on rclone.
+    metadata_object = (
+        ska_sdp_metadata_generator.ska_sdp_metadata_generator.generate_metadata_from_generator(uri)
+    )
 
     # (7)
-    _notify_data_dashboard({})
-    # _notify_data_dashboard(metadata)
+    _notify_data_dashboard(metadata_object)
 
     return uid
 
