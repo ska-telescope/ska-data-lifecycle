@@ -15,8 +15,7 @@ from ..data_item import set_state, set_uri
 from ..dlm_db.db_access import DB
 from ..dlm_request import query_data_item, query_exists
 from ..dlm_storage import check_storage_access, query_storage
-from ..exceptions import (InvalidQueryParameters,
-                          UnmetPreconditionForOperation, ValueAlreadyInDB)
+from ..exceptions import InvalidQueryParameters, UnmetPreconditionForOperation, ValueAlreadyInDB
 
 logger = logging.getLogger(__name__)
 

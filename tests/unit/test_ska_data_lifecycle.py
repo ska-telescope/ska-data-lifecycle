@@ -232,12 +232,3 @@ class TestDlm(TestCase):
         # and run again...
         result = persist_new_data_items(check_time)
         assert result == {"/my/ingest/test/item": True}
-
-# from ska_sdp_metadata_generator.ska_sdp_metadata_generator import generate_metadata_from_generator
-# def test_generate_metadata_returns_metadata_object(self):
-#     # Provide a test file path
-#     test_file = "path/to/test_file.txt"
-
-#     # Call the function and assert the type of output
-#     result = generate_metadata_from_generator(test_file)
-#     self.assertIsInstance(result, MetaData)
