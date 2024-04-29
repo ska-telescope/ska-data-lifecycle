@@ -116,7 +116,7 @@ def _notify_data_dashboard(metadata) -> None:
     headers = {"Content-Type": "application/json"}
     # payload = metadata.get_data().to_json()
     payload = "{}"
-    url = "/ingestnewmetadata"
+    url = CONFIG.DATA_PRODUCT_API.url + "/ingestnewmetadata"
 
     try:
         requests.request("POST", url, headers=headers, data=payload, timeout=2)
