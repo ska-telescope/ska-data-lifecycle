@@ -233,12 +233,12 @@ class TestDlm(TestCase):
         result = persist_new_data_items(check_time)
         assert result == {"/my/ingest/test/item": True}
 
-
     def test_notify_data_dashboard(requests_mock):
         """Test that the write hook will post metadata file info to a URL."""
         # mock a response for this URL, a copy of the normal response from ska-sdp-dataproduct-api
         requests_mock.post(
-            CONFIG.DATA_PRODUCT_API.url + '/ingestnewmetadata', text="New data product metadata file loaded and store index updated"
+            CONFIG.DATA_PRODUCT_API.url + "/ingestnewmetadata",
+            text="New data product metadata file loaded and store index updated",
         )
 
         dlm_ingest.dlm_ingest_requests._notify_data_dashboard({})
