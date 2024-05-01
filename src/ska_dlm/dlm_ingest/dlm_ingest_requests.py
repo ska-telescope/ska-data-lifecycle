@@ -111,13 +111,13 @@ def ingest_data_item(
     )
 
     # (7)
-    _notify_data_dashboard(metadata_object)
+    notify_data_dashboard(metadata_object)
 
     return uid
 
 
 # TODO: add type hint for input param
-def _notify_data_dashboard(metadata) -> None:
+def notify_data_dashboard(metadata) -> None:
     """HTTP POST a MetaData object to the Data Product Dashboard"""
     headers = {"Content-Type": "application/json"}
     # payload = metadata.get_data().to_json()
