@@ -6,6 +6,7 @@ from unittest import TestCase
 
 import inflect
 import pytest
+from requests_mock import Mocker
 
 from ska_dlm import CONFIG, data_item, dlm_ingest, dlm_migration, dlm_request, dlm_storage
 from ska_dlm.dlm_db.db_access import DB
@@ -233,10 +234,11 @@ class TestDlm(TestCase):
         result = persist_new_data_items(check_time)
         assert result == {"/my/ingest/test/item": True}
 
-    def test_notify_data_dashboard(self, requests_mock):
+    def test_notify_data_dashboard(self):
         """Test that the write hook will post metadata file info to a URL."""
         # mock a response for this URL, a copy of the normal response from ska-sdp-dataproduct-api
-        requests_mock.post(
+        req_mock = Mocker()
+        req_mock.post(
             CONFIG.DATA_PRODUCT_API.url + "/ingestnewmetadata",
             text="New data product metadata file loaded and store index updated",
         )

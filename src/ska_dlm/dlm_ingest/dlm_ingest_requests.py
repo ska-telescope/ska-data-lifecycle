@@ -5,8 +5,8 @@ import json
 import logging
 
 import requests
-import ska_sdp_metadata_generator
-import ska_sdp_metadata_generator.ska_sdp_metadata_generator
+import ska_sdp_metadata_generator.ska_sdp_metadata_generator as metagen
+from ska_sdp_dataproduct_metadata import MetaData
 
 from ska_dlm.dlm_storage.dlm_storage_requests import rclone_access
 
@@ -106,9 +106,7 @@ def ingest_data_item(
     # (6)
     # TODO: The following relies on the uri being a local file rather than being a remote file
     # accessible on rclone.
-    metadata_object = (
-        ska_sdp_metadata_generator.ska_sdp_metadata_generator.generate_metadata_from_generator(uri)
-    )
+    metadata_object = metagen.generate_metadata_from_generator(uri)
 
     # (7)
     notify_data_dashboard(metadata_object)
@@ -117,7 +115,7 @@ def ingest_data_item(
 
 
 # TODO: add type hint for input param
-def notify_data_dashboard(metadata) -> None:
+def notify_data_dashboard(metadata: MetaData) -> None:
     """HTTP POST a MetaData object to the Data Product Dashboard"""
     headers = {"Content-Type": "application/json"}
     # payload = metadata.get_data().to_json()
