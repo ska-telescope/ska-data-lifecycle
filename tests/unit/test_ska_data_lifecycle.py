@@ -7,6 +7,7 @@ from unittest import TestCase
 import inflect
 import pytest
 from requests_mock import Mocker
+from ska_sdp_dataproduct_metadata import MetaData
 
 from ska_dlm import CONFIG, data_item, dlm_ingest, dlm_migration, dlm_request, dlm_storage
 from ska_dlm.dlm_db.db_access import DB
@@ -243,4 +244,4 @@ class TestDlm(TestCase):
             text="New data product metadata file loaded and store index updated",
         )
 
-        dlm_ingest.notify_data_dashboard({})
+        dlm_ingest.notify_data_dashboard(MetaData())

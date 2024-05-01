@@ -118,8 +118,8 @@ def ingest_data_item(
 def notify_data_dashboard(metadata: MetaData) -> None:
     """HTTP POST a MetaData object to the Data Product Dashboard"""
     headers = {"Content-Type": "application/json"}
-    # payload = metadata.get_data().to_json()
-    payload = "{}"
+    payload = metadata.get_data().to_json()
+    # payload = "{}"
     url = CONFIG.DATA_PRODUCT_API.url + "/ingestnewmetadata"
 
     try:
