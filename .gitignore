@@ -18,8 +18,7 @@ counter_*.txt
 **/*.pyc
 
 # Python virtualenv folder
-**/venv/
-.venv3.12/
+**venv**
 
 # Pyenv version file
 **/.python-version
