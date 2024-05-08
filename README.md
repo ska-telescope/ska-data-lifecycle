@@ -27,9 +27,7 @@ minikube addons enable ingress
 
 Then spin up the DLM environment, making sure to download helm dependencies and initialise the database:
 ``` bash
-make k8s-namespace
-make update-chart-dependencies
-make install-dlm
+make k8s-install-chart
 ```
 
 On some systems you will also need to start `minikube tunnel` in separate terminal. The most notable case of this is M1 Macs (see [here](https://github.com/kubernetes/minikube/issues/13510) for more details), though there may be others. It is unknown if Intel Macs need this step (if you are running one please test it and update these docs!).

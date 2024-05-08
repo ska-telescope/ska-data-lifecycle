@@ -67,9 +67,7 @@ k8s-test:
     - poetry config virtualenvs.create $POETRY_CONFIG_VIRTUALENVS_CREATE
     - poetry install --with=test
   script:
-    - make k8s-namespace
-    - make update-chart-dependencies
-    - make install-dlm
+    - make k8s-install-chart
     - make python-test
   environment:
     action: access
