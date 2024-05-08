@@ -1,9 +1,5 @@
 image: $SKA_K8S_TOOLS_DOCKER_BUILDER_IMAGE
 
-default:
-  tags:
-    - k8srunner
-
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
@@ -55,28 +51,41 @@ include:
 
 .k8s-test:
   tags:
-    - k8srunner
+    - ska-k8s
   variables:
-    KUBE_NAMESPACE: ci-$CI_PROJECT_NAME-$CI_COMMIT_SHORT_SHA
+    CLUSTER_DOMAIN: techops.internal.skao.int
+    KUBE_NAMESPACE: ci-$CI_PROJECT_NAME-$CI_PIPELINE_ID
+    HELM_VALUES: resources/initialised-dlm.yaml resources/gitlab-cluster.yaml
   environment:
     name: test/$CI_COMMIT_REF_NAME
     kubernetes:
       namespace: $KUBE_NAMESPACE
 
+python-test:
+  rules:
+    - when: never
+
 k8s-test-setup:
   extends: .k8s-test
   stage: pre-test
-  variables:
-    HELM_VALUES: resources/initialised-dlm.yaml resources/gitlab-cluster.yaml
   script:
     - make k8s-namespace
     - make update-chart-dependencies
     - make install-dlm
+  environment:
+    action: start
 
-python-test:
+k8s-test:
   extends: .k8s-test
-  tags:
-    - ska-k8s
+  stage: test
+  before_script:
+    - poetry self update $CI_POETRY_VERSION
+    - poetry config virtualenvs.create $POETRY_CONFIG_VIRTUALENVS_CREATE
+    - poetry install --with=test
+  script:
+    - make python-test
+  environment:
+    action: access
 
 k8s-test-cleanup:
   extends: .k8s-test
@@ -85,3 +94,5 @@ k8s-test-cleanup:
     - when: always
   script:
     - make k8s-delete-namespace
+  environment:
+    action: stop

@@ -4,7 +4,7 @@ PYTHON_LINE_LENGTH = 99
 KUBE_NAMESPACE ?= ska-dlm
 HELM_RELEASE ?= test
 HELM_TIMEOUT ?= 5m
-HELM_VALUES ?=
+HELM_VALUES ?= resources/initialised-dlm.yaml
 
 # MacOS has to run with `minikube tunnel` and against localhost
 # See https://github.com/kubernetes/minikube/issues/13510
@@ -34,9 +34,6 @@ k8s-recreate-namespace: k8s-delete-namespace k8s-namespace
 
 update-chart-dependencies:
 	helm dependency update charts/ska-dlm
-
-install-and-init-dlm: HELM_VALUES = resources/initialised-dlm.yaml
-install-and-init-dlm: install-dlm
 
 install-dlm:
 	helm install -n $(KUBE_NAMESPACE) $(HELM_RELEASE) charts/ska-dlm $(foreach file,$(HELM_VALUES),--values $(file)) --wait --timeout=$(HELM_TIMEOUT)
