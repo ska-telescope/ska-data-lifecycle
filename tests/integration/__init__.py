@@ -1,1 +1,1 @@
-"""Unit test package for ska_data_lifecycle."""
+"""Integration test package for ska_data_lifecycle."""
