@@ -53,8 +53,6 @@ Postgrest labels
 {{- include "ska-dlm.labels" . }}
 component: {{ .Values.postgrest.component }}
 subsystem: {{ .Values.postgrest.subsystem }}
-function: {{ .Values.postgrest.function }}
-domain: {{ .Values.postgrest.domain }}
 intent: production
 {{- end }}
 
@@ -85,7 +83,5 @@ RClone labels
 {{- include "ska-dlm.labels" . }}
 component: {{ .Values.rclone.component }}
 subsystem: {{ .Values.rclone.subsystem }}
-function: {{ .Values.rclone.function }}
-domain: {{ .Values.rclone.domain }}
 intent: production
 {{- end }}
