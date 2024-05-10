@@ -8,9 +8,10 @@ HELM_TIMEOUT ?= 5m
 HELM_VALUES ?= resources/initialised-dlm.yaml
 K8S_CHART_PARAMS ?= $(foreach file,$(HELM_VALUES),--values $(file)) --wait --timeout=$(HELM_TIMEOUT)
 
-# MacOS has to run with `minikube tunnel` and against localhost
+# MacOS Arm64 ingress has issues. Workaround is to run with
+# `minikube tunnel` and connect via localhost
 # See https://github.com/kubernetes/minikube/issues/13510
-ifeq ($(shell uname), Darwin)
+ifeq ($(shell uname -m), arm64)
 	TEST_INGRESS ?= http://localhost
 else
 	TEST_INGRESS ?= http://$(shell minikube ip)
