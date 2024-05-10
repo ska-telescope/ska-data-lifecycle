@@ -1,14 +1,17 @@
 DOCS_SPHINXOPTS = -W --keep-going
 PYTHON_LINE_LENGTH = 99
 
+K8S_CHART = ska-dlm
 KUBE_NAMESPACE ?= ska-dlm
 HELM_RELEASE ?= test
 HELM_TIMEOUT ?= 5m
-HELM_VALUES ?=
+HELM_VALUES ?= resources/initialised-dlm.yaml
+K8S_CHART_PARAMS ?= $(foreach file,$(HELM_VALUES),--values $(file)) --wait --timeout=$(HELM_TIMEOUT)
 
-# MacOS has to run with `minikube tunnel` and against localhost
+# MacOS Arm64 ingress has issues. Workaround is to run with
+# `minikube tunnel` and connect via localhost
 # See https://github.com/kubernetes/minikube/issues/13510
-ifeq ($(shell uname), Darwin)
+ifeq ($(shell uname -m), arm64)
 	TEST_INGRESS ?= http://localhost
 else
 	TEST_INGRESS ?= http://$(shell minikube ip)
@@ -23,8 +26,7 @@ include .make/k8s.mk
 # Make these available as environment variables
 export KUBE_NAMESPACE TEST_INGRESS
 
-.PHONY: docs-pre-build k8s-recreate-namespace \
-	update-chart-dependencies install-dlm uninstall-dlm
+.PHONY: docs-pre-build k8s-recreate-namespace k8s-do-test
 
 docs-pre-build: ## setup the document build environment.
 	poetry config virtualenvs.create false
@@ -32,14 +34,5 @@ docs-pre-build: ## setup the document build environment.
 
 k8s-recreate-namespace: k8s-delete-namespace k8s-namespace
 
-update-chart-dependencies:
-	helm dependency update charts/ska-dlm
-
-install-and-init-dlm: HELM_VALUES = resources/initialised-dlm.yaml
-install-and-init-dlm: install-dlm
-
-install-dlm:
-	helm install -n $(KUBE_NAMESPACE) $(HELM_RELEASE) charts/ska-dlm $(foreach file,$(HELM_VALUES),--values $(file)) --wait --timeout=$(HELM_TIMEOUT)
-
-uninstall-dlm:
-	helm uninstall -n $(KUBE_NAMESPACE) $(HELM_RELEASE) --wait
+k8s-do-test:
+	make python-test

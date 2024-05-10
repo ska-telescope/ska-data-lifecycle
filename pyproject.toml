@@ -14,7 +14,7 @@ packages = [{include="ska_dlm", from="src"}]
 
 [tool.poetry.scripts]
 ska-dlm = "ska_dlm.cli:main"
-dlm-sm-service = "ska_dlm.dlm_storage.main:main"
+ska-dlm-sm-service = "ska_dlm.dlm_storage.main:main"
 
 [[tool.poetry.source]]
 name = 'PyPI'
@@ -35,7 +35,7 @@ ipython = "^8.20.0"
 typer = "^0.9.0"
 rich = "^13.0"
 
-[tool.poetry.group.dev.dependencies]
+[tool.poetry.group.test.dependencies]
 black = "^23.3.0"
 flake8 = "^6.0.0"
 isort = "^5.12.0"
