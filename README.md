@@ -17,8 +17,8 @@ The current design consists of five services and this repository is organised ac
 ## Installation
 The repository contains helm charts to install the services, including the DB. However, the DLM in operations is supposed to run continuously and use SKAO wide services like a HA DB service as well as the authentication system.
 
-## Startup as a test environment
-To run the tests you will need to install [minikube](https://minikube.sigs.k8s.io/docs/), then start it and enable the ingress plugin:
+## Testing the Helm Chart
+To run these tests you will need to install [minikube](https://minikube.sigs.k8s.io/docs/), then start it and enable the ingress plugin:
 
 ``` bash
 minikube start
@@ -27,12 +27,16 @@ minikube addons enable ingress
 
 Then spin up the DLM environment, making sure to download helm dependencies and initialise the database:
 ``` bash
+make k8s-dep-build
 make k8s-install-chart
 ```
 
-On some systems you will also need to start `minikube tunnel` in separate terminal. The most notable case of this is M1 Macs (see [here](https://github.com/kubernetes/minikube/issues/13510) for more details), though there may be others. It is unknown if Intel Macs need this step (if you are running one please test it and update these docs!).
+On some systems you may also need to start `minikube tunnel` in a separate terminal, notably M1 MacOS (see [here](https://github.com/kubernetes/minikube/issues/13510) for more details). there may be others.
 
-Finally you are ready to run the tests! Just execute `make python-test` and the tests will run against the running deployment.
+Finally you are ready to run the tests! Just execute the following and the tests will run against the running deployment.
+```bash
+make k8s-test
+```
 
 ### Optional
 The DLM system is complete now, but in order to have a view into the DB you can run the nice PostGUI web interface, which talks to postgREST.

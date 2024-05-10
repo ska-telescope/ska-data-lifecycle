@@ -68,6 +68,6 @@ k8s-test:
     - poetry install --with=test
   script:
     - make k8s-install-chart
-    - make python-test
+    - make k8s-test
   environment:
     action: access
