@@ -1,9 +1,5 @@
 image: $SKA_K8S_TOOLS_DOCKER_BUILDER_IMAGE
 
-default:
-  tags:
-    - k8srunner
-
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
@@ -49,37 +45,29 @@ include:
   - project: 'ska-telescope/templates-repository'
     file: 'gitlab-ci/includes/helm-chart.gitlab-ci.yml'
 
+    # Test Helm chart
+  - project: 'ska-telescope/templates-repository'
+    file: 'gitlab-ci/includes/k8s-test.gitlab-ci.yml'
+
     # .post step finalisers eg: badges
   - project: 'ska-telescope/templates-repository'
     file: 'gitlab-ci/includes/finaliser.gitlab-ci.yml'
 
-.k8s-test:
-  tags:
-    - k8srunner
-  variables:
-    KUBE_NAMESPACE: ci-$CI_PROJECT_NAME-$CI_COMMIT_SHORT_SHA
-  environment:
-    name: test/$CI_COMMIT_REF_NAME
-    kubernetes:
-      namespace: $KUBE_NAMESPACE
-
-k8s-test-setup:
-  extends: .k8s-test
-  stage: pre-test
-  variables:
-    HELM_VALUES: resources/initialised-dlm.yaml resources/gitlab-cluster.yaml
-  script:
-    - make k8s-namespace
-    - make update-chart-dependencies
-    - make install-dlm
-
 python-test:
-  extends: .k8s-test
-
-k8s-test-cleanup:
-  extends: .k8s-test
-  stage: post-test
+  # TODO: Run unit and integration tagged tests
   rules:
-    - when: always
+    - when: never
+
+k8s-test:
+  variables:
+    KUBE_NAMESPACE: ci-$CI_PROJECT_NAME-$CI_PIPELINE_ID
+    HELM_VALUES: resources/initialised-dlm.yaml resources/gitlab-cluster.yaml
+  before_script:
+    - poetry self update $CI_POETRY_VERSION
+    - poetry config virtualenvs.create $POETRY_CONFIG_VIRTUALENVS_CREATE
+    - poetry install --with=test
   script:
-    - make k8s-delete-namespace
+    - make k8s-install-chart
+    - make k8s-test
+  environment:
+    action: access
