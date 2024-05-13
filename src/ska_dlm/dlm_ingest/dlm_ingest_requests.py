@@ -123,10 +123,8 @@ def notify_data_dashboard(metadata: MetaData) -> None:
     try:
         requests.request("POST", url, headers=headers, data=payload, timeout=2)
         logger.info("POSTed metadata (%s) to %s", metadata.get_data().execution_block, url)
-    except requests.Timeout:
-        logger.exception("Timeout POSTing file path to: %s", url)
-    except requests.ConnectionError:
-        logger.exception("Connection Error POSTing file path to: %s", url)
+    except requests.RequestException:
+        logger.exception("POST error notifying data dashboard at: %s", url)
 
 
 # just for convenience we also define the ingest function as register_data_item.
