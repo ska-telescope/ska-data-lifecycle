@@ -4,6 +4,10 @@ import functools
 import json
 import logging
 
+import requests
+import ska_sdp_metadata_generator.ska_sdp_metadata_generator as metagen
+from ska_sdp_dataproduct_metadata import MetaData
+
 from ska_dlm.dlm_storage.dlm_storage_requests import rclone_access
 
 from .. import CONFIG
@@ -53,6 +57,8 @@ def ingest_data_item(
     (3) check whether item is already registered on that storage
     (4) initialize the new item with the same OID on the new storage
     (5) set state to READY
+    (6) generate metadata
+    (7) notify the data dashboard
 
     Parameters:
     -----------
@@ -90,11 +96,35 @@ def ingest_data_item(
         "item_phase": storages[0]["storage_phase_level"],
     }
     uid = init_data_item(json_data=json.dumps(init_item))
+
     # (4)
     set_uri(uid, uri, storage_id)
-    # all done! Set data_item state to READY
+
+    # (5) all done! Set data_item state to READY
     set_state(uid, "READY")
+
+    # (6)
+    # TODO: The following relies on the uri being a local file rather than being a remote file
+    # accessible on rclone.
+    metadata_object = metagen.generate_metadata_from_generator(uri)
+
+    # (7)
+    notify_data_dashboard(metadata_object)
+
     return uid
+
+
+def notify_data_dashboard(metadata: MetaData) -> None:
+    """HTTP POST a MetaData object to the Data Product Dashboard"""
+    headers = {"Content-Type": "application/json"}
+    payload = metadata.get_data().to_json()
+    url = CONFIG.DATA_PRODUCT_API.url + "/ingestnewmetadata"
+
+    try:
+        requests.request("POST", url, headers=headers, data=payload, timeout=2)
+        logger.info("POSTed metadata (%s) to %s", metadata.get_data().execution_block, url)
+    except requests.RequestException:
+        logger.exception("POST error notifying data dashboard at: %s", url)
 
 
 # just for convenience we also define the ingest function as register_data_item.

@@ -6,6 +6,8 @@ from unittest import TestCase
 
 import inflect
 import pytest
+from requests_mock import Mocker
+from ska_sdp_dataproduct_metadata import MetaData
 
 from ska_dlm import CONFIG, data_item, dlm_ingest, dlm_migration, dlm_request, dlm_storage
 from ska_dlm.dlm_db.db_access import DB
@@ -17,7 +19,7 @@ from tests.common_k8s import (
     write_rclone_file_content,
 )
 
-RCLONE_TEST_FILE_PATH = "/LICENSE"
+RCLONE_TEST_FILE_PATH = "LICENSE"
 """A file that is available locally in the rclone container"""
 RCLONE_TEST_FILE_CONTENT = "license content"
 
@@ -123,6 +125,7 @@ class TestDlm(TestCase):
         assert items[0]["item_state"] == "READY"
         assert items[0]["item_phase"] == "PLASMA"
 
+    # TODO: We don't want RCLONE_TEST_FILE_PATH to disappear after one test run.
     def test_delete_item_payload(self):
         """Delete the payload of a data_item."""
         fpath = RCLONE_TEST_FILE_PATH
@@ -231,3 +234,14 @@ class TestDlm(TestCase):
         # and run again...
         result = persist_new_data_items(check_time)
         assert result == {"/my/ingest/test/item": True}
+
+    def test_notify_data_dashboard(self):
+        """Test that the write hook will post metadata file info to a URL."""
+        # mock a response for this URL, a copy of the normal response from ska-sdp-dataproduct-api
+        req_mock = Mocker()
+        req_mock.post(
+            CONFIG.DATA_PRODUCT_API.url + "/ingestnewmetadata",
+            text="New data product metadata file loaded and store index updated",
+        )
+
+        dlm_ingest.notify_data_dashboard(MetaData())
