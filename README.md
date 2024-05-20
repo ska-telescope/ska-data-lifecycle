@@ -17,50 +17,36 @@ The current design consists of five services and this repository is organised ac
 ## Installation
 The repository contains helm charts to install the services, including the DB. However, the DLM in operations is supposed to run continuously and use SKAO wide services like a HA DB service as well as the authentication system.
 
-## Testing the Helm Chart
-To run these tests you will need to install [minikube](https://minikube.sigs.k8s.io/docs/), then start it and enable the ingress plugin:
+## Testing
 
-``` bash
-minikube start
-minikube addons enable ingress
-```
+### Minikube + Helm One-Time Setup
+DLM testing currently depends on the helm chart deployment of services requiring both helm and minikube to be installed on the test runner. The following commands only need to executed once to prepare a test environment.
 
-Then spin up the DLM environment, making sure to download helm dependencies and initialise the database:
-``` bash
-make k8s-dep-build
-make k8s-install-chart
-```
-
-On some systems you may also need to start `minikube tunnel` in a separate terminal, notably M1 MacOS (see [here](https://github.com/kubernetes/minikube/issues/13510) for more details). there may be others.
-
-Finally you are ready to run the tests! Just execute the following and the tests will run against the running deployment.
 ```bash
-make k8s-test
+helm repo add bitnami https://charts.bitnami.com/bitnami
+minikube start --disk-size 64g --cpus=6 --memory=16384
+minikube addons enable ingress
+
+# Ingress may not work on OSX and additionally the following
+ifeq ($(shell uname -m), arm64)
+  minikube tunnel
+endif
 ```
 
-### Optional
-The DLM system is complete now, but in order to have a view into the DB you can run the nice PostGUI web interface, which talks to postgREST.
+For more information see [helm chart README.md](./charts/ska-dlm/README.md)
 
-#### Clone the PostGUI into a directory on the same level as the `ska-data-lifecycle` one:
-`git clone https://github.com/priyank-purohit/PostGUI`\
-`cd PostGUI`
 
-Replace the file src/data/config.json with the file `setup/postgrest/config.json`, replacing `$(minikube ip)` in the url with the result from your terminal, and `$(KUBE_NAMESPACE)` with the namespace you deployed to (by default in the Makefile: `ska-dlm`).
+### Run Tests Locally
 
-#### Start the PostGUI:
-From inside the PostGUI repository directory run (for Unix):
+Python testing is available using poetry virtual environments. First install and enter a poetry shell using:
 
-`npm install`\
-`export NODE_OPTIONS=--openssl-legacy-provider`\
-`npm start`
+```bash
+poetry install
+poetry shell
+```
 
-_This will run interactively in the terminal._
+Subsequent testing can be performed using only the command:
 
-### Test:
-
-from the ska-data-lifecycle directory, run `pytest`
-
-_This will populate the data_item table in the GUI_
-
-## Shutdown
-To take down the DLM retaining the data in the database (i.e. the persistent volume claim) run `make uninstall-dlm`. You can then bring it back up using `make install-dlm`. To delete everything, including all data, run `make k8s-delete-namespace`.
+```bash
+make python-test
+```
