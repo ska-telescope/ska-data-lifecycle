@@ -1,4 +1,4 @@
-# SKA Data Lifecycle Management chart
+# SKA Data Lifecycle Management Chart
 
 *This is a work in progress*
 
@@ -19,8 +19,7 @@ The main options of interest are:
 
   `minikube start --disk-size 64g --cpus=6 --memory=16384`
 
-- If not already done, you will need to enable the
-  ingress plugin:
+- If not already done, you will need to enable the ingress plugin:
 
   `minikube addons enable ingress`
 
@@ -28,17 +27,11 @@ The main options of interest are:
 
   `helm repo add bitnami https://charts.bitnami.com/bitnami`
 
-- Depending on you system you may also need to run `minikube tunnel`
-  in a separate terminal
-  (notably [M1 Macs](https://github.com/kubernetes/minikube/issues/13510)).
-  In this case, you can access ingress services via `localhost` instead
-  of `minikube ip`.
-
 - Make sure to download helm dependencies and initialise the database ensuring you are in the root directory of this repository:
 
   `make k8s-dep-build`
 
-- On MacOS M-series, ingress to the host system may not be resolvable and additionally requires running `minikube tunnel` in a separate terminal (see [here](https://github.com/kubernetes/minikube/issues/13510) for more details)
+- Depending on you system you may also need to run `minikube tunnel` in a separate terminal(notably [M1 Macs](https://github.com/kubernetes/minikube/issues/13510)). In this case, you can access ingress services via `localhost` instead of `minikube ip`.
 
 ### Optional
 The DLM system is complete now, but in order to have a view into the DB you can run the nice PostGUI web interface, which talks to postgREST.

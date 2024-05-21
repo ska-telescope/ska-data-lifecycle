@@ -20,15 +20,15 @@ The repository contains helm charts to install the services, including the DB. H
 ## Testing
 
 ### Minikube + Helm One-Time Setup
-DLM testing currently depends on the helm chart deployment of services requiring both helm and minikube to be installed on the test runner. The following commands only need to executed once to prepare a test environment.
+DLM testing currently depends on the helm chart deployment of services requiring both helm and minikube to be installed on the test runner. The following commands only need to be executed once to prepare a test environment.
 
 ```bash
 helm repo add bitnami https://charts.bitnami.com/bitnami
 minikube start --disk-size 64g --cpus=6 --memory=16384
 minikube addons enable ingress
 
-# Ingress may not work on OSX and additionally the following
 ifeq ($(shell uname -m), arm64)
+  # Use tunnel on M-Series MacOS
   minikube tunnel
 endif
 ```
@@ -36,9 +36,9 @@ endif
 For more information see [helm chart README.md](./charts/ska-dlm/README.md)
 
 
-### Run Tests Locally
+### Run Tests
 
-Python testing is available using poetry virtual environments. First install and enter a poetry shell using:
+Python testing is available using poetry virtual environments. First install and enter a poetry shell:
 
 ```bash
 poetry install
