@@ -2740,13 +2740,13 @@ reference = "skao"
 
 [[package]]
 name = "ska-sdp-metadata-generator"
-version = "0.0.1"
+version = "0.0.2"
 description = "Python scripts to generate YAML metadata files for existing data products"
 optional = false
 python-versions = ">=3.10,<4.0"
 files = [
-    {file = "ska_sdp_metadata_generator-0.0.1-py3-none-any.whl", hash = "sha256:d82e984e066c004c8d61a365ad461c8896b7fc04e453b9353a9c7d989a9441c6"},
-    {file = "ska_sdp_metadata_generator-0.0.1.tar.gz", hash = "sha256:4a0fecaaf117017a02d2bad954b4cc8965cb40b4f7a0839b4653fe14c063c601"},
+    {file = "ska_sdp_metadata_generator-0.0.2-py3-none-any.whl", hash = "sha256:343582b80f199a51d9c007f236e3f7573f55f97b904252c79b54b3e71668b81b"},
+    {file = "ska_sdp_metadata_generator-0.0.2.tar.gz", hash = "sha256:0a255e09f6d2fdfc6cf007c66e929ffa1be243bb33ce64a2119d7f132757eec7"},
 ]
 
 [package.dependencies]
@@ -3357,4 +3357,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "da83777f99c0f54589a76ca71a5931b9ee92f8dafea1013a8a735e45a12d4faf"
+content-hash = "68aebd0d7730dacc0d8806f35e4ed9c06189693609dac1a6ddb79513ea974769"
