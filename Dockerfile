@@ -18,11 +18,11 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Best practice not to run as root
-# RUN useradd meta-gen
-# USER meta-gen
+# RUN useradd ska-dlm
+# USER ska-dlm
 
 # Copy all Python packages & console scripts to our runtime container
 COPY --from=buildenv /app/.venv /app/.venv/
 ENV PATH="/app/.venv/bin:${PATH}"
 
-# ENTRYPOINT ["meta-gen"]
+ENTRYPOINT ["ska-dlm-sm-service"]
