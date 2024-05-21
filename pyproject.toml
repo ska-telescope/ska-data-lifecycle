@@ -15,7 +15,6 @@ packages = [{include="ska_dlm", from="src"}]
 [tool.poetry.scripts]
 ska-dlm = "ska_dlm.cli:main"
 ska-dlm-sm-service = "ska_dlm.dlm_storage.main:main"
-meta-gen = "ska_sdp_metadata_generator.ska_sdp_metadata_generator:main"
 
 [[tool.poetry.source]]
 name = 'PyPI'

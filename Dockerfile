@@ -25,4 +25,4 @@ RUN apt-get update && apt-get install -y \
 COPY --from=buildenv /app/.venv /app/.venv/
 ENV PATH="/app/.venv/bin:${PATH}"
 
-ENTRYPOINT ["meta-gen"]
+# ENTRYPOINT ["meta-gen"]
