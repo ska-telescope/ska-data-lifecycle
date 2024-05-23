@@ -34,5 +34,11 @@ docs-pre-build: ## setup the document build environment.
 
 k8s-recreate-namespace: k8s-delete-namespace k8s-namespace
 
-k8s-do-test:
-	make python-test
+k8s-do-test: python-test
+	echo "running k8s tests on host machine"
+
+# TODO: use independent test services for testing
+python-pre-test: k8s-install-chart
+
+# TODO: use independent test services for testing
+python-post-test: k8s-uninstall-chart
