@@ -1,4 +1,5 @@
 make python-pre-test
+# make python-do-test
 
 echo ">>> Initialise locations"
 ska-dlm storage init-location --location-name MyHost --location-type server

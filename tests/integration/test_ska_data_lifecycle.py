@@ -59,8 +59,8 @@ class TestDlm(TestCase):
         # configure rclone
         dlm_storage.rclone_config(config)
         yield
-        _clear_database()
-        clear_rclone_data()
+        # _clear_database()
+        # clear_rclone_data()
 
     def test_init(self):
         """Test data_item init."""
