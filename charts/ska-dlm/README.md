@@ -15,52 +15,54 @@ The main options of interest are:
 
 ### Minikube Setup
 
-- Start minikube (this is what was used during development but have confirmed other smaller values work)
+* Start minikube (this is what was used during development but have confirmed other smaller values work)
+  ```sh
+  minikube start --disk-size 64g --cpus=6 --memory=16384
+  ```
 
-  `minikube start --disk-size 64g --cpus=6 --memory=16384`
+* If not already done, you will need to enable the ingress plugin:
+  ```sh
+  minikube addons enable ingress
+  ```
 
-- If not already done, you will need to enable the ingress plugin:
+* Add the following additional repositories to helm:
+  ```sh
+  helm repo add bitnami https://charts.bitnami.com/bitnami
+  helm repo add ectobit https://charts.ectobit.com
+  ```
 
-  `minikube addons enable ingress`
+* Download the helm dependencies and initialise the database from the root directory of this repository
+  ```sh
+  make k8s-dep-build
+  ```
 
-- Add the additional repositories to helm:
-
-  `helm repo add bitnami https://charts.bitnami.com/bitnami`
-
-- Make sure to download helm dependencies and initialise the database ensuring you are in the root directory of this repository:
-
-  `make k8s-dep-build`
+  * The chart lock can be regenerated using using `k8s-dep-update`
 
 - Depending on you system you may also need to run `minikube tunnel` in a separate terminal(notably [M1 Macs](https://github.com/kubernetes/minikube/issues/13510)). In this case, you can access ingress services via `localhost` instead of `minikube ip`.
 
-### Optional
-The DLM system is complete now, but in order to have a view into the DB you can run the nice PostGUI web interface, which talks to postgREST.
 
-#### Clone the PostGUI into a directory on the same level as the `ska-data-lifecycle` one:
-`git clone https://github.com/priyank-purohit/PostGUI`\
-`cd PostGUI`
+### pgweb (optional)
 
-Replace the file src/data/config.json with the file `setup/postgrest/config.json`, replacing `$(minikube ip)` in the url with the result from your terminal, and `$(KUBE_NAMESPACE)` with the namespace you deployed to (by default in the Makefile: `ska-dlm`).
+Web IDE access to PostGRES can be enabled by deploying pgweb in the cluster by adding `--pgweb.enabled=true` `K8S_CHART_PARAMS` in the project `Makefile`.
 
-#### Start the PostGUI:
-From inside the PostGUI repository directory run (for Unix):
+With public network access to the development k8s cluster:
 
-`npm install`\
-`export NODE_OPTIONS=--openssl-legacy-provider`\
-`npm start`
-
-_This will run interactively in the terminal._
+* navigate a browser to
+  `http://<minikube ip or dns>/pgweb/`
+* Select the scheme option
+* Enter the URL
+  `postgres://ska_dlm_admin:password@test-ska-dlm-postgresql.ska-dlm.svc.cluster.local/ska_dlm?sslmode=disable`
 
 ### Running Helm Chart Tests
 
 Run the following to test against the running test deployment:
-```bash
+```sh
 make k8s-test
 ```
 
 Alternatively, installing, testing and uninstalling can be performed manually by running the following respective commands:
 
-```bash
+```sh
 make k8s-install-chart
 make k8s-do-test
 make k8s-uninstall-chart

@@ -69,3 +69,15 @@ kubectl:
   image: bitnami/kubectl
   version: 1.28.6
   imagePullPolicy: Always
+
+pgweb:
+  # see https://github.com/ectobit/charts/tree/main/pgweb
+  enabled: false
+  ingress:
+    enabled: true
+    annotations:
+      nginx.ingress.kubernetes.io/rewrite-target: /$2
+    hosts:
+    - paths:
+      - path: /pgweb(/|$)(.*)
+        pathType: ImplementationSpecific
