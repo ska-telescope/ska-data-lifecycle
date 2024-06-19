@@ -43,15 +43,13 @@ The main options of interest are:
 
 ### pgweb (optional)
 
-Web IDE access to Postgres can be enabled by deploying pgweb in the cluster by adding `--pgweb.enabled=true` to `K8S_CHART_PARAMS` in the project `Makefile`.
+Web IDE access to Postgres can be enabled by deploying pgweb in the cluster by adding `--set pgweb.enabled=true` to `K8S_CHART_PARAMS` in the project `Makefile`.
 
 With public network access to the development k8s cluster:
 
-* navigate a browser to
-  `http://<minikube ip or dns>/pgweb/`
+* navigate a browser to `http://<minikube ip>/pgweb/` (or with minikube tunneling, `http://localhost/pgweb/`)
 * Select the scheme option
-* Enter the URL
-  `postgres://ska_dlm_admin:password@test-ska-dlm-postgresql.ska-dlm.svc.cluster.local/ska_dlm?sslmode=disable`
+* Enter the URL `postgres://ska_dlm_admin:password@test-ska-dlm-postgresql.ska-dlm.svc.cluster.local/ska_dlm?sslmode=disable`
 
 ### Running Helm Chart Tests
 
