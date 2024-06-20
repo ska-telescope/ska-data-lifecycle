@@ -100,6 +100,7 @@ CREATE TABLE data_item (
     compression_method varchar DEFAULT NULL,
     parents uuid DEFAULT NULL,
     children uuid DEFAULT NULL,
+    metadata json DEFAULT NULL,
     CONSTRAINT fk_storage
       FOREIGN KEY(storage_id)
       REFERENCES storage(storage_id)
