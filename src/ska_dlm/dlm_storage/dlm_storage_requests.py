@@ -1,5 +1,6 @@
 """Wrap the most important postgREST API calls."""
 
+from fastapi import FastAPI
 import json
 import logging
 
@@ -14,7 +15,9 @@ from ..exceptions import InvalidQueryParameters, UnmetPreconditionForOperation, 
 
 logger = logging.getLogger(__name__)
 
+app = FastAPI()
 
+@app.get("/storage/query_location")
 def query_location(location_name: str = "", location_id: str = "") -> list:
     """
     Query a location by at least specifying an location_name.
@@ -37,6 +40,7 @@ def query_location(location_name: str = "", location_id: str = "") -> list:
     return DB.select(CONFIG.DLM.location_table, params=params)
 
 
+@app.post("/storage/init_storage")
 def init_storage(  # pylint: disable=R0913
     storage_name: str = "",  # pylint: disable=W0613
     location_name: str = "",
@@ -87,7 +91,7 @@ def init_storage(  # pylint: disable=R0913
                 raise InvalidQueryParameters(f"Argument {k} is mandatory!")
     return DB.insert(CONFIG.DLM.storage_table, json=post_data)[0]["storage_id"]
 
-
+@app.post("/storage/create_storage_config")
 def create_storage_config(
     storage_id: str = "", config: str = "", storage_name: str = "", config_type="rclone"
 ) -> str:
@@ -115,6 +119,7 @@ def create_storage_config(
     raise UnmetPreconditionForOperation("Configuring rclone server failed!")
 
 
+@app.get("/storage/get_storage_config")
 def get_storage_config(storage_id: str = "", storage_name: str = "", config_type="rclone") -> str:
     """
     Get the storage configuration entry for a particular storage backend.
@@ -167,6 +172,7 @@ def rclone_config(config: str) -> bool:
     return request.status_code == 200
 
 
+@app.get("/storage/check_storage_access")
 def check_storage_access(storage_name: str = "", storage_id: str = "") -> bool:
     """
     Check whether storage is accessible.
@@ -248,7 +254,7 @@ def rclone_delete(volume: str, fpath: str) -> bool:
         return False
     return True
 
-
+@app.post("/storage/init_location")
 def init_location(
     location_name: str = "",
     location_type: str = "",
@@ -271,6 +277,7 @@ def init_location(
     return DB.insert(CONFIG.DLM.location_table, json=post_data)[0]["location_id"]
 
 
+@app.get("/storage/query_storage")
 def query_storage(storage_name: str = "", storage_id: str = "") -> list:
     """
     Query a storage by at least specifying a storage_name.
@@ -292,6 +299,7 @@ def query_storage(storage_name: str = "", storage_id: str = "") -> list:
     return DB.select(CONFIG.DLM.storage_table, params=params)
 
 
+@app.get("/storage/check_item_on_storage")
 def check_item_on_storage(
     item_name: str = "",
     oid: str = "",
@@ -324,6 +332,7 @@ def check_item_on_storage(
     return storages
 
 
+@app.delete("/storage/delete_data_item_payload")
 def delete_data_item_payload(uid: str) -> bool:
     """
     Delete the payload of a data_item referred to by the provided UID.
@@ -357,6 +366,7 @@ def delete_data_item_payload(uid: str) -> bool:
     return True
 
 
+@app.delete("/storage/delete_uids")
 def delete_uids():
     """Check for expired data items and trigger deletion."""
     expired_data_items = query_expired()
@@ -373,6 +383,7 @@ def delete_uids():
             logger.warning("Unable to delete data item payload: %s", uid)
 
 
+@app.get("/storage/check_storage_capacity")
 def check_storage_capacity():
     """Check remaining capacity of all storage items."""
     storage_items = query_storage()

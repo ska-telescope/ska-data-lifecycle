@@ -2,7 +2,7 @@
 import functools
 import typing
 
-import typer
+from typer import Typer, Exit
 from requests import HTTPError
 from rich import print as rich_print
 
@@ -17,7 +17,7 @@ def _exception_chain(ex: Exception):
 
 
 def add_as_typer_command(
-    app: typer.Typer,
+    app: Typer,
     func: typing.Callable,
     include_excs: typing.Iterable[type[Exception]] | None = None,
     exclude_excs: typing.Iterable[type[Exception]] | None = None,
@@ -41,7 +41,7 @@ def add_as_typer_command(
             if isinstance(ex, tuple(exceptions_to_handle)):
                 full_msg = ", caused by: ".join(f"{ex}" for ex in _exception_chain(ex))
                 rich_print(f"[bold red]ERROR![/bold red]: {full_msg}")
-                raise typer.Exit(1)
+                raise Exit(1)
             raise
 
     return app.command()(_wrapper)

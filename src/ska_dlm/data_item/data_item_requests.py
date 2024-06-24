@@ -1,5 +1,6 @@
 """Convenience functions to update data_item records."""
 
+from fastapi import FastAPI
 import logging
 
 from ska_dlm.exceptions import InvalidQueryParameters
@@ -10,7 +11,9 @@ from ..dlm_request import query_data_item
 
 logger = logging.getLogger(__name__)
 
+app = FastAPI()
 
+# @app.put("/data_item/update")
 def update_data_item(
     item_name: str = "",
     oid: str = "",
@@ -46,6 +49,7 @@ def update_data_item(
     return DB.update(CONFIG.DLM.dlm_table, params=params, json=post_data)[0]["uid"]
 
 
+@app.put("/data_item/set_uri")
 def set_uri(uid: str, uri: str, storage_id: str):
     """
     Set the URI field of the uid data_item.
@@ -59,6 +63,7 @@ def set_uri(uid: str, uri: str, storage_id: str):
     update_data_item(uid=uid, post_data={"uri": uri, "storage_id": storage_id})
 
 
+@app.put("/data_item/set_state")
 def set_state(uid: str, state: str) -> bool:
     """
     Set the state field of the uid data_item.
@@ -71,6 +76,7 @@ def set_state(uid: str, state: str) -> bool:
     update_data_item(uid=uid, post_data={"item_state": state})
 
 
+@app.put("/data_item/set_oid_expiration")
 def set_oid_expiration(oid: str, expiration: str) -> str:
     """
     Set the oid_expiration field of the data_items with the given OID.
@@ -87,6 +93,7 @@ def set_oid_expiration(oid: str, expiration: str) -> str:
     return update_data_item(oid=oid, post_data={"oid_expiration": expiration})
 
 
+@app.put("/data_item/set_uid_expiration")
 def set_uid_expiration(uid: str, expiration: str):
     """
     Set the uid_expiration field of the data_item with the given UID.
@@ -103,6 +110,7 @@ def set_uid_expiration(uid: str, expiration: str):
     return update_data_item(uid=uid, post_data={"uid_expiration": expiration})
 
 
+@app.put("/data_item/set_user")
 def set_user(oid: str = "", uid: str = "", user: str = "SKA"):
     """
     Set the user field of the data_item(s) with the given OID or UID.
@@ -127,6 +135,7 @@ def set_user(oid: str = "", uid: str = "", user: str = "SKA"):
     return res
 
 
+@app.put("/data_item/set_group")
 def set_group(oid: str = "", uid: str = "", group: str = "SKA"):
     """
     Set the user field of the data_item(s) with the given OID or UID.
@@ -151,6 +160,7 @@ def set_group(oid: str = "", uid: str = "", group: str = "SKA"):
     return res
 
 
+@app.put("/data_item/set_acl")
 def set_acl(oid: str = "", uid: str = "", acl: str = "{}"):
     """
     Set the user field of the data_item(s) with the given OID or UID.
@@ -175,6 +185,7 @@ def set_acl(oid: str = "", uid: str = "", acl: str = "{}"):
     return res
 
 
+@app.put("/data_item/set_phase")
 def set_phase(uid: str, phase: str) -> bool:
     """
     Set the phase field of the data_item(s) with given UID.
@@ -191,6 +202,7 @@ def set_phase(uid: str, phase: str) -> bool:
     return update_data_item(uid=uid, post_data={"item_phase": phase})
 
 
+@app.put("/data_item/update_item_tags")
 def update_item_tags(item_name: str = "", oid: str = "", item_tags: dict = None) -> bool:
     """
     Update/set the item_tags field of a data_item with given item_name/OID.

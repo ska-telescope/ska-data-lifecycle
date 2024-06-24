@@ -2,6 +2,7 @@
 
 import logging
 from datetime import datetime, timedelta, timezone
+from fastapi import FastAPI
 
 from ska_dlm.dlm_db.db_access import DB
 
@@ -10,7 +11,9 @@ from ..exceptions import InvalidQueryParameters
 
 logger = logging.getLogger(__name__)
 
+app = FastAPI()
 
+@app.get("/request/query_data_item")
 def query_data_item(item_name: str = "", oid: str = "", uid: str = "", params: str = None) -> str:
     """
     Query a new data_item by at least specifying an item_name.
@@ -43,6 +46,7 @@ def query_data_item(item_name: str = "", oid: str = "", uid: str = "", params: s
     return DB.select(CONFIG.DLM.dlm_table, params=params)
 
 
+@app.get("/request/query_expired")
 def query_expired(offset: timedelta = None):
     """
     Query for all expired data_items using the uid_expiration timestamp.
@@ -65,6 +69,7 @@ def query_expired(offset: timedelta = None):
     return query_data_item(params=params)
 
 
+@app.get("/request/query_deleted")
 def query_deleted(uid: str = "") -> list:
     """Query for all deleted data_items using the deleted state.
 
@@ -82,6 +87,7 @@ def query_deleted(uid: str = "") -> list:
     return query_data_item(params=params)
 
 
+@app.get("/request/query_new")
 def query_new(check_date: str, uid: str = "") -> list:
     """Query for all data_items newer than the date provided.
 
@@ -105,6 +111,7 @@ def query_new(check_date: str, uid: str = "") -> list:
     return query_data_item(params=params)
 
 
+@app.get("/request/query_exist")
 def query_exists(item_name: str = "", oid: str = "", uid: str = "", ready: bool = False) -> bool:
     """
     Query to check for existence of a data_item.
@@ -129,7 +136,7 @@ def query_exists(item_name: str = "", oid: str = "", uid: str = "", ready: bool 
     # TODO: select COUNT(*) only instead of all data columns
     return bool(query_data_item(params=params))
 
-
+@app.get("/request/query_exist_and_ready")
 def query_exists_and_ready(item_name: str = "", oid: str = "", uid: str = "") -> bool:
     """
     Check whether a data_item exists and is in ready state.
@@ -146,6 +153,7 @@ def query_exists_and_ready(item_name: str = "", oid: str = "", uid: str = "") ->
     return query_exists(item_name, oid, uid, ready=True)
 
 
+@app.get("/request/query_item_storage")
 def query_item_storage(item_name: str = "", oid: str = "", uid: str = "") -> str:
     """
     Query for the storage_ids of all backends holding a copy of a data_item.

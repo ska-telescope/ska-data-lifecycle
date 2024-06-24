@@ -1,5 +1,6 @@
 """Convenience functions wrapping the most important postgREST API calls."""
 
+from fastapi import FastAPI
 import functools
 import json
 import logging
@@ -19,7 +20,9 @@ from ..exceptions import InvalidQueryParameters, UnmetPreconditionForOperation, 
 
 logger = logging.getLogger(__name__)
 
+app = FastAPI()
 
+@app.post("/ingest/init_data_item")
 def init_data_item(item_name: str = "", phase: str = "GAS", json_data: str = "") -> str:
     """
     Intialize a new data_item by at least specifying an item_name.
@@ -43,6 +46,63 @@ def init_data_item(item_name: str = "", phase: str = "GAS", json_data: str = "")
     return DB.insert(CONFIG.DLM.dlm_table, json=post_data)[0]["uid"]
 
 
+@app.post("/ingest/finalize_data_item")
+def finalize_data_item(uid: str, uri: str, storage_name: str = "", storage_id: str="") -> None:
+    """Finzalizes the data_item initialized by init_data_item and makes sure it is available,
+    accessible and in the state READY.
+
+    NOTE: Neither storage_name nor storage_id have to be specified, but in that case the storage_id has
+    to be registered already with the data_item with the init_data_item call.
+
+    Parameters:
+    -----------
+        uid (str): The data_item uid as returned by init_data_item
+        uri (str): The access path to the data_item
+        storage_name (str, optional): Name of the storage as registered in the DLM. Defaults to "".
+        storage_id (str, optional): ID of the storage as registered in the DLM. Defaults to "".
+
+    Returns:
+    --------
+        None
+
+    Raises:
+    -------
+        UnmetPreconditionForOperation: _description_
+    """
+    if not query_exists(uid):
+        raise UnmetPreconditionForOperation(f"data_item {uid} is unknown!")
+    data_item = query_data_item(uid)[0]
+    ex_storage_id = data_item["storage_id"]
+    item_state = data_item["item_state"]
+    item_name = data_item["item_name"]
+    if item_state != "INITIALIZED":
+        raise UnmetPreconditionForOperation(f"data_item {item_name=} is not in INITIALIZED state!")
+
+    if storage_name and not storage_id:
+        storages = query_storage(storage_name=storage_name, storage_id=storage_id)
+        if not storages:
+            storage_id = ""
+        else:
+            storage_id = storages[0]["storage_id"]
+
+    if (storage_id and storage_id != ex_storage_id) or (not ex_storage_id and not storage_id):
+        raise UnmetPreconditionForOperation(f"No storage specified or specified storage differes from storage for {uid=}")
+
+    if not check_storage_access(storage_id=storage_id):
+        raise UnmetPreconditionForOperation(
+            f"Requested storage volume is not accessible by DLM! {storage_name}"
+        )
+    if not rclone_access(storage_name, uri):
+        raise UnmetPreconditionForOperation(f"File {uri} is not accessible {storage_name} by DLM")
+    # (4)
+    set_uri(uid, uri, storage_id)
+
+    # (5) all done! Set data_item state to READY
+    set_state(uid, "READY")
+
+
+
+@app.post("/ingest/ingest_data_item")
 def ingest_data_item(
     item_name: str, uri: str = "", storage_name: str = "", storage_id: str = ""
 ) -> str:

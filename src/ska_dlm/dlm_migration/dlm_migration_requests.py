@@ -1,4 +1,5 @@
 """Convenience functions wrapping the most important postgREST API calls."""
+from fastapi import FastAPI
 import json
 import logging
 
@@ -15,6 +16,7 @@ from ..exceptions import UnmetPreconditionForOperation
 
 logger = logging.getLogger(__name__)
 
+app = FastAPI()
 
 def rclone_copy(src_fs: str, src_remote: str, dst_fs: str, dst_remote: str):
     """
@@ -34,7 +36,7 @@ def rclone_copy(src_fs: str, src_remote: str, dst_fs: str, dst_remote: str):
     logger.info("Response status code: %s", request.status_code)
     return True
 
-
+@app.get("/migration/copy_data_item")
 def copy_data_item(  # pylint: disable=too-many-arguments
     item_name: str = "",
     oid: str = "",
@@ -56,7 +58,7 @@ def copy_data_item(  # pylint: disable=too-many-arguments
 
     Parameters:
     -----------
-    item_name: could be empty, in which case the first 1000 items are returned
+    item_name: could be empty
     oid:    Return data_items referred to by the OID provided.
     uid:    Return data_item referred to by the UID provided.
     destination_name: the name of the destination storage volume.

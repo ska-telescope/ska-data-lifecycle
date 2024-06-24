@@ -59,8 +59,8 @@ class TestDlm(TestCase):
         # configure rclone
         dlm_storage.rclone_config(config)
         yield
-        _clear_database()
-        clear_rclone_data()
+        # _clear_database()
+        # clear_rclone_data()
 
     def test_init(self):
         """Test data_item init."""
@@ -69,6 +69,11 @@ class TestDlm(TestCase):
         for i in range(1, 51, 1):
             ordinal = engine.number_to_words(engine.ordinal(i))
             uid = dlm_ingest.init_data_item(f"this/is/the/{ordinal}/test/item")
+            if uid is None:
+                success = False
+        for i in range(1, 5, 1):
+            ordinal = engine.number_to_words(engine.ordinal(i))
+            uid = dlm_ingest.init_data_item(f"this/is/the/thirty-seventh/test/item/{ordinal}")
             if uid is None:
                 success = False
         assert success
