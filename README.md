@@ -50,3 +50,37 @@ Subsequent testing can be performed using only the command:
 ```bash
 make python-test
 ```
+
+
+### Docker Setup
+
+There is a Docker version for local development and testing
+
+#### Build the Images
+
+```
+docker-compose build
+```
+
+#### Run Tests
+
+The following will start all the necessary services and then run the unit tests within its own container
+
+```
+docker-compose up
+```
+
+
+#### Development
+
+You can run the services within containers and develop the code in isolation.
+
+```
+docker-compose up dlm_db dlm_rclone dlm_postgrest 
+```
+
+To run the tests on your own computer ensure --env local is passed to pytest. 
+
+```
+pytest --env local tests/integration/test_ska_data_lifecycle.py
+```
