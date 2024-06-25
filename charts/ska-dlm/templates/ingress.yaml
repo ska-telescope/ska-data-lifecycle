@@ -6,13 +6,13 @@ metadata:
   name: ska-dlm-postgrest-{{ .Release.Name }}
   namespace: {{ .Release.Namespace }}
   annotations:
-      nginx.ingress.kubernetes.io/rewrite-target: /$1
+      nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
   ingressClassName: nginx
   rules:
     - http:
         paths:
-        - path: /{{ .Release.Namespace }}/postgrest/(.*)
+        - path: /{{ .Release.Namespace }}/postgrest(/|$)(.*)
           pathType: ImplementationSpecific
           backend:
            service:
@@ -26,13 +26,13 @@ metadata:
   name: {{ include "ska-dlm.name" . }}-rclone
   namespace: {{ .Release.Namespace }}
   annotations:
-      nginx.ingress.kubernetes.io/rewrite-target: /$1
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
   ingressClassName: nginx
   rules:
     - http:
         paths:
-        - path: /{{ .Release.Namespace }}/rclone/(.*)
+        - path: /{{ .Release.Namespace }}/rclone(/|$)(.*)
           pathType: ImplementationSpecific
           backend:
            service:
