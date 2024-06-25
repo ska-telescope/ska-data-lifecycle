@@ -6,7 +6,7 @@ KUBE_NAMESPACE ?= ska-dlm
 HELM_RELEASE ?= test
 HELM_TIMEOUT ?= 5m
 HELM_VALUES ?= resources/initialised-dlm.yaml
-K8S_CHART_PARAMS ?= $(foreach file,$(HELM_VALUES),--values $(file)) --wait --timeout=$(HELM_TIMEOUT) --set pgweb.enabled=true --set postgresql.primary.persistence.enabled=false
+K8S_CHART_PARAMS ?= $(foreach file,$(HELM_VALUES),--values $(file)) --wait --timeout=$(HELM_TIMEOUT) --set pgweb.enabled=true
 
 # MacOS Arm64 ingress has issues. Workaround is to run with
 # `minikube tunnel` and connect via localhost
