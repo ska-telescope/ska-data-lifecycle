@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
 """Tests for `ska_data_lifecycle` package."""
+import importlib
 from datetime import timedelta
 from unittest import TestCase
 
 import inflect
 import pytest
-import importlib
 from requests_mock import Mocker
 from ska_sdp_dataproduct_metadata import MetaData
 
@@ -14,7 +14,6 @@ from ska_dlm import CONFIG, data_item, dlm_ingest, dlm_migration, dlm_request, d
 from ska_dlm.dlm_db.db_access import DB
 from ska_dlm.dlm_storage.main import persist_new_data_items
 from ska_dlm.exceptions import InvalidQueryParameters, ValueAlreadyInDB
-
 
 RCLONE_TEST_FILE_PATH = "testfile"
 """A file that is available locally in the rclone container"""
@@ -29,16 +28,14 @@ def _clear_database():
 
 
 def import_test_module():
-    """
-    Dynamically import module based on testing environment
-    """
+    """Dynamically import module based on testing environment"""
     name = None
     test_env = CONFIG.TEST_ENV.env
-    if test_env == 'k8':
+    if test_env == "k8":
         name = "tests.common_k8s"
-    elif test_env == 'local':
+    elif test_env == "local":
         name = "tests.common_local"
-    elif test_env == 'docker':
+    elif test_env == "docker":
         name = "tests.common_docker"
     else:
         raise Exception("unknown test configuration")
@@ -55,9 +52,9 @@ class TestDlm(TestCase):
 
     @pytest.fixture(scope="function", autouse=True)
     def setup_and_teardown(self, request):
+        """Initialze the tests."""
         module = import_test_module()
 
-        """Initialze the tests."""
         _clear_database()
 
         module.write_rclone_file_content(RCLONE_TEST_FILE_PATH, RCLONE_TEST_FILE_CONTENT)
@@ -179,16 +176,16 @@ class TestDlm(TestCase):
         assert dlm_storage.rclone_config(config) is True
 
     def test_copy(self):
+        """Copy a test file from one storage to another."""
         module = import_test_module()
 
-        """Copy a test file from one storage to another."""
         self.test_storage_config()
         dest_id = dlm_storage.query_storage("MyDisk2")[0]["storage_id"]
         uid = dlm_ingest.register_data_item(
             "/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, "MyDisk"
         )
         assert len(uid) == 36
-        dlm_migration.copy_data_item(uid=uid, destination_id=dest_id, path=f"/testfile_copy")
+        dlm_migration.copy_data_item(uid=uid, destination_id=dest_id, path="/testfile_copy")
         assert RCLONE_TEST_FILE_CONTENT == module.get_rclone_local_file_content("testfile_copy")
 
     def test_update_item_tags(self):
