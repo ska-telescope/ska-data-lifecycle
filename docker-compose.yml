@@ -18,7 +18,6 @@ services:
   dlm_rclone:
     image: rclone/rclone
     container_name: dlm_rclone
-    platform: linux/amd64
     ports:
       - 5572:5572
     command:
@@ -35,7 +34,6 @@ services:
   dlm_postgrest:
     image: postgrest/postgrest
     container_name: dlm_postgrest
-    platform: linux/amd64
     ports:
       - 3000:3000
     environment:
@@ -57,7 +55,6 @@ services:
        shm_size: '32gb'
     image: dlm_db
     container_name: dlm_db
-    platform: linux/amd64
     ports:
       - 5432:5432
     environment:
