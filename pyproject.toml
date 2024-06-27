@@ -86,9 +86,6 @@ ignore = [
     "D401", # First line should be in imperative mood; try rephrasing
     "D202", # No blank lines allowed after function docstring
     "D205", # 1 blank line required between summary line and description
-    "C0103", # Variable name "f" doesn't conform to snake_case naming style
-    "W1514", # Using open without explicitly specifying an encoding
-    "W0212", # Access to a protected member
 ]
 
 [tool.pylint.messages_control]
