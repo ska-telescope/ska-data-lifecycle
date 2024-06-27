@@ -38,7 +38,7 @@ def import_test_module():
     elif test_env == "docker":
         name = "tests.common_docker"
     else:
-        raise Exception("unknown test configuration")
+        raise ValueError("unknown test configuration")
 
     return importlib.import_module(name)
 
@@ -51,7 +51,7 @@ class TestDlm(TestCase):
     """
 
     @pytest.fixture(scope="function", autouse=True)
-    def setup_and_teardown(self, request):
+    def setup_and_teardown(self):
         """Initialze the tests."""
         module = import_test_module()
 

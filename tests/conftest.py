@@ -33,12 +33,14 @@ def configure(request):
     elif env == "docker":
         CONFIG.REST.base_url = "http://dlm_postgrest:3000"
         CONFIG.RCLONE.url = "http://dlm_rclone:5572"
+        # pylint: disable-next=protected-access
         DB._api_url = CONFIG.REST.base_url
         CONFIG.TEST_ENV.env = "docker"
 
     elif env == "local":
         CONFIG.REST.base_url = "http://localhost:3000"
         CONFIG.RCLONE.url = "http://localhost:5572"
+        # pylint: disable-next=protected-access
         DB._api_url = CONFIG.REST.base_url
         CONFIG.TEST_ENV.env = "local"
 
