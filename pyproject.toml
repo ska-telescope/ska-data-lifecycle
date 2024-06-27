@@ -29,12 +29,14 @@ python = "^3.10"
 ska-ser-logging = "^0.4.1"
 requests = "^2.31.0"
 pyyaml = "^6.0.1"
-python-benedict = ">=0.31.0,<0.32.0"
+python-benedict = "^0.31.0"
 inflect = "^7.0.0"
 ipython = "^8.20.0"
 typer = "^0.9.0"
 rich = "^13.0"
 ska-sdp-metadata-generator = "^0.0.2"
+# numpy = "<2.0.0"
+astropy = "^5.3.4" # need to add this line to metadata-generator instead
 
 [tool.poetry.group.test.dependencies]
 black = "^23.3.0"

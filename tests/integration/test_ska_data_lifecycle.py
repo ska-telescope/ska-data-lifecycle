@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 """Tests for `ska_data_lifecycle` package."""
+import json
 from datetime import timedelta
 from unittest import TestCase
 
@@ -245,3 +246,35 @@ class TestDlm(TestCase):
         )
 
         dlm_ingest.notify_data_dashboard(MetaData())
+
+    def test_populate_metadata_col(self):
+        """Test that the metadata is correctly saved to the metadata column."""
+        uid = dlm_ingest.register_data_item(
+            "/my/test/item/for/metadata", RCLONE_TEST_FILE_PATH, "MyDisk"
+        )
+        content = dlm_request.query_data_item(uid=uid)
+        metadata_dict = json.loads(content[0]["metadata"])
+
+        assert metadata_dict["interface"] == "http://schema.skao.int/ska-data-product-meta/0.1"
+        assert isinstance(
+            metadata_dict["execution_block"], str
+        )  # Can't verify a specific execution_block because it's not static
+        assert metadata_dict["context"] == {}
+        assert "config" in metadata_dict  # All the fields in here are None atm
+        assert metadata_dict["files"] == [
+            {
+                "crc": "b12dddc1",
+                "description": "",
+                "path": "LICENSE",
+                "size": 1461,
+                "status": "done",
+            }
+        ]
+        assert metadata_dict["obscore"] == {
+            "dataproduct_type": "Unknown",
+            "obs_collection": "Unknown",
+            "access_format": "application/unknown",
+            "facility_name": "SKA-Observatory",
+            "instrument_name": "Unknown",
+            "access_estsize": 1,
+        }

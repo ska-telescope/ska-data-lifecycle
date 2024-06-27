@@ -70,3 +70,5 @@ LICENSE_copy
 .postgrest.pid
 .rclone.pid
 scripts/postgrest
+
+.pre-commit-config.yaml
