@@ -7,7 +7,7 @@ RUN pip install --extra-index-url https://artefact.skao.int/repository/pypi-inte
 
 RUN mkdir -p /data
 RUN apt-get update && apt-get install -y 
-RUN apt-get install -y casacore-dev libboost-python-dev python3-numpy libcfitsio-dev wcslib-dev rclone iputils-ping
+RUN apt-get install -y python3-casacore rclone iputils-ping 
 
 WORKDIR /app
 COPY ./ ./
