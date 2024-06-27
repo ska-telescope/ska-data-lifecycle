@@ -17,7 +17,7 @@ def pytest_addoption(parser):
 def configure(request):
     """Setup tests to run against instance running in Minikube."""  # noqa: D401
 
-    # Run as "pythest --env k8" for Kube testing
+    # Run as "pytest --env k8" for Kube testing
     # Run as "pythest --env docker" for Docker testing
     # Run as "pythest --env local" for local testing
     env = request.config.getoption("--env")
