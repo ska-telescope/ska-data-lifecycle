@@ -1,3 +1,0 @@
-FROM postgres
-RUN apt-get update && apt-get upgrade -y
-COPY ./charts/ska-dlm/initdb-scripts/*.sql /docker-entrypoint-initdb.d/

@@ -19,6 +19,3 @@ RCLONE:
 
 DATA_PRODUCT_API:
   url: "http://localhost:8000"
-
-TEST_ENV:
-  env: 'k8'

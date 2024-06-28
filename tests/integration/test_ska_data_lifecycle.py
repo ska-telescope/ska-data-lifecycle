@@ -27,10 +27,11 @@ def _clear_database():
     DB.delete(CONFIG.DLM.location_table)
 
 
-def import_test_module():
+@pytest.fixture(name="module")
+def import_test_module(request):
     """Dynamically import module based on testing environment"""
     name = None
-    test_env = CONFIG.TEST_ENV.env
+    test_env = request.config.getoption("--env")
     if test_env == "k8":
         name = "tests.common_k8s"
     elif test_env == "local":
@@ -50,12 +51,15 @@ class TestDlm(TestCase):
     NOTE: Currently some of them are dependent on each other.
     """
 
+    module = None
+
     @pytest.fixture(scope="function", autouse=True)
-    def setup_and_teardown(self):
+    def setup_and_teardown(self, module):
         """Initialze the tests."""
-        module = import_test_module()
 
         _clear_database()
+
+        self.module = module
 
         module.write_rclone_file_content(RCLONE_TEST_FILE_PATH, RCLONE_TEST_FILE_CONTENT)
 
@@ -181,8 +185,6 @@ class TestDlm(TestCase):
     @pytest.mark.skip(reason="Will fix in later branches")
     def test_copy(self):
         """Copy a test file from one storage to another."""
-        module = import_test_module()
-
         self.test_storage_config()
         dest_id = dlm_storage.query_storage("MyDisk2")[0]["storage_id"]
         uid = dlm_ingest.register_data_item(
@@ -190,7 +192,9 @@ class TestDlm(TestCase):
         )
         assert len(uid) == 36
         dlm_migration.copy_data_item(uid=uid, destination_id=dest_id, path="/testfile_copy")
-        assert RCLONE_TEST_FILE_CONTENT == module.get_rclone_local_file_content("testfile_copy")
+        assert RCLONE_TEST_FILE_CONTENT == self.module.get_rclone_local_file_content(
+            "testfile_copy"
+        )
 
     @pytest.mark.skip(reason="Will fix in later branches")
     def test_update_item_tags(self):
