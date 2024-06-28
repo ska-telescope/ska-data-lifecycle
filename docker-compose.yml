@@ -6,7 +6,7 @@ services:
     platform: linux/amd64
     build:
        context: .
-       dockerfile: Dockerfile-local
+       dockerfile: Dockerfile-tests
     volumes:
       - shared-tmpfs:/data
     networks:
@@ -51,7 +51,7 @@ services:
     shm_size: '32gb'
     build:
        context: .
-       dockerfile: Dockerfile-local-db 
+       dockerfile: Dockerfile-test-db
        shm_size: '32gb'
     image: dlm_db
     container_name: dlm_db
