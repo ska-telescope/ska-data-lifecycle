@@ -19,7 +19,7 @@ def configure(request):
 
     # Run as "pytest --env k8" for Kube testing
     # Run as "pytest --env docker" for Docker testing
-    # Run as "pythest --env local" for local testing
+    # Run as "pytest --env local" for local testing
     env = request.config.getoption("--env")
     if env == "k8":
         CONFIG.REST.base_url = _generate_k8s_url("postgrest", "ska-dlm-postgrest")
