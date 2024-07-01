@@ -3,8 +3,6 @@ image: $SKA_K8S_TOOLS_DOCKER_BUILDER_IMAGE
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
-  # Ensure TEST_INGRESS is defined so that we don't try to evaluate `minikube ip` in the Makefile
-  TEST_INGRESS: ""
   CI_POETRY_VERSION: 1.8.2
 
 # Enable caching for python
@@ -17,7 +15,6 @@ stages:
   - lint
   - build
   - pre-test
-  - test
   - post-test
   - publish
   - pages
@@ -54,9 +51,15 @@ include:
     file: 'gitlab-ci/includes/finaliser.gitlab-ci.yml'
 
 python-test:
-  # TODO: Run unit and integration tagged tests
-  rules:
-    - when: never
+  image: docker:27.0.2
+  services:
+  - docker:27.0.2-dind
+  before_script:
+    - docker-compose -f tests/testrunner.docker-compose.yaml build
+  script:
+    - docker-compose -f tests/testrunner.docker-compose.yaml run dlm_testrunner
+  after_script:
+    - docker-compose -f tests/testrunner.docker-compose.yaml down
 
 k8s-test:
   variables:

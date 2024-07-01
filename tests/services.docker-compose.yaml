@@ -1,20 +1,4 @@
 services:
-
-  dlm_tests:
-    image: dlm_tests
-    container_name: dlm_tests
-    platform: linux/amd64
-    build:
-       context: .
-       dockerfile: Dockerfile-tests
-    volumes:
-      - shared-tmpfs:/data
-    networks:
-      - dlm_network
-    depends_on:
-      - dlm_rclone
-      - dlm_postgrest
-
   dlm_rclone:
     image: rclone/rclone
     container_name: dlm_rclone
@@ -50,8 +34,8 @@ services:
   dlm_db:
     shm_size: '32gb'
     build:
-       context: .
-       dockerfile: Dockerfile-test-db
+       context: ..
+       dockerfile: tests/Dockerfile-db
        shm_size: '32gb'
     image: dlm_db
     container_name: dlm_db
