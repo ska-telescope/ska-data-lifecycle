@@ -107,8 +107,7 @@ def ingest_data_item(
     # TODO YAN-1746: The following relies on the uri being a local file,
     # rather than being a remote file accessible on rclone.
     metadata_object = metagen.generate_metadata_from_generator(uri)
-    metadata_json = metadata_object.get_data().to_json()
-    set_metadata(uid, metadata_json)  # populate the metadata column in the database
+    set_metadata(uid, metadata_object)  # populate the metadata column in the database
 
     # (7)
     notify_data_dashboard(metadata_object)

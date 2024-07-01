@@ -1,6 +1,9 @@
 """Convenience functions to update data_item records."""
 
+import json
 import logging
+
+from ska_sdp_dataproduct_metadata import MetaData
 
 from ska_dlm.exceptions import InvalidQueryParameters
 
@@ -59,7 +62,7 @@ def set_uri(uid: str, uri: str, storage_id: str):
     update_data_item(uid=uid, post_data={"uri": uri, "storage_id": storage_id})
 
 
-def set_metadata(uid: str, metadata_post):
+def set_metadata(uid: str, metadata_post: MetaData):
     """
     Populate the metadata column for a data_item with the metadata.
 
@@ -68,8 +71,8 @@ def set_metadata(uid: str, metadata_post):
     uid : the UID of the data_item to be updated
     metadata: a metadata JSON string
     """
-
-    update_data_item(uid=uid, post_data={"metadata": metadata_post})
+    metadata_json = json.dumps(metadata_post.get_data())
+    update_data_item(uid=uid, post_data={"metadata": metadata_json})
 
 
 def set_state(uid: str, state: str) -> bool:
