@@ -1,6 +1,5 @@
 """Convenience functions to update data_item records."""
 
-import json
 import logging
 
 from ska_sdp_dataproduct_metadata import MetaData
@@ -71,7 +70,7 @@ def set_metadata(uid: str, metadata_post: MetaData):
     uid : the UID of the data_item to be updated
     metadata: a metadata JSON string
     """
-    metadata_json = json.dumps(metadata_post.get_data())
+    metadata_json = metadata_post.get_data().to_json()
     update_data_item(uid=uid, post_data={"metadata": metadata_json})
 
 
