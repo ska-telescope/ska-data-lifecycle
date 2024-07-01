@@ -1,7 +1,7 @@
 """DLMmigration module for ska-data-lifecycle."""
 
 from .data_item_requests import (
-    populate_metadata_col,
+    set_metadata,
     set_acl,
     set_group,
     set_oid_expiration,
@@ -14,7 +14,7 @@ from .data_item_requests import (
 )
 
 __all__ = [
-    "populate_metadata_col",
+    "set_metadata",
     "set_acl",
     "set_group",
     "set_oid_expiration",

@@ -59,13 +59,14 @@ def set_uri(uid: str, uri: str, storage_id: str):
     update_data_item(uid=uid, post_data={"uri": uri, "storage_id": storage_id})
 
 
-def populate_metadata_col(uid: str, metadata_post):
+def set_metadata(uid: str, metadata_post):
     """
-    Populate the metadata column for a data_item with the given UID.
+    Populate the metadata column for a data_item with the metadata.
 
     Parameters:
     -----------
     uid : the UID of the data_item to be updated
+    metadata: a metadata JSON string
     """
 
     update_data_item(uid=uid, post_data={"metadata": metadata_post})

@@ -11,7 +11,7 @@ from ska_sdp_dataproduct_metadata import MetaData
 from ska_dlm.dlm_storage.dlm_storage_requests import rclone_access
 
 from .. import CONFIG
-from ..data_item import populate_metadata_col, set_state, set_uri
+from ..data_item import set_metadata, set_state, set_uri
 from ..dlm_db.db_access import DB
 from ..dlm_request import query_data_item, query_exists
 from ..dlm_storage import check_storage_access, query_storage
@@ -108,7 +108,7 @@ def ingest_data_item(
     # rather than being a remote file accessible on rclone.
     metadata_object = metagen.generate_metadata_from_generator(uri)
     metadata_json = metadata_object.get_data().to_json()
-    populate_metadata_col(uid, metadata_json)  # populate the metadata column in the database
+    set_metadata(uid, metadata_json)  # populate the metadata column in the database
 
     # (7)
     notify_data_dashboard(metadata_object)

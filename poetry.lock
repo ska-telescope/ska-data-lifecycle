@@ -2762,23 +2762,23 @@ reference = "skao"
 
 [[package]]
 name = "ska-sdp-metadata-generator"
-version = "0.0.2"
+version = "0.0.3"
 description = "Python scripts to generate YAML metadata files for existing data products"
 optional = false
 python-versions = ">=3.10,<4.0"
 files = [
-    {file = "ska_sdp_metadata_generator-0.0.2-py3-none-any.whl", hash = "sha256:343582b80f199a51d9c007f236e3f7573f55f97b904252c79b54b3e71668b81b"},
-    {file = "ska_sdp_metadata_generator-0.0.2.tar.gz", hash = "sha256:0a255e09f6d2fdfc6cf007c66e929ffa1be243bb33ce64a2119d7f132757eec7"},
+    {file = "ska_sdp_metadata_generator-0.0.3-py3-none-any.whl", hash = "sha256:64f92a2e6127eff84225d08892b2004584bdc639c9bc74971898322331d51c20"},
+    {file = "ska_sdp_metadata_generator-0.0.3.tar.gz", hash = "sha256:5deebd49951d3b6a920676e2b9e136befe978151c6d1c02c311b60ee11eeab80"},
 ]
 
 [package.dependencies]
 aiokafka = ">=0.10.0,<0.11.0"
-astropy = ">=5.3.2,<6.0.0"
+astropy = ">=5.3.4,<6.0.0"
 python-benedict = ">=0.31.0,<0.32.0"
 python-casacore = ">=3.1.1"
 requests-mock = ">=1.11.0,<2.0.0"
 ska-sdp-dataproduct-metadata = ">=0.5.0,<0.6.0"
-ska-ser-logging = ">=0.4.1+0a677a67,<0.5.0"
+ska-ser-logging = ">=0.4.1,<0.5.0"
 
 [package.source]
 type = "legacy"
@@ -3379,4 +3379,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "91db2657834314e1b64002e725182acc283958b45d8b519892f3f29532a7ae04"
+content-hash = "66ce55925bb46e5a54bfcd987534e69f3eb84a0e3f41f93446e789a3053138b7"
