@@ -10,18 +10,18 @@ from ska_dlm.dlm_db.db_access import DB
 
 def pytest_addoption(parser):
     """Setup command line"""
-    parser.addoption("--env", action="store", default="k8", help="k8 or docker")
+    parser.addoption("--env", action="store", default="local", help="local, docker, or k8s")
 
 
-@pytest.fixture(name="k8s setup", scope="session", autouse=True)
+@pytest.fixture(name="configure", scope="session", autouse=True)
 def configure(request):
     """Setup tests to run against instance running in Minikube."""  # noqa: D401
 
-    # Run as "pytest --env k8" for Kube testing
-    # Run as "pytest --env docker" for Docker testing
-    # Run as "pytest --env local" for local testing
+    # Run as "pythest --env local" for local testing
+    # Run as "pythest --env docker" for Docker testing
+    # Run as "pytest --env k8s" for Kube testing
     env = request.config.getoption("--env")
-    if env == "k8":
+    if env == "k8s":
         CONFIG.REST.base_url = _generate_k8s_url("postgrest", "ska-dlm-postgrest")
         CONFIG.RCLONE.url = _generate_k8s_url("rclone", "ska-dlm-rclone")
 

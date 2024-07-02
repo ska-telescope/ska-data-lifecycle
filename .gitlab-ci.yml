@@ -54,9 +54,15 @@ include:
     file: 'gitlab-ci/includes/finaliser.gitlab-ci.yml'
 
 python-test:
-  # TODO: Run unit and integration tagged tests
-  rules:
-    - when: never
+  image: docker:27.0.2
+  services:
+    - docker:27.0.2-dind
+  before_script:
+    - docker-compose -f tests/testrunner.docker-compose.yaml build
+  script:
+    - docker-compose -f tests/testrunner.docker-compose.yaml run dlm_testrunner
+  after_script:
+    - docker-compose -f tests/testrunner.docker-compose.yaml down
 
 k8s-test:
   variables:
@@ -71,3 +77,7 @@ k8s-test:
     - make k8s-test
   environment:
     action: access
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      when: manual
+      allow_failure: true

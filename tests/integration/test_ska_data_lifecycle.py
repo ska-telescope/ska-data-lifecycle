@@ -28,23 +28,6 @@ def _clear_database():
     DB.delete(CONFIG.DLM.location_table)
 
 
-@pytest.fixture(name="module")
-def import_test_module(request):
-    """Dynamically import module based on testing environment"""
-    name = None
-    test_env = request.config.getoption("--env")
-    if test_env == "k8":
-        name = "tests.common_k8s"
-    elif test_env == "local":
-        name = "tests.common_local"
-    elif test_env == "docker":
-        name = "tests.common_docker"
-    else:
-        raise ValueError("unknown test configuration")
-
-    return importlib.import_module(name)
-
-
 class TestDlm(TestCase):
     """
     Unit tests for the DLM.
@@ -52,17 +35,28 @@ class TestDlm(TestCase):
     NOTE: Currently some of them are dependent on each other.
     """
 
-    module = None
+    @pytest.fixture(name="env")
+    def import_test_env_module(self, request):
+        """Dynamically import module based on testing environment"""
+        test_env = request.config.getoption("--env")
+        if test_env == "k8s":
+            name = "tests.common_k8s"
+        elif test_env == "local":
+            name = "tests.common_local"
+        elif test_env == "docker":
+            name = "tests.common_docker"
+        else:
+            raise ValueError("unknown test configuration")
+
+        return importlib.import_module(name)
 
     @pytest.fixture(scope="function", autouse=True)
-    def setup_and_teardown(self, module):
+    def setup_and_teardown(self, env):
         """Initialze the tests."""
 
         _clear_database()
 
-        self.module = module
-
-        module.write_rclone_file_content(RCLONE_TEST_FILE_PATH, RCLONE_TEST_FILE_CONTENT)
+        env.write_rclone_file_content(RCLONE_TEST_FILE_PATH, RCLONE_TEST_FILE_CONTENT)
 
         # we need a location to register the storage
         location_id = dlm_storage.init_location("MyOwnStorage", "Server")
@@ -79,9 +73,9 @@ class TestDlm(TestCase):
         dlm_storage.rclone_config(config)
         yield
         _clear_database()
-        module.clear_rclone_data()
+        env.clear_rclone_data()
 
-    def test_init(self):
+    def __initialize_data_item(self):
         """Test data_item init."""
         engine = inflect.engine()
         success = True
@@ -116,7 +110,7 @@ class TestDlm(TestCase):
 
     def test_query_expired(self):
         """Test the query expired returning records."""
-        self.test_init()
+        self.__initialize_data_item()
         uid = dlm_request.query_data_item()[0]["uid"]
         offset = timedelta(days=1)
         data_item.set_state(uid=uid, state="READY")
@@ -161,7 +155,7 @@ class TestDlm(TestCase):
         assert dlm_request.query_data_item(item_name=fpath)[0]["uri"] == fpath
         assert dlm_request.query_data_item(item_name=fpath)[0]["item_state"] == "DELETED"
 
-    def test_storage_config(self):
+    def __initialize_storage_config(self):
         """Add a new location, storage and configuration to the rclone server."""
         location = dlm_storage.query_location("MyHost")
         if location:
@@ -184,18 +178,17 @@ class TestDlm(TestCase):
         assert dlm_storage.rclone_config(config) is True
 
     @pytest.mark.skip(reason="Will fix in later branches")
-    def test_copy(self):
+    def test_copy(self, env):
         """Copy a test file from one storage to another."""
-        self.test_storage_config()
+
+        self.__initialize_storage_config()
         dest_id = dlm_storage.query_storage("MyDisk2")[0]["storage_id"]
         uid = dlm_ingest.register_data_item(
             "/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, "MyDisk"
         )
         assert len(uid) == 36
         dlm_migration.copy_data_item(uid=uid, destination_id=dest_id, path="/testfile_copy")
-        assert RCLONE_TEST_FILE_CONTENT == self.module.get_rclone_local_file_content(
-            "testfile_copy"
-        )
+        assert RCLONE_TEST_FILE_CONTENT == env.get_rclone_local_file_content("testfile_copy")
 
     @pytest.mark.skip(reason="Will fix in later branches")
     def test_update_item_tags(self):
@@ -258,7 +251,7 @@ class TestDlm(TestCase):
         assert result == {"/my/ingest/test/item": False}
 
         # configure additional storage volume
-        self.test_storage_config()
+        self.__initialize_storage_config()
         # and run again...
         result = persist_new_data_items(check_time)
         assert result == {"/my/ingest/test/item": True}
