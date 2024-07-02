@@ -1,9 +1,6 @@
 # Default values for the SKA Data Lifecycle Management system.
 # This is a YAML-formatted file.
 
-REST:
-  base_url: "http://localhost:3001"
-
 DLM:
   dlm_db: "ska_dlm_meta"
   dlm_table: "data_item"
@@ -13,6 +10,9 @@ DLM:
   storage_manager:
     storage_warning_percentage: 80.0
     polling_interval: 10 # seconds
+
+REST:
+  base_url: "http://localhost:3001"
 
 RCLONE:
   url: "http://localhost:5572"

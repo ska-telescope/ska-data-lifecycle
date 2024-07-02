@@ -1,0 +1,21 @@
+FROM python:3.10
+
+RUN apt-get update && apt-get install -y python3-casacore rclone iputils-ping
+RUN pip install pytest requests_mock kubernetes docker
+
+ARG POETRY_VERSION=1.8.2
+RUN pip install poetry==${POETRY_VERSION}
+
+RUN mkdir -p /data
+
+WORKDIR /app
+
+COPY pyproject.toml poetry.lock ./
+RUN poetry config virtualenvs.in-project true \
+    && poetry install --no-root
+
+COPY ./ ./
+RUN poetry install
+
+ENV PATH="/app/.venv/bin:${PATH}"
+ENTRYPOINT pytest --env docker

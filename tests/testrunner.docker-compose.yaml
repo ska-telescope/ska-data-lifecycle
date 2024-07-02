@@ -1,0 +1,18 @@
+include:
+- path: services.docker-compose.yaml
+
+services:
+  dlm_testrunner:
+    image: dlm_testrunner
+    container_name: dlm_testrunner
+    platform: linux/amd64
+    build:
+       context: ..
+       dockerfile: tests/Dockerfile-testrunner
+    volumes:
+      - shared-tmpfs:/data
+    networks:
+      - dlm_network
+    depends_on:
+      - dlm_rclone
+      - dlm_postgrest
