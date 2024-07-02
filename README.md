@@ -45,7 +45,7 @@ make docker-test
 
 #### Manual
 
-Alternatively, the relevant docker compose commands can be mixed and matched to achieve the same result as the above make targets:
+Alternatively, the following relevant docker compose commands can be mixed and matched to achieve the same result as the above make targets:
 
 
 ```sh
