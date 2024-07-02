@@ -11,10 +11,11 @@ RUN mkdir -p /data
 WORKDIR /app
 
 COPY pyproject.toml poetry.lock ./
-RUN poetry export --output=requirements.txt --without-hashes && \
-    pip install --extra-index-url https://artefact.skao.int/repository/pypi-internal/simple -r requirements.txt
+RUN poetry config virtualenvs.in-project true \
+    && poetry install --no-root
 
 COPY ./ ./
-RUN pip install .
+RUN poetry install
 
+ENV PATH="/app/.venv/bin:${PATH}"
 ENTRYPOINT pytest --env docker
