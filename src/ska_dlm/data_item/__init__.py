@@ -3,6 +3,7 @@
 from .data_item_requests import (
     set_acl,
     set_group,
+    set_metadata,
     set_oid_expiration,
     set_phase,
     set_state,
@@ -13,6 +14,7 @@ from .data_item_requests import (
 )
 
 __all__ = [
+    "set_metadata",
     "set_acl",
     "set_group",
     "set_oid_expiration",
