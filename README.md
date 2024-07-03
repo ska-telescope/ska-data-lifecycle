@@ -15,12 +15,57 @@ The current design consists of five services and this repository is organised ac
 - Migration management service (DLMmigration)
 
 ## Installation
-The repository contains helm charts to install the services, including the DB. However, the DLM in operations is supposed to run continuously and use SKAO wide services like a HA DB service as well as the authentication system.
+The repository contains helm charts to install the services, including the DB. However, the DLM in operations is supposed to run continuously and use SKAO-wide services like a HA DB service as well as the authentication system.
 
 ## Testing
 
-### Minikube + Helm One-Time Setup
-DLM testing currently depends on the helm chart deployment of services requiring both helm and minikube to be installed on the test runner. The following commands only need to be executed once to prepare a test environment.
+### Test against Docker Compose
+
+#### Run tests locally
+
+Python testing is available on the local machine using poetry virtual environments. First install and enter a poetry shell:
+
+```bash
+poetry install
+poetry shell
+```
+
+Subsequent testing can be performed using the command:
+
+```bash
+make python-test
+```
+
+#### Run tests using a Docker Testrunner
+
+A test runner Dockerfile is provided to support local development with packages that may be difficult to install. The following command will run the same python tests inside docker containers:
+```sh
+make docker-test
+```
+
+#### Manual
+
+Alternatively, the following relevant docker compose commands can be mixed and matched to achieve the same result as the above make targets:
+
+
+```sh
+# Rebuild any changed Dockerfile dependencies
+docker-compose -f tests/testrunner.docker-compose.yaml build
+
+# Run the test runner
+docker-compose --file tests/testrunner.docker-compose.yaml run dlm_testrunner
+
+# Or run tests locally
+pytest --env local
+
+# Teardown any remaining services
+docker-compose --file tests/testrunner.docker-compose.yaml down
+```
+
+
+### Test against Helm Chart
+
+DLM also provides a helm chart tested weekly that can also be tested locally using Minikube. The following commands only need to be executed once to prepare a test environment.
 
 ```bash
 helm repo add bitnami https://charts.bitnami.com/bitnami
@@ -33,54 +78,10 @@ ifeq ($(shell uname -m), arm64)
 endif
 ```
 
+Tests can then be run using the command:
+
+```sh
+make k8s-test
+```
+
 For more information see [helm chart README.md](./charts/ska-dlm/README.md)
-
-
-### Run Tests
-
-Python testing is available using poetry virtual environments. First install and enter a poetry shell:
-
-```bash
-poetry install
-poetry shell
-```
-
-Subsequent testing can be performed using only the command:
-
-```bash
-make python-test
-```
-
-
-### Docker Setup
-
-There is a Docker version for local development and testing
-
-#### Build the Images
-
-```
-docker-compose build
-```
-
-#### Run Tests
-
-The following will start all the necessary services and then run the unit tests within its own container
-
-```
-docker-compose up
-```
-
-
-#### Development
-
-You can run the services within containers and develop the code in isolation.
-
-```
-docker-compose up dlm_db dlm_rclone dlm_postgrest 
-```
-
-To run the tests on your own computer ensure --env local is passed to pytest. 
-
-```
-pytest --env local tests/integration/test_ska_data_lifecycle.py
-```
