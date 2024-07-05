@@ -4,6 +4,8 @@ import json
 import logging
 
 import requests
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 
 from ska_dlm.dlm_db.db_access import DB
 
@@ -14,7 +16,40 @@ from ..exceptions import InvalidQueryParameters, UnmetPreconditionForOperation, 
 
 logger = logging.getLogger(__name__)
 
+app = FastAPI()
 
+
+# pylint: disable=unused-argument
+@app.exception_handler(ValueAlreadyInDB)
+def valuealreadyindb_exception_handler(request: Request, exc: ValueAlreadyInDB):
+    """Catch ValueAlreadyInDB and send a JSONResponse"""
+    return JSONResponse(
+        status_code=422,
+        content={"exec": "ValueAlreadyInDB", "message": f"{str(exc)}"},
+    )
+
+
+# pylint: disable=unused-argument
+@app.exception_handler(UnmetPreconditionForOperation)
+def unmetprecondition_exception_handler(request: Request, exc: UnmetPreconditionForOperation):
+    """Catch UnmetPreconditionForOperation and send a JSONResponse"""
+    return JSONResponse(
+        status_code=422,
+        content={"exec": "UnmetPreconditionForOperation", "message": f"{str(exc)}"},
+    )
+
+
+# pylint: disable=unused-argument
+@app.exception_handler(InvalidQueryParameters)
+def invalidquery_exception_handler(request: Request, exc: InvalidQueryParameters):
+    """Catch InvalidQueryParameters and send a JSONResponse"""
+    return JSONResponse(
+        status_code=422,
+        content={"exec": "InvalidQueryParameters", "message": f"{str(exc)}"},
+    )
+
+
+@app.get("/storage/query_location")
 def query_location(location_name: str = "", location_id: str = "") -> list:
     """
     Query a location by at least specifying an location_name.
@@ -37,6 +72,7 @@ def query_location(location_name: str = "", location_id: str = "") -> list:
     return DB.select(CONFIG.DLM.location_table, params=params)
 
 
+@app.post("/storage/init_storage")
 def init_storage(  # pylint: disable=R0913
     storage_name: str = "",  # pylint: disable=W0613
     location_name: str = "",
@@ -88,6 +124,7 @@ def init_storage(  # pylint: disable=R0913
     return DB.insert(CONFIG.DLM.storage_table, json=post_data)[0]["storage_id"]
 
 
+@app.post("/storage/create_storage_config")
 def create_storage_config(
     storage_id: str = "", config: str = "", storage_name: str = "", config_type="rclone"
 ) -> str:
@@ -149,6 +186,7 @@ def get_storage_config(storage_id: str = "", storage_name: str = "", config_type
     return [json.loads(entry["config"]) for entry in result] if result else []
 
 
+@app.post("/storage/rclone_config")
 def rclone_config(config: str) -> bool:
     """
     Create a new rclone backend configuration entry on the rclone server.
@@ -157,6 +195,7 @@ def rclone_config(config: str) -> bool:
     -----------
     config: a json string containing the configuration
     """
+    print(config)
     request_url = f"{CONFIG.RCLONE.url}/config/create"
     post_data = config
     logger.info("Creating new rclone config: %s %s", request_url, config)
@@ -249,6 +288,7 @@ def rclone_delete(volume: str, fpath: str) -> bool:
     return True
 
 
+@app.post("/storage/init_location")
 def init_location(
     location_name: str = "",
     location_type: str = "",
@@ -271,6 +311,7 @@ def init_location(
     return DB.insert(CONFIG.DLM.location_table, json=post_data)[0]["location_id"]
 
 
+@app.get("/storage/query_storage")
 def query_storage(storage_name: str = "", storage_id: str = "") -> list:
     """
     Query a storage by at least specifying a storage_name.

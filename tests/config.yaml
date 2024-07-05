@@ -12,10 +12,10 @@ DLM:
     polling_interval: 10 # seconds
 
 REST:
-  base_url: "http://localhost:3000"
+  base_url: "http://dlm_postgrest:3000"
 
 RCLONE:
-  url: "http://localhost:5572"
+  url: "http://dlm_rclone:5572"
 
 DATA_PRODUCT_API:
   url: "http://localhost:8000"

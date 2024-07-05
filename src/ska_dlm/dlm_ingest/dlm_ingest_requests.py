@@ -6,6 +6,7 @@ import logging
 
 import requests
 import ska_sdp_metadata_generator.ska_sdp_metadata_generator as metagen
+from fastapi import FastAPI
 from ska_sdp_dataproduct_metadata import MetaData
 
 from ska_dlm.dlm_storage.dlm_storage_requests import rclone_access
@@ -19,7 +20,10 @@ from ..exceptions import InvalidQueryParameters, UnmetPreconditionForOperation, 
 
 logger = logging.getLogger(__name__)
 
+app = FastAPI()
 
+
+@app.post("/ingest/init_data_item")
 def init_data_item(item_name: str = "", phase: str = "GAS", json_data: str = "") -> str:
     """
     Intialize a new data_item by at least specifying an item_name.
@@ -43,6 +47,7 @@ def init_data_item(item_name: str = "", phase: str = "GAS", json_data: str = "")
     return DB.insert(CONFIG.DLM.dlm_table, json=post_data)[0]["uid"]
 
 
+@app.post("/ingest/ingest_data_item")
 def ingest_data_item(
     item_name: str, uri: str = "", storage_name: str = "", storage_id: str = ""
 ) -> str:

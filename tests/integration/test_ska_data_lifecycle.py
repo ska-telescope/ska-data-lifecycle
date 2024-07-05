@@ -11,8 +11,13 @@ import pytest
 from requests_mock import Mocker
 from ska_sdp_dataproduct_metadata import MetaData
 
-from ska_dlm import CONFIG, data_item, dlm_ingest, dlm_migration, dlm_request, dlm_storage
+import tests.integration.client.dlm_ingest_client as dlm_ingest
+import tests.integration.client.dlm_request_client as dlm_request
+import tests.integration.client.dlm_storage_client as dlm_storage
+from ska_dlm import CONFIG, data_item, dlm_migration
 from ska_dlm.dlm_db.db_access import DB
+from ska_dlm.dlm_ingest import notify_data_dashboard
+from ska_dlm.dlm_storage import rclone_config
 from ska_dlm.dlm_storage.main import persist_new_data_items
 from ska_dlm.exceptions import InvalidQueryParameters, ValueAlreadyInDB
 
@@ -35,6 +40,8 @@ class TestDlm(TestCase):
     NOTE: Currently some of them are dependent on each other.
     """
 
+    env = None
+
     @pytest.fixture(name="env")
     def import_test_env_module(self, request):
         """Dynamically import module based on testing environment"""
@@ -48,11 +55,18 @@ class TestDlm(TestCase):
         else:
             raise ValueError("unknown test configuration")
 
-        return importlib.import_module(name)
+        mod = importlib.import_module(name)
+        client_urls = mod.get_service_urls()
+        dlm_storage.STORAGE_URL = client_urls["dlm_storage"]
+        dlm_ingest.INGEST_URL = client_urls["dlm_ingest"]
+        dlm_request.REQUEST_URL = client_urls["dlm_request"]
+        return mod
 
     @pytest.fixture(scope="function", autouse=True)
     def setup_and_teardown(self, env):
         """Initialze the tests."""
+
+        self.env = env
 
         _clear_database()
 
@@ -70,7 +84,7 @@ class TestDlm(TestCase):
         config = '{"name":"MyDisk","type":"local", "parameters":{}}'
         dlm_storage.create_storage_config(uuid, config=config)
         # configure rclone
-        dlm_storage.rclone_config(config)
+        rclone_config(config)
         yield
         _clear_database()
         env.clear_rclone_data()
@@ -175,10 +189,10 @@ class TestDlm(TestCase):
         config_id = dlm_storage.create_storage_config(uuid, config=config)
         assert len(config_id) == 36
         # configure rclone
-        assert dlm_storage.rclone_config(config) is True
+        assert rclone_config(config) is True
 
     @pytest.mark.skip(reason="Will fix in later branches")
-    def test_copy(self, env):
+    def test_copy(self):
         """Copy a test file from one storage to another."""
 
         self.__initialize_storage_config()
@@ -188,7 +202,7 @@ class TestDlm(TestCase):
         )
         assert len(uid) == 36
         dlm_migration.copy_data_item(uid=uid, destination_id=dest_id, path="/testfile_copy")
-        assert RCLONE_TEST_FILE_CONTENT == env.get_rclone_local_file_content("testfile_copy")
+        assert RCLONE_TEST_FILE_CONTENT == self.env.get_rclone_local_file_content("testfile_copy")
 
     @pytest.mark.skip(reason="Will fix in later branches")
     def test_update_item_tags(self):
@@ -265,7 +279,7 @@ class TestDlm(TestCase):
             text="New data product metadata file loaded and store index updated",
         )
 
-        dlm_ingest.notify_data_dashboard(MetaData())
+        notify_data_dashboard(MetaData())
 
     @pytest.mark.skip(reason="Will fix in later branches")
     def test_populate_metadata_col(self):

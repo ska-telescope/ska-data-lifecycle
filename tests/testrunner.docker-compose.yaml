@@ -14,5 +14,8 @@ services:
     networks:
       - dlm_network
     depends_on:
+      - dlm_request
+      - dlm_storage
+      - dlm_ingest
       - dlm_rclone
       - dlm_postgrest

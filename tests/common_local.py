@@ -59,3 +59,13 @@ def clear_rclone_data():
     """Delete all rclone data."""
     container = client.containers.get(RCLONE_DEPLOYMENT)
     container.exec_run(["/bin/sh", "-c", f"rm -rf {RCLONE_HOME}/*"])
+
+
+def get_service_urls():
+    """Returns named map of the client URLs for each of the DLM services"""
+    urls = {
+        "dlm_ingest": "http://localhost:8001",
+        "dlm_request": "http://localhost:8002",
+        "dlm_storage": "http://localhost:8003",
+    }
+    return urls
