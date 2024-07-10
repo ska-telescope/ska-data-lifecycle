@@ -224,6 +224,7 @@ class TestDlm(TestCase):
         assert tags == {"a": "SKA", "b": "DLM", "c": "Hello", "d": "World"}
 
     @pytest.mark.skip(reason="Will fix in later branches")
+    # pylint: disable=no-member
     def test_expired_by_storage_daemon(self):
         """Test an expired data item is deleted by the storage manager."""
         fname = RCLONE_TEST_FILE_PATH
