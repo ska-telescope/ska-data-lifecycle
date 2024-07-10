@@ -2,6 +2,7 @@ services:
   dlm_storage:
     image: dlm_storage
     container_name: dlm_storage
+    platform: linux/amd64
     build:
        context: ..
        dockerfile: tests/Dockerfile-dlm-service
@@ -21,6 +22,7 @@ services:
   dlm_request:
     image: dlm_request
     container_name: dlm_request
+    platform: linux/amd64
     build:
        context: ..
        dockerfile: tests/Dockerfile-dlm-service
@@ -40,6 +42,7 @@ services:
   dlm_ingest:
     image: dlm_ingest
     container_name: dlm_ingest
+    platform: linux/amd64
     build:
        context: ..
        dockerfile: tests/Dockerfile-dlm-service
