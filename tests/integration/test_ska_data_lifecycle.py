@@ -157,6 +157,7 @@ class TestDlm(TestCase):
 
     # TODO: We don't want RCLONE_TEST_FILE_PATH to disappear after one test run.
     @pytest.mark.skip(reason="Will fix in later branches")
+    # pylint: disable=no-member
     def test_delete_item_payload(self):
         """Delete the payload of a data_item."""
         fpath = RCLONE_TEST_FILE_PATH
@@ -251,6 +252,7 @@ class TestDlm(TestCase):
         assert result[0]["uid"] == uid
 
     @pytest.mark.skip(reason="Will fix in later branches")
+    # pylint: disable=no-member
     def test_query_new(self):
         """Test for newly created data_items."""
         check_time = "2024-01-01"
