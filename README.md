@@ -62,6 +62,14 @@ pytest --env local
 docker-compose --file tests/testrunner.docker-compose.yaml down
 ```
 
+#### Authentication
+
+By default the test platform uses OAuth authentication.
+
+To turn it off set:
+- In `services.docker-compose.yaml`, section `dlm_gateway`, set `AUTH: "0"`.
+- Run tests: `pytest --env local --auth 0`
+
 
 ### Test against Helm Chart
 
