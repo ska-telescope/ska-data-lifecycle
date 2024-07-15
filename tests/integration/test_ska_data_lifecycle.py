@@ -76,12 +76,12 @@ class TestDlm(TestCase):
         """Initialze the tests."""
 
         self.env = env
+        # pylint: disable=attribute-defined-outside-init
         self.auth = auth
 
         # this should only run once per test suite
         if TestDlm.token is None and auth is True:
             TestDlm.token = get_token("admin", "admin", TestDlm.GATEWAY_URL)
-            print(TestDlm.token)
             dlm_request.REQUEST_BEARER = TestDlm.token
             dlm_ingest.INGEST_BEARER = TestDlm.token
             dlm_storage.STORAGE_BEARER = TestDlm.token
