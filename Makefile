@@ -29,7 +29,6 @@ export KUBE_NAMESPACE TEST_INGRESS
 .PHONY: docs-pre-build k8s-recreate-namespace k8s-do-test
 
 docs-pre-build: ## setup the document build environment.
-	poetry config virtualenvs.create false
 	poetry install --only main,docs
 
 python-pre-test:
