@@ -3,6 +3,7 @@
 import requests
 
 INGEST_URL = ""
+INGEST_BEARER = None
 
 
 # pylint: disable=unused-argument
@@ -21,7 +22,12 @@ def init_data_item(item_name: str = "", phase: str = "GAS", json_data: str = "")
     uid,
     """
     params = {k: v for k, v in locals().items() if v}
-    response = requests.post(f"{INGEST_URL}/ingest/init_data_item", params=params, timeout=60)
+    headers = {"Authorization": f"Bearer {INGEST_BEARER}"} if INGEST_BEARER else {}
+    response = requests.post(
+        f"{INGEST_URL}/ingest/init_data_item", params=params, headers=headers, timeout=60
+    )
+    if response.status_code in [401, 403]:
+        response.raise_for_status()
     return response.json()
 
 
@@ -55,5 +61,10 @@ def ingest_data_item(
     str, data_item UID
     """
     params = {k: v for k, v in locals().items() if v}
-    response = requests.post(f"{INGEST_URL}/ingest/ingest_data_item", params=params, timeout=60)
+    headers = {"Authorization": f"Bearer {INGEST_BEARER}"} if INGEST_BEARER else {}
+    response = requests.post(
+        f"{INGEST_URL}/ingest/ingest_data_item", params=params, headers=headers, timeout=60
+    )
+    if response.status_code in [401, 403]:
+        response.raise_for_status()
     return response.json()

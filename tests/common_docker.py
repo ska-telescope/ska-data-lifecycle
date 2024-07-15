@@ -33,8 +33,9 @@ def clear_rclone_data():
 def get_service_urls():
     """Returns named map of the client URLs for each of the DLM services"""
     urls = {
-        "dlm_ingest": "http://dlm_ingest:8001",
-        "dlm_request": "http://dlm_request:8002",
-        "dlm_storage": "http://dlm_storage:8003",
+        "dlm_gateway": "http://dlm_gateway:8000",
+        "dlm_ingest": "http://dlm_gateway:8000",
+        "dlm_request": "http://dlm_gateway:8000",
+        "dlm_storage": "http://dlm_gateway:8000",
     }
     return urls

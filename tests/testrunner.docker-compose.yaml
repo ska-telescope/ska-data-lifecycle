@@ -3,19 +3,19 @@ include:
 
 services:
   dlm_testrunner:
+    platform: linux/amd64
     image: dlm_testrunner
     container_name: dlm_testrunner
-    platform: linux/amd64
     build:
        context: ..
        dockerfile: tests/Dockerfile-testrunner
     volumes:
       - shared-tmpfs:/data
+    environment:
+      DO_AUTH: "1"
     networks:
       - dlm_network
     depends_on:
       - dlm_request
       - dlm_storage
       - dlm_ingest
-      - dlm_rclone
-      - dlm_postgrest

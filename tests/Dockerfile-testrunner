@@ -17,5 +17,8 @@ RUN poetry config virtualenvs.in-project true \
 COPY ./ ./
 RUN poetry install
 
+ARG DO_AUTH
+ENV DO_AUTH=${DO_AUTH}
+
 ENV PATH="/app/.venv/bin:${PATH}"
-ENTRYPOINT pytest --env docker
+ENTRYPOINT pytest --env docker --auth ${DO_AUTH}

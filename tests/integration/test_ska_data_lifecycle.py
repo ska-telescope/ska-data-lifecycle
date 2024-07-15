@@ -20,6 +20,7 @@ from ska_dlm.dlm_ingest import notify_data_dashboard
 from ska_dlm.dlm_storage import rclone_config
 from ska_dlm.dlm_storage.main import persist_new_data_items
 from ska_dlm.exceptions import InvalidQueryParameters, ValueAlreadyInDB
+from tests.integration.client.dlm_gateway_client import get_token
 
 RCLONE_TEST_FILE_PATH = "testfile"
 """A file that is available locally in the rclone container"""
@@ -41,6 +42,13 @@ class TestDlm(TestCase):
     """
 
     env = None
+    token = None
+    GATEWAY_URL = None
+
+    @pytest.fixture(name="auth")
+    def auth_fixture(self, request):
+        """Fixture for auth commandline param."""
+        return bool(int(request.config.getoption("--auth")))
 
     @pytest.fixture(name="env")
     def import_test_env_module(self, request):
@@ -60,13 +68,23 @@ class TestDlm(TestCase):
         dlm_storage.STORAGE_URL = client_urls["dlm_storage"]
         dlm_ingest.INGEST_URL = client_urls["dlm_ingest"]
         dlm_request.REQUEST_URL = client_urls["dlm_request"]
+        TestDlm.GATEWAY_URL = client_urls["dlm_gateway"]
         return mod
 
     @pytest.fixture(scope="function", autouse=True)
-    def setup_and_teardown(self, env):
+    def setup_and_teardown(self, env, auth):
         """Initialze the tests."""
 
         self.env = env
+        self.auth = auth
+
+        # this should only run once per test suite
+        if TestDlm.token is None and auth is True:
+            TestDlm.token = get_token("admin", "admin", TestDlm.GATEWAY_URL)
+            print(TestDlm.token)
+            dlm_request.REQUEST_BEARER = TestDlm.token
+            dlm_ingest.INGEST_BEARER = TestDlm.token
+            dlm_storage.STORAGE_BEARER = TestDlm.token
 
         _clear_database()
 
