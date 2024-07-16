@@ -123,8 +123,8 @@ def copy_data_item(  # pylint: disable=too-many-arguments
     uid = init_data_item(json_data=json.dumps(init_item))
     # (5)
     # TODO(yan-xxx) abstract the actual function called away to allow for different
-    # mechansims to perform the copy. Also needs be a non-blocking call
-    # sheduling a job for dlm_migration service.
+    # mechanisms to perform the copy. Also needs to be a non-blocking call
+    # scheduling a job for dlm_migration service.
     logger.info("source: %s", source)
     rclone_copy(
         source["backend"],
