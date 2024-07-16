@@ -32,9 +32,9 @@ docs-pre-build: ## setup the document build environment.
 	poetry install --only main,docs
 
 python-pre-test:
-	docker compose --file tests/services.docker-compose.yaml up --detach dlm_rclone dlm_db dlm_postgrest
+	docker compose --file tests/services.docker-compose.yaml up --detach
 python-post-test:
-	docker compose --file tests/services.docker-compose.yaml down dlm_rclone dlm_db dlm_postgrest
+	docker compose --file tests/services.docker-compose.yaml down
 
 docker-test: docker-pre-test docker-do-test docker-post-test
 docker-pre-test:
