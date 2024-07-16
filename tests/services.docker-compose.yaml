@@ -1,4 +1,94 @@
 services:
+  dlm_storage:
+    platform: linux/amd64
+    image: dlm_storage
+    container_name: dlm_storage
+    build:
+       context: ..
+       dockerfile: tests/Dockerfile-dlm-service
+    entrypoint: fastapi dev src/ska_dlm/dlm_storage/dlm_storage_requests.py --port 8003 --host 0.0.0.0
+    ports:
+      - 8003:8003
+    volumes:
+      - shared-tmpfs:/data
+    depends_on:
+      - dlm_gateway
+      - dlm_postgrest
+      - dlm_rclone
+    networks:
+      - dlm_network
+
+  dlm_request:
+    image: dlm_request
+    container_name: dlm_request
+    platform: linux/amd64
+    build:
+       context: ..
+       dockerfile: tests/Dockerfile-dlm-service
+    entrypoint: fastapi dev src/ska_dlm/dlm_request/dlm_request_requests.py --port 8002 --host 0.0.0.0
+    ports:
+      - 8002:8002
+    volumes:
+      - shared-tmpfs:/data
+    depends_on:
+      - dlm_gateway
+      - dlm_postgrest
+      - dlm_rclone
+    networks:
+      - dlm_network
+
+  dlm_ingest:
+    platform: linux/amd64
+    image: dlm_ingest
+    container_name: dlm_ingest
+    build:
+       context: ..
+       dockerfile: tests/Dockerfile-dlm-service
+    entrypoint: fastapi dev src/ska_dlm/dlm_ingest/dlm_ingest_requests.py --port 8001 --host 0.0.0.0
+    ports:
+      - 8001:8001
+    volumes:
+      - shared-tmpfs:/data
+    depends_on:
+      - dlm_postgrest
+      - dlm_rclone
+      - dlm_gateway
+    networks:
+      - dlm_network
+
+  dlm_gateway:
+    platform: linux/amd64
+    image: dlm_gateway
+    container_name: dlm_gateway
+    build:
+       context: ..
+       dockerfile: tests/Dockerfile-dlm-gateway
+       args:
+         - PORT=8000
+    ports:
+      - 8000:8000
+    environment:
+        KEYCLOAK_URL: "https://keycloak:8443/"
+        REDIRECT_URL: "http://dlm_gateway:8000/auth_callback/"
+        REALM: "test"
+        CLIENT_ID: "dlm"
+        CLIENT_SECRET: "xU2a9SOTLJZSwvAzAlfoucqg4sCMgY6O"
+        STATE: "magic_string"
+        AUTH: "1"
+        INGEST_CLIENT: "http://dlm_ingest:8001"
+        REQUESTS_CLIENT: "http://dlm_request:8002"
+        STORAGE_CLIENT: "http://dlm_storage:8003"
+    healthcheck:
+        test: curl --fail http://localhost:8000/heartbeat || exit 1
+        interval: 5s
+        timeout: 5s
+        retries: 5
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    networks:
+      - dlm_network
+
   dlm_rclone:
     image: rclone/rclone
     container_name: dlm_rclone
@@ -52,6 +142,59 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
+  keycloak:
+    build:
+        context: ..
+        dockerfile: tests/Dockerfile-keycloak
+    image: keycloak
+    command: start-dev --import-realm
+    container_name: keycloak
+    ports:
+      - 8443:8443
+    environment:
+        KC_DB: "postgres"
+        KC_DB_URL: "jdbc:postgresql://keycloak_db:5432/keycloak"
+        KC_DB_USERNAME: "admin"
+        KC_DB_PASSWORD: "maximum-finishing-punk"
+        KC_HOSTNAME: "localhost"
+        KEYCLOAK_ADMIN: "admin"
+        KEYCLOAK_ADMIN_PASSWORD: "affirm-monoxide-earthling"
+    healthcheck:
+        test:
+          [
+            "CMD-SHELL",
+            'exec 3<>/dev/tcp/localhost/8080; echo -e "GET /health/ready HTTP/1.1\nhost: localhost:8080\n" >&3; timeout --preserve-status 1 cat <&3 | grep -m 1 status | grep -m 1 UP; ERROR=$?; exec 3<&-; exec 3>&-; exit $ERROR'
+          ]
+        interval: 5s
+        timeout: 5s
+        retries: 10
+    depends_on:
+      keycloak_db:
+        condition: service_healthy
+    networks:
+      - dlm_network
+
+  keycloak_db:
+    build: 
+        context: ..
+        dockerfile: tests/Dockerfile-keycloak-db
+    image: keycloak_db
+    container_name: keycloak_db
+    ports:
+      - 5400:5432
+    environment:
+        POSTGRES_DB: "keycloak"
+        POSTGRES_USER: "admin"
+        POSTGRES_PASSWORD: "maximum-finishing-punk"
+    networks:
+      - dlm_network
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "admin", "-d", "keycloak"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
 
 networks:
   dlm_network:

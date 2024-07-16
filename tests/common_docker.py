@@ -28,3 +28,14 @@ def clear_rclone_data():
     files = glob.glob(f"{RCLONE_HOME}/*")
     for file in files:
         os.remove(file)
+
+
+def get_service_urls():
+    """Returns named map of the client URLs for each of the DLM services"""
+    urls = {
+        "dlm_gateway": "http://dlm_gateway:8000",
+        "dlm_ingest": "http://dlm_gateway:8000",
+        "dlm_request": "http://dlm_gateway:8000",
+        "dlm_storage": "http://dlm_gateway:8000",
+    }
+    return urls

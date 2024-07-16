@@ -18,7 +18,7 @@ apps_api = client.AppsV1Api()
 
 def write_rclone_file_content(rclone_path: str, content: str):
     """Write the given text to a file local to rclone."""
-    pod_name = _get_rclone_pod_name()
+    pod_name = _get_pod_name(RCLONE_DEPLOYMENT)
     stream.stream(
         core_api.connect_get_namespaced_pod_exec,
         pod_name,
@@ -30,7 +30,7 @@ def write_rclone_file_content(rclone_path: str, content: str):
 
 def get_rclone_local_file_content(rclone_path: str):
     """Get the text content of a file local to rclone"""
-    pod_name = _get_rclone_pod_name()
+    pod_name = _get_pod_name(RCLONE_DEPLOYMENT)
     content = stream.stream(
         core_api.connect_get_namespaced_pod_exec,
         pod_name,
@@ -43,7 +43,7 @@ def get_rclone_local_file_content(rclone_path: str):
 
 def clear_rclone_data():
     """Delete all local rclone data."""
-    pod_name = _get_rclone_pod_name()
+    pod_name = _get_pod_name(RCLONE_DEPLOYMENT)
     output = stream.stream(
         core_api.connect_get_namespaced_pod_exec,
         pod_name,
@@ -54,15 +54,20 @@ def clear_rclone_data():
     return output
 
 
-def _get_rclone_pod_name():
-    deployment = apps_api.read_namespaced_deployment(RCLONE_DEPLOYMENT, NAMESPACE)
+def _get_pod_name(pod_name):
+    deployment = apps_api.read_namespaced_deployment(pod_name, NAMESPACE)
     labels: dict = deployment.spec.selector.match_labels
     selector = ",".join(f"{k}={v}" for k, v in labels.items())
     pods = core_api.list_namespaced_pod(NAMESPACE, label_selector=selector)
     assert len(pods.items) == 1, (
-        f"Before removing this assert, make sure {RCLONE_HOME} "
+        f"Before removing this assert, make sure {pod_name} "
         "is mounted to a volume that all pods can access"
     )
 
     pod_name = pods.items[0].metadata.name
     return pod_name
+
+
+def get_service_urls():
+    """Returns named map of the client URLs for each of the DLM services"""
+    return {}

@@ -62,6 +62,32 @@ pytest --env local
 docker-compose --file tests/testrunner.docker-compose.yaml down
 ```
 
+#### FastAPI and Authentication
+
+The test platform makes REST requests to DLM services and are proxied through the `dlm_gateway`.
+
+The `dlm_gateway` checks the destination, unpacks the token and checks the permissions based on the user profile.
+
+If the user has the correct permission then the REST call will be proxied to the correct DLM service. If unauthorised a HTTP 401 or 403 error will be returned.
+
+To run manually:
+
+```sh
+# Rebuild any changed Dockerfile dependencies
+docker-compose -f tests/services.docker-compose.yaml build
+
+# Run services
+docker-compose -f tests/services.docker-compose.yaml up
+
+# Or run tests locally
+pytest --env local --auth 1
+
+```
+
+To turn off authentication:
+* In `services.docker-compose.yaml`, section `dlm_gateway`, set `AUTH: "0"`.
+* Run tests: `pytest --env local --auth 0`
+
 
 ### Test against Helm Chart
 

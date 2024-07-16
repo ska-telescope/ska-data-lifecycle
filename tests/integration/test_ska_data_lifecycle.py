@@ -11,10 +11,16 @@ import pytest
 from requests_mock import Mocker
 from ska_sdp_dataproduct_metadata import MetaData
 
-from ska_dlm import CONFIG, data_item, dlm_ingest, dlm_migration, dlm_request, dlm_storage
+import tests.integration.client.dlm_ingest_client as dlm_ingest
+import tests.integration.client.dlm_request_client as dlm_request
+import tests.integration.client.dlm_storage_client as dlm_storage
+from ska_dlm import CONFIG, data_item, dlm_migration
 from ska_dlm.dlm_db.db_access import DB
+from ska_dlm.dlm_ingest import notify_data_dashboard
+from ska_dlm.dlm_storage import rclone_config
 from ska_dlm.dlm_storage.main import persist_new_data_items
 from ska_dlm.exceptions import InvalidQueryParameters, ValueAlreadyInDB
+from tests.integration.client.dlm_gateway_client import get_token
 
 RCLONE_TEST_FILE_PATH = "testfile"
 """A file that is available locally in the rclone container"""
@@ -35,6 +41,15 @@ class TestDlm(TestCase):
     NOTE: Currently some of them are dependent on each other.
     """
 
+    env = None
+    token = None
+    GATEWAY_URL = None
+
+    @pytest.fixture(name="auth")
+    def auth_fixture(self, request):
+        """Fixture for auth commandline param."""
+        return bool(int(request.config.getoption("--auth")))
+
     @pytest.fixture(name="env")
     def import_test_env_module(self, request):
         """Dynamically import module based on testing environment"""
@@ -48,11 +63,26 @@ class TestDlm(TestCase):
         else:
             raise ValueError("unknown test configuration")
 
-        return importlib.import_module(name)
+        mod = importlib.import_module(name)
+        client_urls = mod.get_service_urls()
+        dlm_storage.STORAGE_URL = client_urls["dlm_storage"]
+        dlm_ingest.INGEST_URL = client_urls["dlm_ingest"]
+        dlm_request.REQUEST_URL = client_urls["dlm_request"]
+        TestDlm.GATEWAY_URL = client_urls["dlm_gateway"]
+        return mod
 
     @pytest.fixture(scope="function", autouse=True)
-    def setup_and_teardown(self, env):
+    def setup_and_teardown(self, env, auth):
         """Initialze the tests."""
+
+        self.env = env
+
+        # this should only run once per test suite
+        if TestDlm.token is None and auth is True:
+            TestDlm.token = get_token("admin", "admin", TestDlm.GATEWAY_URL)
+            dlm_request.REQUEST_BEARER = TestDlm.token
+            dlm_ingest.INGEST_BEARER = TestDlm.token
+            dlm_storage.STORAGE_BEARER = TestDlm.token
 
         _clear_database()
 
@@ -70,7 +100,7 @@ class TestDlm(TestCase):
         config = '{"name":"MyDisk","type":"local", "parameters":{}}'
         dlm_storage.create_storage_config(uuid, config=config)
         # configure rclone
-        dlm_storage.rclone_config(config)
+        rclone_config(config)
         yield
         _clear_database()
         env.clear_rclone_data()
@@ -93,6 +123,7 @@ class TestDlm(TestCase):
         assert len(uid) == 36
 
     @pytest.mark.skip(reason="Will fix in later branches")
+    # pylint: disable=no-member
     def test_register_data_item(self):
         """Test the register_data_item function."""
         uid = dlm_ingest.register_data_item(
@@ -142,6 +173,7 @@ class TestDlm(TestCase):
 
     # TODO: We don't want RCLONE_TEST_FILE_PATH to disappear after one test run.
     @pytest.mark.skip(reason="Will fix in later branches")
+    # pylint: disable=no-member
     def test_delete_item_payload(self):
         """Delete the payload of a data_item."""
         fpath = RCLONE_TEST_FILE_PATH
@@ -175,10 +207,11 @@ class TestDlm(TestCase):
         config_id = dlm_storage.create_storage_config(uuid, config=config)
         assert len(config_id) == 36
         # configure rclone
-        assert dlm_storage.rclone_config(config) is True
+        assert rclone_config(config) is True
 
     @pytest.mark.skip(reason="Will fix in later branches")
-    def test_copy(self, env):
+    # pylint: disable=no-member
+    def test_copy(self):
         """Copy a test file from one storage to another."""
 
         self.__initialize_storage_config()
@@ -188,9 +221,10 @@ class TestDlm(TestCase):
         )
         assert len(uid) == 36
         dlm_migration.copy_data_item(uid=uid, destination_id=dest_id, path="/testfile_copy")
-        assert RCLONE_TEST_FILE_CONTENT == env.get_rclone_local_file_content("testfile_copy")
+        assert RCLONE_TEST_FILE_CONTENT == self.env.get_rclone_local_file_content("testfile_copy")
 
     @pytest.mark.skip(reason="Will fix in later branches")
+    # pylint: disable=no-member
     def test_update_item_tags(self):
         """Update the item_tags field of a data_item."""
         _ = dlm_ingest.register_data_item("/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, "MyDisk")
@@ -206,6 +240,7 @@ class TestDlm(TestCase):
         assert tags == {"a": "SKA", "b": "DLM", "c": "Hello", "d": "World"}
 
     @pytest.mark.skip(reason="Will fix in later branches")
+    # pylint: disable=no-member
     def test_expired_by_storage_daemon(self):
         """Test an expired data item is deleted by the storage manager."""
         fname = RCLONE_TEST_FILE_PATH
@@ -234,6 +269,7 @@ class TestDlm(TestCase):
         assert result[0]["uid"] == uid
 
     @pytest.mark.skip(reason="Will fix in later branches")
+    # pylint: disable=no-member
     def test_query_new(self):
         """Test for newly created data_items."""
         check_time = "2024-01-01"
@@ -242,6 +278,7 @@ class TestDlm(TestCase):
         assert len(result) == 1
 
     @pytest.mark.skip(reason="Will fix in later branches")
+    # pylint: disable=no-member
     def test_persist_new_data_items(self):
         """Test making new data items persistent."""
         check_time = "2024-01-01"
@@ -265,9 +302,10 @@ class TestDlm(TestCase):
             text="New data product metadata file loaded and store index updated",
         )
 
-        dlm_ingest.notify_data_dashboard(MetaData())
+        notify_data_dashboard(MetaData())
 
     @pytest.mark.skip(reason="Will fix in later branches")
+    # pylint: disable=no-member
     def test_populate_metadata_col(self):
         """Test that the metadata is correctly saved to the metadata column."""
         uid = dlm_ingest.register_data_item(
