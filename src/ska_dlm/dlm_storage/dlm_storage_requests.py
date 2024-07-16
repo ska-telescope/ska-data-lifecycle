@@ -233,13 +233,24 @@ def check_storage_access(storage_name: str = "", storage_id: str = "") -> bool:
     return rclone_access(rclone_fs)
 
 
-def rclone_access(
-    volume: str = "", remote: str = "", config: str = ""  # pylint disable C0103
-) -> bool:
-    """
-    Check whether a configured backend is accessible.
+def rclone_access(volume: str = "", remote: str = "", config: str = "") -> bool:
+    """Check whether a configured backend is accessible.
 
-    NOTE: This assumes a rclone server is running.
+    NOTE: This assumes a rclone server is running..
+
+    Parameters
+    ----------
+    volume : str
+        Disk volume name, by default ""
+    remote : str
+        Remote url to the volume, by default ""
+    config : str
+        _description_, by default ""
+
+    Returns
+    -------
+    bool
+        True if access is allowed.
     """
     request_url = f"{CONFIG.RCLONE.url}/operations/stat"
     if config:

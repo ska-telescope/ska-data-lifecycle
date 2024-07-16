@@ -14,7 +14,19 @@ class DBQueryError(DataLifecycleError):
     """An error while performing a database query."""
 
     def __init__(self, url: str, method: str, params: dict | tuple | None, json: object | None):
-        """Create a DBQueryError."""
+        """Create a DBQueryError.
+
+        Parameters
+        ----------
+        url : str
+            _description_
+        method : str
+            _description_
+        params : dict | tuple | None
+            _description_
+        json : object | None
+            _description_
+        """
         self.url = url
         self.method = method
         self.params = params

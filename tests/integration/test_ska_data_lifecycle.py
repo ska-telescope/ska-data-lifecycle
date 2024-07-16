@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
 """Tests for `ska_data_lifecycle` package."""
+
 import importlib
 import json
 from datetime import timedelta
-from unittest import TestCase
 
 import inflect
 import pytest
@@ -116,12 +116,13 @@ def test_ingest_data_item():
 
 
 @pytest.mark.skip(reason="Will fix in later branches")
-# pylint: disable=no-member
 def test_register_data_item():
     """Test the register_data_item function."""
+    # pylint: disable-next=no-member
     uid = dlm_ingest.register_data_item("/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, "MyDisk")
     assert len(uid) == 36
     with pytest.raises(ValueAlreadyInDB, match="Item is already registered"):
+        # pylint: disable-next=no-member
         dlm_ingest.register_data_item("/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, "MyDisk")
 
 
@@ -169,7 +170,6 @@ def test_set_uri_state_phase():
 
 # TODO: We don't want RCLONE_TEST_FILE_PATH to disappear after one test run.
 @pytest.mark.skip(reason="Will fix in later branches")
-# pylint: disable=no-member
 def test_delete_item_payload():
     """Delete the payload of a data_item."""
     fpath = RCLONE_TEST_FILE_PATH
@@ -179,6 +179,7 @@ def test_delete_item_payload():
     data_item.set_uri(uid, fpath, storage_id)
     queried_uid = dlm_request.query_data_item(item_name=fpath)[0]["uid"]
     assert uid == queried_uid
+    # pylint: disable-next=no-member
     dlm_storage.delete_data_item_payload(uid)
     assert dlm_request.query_data_item(item_name=fpath)[0]["uri"] == fpath
     assert dlm_request.query_data_item(item_name=fpath)[0]["item_state"] == "DELETED"
@@ -208,12 +209,12 @@ def __initialize_storage_config():
 
 
 @pytest.mark.skip(reason="Will fix in later branches")
-# pylint: disable=no-member
 def test_copy(env):
     """Copy a test file from one storage to another."""
 
     __initialize_storage_config()
     dest_id = dlm_storage.query_storage("MyDisk2")[0]["storage_id"]
+    # pylint: disable-next=no-member
     uid = dlm_ingest.register_data_item("/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, "MyDisk")
     assert len(uid) == 36
     dlm_migration.copy_data_item(uid=uid, destination_id=dest_id, path="/testfile_copy")
@@ -221,9 +222,9 @@ def test_copy(env):
 
 
 @pytest.mark.skip(reason="Will fix in later branches")
-# pylint: disable=no-member
 def test_update_item_tags():
     """Update the item_tags field of a data_item."""
+    # pylint: disable-next=no-member
     _ = dlm_ingest.register_data_item("/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, "MyDisk")
     res = data_item.update_item_tags(
         "/my/ingest/test/item2", item_tags={"a": "SKA", "b": "DLM", "c": "dummy"}
@@ -238,7 +239,6 @@ def test_update_item_tags():
 
 
 @pytest.mark.skip(reason="Will fix in later branches")
-# pylint: disable=no-member
 def test_expired_by_storage_daemon():
     """Test an expired data item is deleted by the storage manager."""
     fname = RCLONE_TEST_FILE_PATH
@@ -260,6 +260,7 @@ def test_expired_by_storage_daemon():
     assert len(result) == 1
 
     # run storage daemon code
+    # pylint: disable-next=no-member
     dlm_storage.delete_uids()
 
     # check that the daemon deleted the item
@@ -268,20 +269,20 @@ def test_expired_by_storage_daemon():
 
 
 @pytest.mark.skip(reason="Will fix in later branches")
-# pylint: disable=no-member
 def test_query_new():
     """Test for newly created data_items."""
     check_time = "2024-01-01"
+    # pylint: disable-next=no-member
     _ = dlm_ingest.register_data_item("/my/ingest/test/item", RCLONE_TEST_FILE_PATH, "MyDisk")
     result = dlm_request.query_new(check_time)
     assert len(result) == 1
 
 
 @pytest.mark.skip(reason="Will fix in later branches")
-# pylint: disable=no-member
 def test_persist_new_data_items():
     """Test making new data items persistent."""
     check_time = "2024-01-01"
+    # pylint: disable-next=no-member
     _ = dlm_ingest.register_data_item("/my/ingest/test/item", RCLONE_TEST_FILE_PATH, "MyDisk")
     result = persist_new_data_items(check_time)
     # negative test, since there is only a single volume registered
@@ -307,9 +308,9 @@ def test_notify_data_dashboard():
 
 
 @pytest.mark.skip(reason="Will fix in later branches")
-# pylint: disable=no-member
 def test_populate_metadata_col():
     """Test that the metadata is correctly saved to the metadata column."""
+    # pylint: disable-next=no-member
     uid = dlm_ingest.register_data_item("/my/metadata/test/item", RCLONE_TEST_FILE_PATH, "MyDisk")
     content = dlm_request.query_data_item(uid=uid)
     metadata_dict = json.loads(content[0]["metadata"])
