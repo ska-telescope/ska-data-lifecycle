@@ -6,9 +6,7 @@ services:
     build:
        context: ..
        dockerfile: tests/Dockerfile-dlm-service
-       args:
-         - FILE=dlm_storage/dlm_storage_requests.py
-         - PORT=8003
+    entrypoint: fastapi dev src/ska_dlm/dlm_storage/dlm_storage_requests.py --port 8003 --host 0.0.0.0
     ports:
       - 8003:8003
     volumes:
