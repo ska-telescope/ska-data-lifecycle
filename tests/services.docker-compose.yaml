@@ -25,9 +25,7 @@ services:
     build:
        context: ..
        dockerfile: tests/Dockerfile-dlm-service
-       args:
-         - FILE=dlm_request/dlm_request_requests.py
-         - PORT=8002
+    entrypoint: fastapi dev src/ska_dlm/dlm_request/dlm_request_requests.py --port 8002 --host 0.0.0.0
     ports:
       - 8002:8002
     volumes:
@@ -46,9 +44,7 @@ services:
     build:
        context: ..
        dockerfile: tests/Dockerfile-dlm-service
-       args:
-         - FILE=dlm_ingest/dlm_ingest_requests.py
-         - PORT=8001
+    entrypoint: fastapi dev src/ska_dlm/dlm_ingest/dlm_ingest_requests.py --port 8001 --host 0.0.0.0
     ports:
       - 8001:8001
     volumes:

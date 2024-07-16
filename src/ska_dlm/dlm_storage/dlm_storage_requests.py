@@ -195,7 +195,6 @@ def rclone_config(config: str) -> bool:
     -----------
     config: a json string containing the configuration
     """
-    print(config)
     request_url = f"{CONFIG.RCLONE.url}/config/create"
     post_data = config
     logger.info("Creating new rclone config: %s %s", request_url, config)
