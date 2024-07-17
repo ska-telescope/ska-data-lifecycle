@@ -45,6 +45,7 @@ pylint = "^2.17.4"
 pylint-junit = "^0.3.2"
 pytest = "^7.3.1"
 pytest-cov = "^4.1.0"
+darglint = "^1.8.1"
 flake8-docstrings = "^1.7.0"
 flake8-rst-docstrings = "^0.3.0"
 flake8-pyproject = "^1.2.3"
@@ -60,10 +61,13 @@ sphinx-autodoc-typehints = "^1.23.0"
 m2r2 = "<0.3.3"
 
 [tool.pytest.ini_options]
-addopts = "-v"
+addopts = [
+    "-v",
+]
+# log_cli=true
 
 [tool.flake8]
-docstring-style = "sphinx"
+docstring-style = "numpy"
 rst-directives = "literalinclude"
 rst-roles = [
     "py:attr",
@@ -78,7 +82,7 @@ enable = "DAR104"
 max-complexity = 10
 
 ignore = [
-    # Black handles formatting for us
+    # Use black to handle formatting
     "E203", # Whitespace before ':'
     "W503", # Line break occurred before a binary operator
     "E501", # line too long
@@ -88,6 +92,12 @@ ignore = [
     "D401", # First line should be in imperative mood; try rephrasing
     "D202", # No blank lines allowed after function docstring
     "D205", # 1 blank line required between summary line and description
+
+    # These should be reanabled
+    "DAR101", # Missing parameter(s) in Docstring
+    "DAR201", # Missing "Returns" in Docstring
+    "DAR301", # Missing "Yields" in Docstring
+    "DAR401", # Missing "Exception" in Docstring
 ]
 
 [tool.pylint.messages_control]

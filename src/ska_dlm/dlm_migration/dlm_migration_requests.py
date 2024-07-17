@@ -17,11 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 def rclone_copy(src_fs: str, src_remote: str, dst_fs: str, dst_remote: str):
-    """
-    Copy a file from one place to another.
-
-    NOTE: This assumes a rclone server is running.
-    """
+    """Copy a file from one place to another."""
     request_url = f"{CONFIG.RCLONE.url}/operations/copyfile"
     post_data = {
         "srcFs": src_fs,
@@ -54,18 +50,34 @@ def copy_data_item(  # pylint: disable=too-many-arguments
     (5) use the rclone copy command to copy it to the new location
     (6) make sure the copy was successful
 
-    Parameters:
-    -----------
-    item_name: could be empty, in which case the first 1000 items are returned
-    oid:    Return data_items referred to by the OID provided.
-    uid:    Return data_item referred to by the UID provided.
-    destination_name: the name of the destination storage volume.
-    destination_id: the destination storage
-    path: the destination path
+    Parameters
+    ----------
+    item_name : str
+        data item name, when empty the first 1000 items are returned, by default ""
+    oid : str
+        object id, Return data_items referred to by the OID provided, by default ""
+    uid : str
+        Return data_item referred to by the UID provided, by default ""
+    destination_name : str
+        the name of the destination storage volume, by default ""
+    destination_id : str
+        the destination storage, by default ""
+    path : str
+        the destination path, by default ""
+
     Returns
     -------
-    The uid of the new item copy.
+    str
+        The uid of the new item copy.
+
+    Raises
+    ------
+    InvalidQueryParameters
+        _description_
+    UnmetPreconditionForOperation
+        _description_
     """
+
     if not item_name and not oid and not uid:
         raise InvalidQueryParameters("Either an item_name or an OID or an UID has to be provided!")
     orig_item = query_data_item(item_name, oid, uid)
@@ -110,8 +122,9 @@ def copy_data_item(  # pylint: disable=too-many-arguments
     }
     uid = init_data_item(json_data=json.dumps(init_item))
     # (5)
-    # TODO: abstract the actual function called away to allow for different
-    # mechansims to perform the copy
+    # TODO(yan-xxx) abstract the actual function called away to allow for different
+    # mechanisms to perform the copy. Also needs to be a non-blocking call
+    # scheduling a job for dlm_migration service.
     logger.info("source: %s", source)
     rclone_copy(
         source["backend"],

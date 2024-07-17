@@ -11,7 +11,7 @@ from ska_dlm.dlm_db.db_access import DB
 def pytest_addoption(parser):
     """Setup command line"""
     parser.addoption("--env", action="store", default="local", help="local, docker, or k8s")
-    parser.addoption("--auth", action="store", default="0", help="Use OAuth flow")
+    parser.addoption("--auth", action="store", default="1", help="Use OAuth flow")
 
 
 @pytest.fixture(name="configure", scope="session", autouse=True)
