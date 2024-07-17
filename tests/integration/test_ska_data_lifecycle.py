@@ -124,13 +124,11 @@ def test_ingest_data_item():
 def test_register_data_item():
     """Test the register_data_item function."""
     metadata_object = metagen.generate_metadata_from_generator(f"/data/{RCLONE_TEST_FILE_PATH}")
-    # pylint: disable-next=no-member
     uid = register_data_item(
         "/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, metadata_object, "MyDisk"
     )
     assert len(uid) == 36
     with pytest.raises(ValueAlreadyInDB, match="Item is already registered"):
-        # pylint: disable-next=no-member
         register_data_item(
             "/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, metadata_object, "MyDisk"
         )
@@ -189,7 +187,6 @@ def test_delete_item_payload():
     data_item.set_uri(uid, fpath, storage_id)
     queried_uid = dlm_request.query_data_item(item_name=fpath)[0]["uid"]
     assert uid == queried_uid
-    # pylint: disable-next=no-member
     delete_data_item_payload(uid)
     assert dlm_request.query_data_item(item_name=fpath)[0]["uri"] == fpath
     assert dlm_request.query_data_item(item_name=fpath)[0]["item_state"] == "DELETED"
@@ -225,7 +222,6 @@ def test_copy(env):
     __initialize_storage_config()
     dest_id = dlm_storage.query_storage("MyDisk2")[0]["storage_id"]
     metadata_object = metagen.generate_metadata_from_generator(f"/data/{RCLONE_TEST_FILE_PATH}")
-    # pylint: disable-next=no-member
     uid = register_data_item(
         "/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, metadata_object, "MyDisk"
     )
@@ -237,7 +233,6 @@ def test_copy(env):
 def test_update_item_tags():
     """Update the item_tags field of a data_item."""
     metadata_object = metagen.generate_metadata_from_generator(f"/data/{RCLONE_TEST_FILE_PATH}")
-    # pylint: disable-next=no-member
     _ = register_data_item(
         "/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, metadata_object, "MyDisk"
     )
@@ -277,7 +272,6 @@ def test_expired_by_storage_daemon():
     assert len(result) == 1
 
     # run storage daemon code
-    # pylint: disable-next=no-member
     delete_uids()
 
     # check that the daemon deleted the item
@@ -289,7 +283,6 @@ def test_query_new():
     """Test for newly created data_items."""
     check_time = "2024-01-01"
     metadata_object = metagen.generate_metadata_from_generator(f"/data/{RCLONE_TEST_FILE_PATH}")
-    # pylint: disable-next=no-member
     _ = register_data_item(
         "/my/ingest/test/item", RCLONE_TEST_FILE_PATH, metadata_object, "MyDisk"
     )
@@ -301,7 +294,6 @@ def test_persist_new_data_items():
     """Test making new data items persistent."""
     check_time = "2024-01-01"
     metadata_object = metagen.generate_metadata_from_generator(f"/data/{RCLONE_TEST_FILE_PATH}")
-    # pylint: disable-next=no-member
     _ = register_data_item(
         "/my/ingest/test/item", RCLONE_TEST_FILE_PATH, metadata_object, "MyDisk"
     )
@@ -331,7 +323,6 @@ def test_notify_data_dashboard():
 def test_populate_metadata_col():
     """Test that the metadata is correctly saved to the metadata column."""
     metadata_object = metagen.generate_metadata_from_generator(f"/data/{RCLONE_TEST_FILE_PATH}")
-    # pylint: disable-next=no-member
     uid = register_data_item(
         "/my/metadata/test/item", RCLONE_TEST_FILE_PATH, metadata_object, "MyDisk"
     )
