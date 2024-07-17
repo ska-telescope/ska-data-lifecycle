@@ -1,11 +1,9 @@
 """Convenience functions wrapping the most important postgREST API calls."""
 
-import functools
 import json
 import logging
 
 import requests
-
 from fastapi import FastAPI
 from ska_sdp_dataproduct_metadata import MetaData
 
@@ -49,7 +47,11 @@ def init_data_item(item_name: str = "", phase: str = "GAS", json_data: str = "")
 
 @app.post("/ingest/ingest_data_item")
 def register_data_item(
-    item_name: str, uri: str = "", metadata: str = "", storage_name: str = "", storage_id: str = ""
+    item_name: str,
+    uri: str = "",
+    metadata: object = None,
+    storage_name: str = "",
+    storage_id: str = "",
 ) -> str:
     """
     Ingest a data_item (register function is an alias).
@@ -134,4 +136,4 @@ def notify_data_dashboard(metadata: MetaData) -> None:
 # @functools.wraps(ingest_data_item, assigned=set(functools.WRAPPER_ASSIGNMENTS) - {"__name__"})
 # pylint: disable-next=missing-function-docstring
 # def register_data_item(*args, **kwargs) -> str:  # noqa: D103
-    # return ingest_data_item(*args, **kwargs)
+# return ingest_data_item(*args, **kwargs)

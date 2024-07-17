@@ -17,13 +17,13 @@ import tests.integration.client.dlm_request_client as dlm_request
 import tests.integration.client.dlm_storage_client as dlm_storage
 from ska_dlm import CONFIG, data_item, dlm_migration
 from ska_dlm.dlm_db.db_access import DB
-from ska_dlm.dlm_ingest import register_data_item, notify_data_dashboard
-from ska_dlm.dlm_storage import rclone_config
+from ska_dlm.dlm_ingest import notify_data_dashboard, register_data_item
+from ska_dlm.dlm_storage import delete_data_item_payload, delete_uids, rclone_config
 from ska_dlm.dlm_storage.main import persist_new_data_items
 from ska_dlm.exceptions import InvalidQueryParameters, ValueAlreadyInDB
 from tests.integration.client.dlm_gateway_client import get_token
 
-RCLONE_TEST_FILE_PATH = "testfile" # change to full path / file uri
+RCLONE_TEST_FILE_PATH = "testfile"  # change to full path / file uri
 """A file that is available locally in the rclone container"""
 RCLONE_TEST_FILE_CONTENT = "license content"
 
@@ -65,9 +65,8 @@ def import_test_env_module(request):
 
 
 @pytest.fixture(scope="session", autouse=True)
-def setup_and_teardown(env, auth):
-    """Initialze the tests."""
-
+def setup_auth(env, auth):
+    """Initialze Auth per session."""
     # this should only run once per test suite
     if auth is True:
         token = get_token("admin", "admin", env.get_service_urls()["dlm_gateway"])
@@ -75,6 +74,10 @@ def setup_and_teardown(env, auth):
         dlm_ingest.INGEST_BEARER = token
         dlm_storage.STORAGE_BEARER = token
 
+
+@pytest.fixture(scope="function", autouse=True)
+def setup(env, auth):
+    """Initialze the tests."""
     _clear_database()
 
     env.write_rclone_file_content(RCLONE_TEST_FILE_PATH, RCLONE_TEST_FILE_CONTENT)
@@ -109,22 +112,28 @@ def __initialize_data_item():
     assert success
 
 
-@pytest.mark.skip(reason="Will fix in later branches")
 def test_ingest_data_item():
     """Test the ingest_data_item function."""
-    uid = dlm_ingest.ingest_data_item("/my/ingest/test/item", RCLONE_TEST_FILE_PATH, "MyDisk")
+    metadata_object = metagen.generate_metadata_from_generator(f"/data/{RCLONE_TEST_FILE_PATH}")
+    uid = register_data_item(
+        "/my/ingest/test/item", RCLONE_TEST_FILE_PATH, metadata_object, "MyDisk"
+    )
     assert len(uid) == 36
 
 
-@pytest.mark.skip(reason="Will fix in later branches")
 def test_register_data_item():
     """Test the register_data_item function."""
+    metadata_object = metagen.generate_metadata_from_generator(f"/data/{RCLONE_TEST_FILE_PATH}")
     # pylint: disable-next=no-member
-    uid = dlm_ingest.register_data_item("/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, "MyDisk")
+    uid = register_data_item(
+        "/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, metadata_object, "MyDisk"
+    )
     assert len(uid) == 36
     with pytest.raises(ValueAlreadyInDB, match="Item is already registered"):
         # pylint: disable-next=no-member
-        dlm_ingest.register_data_item("/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, "MyDisk")
+        register_data_item(
+            "/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, metadata_object, "MyDisk"
+        )
 
 
 def test_query_expired_empty():
@@ -170,18 +179,18 @@ def test_set_uri_state_phase():
 
 
 # TODO: We don't want RCLONE_TEST_FILE_PATH to disappear after one test run.
-@pytest.mark.skip(reason="Will fix in later branches")
 def test_delete_item_payload():
     """Delete the payload of a data_item."""
+    metadata_object = metagen.generate_metadata_from_generator(f"/data/{RCLONE_TEST_FILE_PATH}")
     fpath = RCLONE_TEST_FILE_PATH
     storage_id = dlm_storage.query_storage(storage_name="MyDisk")[0]["storage_id"]
-    uid = dlm_ingest.ingest_data_item(fpath, fpath, "MyDisk")
+    uid = register_data_item(fpath, fpath, metadata_object, "MyDisk")
     data_item.set_state(uid, "READY")
     data_item.set_uri(uid, fpath, storage_id)
     queried_uid = dlm_request.query_data_item(item_name=fpath)[0]["uid"]
     assert uid == queried_uid
     # pylint: disable-next=no-member
-    dlm_storage.delete_data_item_payload(uid)
+    delete_data_item_payload(uid)
     assert dlm_request.query_data_item(item_name=fpath)[0]["uri"] == fpath
     assert dlm_request.query_data_item(item_name=fpath)[0]["item_state"] == "DELETED"
 
@@ -215,19 +224,23 @@ def test_copy(env):
 
     __initialize_storage_config()
     dest_id = dlm_storage.query_storage("MyDisk2")[0]["storage_id"]
-    metadata_object = metagen.generate_metadata_from_generator("/data/"+RCLONE_TEST_FILE_PATH)
+    metadata_object = metagen.generate_metadata_from_generator(f"/data/{RCLONE_TEST_FILE_PATH}")
     # pylint: disable-next=no-member
-    uid = register_data_item("/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, metadata_object, "MyDisk")
+    uid = register_data_item(
+        "/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, metadata_object, "MyDisk"
+    )
     assert len(uid) == 36
     dlm_migration.copy_data_item(uid=uid, destination_id=dest_id, path="/testfile_copy")
     assert RCLONE_TEST_FILE_CONTENT == env.get_rclone_local_file_content("testfile_copy")
 
 
-@pytest.mark.skip(reason="Will fix in later branches")
 def test_update_item_tags():
     """Update the item_tags field of a data_item."""
+    metadata_object = metagen.generate_metadata_from_generator(f"/data/{RCLONE_TEST_FILE_PATH}")
     # pylint: disable-next=no-member
-    _ = dlm_ingest.register_data_item("/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, "MyDisk")
+    _ = register_data_item(
+        "/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, metadata_object, "MyDisk"
+    )
     res = data_item.update_item_tags(
         "/my/ingest/test/item2", item_tags={"a": "SKA", "b": "DLM", "c": "dummy"}
     )
@@ -240,7 +253,6 @@ def test_update_item_tags():
     assert tags == {"a": "SKA", "b": "DLM", "c": "Hello", "d": "World"}
 
 
-@pytest.mark.skip(reason="Will fix in later branches")
 def test_expired_by_storage_daemon():
     """Test an expired data item is deleted by the storage manager."""
     fname = RCLONE_TEST_FILE_PATH
@@ -252,8 +264,11 @@ def test_expired_by_storage_daemon():
     result = dlm_request.query_deleted()
     assert len(result) == 0
 
+    metadata_object = metagen.generate_metadata_from_generator(f"/data/{RCLONE_TEST_FILE_PATH}")
     # add an item, and expire immediately
-    uid = dlm_ingest.ingest_data_item(item_name=fname, uri=fname, storage_name="MyDisk")
+    uid = register_data_item(
+        item_name=fname, uri=fname, metadata=metadata_object, storage_name="MyDisk"
+    )
     data_item.set_state(uid=uid, state="READY")
     data_item.set_uid_expiration(uid, "2000-01-01")
 
@@ -263,29 +278,33 @@ def test_expired_by_storage_daemon():
 
     # run storage daemon code
     # pylint: disable-next=no-member
-    dlm_storage.delete_uids()
+    delete_uids()
 
     # check that the daemon deleted the item
     result = dlm_request.query_deleted()
     assert result[0]["uid"] == uid
 
 
-@pytest.mark.skip(reason="Will fix in later branches")
 def test_query_new():
     """Test for newly created data_items."""
     check_time = "2024-01-01"
+    metadata_object = metagen.generate_metadata_from_generator(f"/data/{RCLONE_TEST_FILE_PATH}")
     # pylint: disable-next=no-member
-    _ = dlm_ingest.register_data_item("/my/ingest/test/item", RCLONE_TEST_FILE_PATH, "MyDisk")
+    _ = register_data_item(
+        "/my/ingest/test/item", RCLONE_TEST_FILE_PATH, metadata_object, "MyDisk"
+    )
     result = dlm_request.query_new(check_time)
     assert len(result) == 1
 
 
-@pytest.mark.skip(reason="Will fix in later branches")
 def test_persist_new_data_items():
     """Test making new data items persistent."""
     check_time = "2024-01-01"
+    metadata_object = metagen.generate_metadata_from_generator(f"/data/{RCLONE_TEST_FILE_PATH}")
     # pylint: disable-next=no-member
-    _ = dlm_ingest.register_data_item("/my/ingest/test/item", RCLONE_TEST_FILE_PATH, "MyDisk")
+    _ = register_data_item(
+        "/my/ingest/test/item", RCLONE_TEST_FILE_PATH, metadata_object, "MyDisk"
+    )
     result = persist_new_data_items(check_time)
     # negative test, since there is only a single volume registered
     assert result == {"/my/ingest/test/item": False}
@@ -309,14 +328,16 @@ def test_notify_data_dashboard():
     notify_data_dashboard(MetaData())
 
 
-@pytest.mark.skip(reason="Will fix in later branches")
 def test_populate_metadata_col():
     """Test that the metadata is correctly saved to the metadata column."""
+    metadata_object = metagen.generate_metadata_from_generator(f"/data/{RCLONE_TEST_FILE_PATH}")
     # pylint: disable-next=no-member
-    uid = dlm_ingest.register_data_item("/my/metadata/test/item", RCLONE_TEST_FILE_PATH, "MyDisk")
+    uid = register_data_item(
+        "/my/metadata/test/item", RCLONE_TEST_FILE_PATH, metadata_object, "MyDisk"
+    )
     content = dlm_request.query_data_item(uid=uid)
     metadata_dict = json.loads(content[0]["metadata"])
-
+    print(metadata_dict)
     assert metadata_dict["interface"] == "http://schema.skao.int/ska-data-product-meta/0.1"
     assert isinstance(
         metadata_dict["execution_block"], str
@@ -325,10 +346,10 @@ def test_populate_metadata_col():
     assert "config" in metadata_dict  # All the fields in here are None atm
     assert metadata_dict["files"] == [
         {
-            "crc": "b12dddc1",
+            "crc": "62acf8ce",
             "description": "",
-            "path": "LICENSE",
-            "size": 1461,
+            "path": "testfile",
+            "size": 15,
             "status": "done",
         }
     ]
@@ -338,5 +359,5 @@ def test_populate_metadata_col():
         "access_format": "application/unknown",
         "facility_name": "SKA-Observatory",
         "instrument_name": "Unknown",
-        "access_estsize": 1,
+        "access_estsize": 0,
     }
