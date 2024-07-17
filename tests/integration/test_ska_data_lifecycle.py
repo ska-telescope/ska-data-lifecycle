@@ -76,7 +76,7 @@ def setup_auth(env, auth):
 
 
 @pytest.fixture(scope="function", autouse=True)
-def setup(env, auth):
+def setup(env):
     """Initialze the tests."""
     _clear_database()
 
