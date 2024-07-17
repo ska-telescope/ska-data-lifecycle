@@ -1,0 +1,5 @@
+# To make use of this file, run from the project root directory:
+#    git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# Refactor tests to pytest functions
+886456a8ed9e22afc4ae86d54683bb13bbb6432c
