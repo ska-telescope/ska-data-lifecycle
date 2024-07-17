@@ -5,7 +5,7 @@ import json
 import logging
 
 import requests
-import ska_sdp_metadata_generator.ska_sdp_metadata_generator as metagen
+
 from fastapi import FastAPI
 from ska_sdp_dataproduct_metadata import MetaData
 
@@ -48,8 +48,8 @@ def init_data_item(item_name: str = "", phase: str = "GAS", json_data: str = "")
 
 
 @app.post("/ingest/ingest_data_item")
-def ingest_data_item(
-    item_name: str, uri: str = "", storage_name: str = "", storage_id: str = ""
+def register_data_item(
+    item_name: str, uri: str = "", metadata: str = "", storage_name: str = "", storage_id: str = ""
 ) -> str:
     """
     Ingest a data_item (register function is an alias).
@@ -108,14 +108,11 @@ def ingest_data_item(
     # (5) Set data_item state to READY
     set_state(uid, "READY")
 
-    # (6) Generate metadata
-    # TODO YAN-1746: The following relies on the uri being a local file,
-    # rather than being a remote file accessible on rclone.
-    metadata_object = metagen.generate_metadata_from_generator(uri)
-    set_metadata(uid, metadata_object)  # populate the metadata column in the database
+    # (6) Set metadata
+    set_metadata(uid, metadata)  # populate the metadata column in the database
 
     # (7)
-    notify_data_dashboard(metadata_object)
+    notify_data_dashboard(metadata)
 
     return uid
 
@@ -134,7 +131,7 @@ def notify_data_dashboard(metadata: MetaData) -> None:
 
 
 # just for convenience we also define the ingest function as register_data_item.
-@functools.wraps(ingest_data_item, assigned=set(functools.WRAPPER_ASSIGNMENTS) - {"__name__"})
+# @functools.wraps(ingest_data_item, assigned=set(functools.WRAPPER_ASSIGNMENTS) - {"__name__"})
 # pylint: disable-next=missing-function-docstring
-def register_data_item(*args, **kwargs) -> str:  # noqa: D103
-    return ingest_data_item(*args, **kwargs)
+# def register_data_item(*args, **kwargs) -> str:  # noqa: D103
+    # return ingest_data_item(*args, **kwargs)

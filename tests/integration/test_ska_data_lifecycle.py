@@ -8,6 +8,7 @@ from datetime import timedelta
 
 import inflect
 import pytest
+import ska_sdp_metadata_generator.ska_sdp_metadata_generator as metagen
 from requests_mock import Mocker
 from ska_sdp_dataproduct_metadata import MetaData
 
@@ -16,13 +17,13 @@ import tests.integration.client.dlm_request_client as dlm_request
 import tests.integration.client.dlm_storage_client as dlm_storage
 from ska_dlm import CONFIG, data_item, dlm_migration
 from ska_dlm.dlm_db.db_access import DB
-from ska_dlm.dlm_ingest import notify_data_dashboard
+from ska_dlm.dlm_ingest import register_data_item, notify_data_dashboard
 from ska_dlm.dlm_storage import rclone_config
 from ska_dlm.dlm_storage.main import persist_new_data_items
 from ska_dlm.exceptions import InvalidQueryParameters, ValueAlreadyInDB
 from tests.integration.client.dlm_gateway_client import get_token
 
-RCLONE_TEST_FILE_PATH = "testfile"
+RCLONE_TEST_FILE_PATH = "testfile" # change to full path / file uri
 """A file that is available locally in the rclone container"""
 RCLONE_TEST_FILE_CONTENT = "license content"
 
@@ -208,14 +209,15 @@ def __initialize_storage_config():
     assert rclone_config(config) is True
 
 
-@pytest.mark.skip(reason="Will fix in later branches")
+# @pytest.mark.skip(reason="Will fix in later branches")
 def test_copy(env):
     """Copy a test file from one storage to another."""
 
     __initialize_storage_config()
     dest_id = dlm_storage.query_storage("MyDisk2")[0]["storage_id"]
+    metadata_object = metagen.generate_metadata_from_generator("/data/"+RCLONE_TEST_FILE_PATH)
     # pylint: disable-next=no-member
-    uid = dlm_ingest.register_data_item("/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, "MyDisk")
+    uid = register_data_item("/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, metadata_object, "MyDisk")
     assert len(uid) == 36
     dlm_migration.copy_data_item(uid=uid, destination_id=dest_id, path="/testfile_copy")
     assert RCLONE_TEST_FILE_CONTENT == env.get_rclone_local_file_content("testfile_copy")
