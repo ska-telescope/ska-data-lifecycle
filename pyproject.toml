@@ -93,13 +93,9 @@ ignore = [
 
     # pydocstyle
     # These hinder adoption of documentation
-    "D400", # First line should end with a period
     "D401", # First line should be in imperative mood; try rephrasing
-    "D202", # No blank lines allowed after function docstring
-    "D205", # 1 blank line required between summary line and description
 
     # flake8 darglint and pydoclint
-    # "DAR101", # Missing parameter(s) in Docstring
     "DOC103", "DAR103", # Parameter type mismatch
     "DOC201", "DAR201", # Missing "Returns" in Docstring
     "DOC301", "DAR301", # Missing "Yields" in Docstring

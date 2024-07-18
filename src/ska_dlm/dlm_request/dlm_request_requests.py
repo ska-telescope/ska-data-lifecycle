@@ -151,14 +151,13 @@ def query_exists(item_name: str = "", oid: str = "", uid: str = "", ready: bool 
 
 @app.get("/request/query_exist_and_ready")
 def query_exists_and_ready(item_name: str = "", oid: str = "", uid: str = "") -> bool:
-    """
-    Check whether a data_item exists and is in ready state.
+    """Check whether a data_item exists and is in ready state.
 
     Parameters
     ----------
     item_name: str, optional
         optional item_name
-    oid: str, optional,
+    oid: str, optional
         the oid to be searched for
     uid: str, optional
         this returns only one storage_id
