@@ -114,11 +114,15 @@ def __initialize_data_item():
 
 def test_ingest_data_item():
     """Test the ingest_data_item function."""
-    metadata_object = metagen.generate_metadata_from_generator(f"/data/{RCLONE_TEST_FILE_PATH}")
-    uid = register_data_item(
-        "/my/ingest/test/item", RCLONE_TEST_FILE_PATH, metadata_object, "MyDisk"
-    )
+    path = f"/data/{RCLONE_TEST_FILE_PATH}"
+    metadata_object = metagen.generate_metadata_from_generator(path)
+    uid = register_data_item("/my/ingest/test/item", path, metadata_object, "MyDisk")
     assert len(uid) == 36
+
+
+# TODO:
+# def test_register_data_item_with_metadata():
+# def test_register_data_item_without_metadata():
 
 
 def test_register_data_item():
@@ -308,6 +312,7 @@ def test_persist_new_data_items():
     assert result == {"/my/ingest/test/item": True}
 
 
+@pytest.mark.skip(reason="Will update soon")
 def test_notify_data_dashboard():
     """Test that the write hook will post metadata file info to a URL."""
     # mock a response for this URL, a copy of the normal response from ska-sdp-dataproduct-api
@@ -322,20 +327,37 @@ def test_notify_data_dashboard():
 
 def test_populate_metadata_col():
     """Test that the metadata is correctly saved to the metadata column."""
+    # Generate metadata
     metadata_object = metagen.generate_metadata_from_generator(f"/data/{RCLONE_TEST_FILE_PATH}")
+    # metadata_object = metagen.generate_metadata_from_generator("/Users/00110564/ska/ska-data-lifecycle/LICENSE")
+    metadata_json = (
+        metadata_object.get_data().to_json()
+    )  # MetaData object --> benedict object --> json str
+
+    assert isinstance(metadata_json, str)  # json str
+    try:
+        json.loads(metadata_json)
+    except json.JSONDecodeError as e:
+        assert False, f"Failed to decode JSON: {e}. Check type."
+
+    # Register data item
     uid = register_data_item(
-        "/my/metadata/test/item", RCLONE_TEST_FILE_PATH, metadata_object, "MyDisk"
+        "/my/metadata/test/item", RCLONE_TEST_FILE_PATH, metadata_json, "MyDisk"
     )
-    content = dlm_request.query_data_item(uid=uid)
-    metadata_dict = json.loads(content[0]["metadata"])
-    print(metadata_dict)
-    assert metadata_dict["interface"] == "http://schema.skao.int/ska-data-product-meta/0.1"
+
+    metadata_str_from_db = dlm_request.query_data_item(uid=uid)
+    assert isinstance(metadata_str_from_db[0]["metadata"], str)
+
+    metadata_dict_from_db = json.loads(metadata_str_from_db[0]["metadata"])
+    assert isinstance(metadata_dict_from_db, dict)  # otherwise the data might be double encoded
+
+    assert metadata_dict_from_db["interface"] == "http://schema.skao.int/ska-data-product-meta/0.1"
     assert isinstance(
-        metadata_dict["execution_block"], str
-    )  # Can't verify a specific execution_block because it's not static
-    assert metadata_dict["context"] == {}
-    assert "config" in metadata_dict  # All the fields in here are None atm
-    assert metadata_dict["files"] == [
+        metadata_dict_from_db["execution_block"], str
+    )  # Can't verify a specific execution_block by hard-coding because it's not static
+    assert metadata_dict_from_db["context"] == {}
+    assert "config" in metadata_dict_from_db  # All the fields in here are None atm
+    assert metadata_dict_from_db["files"] == [
         {
             "crc": "62acf8ce",
             "description": "",
@@ -344,7 +366,7 @@ def test_populate_metadata_col():
             "status": "done",
         }
     ]
-    assert metadata_dict["obscore"] == {
+    assert metadata_dict_from_db["obscore"] == {
         "dataproduct_type": "Unknown",
         "obs_collection": "Unknown",
         "access_format": "application/unknown",

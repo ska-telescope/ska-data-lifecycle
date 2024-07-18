@@ -8,14 +8,16 @@ from fastapi import FastAPI
 from ska_sdp_dataproduct_metadata import MetaData
 
 from ska_dlm.dlm_storage.dlm_storage_requests import rclone_access
-
+import ska_sdp_metadata_generator.ska_sdp_metadata_generator as metagen
 from .. import CONFIG
 from ..data_item import set_metadata, set_state, set_uri
 from ..dlm_db.db_access import DB
 from ..dlm_request import query_data_item, query_exists
 from ..dlm_storage import check_storage_access, query_storage
 from ..exceptions import InvalidQueryParameters, UnmetPreconditionForOperation, ValueAlreadyInDB
+from typing import Dict, List, Union, Any
 
+JsonType = Union[Dict[str, Any], List[Any], str, int, float, bool, None]
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
@@ -49,7 +51,7 @@ def init_data_item(item_name: str = "", phase: str = "GAS", json_data: str = "")
 def register_data_item(
     item_name: str,
     uri: str = "",
-    metadata: object = None,
+    metadata: JsonType = None,
     storage_name: str = "",
     storage_id: str = "",
 ) -> str:
@@ -110,23 +112,35 @@ def register_data_item(
     # (5) Set data_item state to READY
     set_state(uid, "READY")
 
-    # (6) Set metadata
-    set_metadata(uid, metadata)  # populate the metadata column in the database
+    # (6) Populate the metadata column in the database
+    metadata_temp = metadata
+    if metadata is None:
+        try:
+            metadata_object = metagen.generate_metadata_from_generator(uri)
+            metadata_temp = metadata_object.get_data().to_json()
+        except:
+            # print exception
+            # log
+            pass
+
+    if metadata_temp is not None:
+        # Check that metadata_temp is standard json?
+        set_metadata(uid, metadata_temp)
 
     # (7)
-    notify_data_dashboard(metadata)
+    # notify_data_dashboard(metadata_temp)
 
     return uid
 
 
-def notify_data_dashboard(metadata: MetaData) -> None:
+def notify_data_dashboard(metadata: MetaData) -> None:  ### NB: change
     """HTTP POST a MetaData object to the Data Product Dashboard"""
     headers = {"Content-Type": "application/json"}
-    payload = metadata.get_data().to_json()
+    payload = metadata.get_data().to_json()  #### dumps
     url = CONFIG.DATA_PRODUCT_API.url + "/ingestnewmetadata"
 
     try:
         requests.request("POST", url, headers=headers, data=payload, timeout=2)
-        logger.info("POSTed metadata (%s) to %s", metadata.get_data().execution_block, url)
+        logger.info("POSTed metadata (%s) to %s", metadata.get_data().execution_block, url)  ###
     except requests.RequestException:
         logger.exception("POST error notifying data dashboard at: %s", url)
