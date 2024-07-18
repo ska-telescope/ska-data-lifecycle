@@ -16,23 +16,25 @@ app = FastAPI()
 
 
 @app.get("/request/query_data_item")
-def query_data_item(item_name: str = "", oid: str = "", uid: str = "", params: str = None) -> list:
+def query_data_item(
+    item_name: str = "", oid: str = "", uid: str = "", params: str | None = None
+) -> list:
     """
     Query a new data_item by at least specifying an item_name.
 
-    Parameters:
-    -----------
-    item_name: could be empty, in which case the first 1000 items are returned
-    oid:    Return data_items referred to by the OID provided.
-    uid:    Return data_item referred to by the UID provided.
-    params: specify the query parameters
+    Parameters
+    ----------
+    item_name: str
+        could be empty, in which case the first 1000 items are returned
+    oid : str
+        Return data_items referred to by the OID provided.
+    uid : str
+        Return data_item referred to by the UID provided.
+    params: str | None
+        specify the query parameters
 
-    Returns:
-    --------
-    list
-
-    Returns:
-    --------
+    Returns
+    -------
     list
     """
     if bool(params) == (item_name or oid or uid):
@@ -50,12 +52,12 @@ def query_data_item(item_name: str = "", oid: str = "", uid: str = "", params: s
 
 @app.get("/request/query_expired")
 def query_expired(offset: timedelta = None):
-    """
-    Query for all expired data_items using the uid_expiration timestamp.
+    """Query for all expired data_items using the uid_expiration timestamp.
 
-    Parameters:
-    -----------
-    offset: optional offset for the query
+    Parameters
+    ----------
+    offset : str
+        optional offset for the query
     """
     now = datetime.now(timezone.utc)
     if offset:
@@ -75,13 +77,15 @@ def query_expired(offset: timedelta = None):
 def query_deleted(uid: str = "") -> list:
     """Query for all deleted data_items using the deleted state.
 
-    Parameters:
-    -----------
-    uid: The UID to be checked, optional.
+    Parameters
+    ----------
+    uid: str
+        The UID to be checked, optional.
 
-    RETURNS:
-    --------
-    list of dictionaries with UIDs of deleted items.
+    Returns
+    -------
+    list
+        list of dictionaries with UIDs of deleted items.
     """
     params = {"item_state": "eq.DELETED", "select": "uid"}
     if uid:
@@ -93,13 +97,15 @@ def query_deleted(uid: str = "") -> list:
 def query_new(check_date: str, uid: str = "") -> list:
     """Query for all data_items newer than the date provided.
 
-    Parameters:
-    -----------
-    check_date: str, the UTC starting date (exclusive)
-    uid: The UID to be checked, optional.
+    Parameters
+    ----------
+    check_date: str
+        the UTC starting date (exclusive)
+    uid: str
+        The UID to be checked, optional.
 
-    RETURNS:
-    --------
+    Returns
+    -------
     list of dictionaries with UID, UID_creation and storage_id of new items.
     """
     params = {
@@ -115,14 +121,18 @@ def query_new(check_date: str, uid: str = "") -> list:
 
 @app.get("/request/query_exists")
 def query_exists(item_name: str = "", oid: str = "", uid: str = "", ready: bool = False) -> bool:
-    """
-    Query to check for existence of a data_item.
+    """Query to check for existence of a data_item.
 
-    Parameters:
-    -----------
-    item_name: optional item_name
-    oid: optional, the oid to be searched for
-    uid: optional, this returns only one storage_id
+    Parameters
+    ----------
+    item_name: str, optional
+        optional item_name
+    oid: str, optional
+        the oid to be searched for
+    uid: str, optional
+        this returns only one storage_id
+    ready: bool, optional
+        _description_
     """
     if not item_name and not oid and not uid:
         raise InvalidQueryParameters("Either an item_name or an OID or an UID have to be provided")
@@ -144,14 +154,18 @@ def query_exists_and_ready(item_name: str = "", oid: str = "", uid: str = "") ->
     """
     Check whether a data_item exists and is in ready state.
 
-    Parameters:
-    -----------
-    item_name: optional item_name
-    oid: optional, the oid to be searched for
-    uid: optional, this returns only one storage_id
+    Parameters
+    ----------
+    item_name: str, optional
+        optional item_name
+    oid: str, optional,
+        the oid to be searched for
+    uid: str, optional
+        this returns only one storage_id
 
-    Returns:
-    boolean
+    Returns
+    -------
+    bool
     """
     return query_exists(item_name, oid, uid, ready=True)
 
@@ -163,11 +177,14 @@ def query_item_storage(item_name: str = "", oid: str = "", uid: str = "") -> str
 
     Either an item_name or a OID have to be provided.
 
-    Parameters:
-    -----------
-    item_name: optional item_name
-    oid: optional, the oid to be searched for
-    uid: optional, this returns only one storage_id
+    Parameters
+    ----------
+    item_name: str, optional
+        optional item_name
+    oid: str, optional
+        the oid to be searched for
+    uid: str, optional
+        this returns only one storage_id
     """
     if not query_exists_and_ready(item_name, oid, uid):
         logger.warning("data_item does not exists or is not READY!")
