@@ -68,6 +68,8 @@ addopts = [
 
 [tool.flake8]
 docstring-style = "numpy"
+docstring-convention = "numpy"
+strictness = "short"
 rst-directives = "literalinclude"
 rst-roles = [
     "py:attr",
@@ -80,25 +82,40 @@ rst-roles = [
 ]
 enable = "DAR104"
 max-complexity = 10
-
+exclude = [
+    "tests/",
+]
 ignore = [
     # Use black to handle formatting
     "E203", # Whitespace before ':'
     "W503", # Line break occurred before a binary operator
     "E501", # line too long
 
+    # pydocstyle
     # These hinder adoption of documentation
     "D400", # First line should end with a period
     "D401", # First line should be in imperative mood; try rephrasing
     "D202", # No blank lines allowed after function docstring
     "D205", # 1 blank line required between summary line and description
 
-    # These should be reanabled
-    "DAR101", # Missing parameter(s) in Docstring
-    "DAR201", # Missing "Returns" in Docstring
-    "DAR301", # Missing "Yields" in Docstring
-    "DAR401", # Missing "Exception" in Docstring
+    # flake8 darglint and pydoclint
+    # "DAR101", # Missing parameter(s) in Docstring
+    "DOC103", "DAR103", # Parameter type mismatch
+    "DOC201", "DAR201", # Missing "Returns" in Docstring
+    "DOC301", "DAR301", # Missing "Yields" in Docstring
+    "DOC401", "DAR401", # Missing "Exception" in Docstring
+    "DOC501", "DAR501", # Missing "Raises" in Docstring
 ]
+
+[tool.pydoclint]
+style = 'numpy'
+allow-init-docstring = true
+check-return-type = false
+check-yeild-type = false
+skip-checking-raises = true
+
+[tool.ruff]
+line-length = 99
 
 [tool.pylint.messages_control]
 disable = ["duplicate-code", "fixme"]
