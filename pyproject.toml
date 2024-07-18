@@ -64,11 +64,11 @@ m2r2 = "<0.3.3"
 addopts = [
     "-v",
 ]
-# log_cli=true
+# log_cli = true
 
 [tool.flake8]
-docstring-style = "numpy"
-docstring-convention = "numpy"
+docstring-style = "numpy"  # darglint
+docstring-convention = "numpy"  # flake8-docstrings
 strictness = "short"
 rst-directives = "literalinclude"
 rst-roles = [
@@ -106,16 +106,6 @@ ignore = [
     "DOC401", "DAR401", # Missing "Exception" in Docstring
     "DOC501", "DAR501", # Missing "Raises" in Docstring
 ]
-
-[tool.pydoclint]
-style = 'numpy'
-allow-init-docstring = true
-check-return-type = false
-check-yeild-type = false
-skip-checking-raises = true
-
-[tool.ruff]
-line-length = 99
 
 [tool.pylint.messages_control]
 disable = ["duplicate-code", "fixme"]
