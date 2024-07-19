@@ -1,4 +1,5 @@
 """Convenience functions wrapping the most important postgREST API calls."""
+
 import json
 import logging
 
@@ -39,10 +40,9 @@ def copy_data_item(  # pylint: disable=too-many-arguments
     destination_id: str = "",
     path: str = "",
 ) -> str:
-    """
-    Copy a data_item from source to destination.
+    """Copy a data_item from source to destination.
 
-    Steps:
+    Steps
     (1) get the current storage_id(s) of the item
     (2) convert one(first) storage_id to a configured rclone backend
     (3) check whether item already exists on destination
@@ -73,11 +73,10 @@ def copy_data_item(  # pylint: disable=too-many-arguments
     Raises
     ------
     InvalidQueryParameters
-        _description_
+        Neither an item_name, OID nor UID parameter provided.
     UnmetPreconditionForOperation
-        _description_
+        No data item found for copying.
     """
-
     if not item_name and not oid and not uid:
         raise InvalidQueryParameters("Either an item_name or an OID or an UID has to be provided!")
     orig_item = query_data_item(item_name, oid, uid)

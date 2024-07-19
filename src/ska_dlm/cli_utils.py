@@ -1,4 +1,5 @@
 """Common utilities for CLI modules."""
+
 import functools
 import typing
 
@@ -28,6 +29,17 @@ def add_as_typer_command(
     The result of invoking the function is printed onto the screen. Certain exceptions are
     summarised in a single line instead of resulting on a full stack trace. Users can add/remove
     exceptions from getting this special treatment.
+
+    Parameters
+    ----------
+    app : typer.Typer
+        _description_
+    func : typing.Callable
+        _description_
+    include_excs : typing.Iterable[type[Exception]] | None, optional
+        _description_, by default None
+    exclude_excs : typing.Iterable[type[Exception]] | None, optional
+        _description_, by default None
     """
     exceptions_to_handle = {HTTPError, DBQueryError, UnmetPreconditionForOperation}
     exceptions_to_handle.update(set(include_excs or []))
@@ -44,4 +56,4 @@ def add_as_typer_command(
                 raise typer.Exit(1)
             raise
 
-    return app.command()(_wrapper)
+    app.command()(_wrapper)

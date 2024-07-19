@@ -22,7 +22,7 @@ app = FastAPI()
 # pylint: disable=unused-argument
 @app.exception_handler(ValueAlreadyInDB)
 def valuealreadyindb_exception_handler(request: Request, exc: ValueAlreadyInDB):
-    """Catch ValueAlreadyInDB and send a JSONResponse"""
+    """Catch ValueAlreadyInDB and send a JSONResponse."""
     return JSONResponse(
         status_code=422,
         content={"exec": "ValueAlreadyInDB", "message": f"{str(exc)}"},
@@ -32,7 +32,7 @@ def valuealreadyindb_exception_handler(request: Request, exc: ValueAlreadyInDB):
 # pylint: disable=unused-argument
 @app.exception_handler(UnmetPreconditionForOperation)
 def unmetprecondition_exception_handler(request: Request, exc: UnmetPreconditionForOperation):
-    """Catch UnmetPreconditionForOperation and send a JSONResponse"""
+    """Catch UnmetPreconditionForOperation and send a JSONResponse."""
     return JSONResponse(
         status_code=422,
         content={"exec": "UnmetPreconditionForOperation", "message": f"{str(exc)}"},
@@ -42,7 +42,7 @@ def unmetprecondition_exception_handler(request: Request, exc: UnmetPrecondition
 # pylint: disable=unused-argument
 @app.exception_handler(InvalidQueryParameters)
 def invalidquery_exception_handler(request: Request, exc: InvalidQueryParameters):
-    """Catch InvalidQueryParameters and send a JSONResponse"""
+    """Catch InvalidQueryParameters and send a JSONResponse."""
     return JSONResponse(
         status_code=422,
         content={"exec": "InvalidQueryParameters", "message": f"{str(exc)}"},
@@ -54,14 +54,16 @@ def query_location(location_name: str = "", location_id: str = "") -> list:
     """
     Query a location by at least specifying an location_name.
 
-    Parameters:
-    -----------
-    location_name: could be empty, in which case the first 1000 items are returned
-    location_id:    Return locations referred to by the location_id provided.
+    Parameters
+    ----------
+    location_name: str, optional
+        could be empty, in which case the first 1000 items are returned
+    location_id: str, optional
+        Return locations referred to by the location_id provided.
 
-    Returns:
-    --------
-    str
+    Returns
+    -------
+    list
     """
     params = {"limit": 1000}
     if location_name or location_id:
@@ -86,13 +88,29 @@ def init_storage(  # pylint: disable=R0913
     """
     Intialize a new storage by at least specifying an item_name.
 
-    Parameters:
-    -----------
-    storage_name
+    Parameters
+    ----------
+    storage_name : str, optional
+        _description_
+    location_name : str, optional
+        _description_
+    location_id : str, optional
+        _description_
+    storage_type: str
+        _description_
+    storage_interface: str
+        _description_
+    storage_capacity: str
+        _description_
+    storage_phase_level: str
+        _description_
+    json_data: str
+        _description_
 
-    Returns:
-    --------
-    Either a storage_ID or an empty string
+    Returns
+    -------
+    str
+        Either a storage_ID or an empty string
     """
     provided_args = dict(locals())
     mandatory_keys = [
@@ -128,19 +146,28 @@ def init_storage(  # pylint: disable=R0913
 def create_storage_config(
     storage_id: str = "", config: str = "", storage_name: str = "", config_type="rclone"
 ) -> str:
-    """
-    Create a new record in the storage_config table for a storage with the given id.
+    """Create a new record in the storage_config table for a storage with the given id.
 
-    Parameters:
-    -----------
-    storage_name: the name of the storage for which the config is provided.
-    storage_id: the storage_id for which to create the entry.
-    config: the configuration entry. For rclone this is s JSON formatted string
-    config_type: default is rclone, but could be something else in the future.
+    Parameters
+    ----------
+    storage_id: str, optional
+        the storage_id for which to create the entry.
+    config: str, optional
+        the configuration entry. For rclone this is s JSON formatted string
+    storage_name: str, optional
+        the name of the storage for which the config is provided.
+    config_type: str, otional
+        default is rclone, but could be something else in the future.
 
-    Returns:
-    --------
-    str, the ID of the configuration entry.
+    Returns
+    -------
+    str
+        the ID of the configuration entry.
+
+    Raises
+    ------
+    UnmetPreconditionForOperation
+        Neither storage_name or ID specified.
     """
     if not storage_name and not storage_id:
         raise UnmetPreconditionForOperation("Neither storage_name or ID specified.")
@@ -153,18 +180,21 @@ def create_storage_config(
 
 
 def get_storage_config(storage_id: str = "", storage_name: str = "", config_type="rclone") -> str:
-    """
-    Get the storage configuration entry for a particular storage backend.
+    """Get the storage configuration entry for a particular storage backend.
 
-    Parameters:
-    -----------
-    storage_name: the name of the storage volume
-    storage_id: required
-    config_type: required, query only the specified type
+    Parameters
+    ----------
+    storage_id: str
+        required, _description_
+    storage_name: str
+        the name of the storage volume
+    config_type: str
+        required, query only the specified type
 
-    Returns:
-    --------
-    json object
+    Returns
+    -------
+    str
+        json object
     """
     params = {}
     if not storage_name and not storage_id:
@@ -188,12 +218,12 @@ def get_storage_config(storage_id: str = "", storage_name: str = "", config_type
 
 @app.post("/storage/rclone_config")
 def rclone_config(config: str) -> bool:
-    """
-    Create a new rclone backend configuration entry on the rclone server.
+    """Create a new rclone backend configuration entry on the rclone server.
 
-    Parameters:
-    -----------
-    config: a json string containing the configuration
+    Parameters
+    ----------
+    config: str
+        a json string containing the configuration
     """
     request_url = f"{CONFIG.RCLONE.url}/config/create"
     post_data = config
@@ -206,17 +236,19 @@ def rclone_config(config: str) -> bool:
 
 
 def check_storage_access(storage_name: str = "", storage_id: str = "") -> bool:
-    """
-    Check whether storage is accessible.
+    """Check whether storage is accessible.
 
-    Parameters:
-    -----------
-    storage_name: The name of the storage volume (either name or ID are required)
-    storage_id: The ID of the storage volume.
+    Parameters
+    ----------
+    storage_name: str
+        The name of the storage volume (either name or ID are required)
+    storage_id: str
+        The ID of the storage volume.
 
-    Returns:
-    --------
-    True is accessible
+    Returns
+    -------
+    bool
+        True is accessible
     """
     storages = query_storage(storage_name=storage_name, storage_id=storage_id)
     if not storages:
@@ -270,16 +302,19 @@ def rclone_access(volume: str = "", remote: str = "", config: str = "") -> bool:
 
 
 def rclone_delete(volume: str, fpath: str) -> bool:
-    """
-    Delete a file, referred to by fpath from a volume using rclone.
+    """Delete a file, referred to by fpath from a volume using rclone.
 
-    Parameters:
-    -----------
-    volume: the configured volume name hosting <fpath>.
-    fpath: the file path.
+    Parameters
+    ----------
+    volume: str
+        the configured volume name hosting <fpath>.
+    fpath: str
+        the file path.
 
-    Returns:
-    bool, True if successful
+    Returns
+    -------
+    bool
+        True if successful
     """
     volume = f"{volume}:" if volume[-1] != ":" else volume
     if not rclone_access(volume, fpath):
@@ -326,13 +361,15 @@ def query_storage(storage_name: str = "", storage_id: str = "") -> list:
     """
     Query a storage by at least specifying a storage_name.
 
-    Parameters:
-    -----------
-    storage_name: could be empty, in which case the first 1000 items are returned
-    storage_id:    Return locations referred to by the location_id provided.
+    Parameters
+    ----------
+    storage_name: str, optional
+        could be empty, in which case the first 1000 items are returned
+    storage_id: str, optional
+        Return locations referred to by the location_id provided.
 
-    Returns:
-    --------
+    Returns
+    -------
     str
     """
     params = {"limit": 1000}
@@ -350,16 +387,24 @@ def check_item_on_storage(
     storage_name: str = "",
     storage_id: str = "",
 ) -> bool:
-    """
-    Check whether item is on storage.
+    """Check whether item is on storage.
 
-    Parameters:
-    -----------
-    item_name: could be empty, in which case the first 1000 items are returned
-    oid:    Return data_items referred to by the OID provided.
-    uid:    Return data_item referred to by the UID provided.
-    storage_name: optional, the name of the storage device
-    storage_id: optional, the storage_id of a destination storage
+    Parameters
+    ----------
+    item_name: str, optional
+        could be empty, in which case the first 1000 items are returned
+    oid: str, optional
+        Return data_items referred to by the OID provided.
+    uid: str, optional
+        Return data_item referred to by the UID provided.
+    storage_name: str, optional
+        the name of the storage device
+    storage_id: str, optional
+        the storage_id of a destination storage
+
+    Returns
+    -------
+    bool
     """
     storages = query_item_storage(item_name, oid, uid)
     if not storages:
@@ -376,15 +421,17 @@ def check_item_on_storage(
 
 
 def delete_data_item_payload(uid: str) -> bool:
-    """
-    Delete the payload of a data_item referred to by the provided UID.
+    """Delete the payload of a data_item referred to by the provided UID.
 
-    Parameters:
-    -----------
-    uid: The UID of the data_item whose payload should be deleted.
+    Parameters
+    ----------
+    uid: str
+        The UID of the data_item whose payload should be deleted.
 
-    Returns:
-    bool, True if successful
+    Returns
+    -------
+    bool
+        True if successful
     """
     storages = query_item_storage(uid=uid)
     logger.info("Storage for this uid: %s", storages)
