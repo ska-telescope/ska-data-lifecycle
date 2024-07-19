@@ -92,7 +92,7 @@ def setup(env):
         storage_interface="posix",
         storage_capacity=100000000,
     )
-    config = {"name":"MyDisk","type":"alias", "parameters":{"remote": "/"}}
+    config = {"name": "MyDisk", "type": "alias", "parameters": {"remote": "/"}}
     config = json.dumps(config)
     dlm_storage.create_storage_config(uuid, config=config)
     # configure rclone
@@ -127,14 +127,10 @@ def test_ingest_data_item():
 
 def test_register_data_item():
     """Test the register_data_item function."""
-    uid = register_data_item(
-        "/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, "MyDisk"
-    )
+    uid = register_data_item("/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, "MyDisk")
     assert len(uid) == 36
     with pytest.raises(ValueAlreadyInDB, match="Item is already registered"):
-        register_data_item(
-            "/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, "MyDisk"
-        )
+        register_data_item("/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, "MyDisk")
 
 
 def test_query_expired_empty():
@@ -202,7 +198,7 @@ def __initialize_storage_config():
     else:
         location_id = dlm_storage.init_location("MyHost", "Server")
     assert len(location_id) == 36
-    config = {"name":"MyDisk2","type":"alias", "parameters":{"remote": "/"}}
+    config = {"name": "MyDisk2", "type": "alias", "parameters": {"remote": "/"}}
     config = json.dumps(config)
     uuid = dlm_storage.init_storage(
         storage_name="MyDisk2",
@@ -224,9 +220,7 @@ def test_copy(env):
 
     __initialize_storage_config()
     dest_id = dlm_storage.query_storage("MyDisk2")[0]["storage_id"]
-    uid = register_data_item(
-        "/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, "MyDisk"
-    )
+    uid = register_data_item("/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, "MyDisk")
     assert len(uid) == 36
     dest = "/data/testfile_copy"
     dlm_migration.copy_data_item(uid=uid, destination_id=dest_id, path=dest)
@@ -235,9 +229,7 @@ def test_copy(env):
 
 def test_update_item_tags():
     """Update the item_tags field of a data_item."""
-    _ = register_data_item(
-        "/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, "MyDisk"
-    )
+    _ = register_data_item("/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, "MyDisk")
     res = data_item.update_item_tags(
         "/my/ingest/test/item2", item_tags={"a": "SKA", "b": "DLM", "c": "dummy"}
     )
@@ -262,9 +254,7 @@ def test_expired_by_storage_daemon():
     assert len(result) == 0
 
     # add an item, and expire immediately
-    uid = register_data_item(
-        item_name=fname, uri=fname, storage_name="MyDisk"
-    )
+    uid = register_data_item(item_name=fname, uri=fname, storage_name="MyDisk")
     data_item.set_state(uid=uid, state="READY")
     data_item.set_uid_expiration(uid, "2000-01-01")
 
@@ -283,9 +273,7 @@ def test_expired_by_storage_daemon():
 def test_query_new():
     """Test for newly created data_items."""
     check_time = "2024-01-01"
-    _ = register_data_item(
-        "/my/ingest/test/item", RCLONE_TEST_FILE_PATH, "MyDisk"
-    )
+    _ = register_data_item("/my/ingest/test/item", RCLONE_TEST_FILE_PATH, "MyDisk")
     result = dlm_request.query_new(check_time)
     assert len(result) == 1
 
@@ -293,9 +281,7 @@ def test_query_new():
 def test_persist_new_data_items():
     """Test making new data items persistent."""
     check_time = "2024-01-01"
-    _ = register_data_item(
-        "/my/ingest/test/item", RCLONE_TEST_FILE_PATH, "MyDisk"
-    )
+    _ = register_data_item("/my/ingest/test/item", RCLONE_TEST_FILE_PATH, "MyDisk")
     result = persist_new_data_items(check_time)
     # negative test, since there is only a single volume registered
     assert result == {"/my/ingest/test/item": False}
