@@ -51,9 +51,9 @@ def init_data_item(item_name: str = "", phase: str = "GAS", json_data: str = "")
 def register_data_item(
     item_name: str,
     uri: str = "",
-    metadata: JsonType = None,
     storage_name: str = "",
     storage_id: str = "",
+    metadata: JsonType = None,
 ) -> str:
     """
     Ingest a data_item (register function is an alias).

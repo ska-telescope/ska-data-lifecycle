@@ -23,7 +23,8 @@ from ska_dlm.dlm_storage.main import persist_new_data_items
 from ska_dlm.exceptions import InvalidQueryParameters, ValueAlreadyInDB
 from tests.integration.client.dlm_gateway_client import get_token
 
-RCLONE_TEST_FILE_PATH = "testfile"  # change to full path / file uri
+ROOT = "/data/"
+RCLONE_TEST_FILE_PATH = "/data/testfile"  # change to full path / file uri
 """A file that is available locally in the rclone container"""
 RCLONE_TEST_FILE_CONTENT = "license content"
 
@@ -91,13 +92,14 @@ def setup(env):
         storage_interface="posix",
         storage_capacity=100000000,
     )
-    config = '{"name":"MyDisk","type":"local", "parameters":{}}'
+    config = {"name":"MyDisk","type":"alias", "parameters":{"remote": "/"}}
+    config = json.dumps(config)
     dlm_storage.create_storage_config(uuid, config=config)
     # configure rclone
     rclone_config(config)
     yield
     _clear_database()
-    env.clear_rclone_data()
+    env.clear_rclone_data(ROOT)
 
 
 def __initialize_data_item():
@@ -114,9 +116,7 @@ def __initialize_data_item():
 
 def test_ingest_data_item():
     """Test the ingest_data_item function."""
-    path = f"/data/{RCLONE_TEST_FILE_PATH}"
-    metadata_object = metagen.generate_metadata_from_generator(path)
-    uid = register_data_item("/my/ingest/test/item", path, metadata_object, "MyDisk")
+    uid = register_data_item("/my/ingest/test/item", RCLONE_TEST_FILE_PATH, "MyDisk")
     assert len(uid) == 36
 
 
@@ -127,14 +127,13 @@ def test_ingest_data_item():
 
 def test_register_data_item():
     """Test the register_data_item function."""
-    metadata_object = metagen.generate_metadata_from_generator(f"/data/{RCLONE_TEST_FILE_PATH}")
     uid = register_data_item(
-        "/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, metadata_object, "MyDisk"
+        "/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, "MyDisk"
     )
     assert len(uid) == 36
     with pytest.raises(ValueAlreadyInDB, match="Item is already registered"):
         register_data_item(
-            "/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, metadata_object, "MyDisk"
+            "/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, "MyDisk"
         )
 
 
@@ -183,10 +182,9 @@ def test_set_uri_state_phase():
 # TODO: We don't want RCLONE_TEST_FILE_PATH to disappear after one test run.
 def test_delete_item_payload():
     """Delete the payload of a data_item."""
-    metadata_object = metagen.generate_metadata_from_generator(f"/data/{RCLONE_TEST_FILE_PATH}")
     fpath = RCLONE_TEST_FILE_PATH
     storage_id = dlm_storage.query_storage(storage_name="MyDisk")[0]["storage_id"]
-    uid = register_data_item(fpath, fpath, metadata_object, "MyDisk")
+    uid = register_data_item(fpath, fpath, "MyDisk")
     data_item.set_state(uid, "READY")
     data_item.set_uri(uid, fpath, storage_id)
     queried_uid = dlm_request.query_data_item(item_name=fpath)[0]["uid"]
@@ -204,7 +202,8 @@ def __initialize_storage_config():
     else:
         location_id = dlm_storage.init_location("MyHost", "Server")
     assert len(location_id) == 36
-    config = '{"name":"MyDisk2","type":"local", "parameters":{}}'
+    config = {"name":"MyDisk2","type":"alias", "parameters":{"remote": "/"}}
+    config = json.dumps(config)
     uuid = dlm_storage.init_storage(
         storage_name="MyDisk2",
         location_id=location_id,
@@ -225,20 +224,19 @@ def test_copy(env):
 
     __initialize_storage_config()
     dest_id = dlm_storage.query_storage("MyDisk2")[0]["storage_id"]
-    metadata_object = metagen.generate_metadata_from_generator(f"/data/{RCLONE_TEST_FILE_PATH}")
     uid = register_data_item(
-        "/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, metadata_object, "MyDisk"
+        "/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, "MyDisk"
     )
     assert len(uid) == 36
-    dlm_migration.copy_data_item(uid=uid, destination_id=dest_id, path="/testfile_copy")
-    assert RCLONE_TEST_FILE_CONTENT == env.get_rclone_local_file_content("testfile_copy")
+    dest = "/data/testfile_copy"
+    dlm_migration.copy_data_item(uid=uid, destination_id=dest_id, path=dest)
+    assert RCLONE_TEST_FILE_CONTENT == env.get_rclone_local_file_content(dest)
 
 
 def test_update_item_tags():
     """Update the item_tags field of a data_item."""
-    metadata_object = metagen.generate_metadata_from_generator(f"/data/{RCLONE_TEST_FILE_PATH}")
     _ = register_data_item(
-        "/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, metadata_object, "MyDisk"
+        "/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, "MyDisk"
     )
     res = data_item.update_item_tags(
         "/my/ingest/test/item2", item_tags={"a": "SKA", "b": "DLM", "c": "dummy"}
@@ -263,10 +261,9 @@ def test_expired_by_storage_daemon():
     result = dlm_request.query_deleted()
     assert len(result) == 0
 
-    metadata_object = metagen.generate_metadata_from_generator(f"/data/{RCLONE_TEST_FILE_PATH}")
     # add an item, and expire immediately
     uid = register_data_item(
-        item_name=fname, uri=fname, metadata=metadata_object, storage_name="MyDisk"
+        item_name=fname, uri=fname, storage_name="MyDisk"
     )
     data_item.set_state(uid=uid, state="READY")
     data_item.set_uid_expiration(uid, "2000-01-01")
@@ -286,9 +283,8 @@ def test_expired_by_storage_daemon():
 def test_query_new():
     """Test for newly created data_items."""
     check_time = "2024-01-01"
-    metadata_object = metagen.generate_metadata_from_generator(f"/data/{RCLONE_TEST_FILE_PATH}")
     _ = register_data_item(
-        "/my/ingest/test/item", RCLONE_TEST_FILE_PATH, metadata_object, "MyDisk"
+        "/my/ingest/test/item", RCLONE_TEST_FILE_PATH, "MyDisk"
     )
     result = dlm_request.query_new(check_time)
     assert len(result) == 1
@@ -297,9 +293,8 @@ def test_query_new():
 def test_persist_new_data_items():
     """Test making new data items persistent."""
     check_time = "2024-01-01"
-    metadata_object = metagen.generate_metadata_from_generator(f"/data/{RCLONE_TEST_FILE_PATH}")
     _ = register_data_item(
-        "/my/ingest/test/item", RCLONE_TEST_FILE_PATH, metadata_object, "MyDisk"
+        "/my/ingest/test/item", RCLONE_TEST_FILE_PATH, "MyDisk"
     )
     result = persist_new_data_items(check_time)
     # negative test, since there is only a single volume registered
@@ -327,13 +322,17 @@ def test_notify_data_dashboard():
 
 def test_populate_metadata_col():
     """Test that the metadata is correctly saved to the metadata column."""
+    META_FILE = "/tmp/testfile"
+    with open(META_FILE, "wt", encoding="ascii") as file:
+        file.write(RCLONE_TEST_FILE_CONTENT)
+
     # Generate metadata
-    metadata_object = metagen.generate_metadata_from_generator(f"/data/{RCLONE_TEST_FILE_PATH}")
+    metadata_object = metagen.generate_metadata_from_generator(META_FILE)
     # metadata_object = metagen.generate_metadata_from_generator("/Users/00110564/ska/ska-data-lifecycle/LICENSE")
     metadata_json = (
         metadata_object.get_data().to_json()
     )  # MetaData object --> benedict object --> json str
-
+    print(metadata_json)
     assert isinstance(metadata_json, str)  # json str
     try:
         json.loads(metadata_json)
@@ -342,7 +341,7 @@ def test_populate_metadata_col():
 
     # Register data item
     uid = register_data_item(
-        "/my/metadata/test/item", RCLONE_TEST_FILE_PATH, metadata_json, "MyDisk"
+        "/my/metadata/test/item", RCLONE_TEST_FILE_PATH, "MyDisk", metadata=metadata_json
     )
 
     metadata_str_from_db = dlm_request.query_data_item(uid=uid)

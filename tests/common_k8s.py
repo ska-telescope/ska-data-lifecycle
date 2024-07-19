@@ -9,7 +9,6 @@ logger = logging.getLogger(__name__)
 
 NAMESPACE = os.getenv("KUBE_NAMESPACE")
 RCLONE_DEPLOYMENT = "ska-dlm-rclone"
-RCLONE_HOME = "/data"
 
 config.load_kube_config()
 core_api = client.CoreV1Api()
@@ -23,7 +22,7 @@ def write_rclone_file_content(rclone_path: str, content: str):
         core_api.connect_get_namespaced_pod_exec,
         pod_name,
         NAMESPACE,
-        command=["/bin/sh", "-c", f"echo -n '{content}' > {RCLONE_HOME}/{rclone_path}"],
+        command=["/bin/sh", "-c", f"echo -n '{content}' > {rclone_path}"],
         stdout=True,
     )
 
@@ -35,20 +34,20 @@ def get_rclone_local_file_content(rclone_path: str):
         core_api.connect_get_namespaced_pod_exec,
         pod_name,
         NAMESPACE,
-        command=["/bin/cat", f"{RCLONE_HOME}/{rclone_path}"],
+        command=["/bin/cat", f"]{rclone_path}"],
         stdout=True,
     )
     return content
 
 
-def clear_rclone_data():
+def clear_rclone_data(path: str):
     """Delete all local rclone data."""
     pod_name = _get_pod_name(RCLONE_DEPLOYMENT)
     output = stream.stream(
         core_api.connect_get_namespaced_pod_exec,
         pod_name,
         NAMESPACE,
-        command=["/bin/sh", "-c", f"rm -rf {RCLONE_HOME}/*"],
+        command=["/bin/sh", "-c", f"rm -rf {path}/*"],
         stdout=True,
     )
     return output
