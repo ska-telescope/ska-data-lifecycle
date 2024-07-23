@@ -8,9 +8,8 @@ from datetime import timedelta
 
 import inflect
 import pytest
-import ska_sdp_metadata_generator.ska_sdp_metadata_generator as metagen
+import ska_sdp_metadata_generator as metagen
 from requests_mock import Mocker
-from ska_sdp_dataproduct_metadata import MetaData
 
 import tests.integration.client.dlm_ingest_client as dlm_ingest
 import tests.integration.client.dlm_request_client as dlm_request
@@ -116,7 +115,9 @@ def __initialize_data_item():
 
 def test_ingest_data_item():
     """Test the ingest_data_item function."""
-    uid = register_data_item("/my/ingest/test/item", RCLONE_TEST_FILE_PATH, "MyDisk")
+    uid = register_data_item(
+        "/my/ingest/test/item", RCLONE_TEST_FILE_PATH, "MyDisk", metadata=None
+    )  # check this
     assert len(uid) == 36
 
 
@@ -214,7 +215,6 @@ def __initialize_storage_config():
     assert rclone_config(config) is True
 
 
-# @pytest.mark.skip(reason="Will fix in later branches")
 def test_copy(env):
     """Copy a test file from one storage to another."""
 
@@ -303,7 +303,7 @@ def test_notify_data_dashboard():
         text="New data product metadata file loaded and store index updated",
     )
 
-    notify_data_dashboard(MetaData())
+    notify_data_dashboard({})
 
 
 def test_populate_metadata_col():

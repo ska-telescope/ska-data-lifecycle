@@ -50,10 +50,10 @@ Alternatively, the following relevant docker compose commands can be mixed and m
 
 ```sh
 # Rebuild any changed Dockerfile dependencies
-docker-compose -f tests/testrunner.docker-compose.yaml build
+docker compose -f tests/testrunner.docker-compose.yaml build
 
 # Run the test runner
-docker-compose --file tests/testrunner.docker-compose.yaml run dlm_testrunner
+docker compose --file tests/testrunner.docker-compose.yaml run dlm_testrunner
 
 # Or run tests locally
 pytest --env local

@@ -1,10 +1,7 @@
 """Convenience functions to update data_item records."""
 
-import json
 import logging
 from typing import Any, Dict, List, Union
-
-from ska_sdp_dataproduct_metadata import MetaData
 
 from ska_dlm.exceptions import InvalidQueryParameters
 
@@ -75,7 +72,7 @@ def set_metadata(uid: str, metadata_post: JsonType):
     uid : the UID of the data_item to be updated
     metadata: a metadata JSON string
     """
-    # metadata_json = json.dumps(metadata_post) # this was double-encoding
+
     update_data_item(uid=uid, post_data={"metadata": metadata_post})
 
 

@@ -5,9 +5,8 @@ import logging
 from typing import Any, Dict, List, Union
 
 import requests
-import ska_sdp_metadata_generator.ska_sdp_metadata_generator as metagen
+import ska_sdp_metadata_generator as metagen
 from fastapi import FastAPI
-from ska_sdp_dataproduct_metadata import MetaData
 
 from ska_dlm.dlm_storage.dlm_storage_requests import rclone_access
 
@@ -93,7 +92,7 @@ def register_data_item(
             f"Requested storage volume is not accessible by DLM! {storage_name}"
         )
     # (2)
-    if not rclone_access(storage_name, uri):
+    if not rclone_access(storage_name, uri):  # TODO: don't call into rclone directly
         raise UnmetPreconditionForOperation(f"File {uri} does not exist on {storage_name}")
     if query_exists(item_name):
         ex_storage_id = query_data_item(item_name)[0]["storage_id"]
@@ -117,11 +116,12 @@ def register_data_item(
     metadata_temp = metadata
     if metadata is None:
         try:
+            # TODO: call into a storage service/endpoint to get metadata
             metadata_object = metagen.generate_metadata_from_generator(uri)
             metadata_temp = metadata_object.get_data().to_json()
-        except:
-            # print exception
-            # log
+            metadata_temp = json.loads(metadata_temp)
+        except ValueError as e:
+            logger.info(f"ValueError occurred: {e}")
             pass
 
     if metadata_temp is not None:
@@ -129,19 +129,21 @@ def register_data_item(
         set_metadata(uid, metadata_temp)
 
     # (7)
-    # notify_data_dashboard(metadata_temp)
+
+    notify_data_dashboard(metadata_temp)
 
     return uid
 
 
-def notify_data_dashboard(metadata: MetaData) -> None:  ### NB: change
+def notify_data_dashboard(metadata: JsonType) -> None:
     """HTTP POST a MetaData object to the Data Product Dashboard"""
     headers = {"Content-Type": "application/json"}
-    payload = metadata.get_data().to_json()  #### dumps
+    payload = json.dumps(metadata)
+    print("payload type:", type(payload))
     url = CONFIG.DATA_PRODUCT_API.url + "/ingestnewmetadata"
 
     try:
         requests.request("POST", url, headers=headers, data=payload, timeout=2)
-        logger.info("POSTed metadata (%s) to %s", metadata.get_data().execution_block, url)  ###
+        logger.info("POSTed metadata (%s) to %s", payload.execution_block, url)
     except requests.RequestException:
         logger.exception("POST error notifying data dashboard at: %s", url)
