@@ -120,13 +120,14 @@ def register_data_item(
             metadata_object = metagen.generate_metadata_from_generator(uri)
             metadata_temp = metadata_object.get_data().to_json()
             metadata_temp = json.loads(metadata_temp)
-        except ValueError as e:
-            logger.info(f"ValueError occurred: {e}")
-            pass
+            logger.info("Metadata extracted successfully.")
+        except ValueError as err:
+            logger.info("ValueError occurred: %s", err)
 
     if metadata_temp is not None:
         # Check that metadata_temp is standard json?
         set_metadata(uid, metadata_temp)
+        logger.info("Saved metadata provided by client.")
 
     # (7)
 
@@ -138,12 +139,11 @@ def register_data_item(
 def notify_data_dashboard(metadata: JsonType) -> None:
     """HTTP POST a MetaData object to the Data Product Dashboard"""
     headers = {"Content-Type": "application/json"}
-    payload = json.dumps(metadata)
-    print("payload type:", type(payload))
+    payload = json.loads(metadata)
     url = CONFIG.DATA_PRODUCT_API.url + "/ingestnewmetadata"
 
     try:
         requests.request("POST", url, headers=headers, data=payload, timeout=2)
-        logger.info("POSTed metadata (%s) to %s", payload.execution_block, url)
+        logger.info("POSTed metadata (%s) to %s", payload["execution_block"], url)
     except requests.RequestException:
         logger.exception("POST error notifying data dashboard at: %s", url)

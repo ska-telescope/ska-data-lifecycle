@@ -2,9 +2,9 @@
 
 """Tests for `ska_data_lifecycle` package."""
 
+import datetime
 import importlib
 import json
-from datetime import timedelta
 
 import inflect
 import pytest
@@ -23,9 +23,13 @@ from ska_dlm.exceptions import InvalidQueryParameters, ValueAlreadyInDB
 from tests.integration.client.dlm_gateway_client import get_token
 
 ROOT = "/data/"
-RCLONE_TEST_FILE_PATH = "/data/testfile"  # change to full path / file uri
+RCLONE_TEST_FILE_PATH = "/data/testfile"
 """A file that is available locally in the rclone container"""
 RCLONE_TEST_FILE_CONTENT = "license content"
+TODAY_DATE = datetime.datetime.now().strftime("%Y%m%d")
+METADATA_RECEIVED = {
+    "execution_block": "eb-meta-20240723-00000",
+}
 
 
 def _clear_database():
@@ -43,7 +47,7 @@ def auth_fixture(request):
 
 @pytest.fixture(name="env", scope="session")
 def import_test_env_module(request):
-    """Dynamically import module based on testing environment"""
+    """Dynamically import module based on testing environment."""
     match request.config.getoption("--env"):
         case "k8s":
             env_module_name = "tests.common_k8s"
@@ -113,25 +117,33 @@ def __initialize_data_item():
     assert success
 
 
+@pytest.mark.skip(reason="Placeholder. We removed the ingest_data_item alias.")
 def test_ingest_data_item():
     """Test the ingest_data_item function."""
     uid = register_data_item(
         "/my/ingest/test/item", RCLONE_TEST_FILE_PATH, "MyDisk", metadata=None
-    )  # check this
+    )
     assert len(uid) == 36
 
 
-# TODO:
-# def test_register_data_item_with_metadata():
-# def test_register_data_item_without_metadata():
-
-
-def test_register_data_item():
-    """Test the register_data_item function."""
-    uid = register_data_item("/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, "MyDisk")
+def test_register_data_item_with_metadata():
+    """Test the register_data_item function with provided metadata."""
+    # pylint: disable-next=no-member
+    uid = register_data_item(
+        "/my/ingest/test/item2",
+        RCLONE_TEST_FILE_PATH,
+        "MyDisk",
+        metadata=json.dumps(METADATA_RECEIVED),
+    )
     assert len(uid) == 36
     with pytest.raises(ValueAlreadyInDB, match="Item is already registered"):
-        register_data_item("/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, "MyDisk")
+        # pylint: disable-next=no-member
+        register_data_item(
+            "/my/ingest/test/item2",
+            RCLONE_TEST_FILE_PATH,
+            "MyDisk",
+            metadata=json.dumps(METADATA_RECEIVED),
+        )
 
 
 def test_query_expired_empty():
@@ -145,7 +157,7 @@ def test_query_expired():
     """Test the query expired returning records."""
     __initialize_data_item()
     uid = dlm_request.query_data_item()[0]["uid"]
-    offset = timedelta(days=1)
+    offset = datetime.timedelta(days=1)
     data_item.set_state(uid=uid, state="READY")
     result = dlm_request.query_expired(offset)
     success = len(result) != 0
@@ -217,7 +229,6 @@ def __initialize_storage_config():
 
 def test_copy(env):
     """Copy a test file from one storage to another."""
-
     __initialize_storage_config()
     dest_id = dlm_storage.query_storage("MyDisk2")[0]["storage_id"]
     uid = register_data_item("/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, "MyDisk")
@@ -308,22 +319,18 @@ def test_notify_data_dashboard():
 
 def test_populate_metadata_col():
     """Test that the metadata is correctly saved to the metadata column."""
-    META_FILE = "/tmp/testfile"
+    META_FILE = "/tmp/testfile"  # pylint: disable=invalid-name
     with open(META_FILE, "wt", encoding="ascii") as file:
         file.write(RCLONE_TEST_FILE_CONTENT)
 
     # Generate metadata
     metadata_object = metagen.generate_metadata_from_generator(META_FILE)
-    # metadata_object = metagen.generate_metadata_from_generator("/Users/00110564/ska/ska-data-lifecycle/LICENSE")
-    metadata_json = (
-        metadata_object.get_data().to_json()
-    )  # MetaData object --> benedict object --> json str
-    print(metadata_json)
-    assert isinstance(metadata_json, str)  # json str
+    metadata_json = metadata_object.get_data().to_json()  # MetaData obj -> benedict -> json str
+    assert isinstance(metadata_json, str)
     try:
         json.loads(metadata_json)
-    except json.JSONDecodeError as e:
-        assert False, f"Failed to decode JSON: {e}. Check type."
+    except json.JSONDecodeError as err:
+        assert False, "Failed to decode JSON: %s. Check type." % err
 
     # Register data item
     uid = register_data_item(
@@ -337,9 +344,8 @@ def test_populate_metadata_col():
     assert isinstance(metadata_dict_from_db, dict)  # otherwise the data might be double encoded
 
     assert metadata_dict_from_db["interface"] == "http://schema.skao.int/ska-data-product-meta/0.1"
-    assert isinstance(
-        metadata_dict_from_db["execution_block"], str
-    )  # Can't verify a specific execution_block by hard-coding because it's not static
+    assert metadata_dict_from_db["execution_block"].startswith(f"eb-meta-{TODAY_DATE}")
+
     assert metadata_dict_from_db["context"] == {}
     assert "config" in metadata_dict_from_db  # All the fields in here are None atm
     assert metadata_dict_from_db["files"] == [
