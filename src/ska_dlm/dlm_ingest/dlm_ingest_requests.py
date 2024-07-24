@@ -141,7 +141,8 @@ def notify_data_dashboard(metadata: MetaData) -> None:
     url = CONFIG.DATA_PRODUCT_API.url + "/ingestnewmetadata"
 
     try:
-        requests.request("POST", url, headers=headers, data=payload, timeout=2)
+        resp = requests.request("POST", url, headers=headers, data=payload, timeout=2)
+        resp.raise_for_status()
         logger.info("POSTed metadata (%s) to %s", metadata.get_data().execution_block, url)
     except requests.RequestException:
         logger.exception("POST error notifying data dashboard at: %s", url)
