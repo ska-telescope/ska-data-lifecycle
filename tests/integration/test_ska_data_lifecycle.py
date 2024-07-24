@@ -128,7 +128,6 @@ def test_ingest_data_item():
 
 def test_register_data_item_with_metadata():
     """Test the register_data_item function with provided metadata."""
-    # pylint: disable-next=no-member
     uid = register_data_item(
         "/my/ingest/test/item2",
         RCLONE_TEST_FILE_PATH,
@@ -137,7 +136,6 @@ def test_register_data_item_with_metadata():
     )
     assert len(uid) == 36
     with pytest.raises(ValueAlreadyInDB, match="Item is already registered"):
-        # pylint: disable-next=no-member
         register_data_item(
             "/my/ingest/test/item2",
             RCLONE_TEST_FILE_PATH,
@@ -330,7 +328,7 @@ def test_populate_metadata_col():
     try:
         json.loads(metadata_json)
     except json.JSONDecodeError as err:
-        assert False, "Failed to decode JSON: %s. Check type." % err
+        assert False, f"Failed to decode JSON: {err}. Check type."
 
     # Register data item
     uid = register_data_item(
