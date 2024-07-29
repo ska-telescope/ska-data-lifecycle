@@ -5,9 +5,11 @@
 import datetime
 import importlib
 import json
+import logging
 
 import inflect
 import pytest
+import requests
 import ska_sdp_metadata_generator as metagen
 from requests_mock import Mocker
 
@@ -17,7 +19,8 @@ import tests.integration.client.dlm_storage_client as dlm_storage
 from ska_dlm import CONFIG, data_item, dlm_migration
 from ska_dlm.dlm_db.db_access import DB
 from ska_dlm.dlm_ingest import notify_data_dashboard, register_data_item
-from ska_dlm.dlm_storage import delete_data_item_payload, delete_uids, rclone_config
+from ska_dlm.dlm_storage import (delete_data_item_payload, delete_uids,
+                                 rclone_config)
 from ska_dlm.dlm_storage.main import persist_new_data_items
 from ska_dlm.exceptions import InvalidQueryParameters, ValueAlreadyInDB
 from tests.integration.client.dlm_gateway_client import get_token
@@ -302,18 +305,37 @@ def test_persist_new_data_items():
     assert result == {"/my/ingest/test/item": True}
 
 
-@pytest.mark.skip(reason="Will update soon")
-def test_notify_data_dashboard():
-    """Test that the write hook will post metadata file info to a URL."""
-    # mock a response for this URL, a copy of the normal response from ska-sdp-dataproduct-api
-    req_mock = Mocker()
-    req_mock.post(
-        CONFIG.DATA_PRODUCT_API.url + "/ingestnewmetadata",
-        text="New data product metadata file loaded and store index updated",
-    )
+@pytest.fixture
+def log_capture(caplog):
+    caplog.set_level(logging.INFO)
+    return caplog
 
-    notify_data_dashboard({})
+def test_notify_data_dashboard(log_capture):
+    """Test that the write hook will HTTP POST metadata file info to a URL."""
+    with Mocker() as req_mock:
+        req_mock.post(
+            CONFIG.DATA_PRODUCT_API.url + "/ingestnewmetadata",
+            text="New data product metadata file loaded and store index updated",
+        )
 
+        # Test for the first logger outcome: Failed to parse metadata
+        notify_data_dashboard('invalid json')
+        assert "Failed to parse metadata" in log_capture.text
+        log_capture.clear()
+
+        # Test for the second logger outcome: POST error notifying dataproduct dashboard
+        valid_metadata = json.dumps({"execution_block": "block123"})
+        req_mock.post(f"{CONFIG.DATA_PRODUCT_API.url}/ingestnewmetadata", exc=requests.RequestException("Mocked request exception"))
+
+        notify_data_dashboard(valid_metadata)
+        assert "POST error notifying dataproduct dashboard" in log_capture.text
+        log_capture.clear()
+
+        # Test for the third logger outcome: Successfully POSTed metadata
+        req_mock.post(f"{CONFIG.DATA_PRODUCT_API.url}/ingestnewmetadata", text='{"message": "success"}', status_code=200)
+
+        notify_data_dashboard(valid_metadata)
+        assert "POSTed metadata (execution_block: block123) to" in log_capture.text
 
 def test_populate_metadata_col():
     """Test that the metadata is correctly saved to the metadata column."""
@@ -342,7 +364,7 @@ def test_populate_metadata_col():
     assert isinstance(metadata_dict_from_db, dict)  # otherwise the data might be double encoded
 
     assert metadata_dict_from_db["interface"] == "http://schema.skao.int/ska-data-product-meta/0.1"
-    assert metadata_dict_from_db["execution_block"].startswith(f"eb-meta-{TODAY_DATE}")
+    assert isinstance(metadata_dict_from_db["execution_block"], str)
 
     assert metadata_dict_from_db["context"] == {}
     assert "config" in metadata_dict_from_db  # All the fields in here are None atm

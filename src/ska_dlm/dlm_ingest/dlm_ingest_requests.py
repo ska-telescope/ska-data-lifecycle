@@ -120,9 +120,11 @@ def register_data_item(
             metadata_object = metagen.generate_metadata_from_generator(uri)
             metadata_temp = metadata_object.get_data().to_json()
             metadata_temp = json.loads(metadata_temp)
+            if not metadata_temp.execution_block or metadata_temp.execution_block is None:
+                metadata_temp.execution_block = "" # Use an empty string to satisfy the schema
             logger.info("Metadata extracted successfully.")
         except ValueError as err:
-            logger.info("ValueError occurred: %s", err)
+            logger.info("ValueError occurred while attempting to extract metadata: %s", err)
 
     if metadata_temp is not None:
         # Check that metadata_temp is standard json?
@@ -130,20 +132,26 @@ def register_data_item(
         logger.info("Saved metadata provided by client.")
 
     # (7)
-
     notify_data_dashboard(metadata_temp)
 
     return uid
 
 
 def notify_data_dashboard(metadata: JsonType) -> None:
-    """HTTP POST a MetaData object to the Data Product Dashboard"""
+    """HTTP POST MetaData json object to the Data Product Dashboard."""
     headers = {"Content-Type": "application/json"}
-    payload = json.loads(metadata)
     url = CONFIG.DATA_PRODUCT_API.url + "/ingestnewmetadata"
 
+    payload = None
     try:
-        requests.request("POST", url, headers=headers, data=payload, timeout=2)
-        logger.info("POSTed metadata (%s) to %s", payload["execution_block"], url)
-    except requests.RequestException:
-        logger.exception("POST error notifying data dashboard at: %s", url)
+        payload = json.loads(metadata) # --> json str to python obj (dict)
+        print("type payload:", type(payload))
+    except (TypeError, ValueError) as err:
+        logger.error(f"Failed to parse metadata: {err}. Not notifying dashboard.")
+
+    if payload is not None:
+        try:
+            requests.request("POST", url, headers=headers, data=json.dumps(payload), timeout=2)
+            logger.info("POSTed metadata (execution_block: %s) to %s", payload["execution_block"], url)
+        except requests.RequestException as err:
+            logger.exception(f"POST error notifying dataproduct dashboard at: {url} - {err}")
