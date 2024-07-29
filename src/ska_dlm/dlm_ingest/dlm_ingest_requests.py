@@ -48,7 +48,7 @@ def init_data_item(item_name: str = "", phase: str = "GAS", json_data: str = "")
 
 
 @app.post("/ingest/ingest_data_item")
-def register_data_item(
+def register_data_item(  # noqa: C901
     item_name: str,
     uri: str = "",
     storage_name: str = "",
@@ -121,7 +121,7 @@ def register_data_item(
             metadata_temp = metadata_object.get_data().to_json()
             metadata_temp = json.loads(metadata_temp)
             if not metadata_temp.execution_block or metadata_temp.execution_block is None:
-                metadata_temp.execution_block = "" # Use an empty string to satisfy the schema
+                metadata_temp.execution_block = ""  # Use an empty string to satisfy the schema
             logger.info("Metadata extracted successfully.")
         except ValueError as err:
             logger.info("ValueError occurred while attempting to extract metadata: %s", err)
@@ -144,14 +144,16 @@ def notify_data_dashboard(metadata: JsonType) -> None:
 
     payload = None
     try:
-        payload = json.loads(metadata) # --> json str to python obj (dict)
+        payload = json.loads(metadata)  # --> json str to python obj (dict)
         print("type payload:", type(payload))
     except (TypeError, ValueError) as err:
-        logger.error(f"Failed to parse metadata: {err}. Not notifying dashboard.")
+        logger.error("Failed to parse metadata: %s. Not notifying dashboard.", err)
 
     if payload is not None:
         try:
             requests.request("POST", url, headers=headers, data=json.dumps(payload), timeout=2)
-            logger.info("POSTed metadata (execution_block: %s) to %s", payload["execution_block"], url)
+            logger.info(
+                "POSTed metadata (execution_block: %s) to %s", payload["execution_block"], url
+            )
         except requests.RequestException as err:
-            logger.exception(f"POST error notifying dataproduct dashboard at: {url} - {err}")
+            logger.exception("POST error notifying dataproduct dashboard at: %s - %s", url, err)

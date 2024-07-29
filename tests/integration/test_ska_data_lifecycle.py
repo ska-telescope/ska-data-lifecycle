@@ -19,8 +19,7 @@ import tests.integration.client.dlm_storage_client as dlm_storage
 from ska_dlm import CONFIG, data_item, dlm_migration
 from ska_dlm.dlm_db.db_access import DB
 from ska_dlm.dlm_ingest import notify_data_dashboard, register_data_item
-from ska_dlm.dlm_storage import (delete_data_item_payload, delete_uids,
-                                 rclone_config)
+from ska_dlm.dlm_storage import delete_data_item_payload, delete_uids, rclone_config
 from ska_dlm.dlm_storage.main import persist_new_data_items
 from ska_dlm.exceptions import InvalidQueryParameters, ValueAlreadyInDB
 from tests.integration.client.dlm_gateway_client import get_token
@@ -307,10 +306,12 @@ def test_persist_new_data_items():
 
 @pytest.fixture
 def log_capture(caplog):
+    """Fixture for capturing log messages."""
     caplog.set_level(logging.INFO)
     return caplog
 
-def test_notify_data_dashboard(log_capture):
+
+def test_notify_data_dashboard(log_capture):  # pylint: disable=redefined-outer-name
     """Test that the write hook will HTTP POST metadata file info to a URL."""
     with Mocker() as req_mock:
         req_mock.post(
@@ -319,23 +320,31 @@ def test_notify_data_dashboard(log_capture):
         )
 
         # Test for the first logger outcome: Failed to parse metadata
-        notify_data_dashboard('invalid json')
+        notify_data_dashboard("invalid json")
         assert "Failed to parse metadata" in log_capture.text
         log_capture.clear()
 
         # Test for the second logger outcome: POST error notifying dataproduct dashboard
         valid_metadata = json.dumps({"execution_block": "block123"})
-        req_mock.post(f"{CONFIG.DATA_PRODUCT_API.url}/ingestnewmetadata", exc=requests.RequestException("Mocked request exception"))
+        req_mock.post(
+            f"{CONFIG.DATA_PRODUCT_API.url}/ingestnewmetadata",
+            exc=requests.RequestException("Mocked request exception"),
+        )
 
         notify_data_dashboard(valid_metadata)
         assert "POST error notifying dataproduct dashboard" in log_capture.text
         log_capture.clear()
 
         # Test for the third logger outcome: Successfully POSTed metadata
-        req_mock.post(f"{CONFIG.DATA_PRODUCT_API.url}/ingestnewmetadata", text='{"message": "success"}', status_code=200)
+        req_mock.post(
+            f"{CONFIG.DATA_PRODUCT_API.url}/ingestnewmetadata",
+            text='{"message": "success"}',
+            status_code=200,
+        )
 
         notify_data_dashboard(valid_metadata)
         assert "POSTed metadata (execution_block: block123) to" in log_capture.text
+
 
 def test_populate_metadata_col():
     """Test that the metadata is correctly saved to the metadata column."""
