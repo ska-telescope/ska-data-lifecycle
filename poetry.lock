@@ -2643,6 +2643,17 @@ pytest = ">=4.6"
 testing = ["fields", "hunter", "process-tests", "pytest-xdist", "six", "virtualenv"]
 
 [[package]]
+name = "pytest-integration"
+version = "0.2.3"
+description = "Organizing pytests by integration or not"
+optional = false
+python-versions = ">=3.6"
+files = [
+    {file = "pytest_integration-0.2.3-py3-none-any.whl", hash = "sha256:7f59ed1fa1cc8cb240f9495b68bc02c0421cce48589f78e49b7b842231604b12"},
+    {file = "pytest_integration-0.2.3.tar.gz", hash = "sha256:b00988a5de8a6826af82d4c7a3485b43fbf32c11235e9f4a8b7225eef5fbcf65"},
+]
+
+[[package]]
 name = "python-benedict"
 version = "0.31.0"
 description = "python-benedict is a dict subclass with keylist/keypath/keyattr support, normalized I/O operations (base64, csv, ini, json, pickle, plist, query-string, toml, xls, xml, yaml) and many utilities... for humans, obviously."
@@ -4250,4 +4261,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "cc603ff963a59e0d478d7c2e6ec518882f2448fb024b831b3f06afe8622f7b77"
+content-hash = "0771d5b4ff6942899033f78fb248487c5ecd6754c2f46954d6e935433b4b70e7"

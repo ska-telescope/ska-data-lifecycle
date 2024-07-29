@@ -108,6 +108,7 @@ def __initialize_data_item():
     assert success
 
 
+@pytest.mark.integration_test
 @pytest.mark.skip(reason="Will fix in later branches")
 def test_ingest_data_item():
     """Test the ingest_data_item function."""
@@ -115,6 +116,7 @@ def test_ingest_data_item():
     assert len(uid) == 36
 
 
+@pytest.mark.integration_test
 @pytest.mark.skip(reason="Will fix in later branches")
 def test_register_data_item():
     """Test the register_data_item function."""
@@ -126,6 +128,7 @@ def test_register_data_item():
         dlm_ingest.register_data_item("/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, "MyDisk")
 
 
+@pytest.mark.integration_test
 def test_query_expired_empty():
     """Test the query expired returning an empty set."""
     result = dlm_request.query_expired()
@@ -133,6 +136,7 @@ def test_query_expired_empty():
     assert success
 
 
+@pytest.mark.integration_test
 def test_query_expired():
     """Test the query expired returning records."""
     __initialize_data_item()
@@ -144,6 +148,7 @@ def test_query_expired():
     assert success
 
 
+@pytest.mark.integration_test
 def test_location_init():
     """Test initialisation on a location."""
     # This returns an empty string if unsuccessful
@@ -154,6 +159,7 @@ def test_location_init():
     assert location["location_type"] == "SKAO Data Centre"
 
 
+@pytest.mark.integration_test
 def test_set_uri_state_phase():
     """Update a data_item record with the pointer to a file."""
     uid = dlm_ingest.init_data_item(item_name="this/is/the/first/test/item")
@@ -169,6 +175,7 @@ def test_set_uri_state_phase():
 
 
 # TODO: We don't want RCLONE_TEST_FILE_PATH to disappear after one test run.
+@pytest.mark.integration_test
 @pytest.mark.skip(reason="Will fix in later branches")
 def test_delete_item_payload():
     """Delete the payload of a data_item."""
@@ -208,6 +215,7 @@ def __initialize_storage_config():
     assert rclone_config(config) is True
 
 
+@pytest.mark.integration_test
 @pytest.mark.skip(reason="Will fix in later branches")
 def test_copy(env):
     """Copy a test file from one storage to another."""
@@ -221,6 +229,7 @@ def test_copy(env):
     assert RCLONE_TEST_FILE_CONTENT == env.get_rclone_local_file_content("testfile_copy")
 
 
+@pytest.mark.integration_test
 @pytest.mark.skip(reason="Will fix in later branches")
 def test_update_item_tags():
     """Update the item_tags field of a data_item."""
@@ -238,6 +247,7 @@ def test_update_item_tags():
     assert tags == {"a": "SKA", "b": "DLM", "c": "Hello", "d": "World"}
 
 
+@pytest.mark.integration_test
 @pytest.mark.skip(reason="Will fix in later branches")
 def test_expired_by_storage_daemon():
     """Test an expired data item is deleted by the storage manager."""
@@ -268,6 +278,7 @@ def test_expired_by_storage_daemon():
     assert result[0]["uid"] == uid
 
 
+@pytest.mark.integration_test
 @pytest.mark.skip(reason="Will fix in later branches")
 def test_query_new():
     """Test for newly created data_items."""
@@ -278,6 +289,7 @@ def test_query_new():
     assert len(result) == 1
 
 
+@pytest.mark.integration_test
 @pytest.mark.skip(reason="Will fix in later branches")
 def test_persist_new_data_items():
     """Test making new data items persistent."""
@@ -295,6 +307,7 @@ def test_persist_new_data_items():
     assert result == {"/my/ingest/test/item": True}
 
 
+@pytest.mark.integration_test
 def test_notify_data_dashboard():
     """Test that the write hook will post metadata file info to a URL."""
     # mock a response for this URL, a copy of the normal response from ska-sdp-dataproduct-api
@@ -307,6 +320,7 @@ def test_notify_data_dashboard():
     notify_data_dashboard(MetaData())
 
 
+@pytest.mark.integration_test
 @pytest.mark.skip(reason="Will fix in later branches")
 def test_populate_metadata_col():
     """Test that the metadata is correctly saved to the metadata column."""
