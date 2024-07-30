@@ -14,11 +14,11 @@ cache:
     - .cache/pip
 
 stages:
-  - lint
   - build
   - pre-test
   - test
   - post-test
+  - lint
   - publish
   - pages
   - scan

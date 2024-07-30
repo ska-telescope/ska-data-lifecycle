@@ -1,7 +1,7 @@
 """Convenience functions to update data_item records."""
 
 import logging
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Literal, Union
 
 from ska_dlm.exceptions import InvalidQueryParameters
 
@@ -84,7 +84,6 @@ def set_metadata(uid: str, metadata_post: JsonType):
     metadata_post : MetaData
         a metadata JSON string
     """
-
     update_data_item(uid=uid, post_data={"metadata": metadata_post})
 
 
