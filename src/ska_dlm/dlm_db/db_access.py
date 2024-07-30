@@ -1,4 +1,5 @@
 """DB access classes, interfaces and utilities."""
+
 import contextlib
 import logging
 
@@ -19,13 +20,13 @@ class DBQueryError(DataLifecycleError):
         Parameters
         ----------
         url : str
-            _description_
+            The query url.
         method : str
-            _description_
+            The query HTTP method.
         params : dict | tuple | None
-            _description_
+            The query HTTP params.
         json : object | None
-            _description_
+            The query JSON body.
         """
         self.url = url
         self.method = method
@@ -78,7 +79,7 @@ class PostgRESTAccess(contextlib.AbstractContextManager):
         params: dict | list | None = None,
         json: object | None = None,
         **kwargs,
-    ):
+    ) -> str:
         url = f"{self._api_url}/{table}"
         try:
             response = self._session.request(method, url, params=params, json=json, **kwargs)

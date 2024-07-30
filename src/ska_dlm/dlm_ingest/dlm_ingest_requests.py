@@ -25,18 +25,24 @@ app = FastAPI()
 
 @app.post("/ingest/init_data_item")
 def init_data_item(item_name: str = "", phase: str = "GAS", json_data: str = "") -> str:
-    """
-    Intialize a new data_item by at least specifying an item_name.
+    """Intialize a new data_item by at least specifying an item_name.
 
-    Parameters:
-    -----------
-    item_name, the item_name, can be empty, but then json_data has to be specified.
-    phase, the phase this item is set to (usually inherited from the storage)
-    json_data, provides the ability to specify all values.
+    Parameters
+    ----------
+    item_name : str
+        the item_name, can be empty, but then json_data has to be specified.
+    phase : str
+        the phase this item is set to (usually inherited from the storage)
+    json_data : str
+        provides the ability to specify all values.
 
-    Returns:
-    --------
-    uid,
+    Returns
+    -------
+    str
+
+    Raises
+    ------
+    InvalidQueryParameters
     """
     if item_name:
         post_data = {"item_name": item_name, "item_phase": phase}
@@ -56,8 +62,7 @@ def register_data_item(  # noqa: C901 # pylint: disable=too-many-arguments
     metadata: JsonType = None,
     eb_id: str | None = None,
 ) -> str:
-    """
-    Ingest a data_item (register function is an alias).
+    """Ingest a data_item (register function is an alias).
 
     This high level function is a combination of init_data_item, set_uri and set_state(READY).
     It also checks whether a data_item is already registered on the requested storage.
@@ -70,16 +75,25 @@ def register_data_item(  # noqa: C901 # pylint: disable=too-many-arguments
     (6) generate metadata
     (7) notify the data dashboard
 
-    Parameters:
-    -----------
-    item_name: could be empty, in which case the first 1000 items are returned
-    uri: the access path to the payload.
-    storage_name: the name of the configured storage volume (name or ID required)
-    storage_id: optional, the ID of the configured storage.
+    Parameters
+    ----------
+    item_name: str
+        could be empty, in which case the first 1000 items are returned
+    uri: str
+        the access path to the payload.
+    storage_name: str
+        the name of the configured storage volume (name or ID required)
+    storage_id: str, optional
+        the ID of the configured storage.
 
-    Returns:
-    --------
-    str, data_item UID
+    Returns
+    -------
+    str
+        data_item UID
+
+    Raises
+    ------
+    UnmetPreconditionForOperation
     """
     # (1)
     storages = query_storage(storage_name=storage_name, storage_id=storage_id)

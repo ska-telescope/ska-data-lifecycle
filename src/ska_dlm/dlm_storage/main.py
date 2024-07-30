@@ -17,13 +17,15 @@ logger = logging.getLogger(__name__)
 def persist_new_data_items(last_check_time: str) -> dict:
     """Check for new data items (since the last query), if found, copy to a second location.
 
-    Parameters:
-    -----------
-    last_check_time: ISO formatted datetime string
+    Parameters
+    ----------
+    last_check_time: str
+        ISO formatted datetime string
 
-    Returns:
-    --------
-    dict, with entries of the form {item_name:status}
+    Returns
+    -------
+    dict
+        dict with entries of the form {item_name:status}
     """
     new_data_items = dlm_request.query_new(last_check_time)
     if not new_data_items:
@@ -56,7 +58,9 @@ def persist_new_data_items(last_check_time: str) -> dict:
         except DataLifecycleError:
             logger.exception("Copy of data_item %s unsuccessful!", new_data_item["item_name"])
         logger.info(
-            "Persisted %s to volume %s", new_data_item["item_name"], new_storage["storage_name"]
+            "Persisted %s to volume %s",
+            new_data_item["item_name"],
+            new_storage["storage_name"],
         )
         data_item.set_phase(uid=new_data_item["uid"], phase="LIQUID")
         data_item.set_phase(uid=copy_uid, phase="LIQUID")
@@ -88,7 +92,8 @@ def main():
     last_new_data_item_query_time = "2024-01-01"
     while run_main_loop:
         logger.info(
-            "Running new/expired checks with timestamp: %s UTC", last_new_data_item_query_time
+            "Running new/expired checks with timestamp: %s UTC",
+            last_new_data_item_query_time,
         )
         dlm_storage.delete_uids()
         _ = persist_new_data_items(last_new_data_item_query_time)
