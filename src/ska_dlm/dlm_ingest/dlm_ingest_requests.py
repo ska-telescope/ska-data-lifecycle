@@ -48,12 +48,13 @@ def init_data_item(item_name: str = "", phase: str = "GAS", json_data: str = "")
 
 
 @app.post("/ingest/ingest_data_item")
-def register_data_item(  # noqa: C901
+def register_data_item(  # noqa: C901 # pylint: disable=too-many-arguments
     item_name: str,
     uri: str = "",
     storage_name: str = "",
     storage_id: str = "",
     metadata: JsonType = None,
+    eb_id: str | None = None,
 ) -> str:
     """
     Ingest a data_item (register function is an alias).
@@ -117,11 +118,9 @@ def register_data_item(  # noqa: C901
     if metadata is None:
         try:
             # TODO: call into a storage service/endpoint to get metadata
-            metadata_object = metagen.generate_metadata_from_generator(uri)
+            metadata_object = metagen.generate_metadata_from_generator(uri, eb_id)
             metadata_temp = metadata_object.get_data().to_json()
             metadata_temp = json.loads(metadata_temp)
-            if not metadata_temp.execution_block or metadata_temp.execution_block is None:
-                metadata_temp.execution_block = ""  # Use an empty string to satisfy the schema
             logger.info("Metadata extracted successfully.")
         except ValueError as err:
             logger.info("ValueError occurred while attempting to extract metadata: %s", err)
