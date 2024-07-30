@@ -10,7 +10,7 @@ from ..dlm_db.db_access import DB
 from ..dlm_request import query_data_item
 
 JsonType = Union[Dict[str, Any], List[Any], str, int, float, bool, None]
-
+# pylint: disable=possibly-used-before-assignment
 
 logger = logging.getLogger(__name__)
 
