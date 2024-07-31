@@ -135,7 +135,8 @@ def register_data_item(  # noqa: C901 # pylint: disable=too-many-arguments
     metadata_temp = metadata
     if metadata is None:
         try:
-            # TODO: call into a storage service/endpoint to get metadata
+            # TODO(yan-xxx) create another RESTful service associated with a storage type
+            # and call into the endpoint
             metadata_object = metagen.generate_metadata_from_generator(uri, eb_id)
             metadata_temp = metadata_object.get_data().to_json()
             metadata_temp = json.loads(metadata_temp)
