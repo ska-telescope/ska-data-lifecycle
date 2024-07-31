@@ -32,17 +32,17 @@ docs-pre-build: ## setup the document build environment.
 	poetry install --only main,docs
 
 python-pre-test:
-	docker compose --file tests/services.docker-compose.yaml up --detach
+	docker compose --file tests/services.docker-compose.yaml -p dlm-test-services up --detach
 python-post-test:
-	docker compose --file tests/services.docker-compose.yaml down
+	docker compose --file tests/services.docker-compose.yaml -p dlm-test-services down
 
 docker-test: docker-pre-test docker-do-test docker-post-test
 docker-pre-test:
-	docker-compose -f tests/testrunner.docker-compose.yaml build
+	docker compose -f tests/testrunner.docker-compose.yaml build
 docker-do-test:
-	docker-compose --file tests/testrunner.docker-compose.yaml run dlm_testrunner
+	docker compose --file tests/testrunner.docker-compose.yaml run dlm_testrunner
 docker-post-test:
-	docker-compose --file tests/testrunner.docker-compose.yaml down
+	docker compose --file tests/testrunner.docker-compose.yaml down
 
 k8s-recreate-namespace: k8s-delete-namespace k8s-namespace
 k8s-do-test:

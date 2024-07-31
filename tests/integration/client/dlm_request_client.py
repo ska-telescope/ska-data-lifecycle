@@ -23,10 +23,6 @@ def query_data_item(item_name: str = "", oid: str = "", uid: str = "", params: s
     Returns:
     --------
     list
-
-    Returns:
-    --------
-    list
     """
     params = {k: v for k, v in locals().items() if v}
     headers = {"Authorization": f"Bearer {REQUEST_BEARER}"} if REQUEST_BEARER else {}
