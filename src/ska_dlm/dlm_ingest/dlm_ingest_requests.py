@@ -162,7 +162,6 @@ def notify_data_dashboard(metadata: JsonType) -> None:
     payload = None
     try:
         payload = json.loads(metadata)  # --> json str to python obj (dict)
-        print("type payload:", type(payload))
     except (TypeError, ValueError) as err:
         logger.error("Failed to parse metadata: %s. Not notifying dashboard.", err)
 
