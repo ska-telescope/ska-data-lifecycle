@@ -168,7 +168,9 @@ def notify_data_dashboard(metadata: JsonType) -> None:
 
     if payload is not None:
         try:
-            resp = requests.request("POST", url, headers=headers, data=json.dumps(payload), timeout=2)
+            resp = requests.request(
+                "POST", url, headers=headers, data=json.dumps(payload), timeout=2
+            )
             resp.raise_for_status()
             logger.info(
                 "POSTed metadata (execution_block: %s) to %s", payload["execution_block"], url

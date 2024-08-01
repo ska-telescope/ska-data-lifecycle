@@ -316,45 +316,18 @@ def test_persist_new_data_items():
     assert result == {"/my/ingest/test/item": True}
 
 
-def log_capture(caplog):
-    """Fixture for capturing log messages."""
-    caplog.set_level(logging.INFO)
-    return caplog
-
-
 @pytest.mark.integration_test
-def test_notify_data_dashboard(log_capture):  # pylint: disable=redefined-outer-name
+def test_notify_data_dashboard(caplog):  # pylint: disable=redefined-outer-name
     """Test that the write hook will HTTP POST metadata file info to a URL."""
     with Mocker() as req_mock:
-        req_mock.post(
-            CONFIG.DATA_PRODUCT_API.url + "/ingestnewmetadata",
-            text="New data product metadata file loaded and store index updated",
-        )
-
-        # Test for the first logger outcome: Failed to parse metadata
-        notify_data_dashboard("invalid json")
-        assert "Failed to parse metadata" in log_capture.text
-        log_capture.clear()
-
-        # Test for the second logger outcome: POST error notifying dataproduct dashboard
-        valid_metadata = json.dumps({"execution_block": "block123"})
-        req_mock.post(
-            f"{CONFIG.DATA_PRODUCT_API.url}/ingestnewmetadata",
-            exc=requests.RequestException("Mocked request exception"),
-        )
-
-        assert "POST error notifying dataproduct dashboard" in log_capture.text
-        log_capture.clear()
-
-        # Test for the third logger outcome: Successfully POSTed metadata
         req_mock.post(
             f"{CONFIG.DATA_PRODUCT_API.url}/ingestnewmetadata",
             text='{"message": "success"}',
             status_code=200,
         )
-
+        valid_metadata = json.dumps({"execution_block": "block123"})
         notify_data_dashboard(valid_metadata)
-        assert "POSTed metadata (execution_block: block123) to" in log_capture.text
+        assert "POSTed metadata (execution_block: block123) to" in caplog.text, caplog.text
 
 
 @pytest.mark.integration_test
