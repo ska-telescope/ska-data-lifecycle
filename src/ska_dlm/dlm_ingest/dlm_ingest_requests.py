@@ -1,13 +1,12 @@
 """Convenience functions wrapping the most important postgREST API calls."""
 
-import functools
 import json
 import logging
+from typing import Any, Dict, List, Union
 
 import requests
-import ska_sdp_metadata_generator.ska_sdp_metadata_generator as metagen
+import ska_sdp_metadata_generator as metagen
 from fastapi import FastAPI
-from ska_sdp_dataproduct_metadata import MetaData
 
 from ska_dlm.dlm_storage.dlm_storage_requests import rclone_access
 
@@ -18,6 +17,7 @@ from ..dlm_request import query_data_item, query_exists
 from ..dlm_storage import check_storage_access, query_storage
 from ..exceptions import InvalidQueryParameters, UnmetPreconditionForOperation, ValueAlreadyInDB
 
+JsonType = Union[Dict[str, Any], List[Any], str, int, float, bool, None]
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
@@ -54,8 +54,13 @@ def init_data_item(item_name: str = "", phase: str = "GAS", json_data: str = "")
 
 
 @app.post("/ingest/ingest_data_item")
-def ingest_data_item(
-    item_name: str, uri: str = "", storage_name: str = "", storage_id: str = ""
+def register_data_item(  # noqa: C901 # pylint: disable=too-many-arguments
+    item_name: str,
+    uri: str = "",
+    storage_name: str = "",
+    storage_id: str = "",
+    metadata: JsonType = None,
+    eb_id: str | None = None,
 ) -> str:
     """Ingest a data_item (register function is an alias).
 
@@ -80,6 +85,10 @@ def ingest_data_item(
         the name of the configured storage volume (name or ID required)
     storage_id: str, optional
         the ID of the configured storage.
+    metadata: json, optional
+        metadata provided by the client
+    eb_id: str, optional
+        execution block ID provided by the client
 
     Returns
     -------
@@ -102,7 +111,7 @@ def ingest_data_item(
             f"Requested storage volume is not accessible by DLM! {storage_name}"
         )
     # (2)
-    if not rclone_access(storage_name, uri):
+    if not rclone_access(storage_name, uri):  # TODO: don't call into rclone directly
         raise UnmetPreconditionForOperation(f"File {uri} does not exist on {storage_name}")
     if query_exists(item_name):
         ex_storage_id = query_data_item(item_name)[0]["storage_id"]
@@ -122,34 +131,47 @@ def ingest_data_item(
     # (5) Set data_item state to READY
     set_state(uid, "READY")
 
-    # (6) Generate metadata
-    # TODO YAN-1746: The following relies on the uri being a local file,
-    # rather than being a remote file accessible on rclone.
-    metadata_object = metagen.generate_metadata_from_generator(uri)
-    set_metadata(uid, metadata_object)  # populate the metadata column in the database
+    # (6) Populate the metadata column in the database
+    metadata_temp = metadata
+    if metadata is None:
+        try:
+            # TODO(yan-xxx) create another RESTful service associated with a storage type
+            # and call into the endpoint
+            metadata_object = metagen.generate_metadata_from_generator(uri, eb_id)
+            metadata_temp = metadata_object.get_data().to_json()
+            metadata_temp = json.loads(metadata_temp)
+            logger.info("Metadata extracted successfully.")
+        except ValueError as err:
+            logger.info("ValueError occurred while attempting to extract metadata: %s", err)
+
+    if metadata_temp is not None:
+        # Check that metadata_temp is standard json?
+        set_metadata(uid, metadata_temp)
+        logger.info("Saved metadata provided by client.")
 
     # (7)
-    notify_data_dashboard(metadata_object)
+    notify_data_dashboard(metadata_temp)
 
     return uid
 
 
-def notify_data_dashboard(metadata: MetaData) -> None:
-    """HTTP POST a MetaData object to the Data Product Dashboard."""
+def notify_data_dashboard(metadata: JsonType) -> None:
+    """HTTP POST MetaData json object to the Data Product Dashboard."""
     headers = {"Content-Type": "application/json"}
-    payload = metadata.get_data().to_json()
     url = CONFIG.DATA_PRODUCT_API.url + "/ingestnewmetadata"
 
+    payload = None
     try:
-        resp = requests.request("POST", url, headers=headers, data=payload, timeout=2)
-        resp.raise_for_status()
-        logger.info("POSTed metadata (%s) to %s", metadata.get_data().execution_block, url)
-    except requests.RequestException:
-        logger.exception("POST error notifying data dashboard at: %s", url)
+        payload = json.loads(metadata)  # --> json str to python obj (dict)
+    except (TypeError, ValueError) as err:
+        logger.error("Failed to parse metadata: %s. Not notifying dashboard.", err)
 
-
-# just for convenience we also define the ingest function as register_data_item.
-@functools.wraps(ingest_data_item, assigned=set(functools.WRAPPER_ASSIGNMENTS) - {"__name__"})
-# pylint: disable-next=missing-function-docstring
-def register_data_item(*args, **kwargs) -> str:  # noqa: D103
-    return ingest_data_item(*args, **kwargs)
+    if payload is not None:
+        try:
+            resp = requests.request("POST", url, headers=headers, data=json.dumps(payload), timeout=2)
+            resp.raise_for_status()
+            logger.info(
+                "POSTed metadata (execution_block: %s) to %s", payload["execution_block"], url
+            )
+        except requests.RequestException as err:
+            logger.exception("POST error notifying dataproduct dashboard at: %s - %s", url, err)

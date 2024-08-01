@@ -1,6 +1,8 @@
 include:
 - path: services.docker-compose.yaml
 
+name: dlm-testrunner
+
 services:
   dlm_testrunner:
     platform: linux/amd64

@@ -1,3 +1,4 @@
+import json
 import logging
 
 from requests_mock import Mocker
@@ -16,9 +17,9 @@ def test_notify_data_dashboard(caplog):
             text="New data product metadata file loaded and store index updated",
             status_code=200,
         )
-        dlm_ingest.notify_data_dashboard(MetaData())
+        dlm_ingest.notify_data_dashboard(json.dumps({"execution_block": "block123"}))
 
-    assert not any(record.levelno == logging.ERROR for record in caplog.records)
+    assert not any(record.levelno == logging.ERROR for record in caplog.records), caplog.text
 
 
 def test_notify_data_dashboard_http_errors(caplog):
@@ -28,4 +29,4 @@ def test_notify_data_dashboard_http_errors(caplog):
         req_mock.post(CONFIG.DATA_PRODUCT_API.url + "/ingestnewmetadata", status_code=404)
         dlm_ingest.notify_data_dashboard(MetaData())
 
-    assert any(record.levelno == logging.ERROR for record in caplog.records)
+    assert any(record.levelno == logging.ERROR for record in caplog.records), caplog.text
