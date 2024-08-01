@@ -85,9 +85,9 @@ def register_data_item(  # noqa: C901 # pylint: disable=too-many-arguments
         the name of the configured storage volume (name or ID required)
     storage_id: str, optional
         the ID of the configured storage.
-    metadata: json, optional
+    metadata: JsonType, optional
         metadata provided by the client
-    eb_id: str, optional
+    eb_id: str | None, optional
         execution block ID provided by the client
 
     Returns

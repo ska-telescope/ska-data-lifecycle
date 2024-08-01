@@ -5,11 +5,9 @@
 import datetime
 import importlib
 import json
-import logging
 
 import inflect
 import pytest
-import requests
 import ska_sdp_metadata_generator as metagen
 from requests_mock import Mocker
 
@@ -317,7 +315,7 @@ def test_persist_new_data_items():
 
 
 @pytest.mark.integration_test
-def test_notify_data_dashboard(caplog):  # pylint: disable=redefined-outer-name
+def test_notify_data_dashboard(caplog):
     """Test that the write hook will HTTP POST metadata file info to a URL."""
     with Mocker() as req_mock:
         req_mock.post(

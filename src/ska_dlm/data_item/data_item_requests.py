@@ -10,7 +10,6 @@ from ..dlm_db.db_access import DB
 from ..dlm_request import query_data_item
 
 JsonType = Union[Dict[str, Any], List[Any], str, int, float, bool, None]
-# pylint: disable=possibly-used-before-assignment
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +80,7 @@ def set_metadata(uid: str, metadata_post: JsonType):
     ----------
     uid : str
         the UID of the data_item to be updated
-    metadata_post : MetaData
+    metadata_post : JsonType
         a metadata JSON string
     """
     update_data_item(uid=uid, post_data={"metadata": metadata_post})

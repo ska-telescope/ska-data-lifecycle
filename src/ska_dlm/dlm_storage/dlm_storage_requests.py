@@ -100,7 +100,7 @@ def init_storage(  # pylint: disable=R0913
         _description_
     storage_interface: str
         _description_
-    storage_capacity: str
+    storage_capacity: int
         _description_
     storage_phase_level: str
         _description_
@@ -144,7 +144,7 @@ def init_storage(  # pylint: disable=R0913
 
 @app.post("/storage/create_storage_config")
 def create_storage_config(
-    storage_id: str = "", config: str = "", storage_name: str = "", config_type="rclone"
+    storage_id: str = "", config: str = "", storage_name: str = "", config_type: str = "rclone"
 ) -> str:
     """Create a new record in the storage_config table for a storage with the given id.
 
@@ -179,22 +179,29 @@ def create_storage_config(
     raise UnmetPreconditionForOperation("Configuring rclone server failed!")
 
 
-def get_storage_config(storage_id: str = "", storage_name: str = "", config_type="rclone") -> str:
+def get_storage_config(
+    storage_id: str = "", storage_name: str = "", config_type: str = "rclone"
+) -> list[str]:
     """Get the storage configuration entry for a particular storage backend.
 
     Parameters
     ----------
-    storage_id: str
-        required, _description_
-    storage_name: str
-        the name of the storage volume
-    config_type: str
-        required, query only the specified type
+    storage_id : str, optional
+        the storage id, by default ""
+    storage_name : str, optional
+        the name of the storage volume, by default ""
+    config_type : str, optional
+        query only the specified type, by default "rclone"
 
     Returns
     -------
-    str
-        json object
+    list[str]
+        list of json configs
+
+    Raises
+    ------
+    UnmetPreconditionForOperation
+        _description_
     """
     params = {}
     if not storage_name and not storage_id:
@@ -224,6 +231,10 @@ def rclone_config(config: str) -> bool:
     ----------
     config: str
         a json string containing the configuration
+
+    Returns
+    -------
+    bool
     """
     request_url = f"{CONFIG.RCLONE.url}/config/create"
     post_data = config
@@ -370,7 +381,7 @@ def query_storage(storage_name: str = "", storage_id: str = "") -> list:
 
     Returns
     -------
-    str
+    list
     """
     params = {"limit": 1000}
     if storage_name:
