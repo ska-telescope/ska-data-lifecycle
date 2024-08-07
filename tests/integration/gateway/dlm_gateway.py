@@ -22,6 +22,7 @@ AUTH = bool(int(os.environ["AUTH"]))
 ingest_client = httpx.AsyncClient(base_url=os.environ["INGEST_CLIENT"])
 requests_client = httpx.AsyncClient(base_url=os.environ["REQUESTS_CLIENT"])
 storage_client = httpx.AsyncClient(base_url=os.environ["STORAGE_CLIENT"])
+migration_client = httpx.AsyncClient(base_url=os.environ["MIGRATION_CLIENT"])
 
 
 # Configure client
@@ -69,11 +70,18 @@ async def heartbeat():
     return "ACK"
 
 
+# pylint: disable=redefined-outer-name
 @app.get("/token")
 async def token(username: str, password: str):
     """Get OAUTH token based on username and password"""
     access_token = keycloak_openid.token(username, password)
     return access_token["access_token"]
+
+
+@app.get("/scope")
+async def has_scope(token: str, permission: str):
+    """Get UMA scopes"""
+    return keycloak_openid.has_uma_access(token, permission)
 
 
 # pylint: disable=redefined-outer-name
@@ -97,6 +105,9 @@ async def _check_permissions(token: str, request: Request):
         else:
             scope = "scope:create"
 
+    elif path.startswith("/migration"):
+        res = "res:migraiton"
+        scope = "scope:read"
     else:
         raise HTTPException("Unknown endpoint")
     # Check with permissions services if the user has permission to access endpoint
@@ -111,6 +122,8 @@ async def _send_endpoint(url: str, request: Request):
         client = ingest_client
     elif request.url.path.startswith("/storage"):
         client = storage_client
+    elif request.url.path.startswith("/migration"):
+        client = migration_client
     else:
         raise HTTPException("Unknown endpoint")
 
@@ -151,3 +164,4 @@ async def _reverse_proxy(request: Request):
 app.add_route("/request/{path:path}", _reverse_proxy, ["GET", "POST"])
 app.add_route("/storage/{path:path}", _reverse_proxy, ["GET", "POST"])
 app.add_route("/ingest/{path:path}", _reverse_proxy, ["GET", "POST"])
+app.add_route("/migration/{path:path}", _reverse_proxy, ["GET", "POST"])
