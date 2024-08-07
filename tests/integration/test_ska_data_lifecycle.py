@@ -134,7 +134,7 @@ def test_register_data_item_with_metadata():
         "/my/ingest/test/item2",
         RCLONE_TEST_FILE_PATH,
         "MyDisk",
-        metadata=json.dumps(METADATA_RECEIVED),
+        metadata=METADATA_RECEIVED,
     )
     assert len(uid) == 36
     with pytest.raises(ValueAlreadyInDB, match="Item is already registered"):
@@ -142,7 +142,7 @@ def test_register_data_item_with_metadata():
             "/my/ingest/test/item2",
             RCLONE_TEST_FILE_PATH,
             "MyDisk",
-            metadata=json.dumps(METADATA_RECEIVED),
+            metadata=METADATA_RECEIVED,
         )
 
 
@@ -319,13 +319,8 @@ def test_notify_data_dashboard(log_capture):  # pylint: disable=redefined-outer-
             text="New data product metadata file loaded and store index updated",
         )
 
-        # Test for the first logger outcome: Failed to parse metadata
-        notify_data_dashboard("invalid json")
-        assert "Failed to parse metadata" in log_capture.text
-        log_capture.clear()
-
         # Test for the second logger outcome: POST error notifying dataproduct dashboard
-        valid_metadata = json.dumps({"execution_block": "block123"})
+        valid_metadata = {"execution_block": "block123"}
         req_mock.post(
             f"{CONFIG.DATA_PRODUCT_API.url}/ingestnewmetadata",
             exc=requests.RequestException("Mocked request exception"),
@@ -363,13 +358,16 @@ def test_populate_metadata_col():
 
     # Register data item
     uid = register_data_item(
-        "/my/metadata/test/item", RCLONE_TEST_FILE_PATH, "MyDisk", metadata=metadata_json
+        "/my/metadata/test/item",
+        RCLONE_TEST_FILE_PATH,
+        "MyDisk",
+        metadata=json.loads(metadata_json),
     )
 
     metadata_str_from_db = dlm_request.query_data_item(uid=uid)
-    assert isinstance(metadata_str_from_db[0]["metadata"], str)
+    assert isinstance(metadata_str_from_db[0]["metadata"], dict)
 
-    metadata_dict_from_db = json.loads(metadata_str_from_db[0]["metadata"])
+    metadata_dict_from_db = metadata_str_from_db[0]["metadata"]
     assert isinstance(metadata_dict_from_db, dict)  # otherwise the data might be double encoded
 
     assert metadata_dict_from_db["interface"] == "http://schema.skao.int/ska-data-product-meta/0.1"
