@@ -53,13 +53,14 @@ def init_data_item(item_name: str = "", phase: str = "GAS", json_data: str = "")
     return DB.insert(CONFIG.DLM.dlm_table, json=post_data)[0]["uid"]
 
 
-@app.post("/ingest/ingest_data_item")
+@app.post("/ingest/register_data_item")
 def register_data_item(  # noqa: C901 # pylint: disable=too-many-arguments
     item_name: str,
     uri: str = "",
     storage_name: str = "",
     storage_id: str = "",
     metadata: JsonType = None,
+    item_format: str | None = "unknown",
     eb_id: str | None = None,
 ) -> str:
     """Ingest a data_item (register function is an alias).
@@ -87,6 +88,8 @@ def register_data_item(  # noqa: C901 # pylint: disable=too-many-arguments
         the ID of the configured storage.
     metadata: json, optional
         metadata provided by the client
+    item_format: str, optional
+        format of the data item
     eb_id: str, optional
         execution block ID provided by the client
 
@@ -122,6 +125,7 @@ def register_data_item(  # noqa: C901 # pylint: disable=too-many-arguments
         "item_name": item_name,
         "storage_id": storage_id,
         "item_phase": storages[0]["storage_phase_level"],
+        "item_format": item_format,
     }
     uid = init_data_item(json_data=json.dumps(init_item))
 
@@ -149,6 +153,9 @@ def register_data_item(  # noqa: C901 # pylint: disable=too-many-arguments
         set_metadata(uid, metadata_temp)
         logger.info("Saved metadata provided by client.")
 
+    metadata_temp["uid"] = uid
+    metadata_temp["item_name"] = item_name
+
     # (7)
     notify_data_dashboard(metadata_temp)
 
@@ -162,15 +169,15 @@ def notify_data_dashboard(metadata: JsonType) -> None:
 
     payload = None
     try:
-        payload = json.loads(metadata)  # --> json str to python obj (dict)
+        payload = json.dumps(metadata)  # --> python obj to json string
     except (TypeError, ValueError) as err:
         logger.error("Failed to parse metadata: %s. Not notifying dashboard.", err)
 
     if payload is not None:
         try:
-            requests.request("POST", url, headers=headers, data=json.dumps(payload), timeout=2)
+            requests.request("POST", url, headers=headers, data=payload, timeout=2)
             logger.info(
-                "POSTed metadata (execution_block: %s) to %s", payload["execution_block"], url
+                "POSTed metadata (execution_block: %s) to %s", metadata["execution_block"], url
             )
         except requests.RequestException as err:
             logger.exception("POST error notifying dataproduct dashboard at: %s - %s", url, err)
