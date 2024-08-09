@@ -45,7 +45,7 @@ spec:
           - "8003"
         volumeMounts:
         - name: dlm-configmap
-          mountPath: "/home/dlm/.dlm"
+          mountPath: "/home/ska-dlm/.dlm"
           readOnly: true
       volumes:
       - name: dlm-configmap

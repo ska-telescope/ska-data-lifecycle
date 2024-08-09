@@ -43,3 +43,11 @@ spec:
           - ska_dlm.dlm_ingest.dlm_ingest_requests:app
           - --port
           - "8001"
+        volumeMounts:
+        - name: dlm-configmap
+          mountPath: "/home/ska-dlm/.dlm"
+          readOnly: true
+      volumes:
+      - name: dlm-configmap
+        configMap:
+          name: {{ include "ska-dlm.name" . }}-configmap

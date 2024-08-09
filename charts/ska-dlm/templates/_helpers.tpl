@@ -77,6 +77,16 @@ Template to generate the Postgresql URI
 {{- end -}}
 
 {{/*
+Migration labels
+*/}}
+{{- define "ska-dlm.migration.labels" }}
+{{- include "ska-dlm.labels" . }}
+component: {{ .Values.migration.component }}
+subsystem: {{ .Values.migration.subsystem }}
+intent: production
+{{- end }}
+
+{{/*
 Ingest labels
 */}}
 {{- define "ska-dlm.ingest.labels" }}

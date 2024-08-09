@@ -17,9 +17,7 @@ RUN . .venv/bin/activate \
 
 FROM python:${PYTHON_VERSION}-slim AS runtime
 
-RUN apt-get update && apt-get install -y \
-    rclone \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y rclone
 
 # # Best practice not to run as root
 RUN useradd ska-dlm
