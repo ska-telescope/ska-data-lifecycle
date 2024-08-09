@@ -77,6 +77,36 @@ Template to generate the Postgresql URI
 {{- end -}}
 
 {{/*
+Ingest labels
+*/}}
+{{- define "ska-dlm.ingest.labels" }}
+{{- include "ska-dlm.labels" . }}
+component: {{ .Values.ingest.component }}
+subsystem: {{ .Values.ingest.subsystem }}
+intent: production
+{{- end }}
+
+{{/*
+Storage labels
+*/}}
+{{- define "ska-dlm.storage.labels" }}
+{{- include "ska-dlm.labels" . }}
+component: {{ .Values.storage.component }}
+subsystem: {{ .Values.storage.subsystem }}
+intent: production
+{{- end }}
+
+{{/*
+Request labels
+*/}}
+{{- define "ska-dlm.request.labels" }}
+{{- include "ska-dlm.labels" . }}
+component: {{ .Values.request.component }}
+subsystem: {{ .Values.request.subsystem }}
+intent: production
+{{- end }}
+
+{{/*
 RClone labels
 */}}
 {{- define "ska-dlm.rclone.labels" }}
@@ -85,3 +115,5 @@ component: {{ .Values.rclone.component }}
 subsystem: {{ .Values.rclone.subsystem }}
 intent: production
 {{- end }}
+
+

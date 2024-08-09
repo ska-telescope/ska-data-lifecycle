@@ -2,10 +2,46 @@ system: dlm
 
 # Global parameters
 global:
-  minikube: true
+  ingress:
+    enabled: false
+  storageClass: nfss1
+  development: true
 
 nameOverride: ""
 fullnameOverride: ""
+
+# DLM
+request:
+  component: request
+  subsystem: data-lifecycle-management
+  image: nallack/ska-data-lifecycle
+  version: latest
+  imagePullPolicy: Always
+  replicas: 1
+
+migration:
+  component: migration
+  subsystem: data-lifecycle-management
+  image: nallack/ska-data-lifecycle
+  version: latest
+  imagePullPolicy: Always
+  replicas: 1
+
+storage:
+  component: storage
+  subsystem: data-lifecycle-management
+  image: nallack/ska-data-lifecycle
+  version: latest
+  imagePullPolicy: Always
+  replicas: 1
+
+ingest:
+  component: ingest
+  subsystem: data-lifecycle-management
+  image: nallack/ska-data-lifecycle
+  version: latest
+  imagePullPolicy: Always
+  replicas: 1
 
 # Postgresql DB
 postgresql:
@@ -34,11 +70,13 @@ postgresql:
       scriptsConfigMap: ska-dlm-postgresql-initdb-scripts
     podLabels:
       component: postgresql
-      subsystem: data-management-lifecycle
+      subsystem: data-lifecycle-management
+    networkPolicy:
+      enabled: false
 
 postgrest:
   component: postgrest
-  subsystem: data-management-lifecycle
+  subsystem: data-lifecycle-management
 
   image: postgrest/postgrest
   version: v12.0.2
@@ -57,8 +95,7 @@ postgrest:
 
 rclone:
   component: rclone
-  subsystem: data-management-lifecycle
-
+  subsystem: data-lifecycle-management
   image: rclone/rclone
   version: "1.65"
   imagePullPolicy: Always
@@ -74,7 +111,7 @@ pgweb:
   # see https://github.com/ectobit/charts/tree/main/pgweb
   enabled: false
   ingress:
-    enabled: true
+    enabled: false
     annotations:
       nginx.ingress.kubernetes.io/rewrite-target: /$2
     hosts:

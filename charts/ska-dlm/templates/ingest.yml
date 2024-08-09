@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ska-dlm.name" . }}-ingest
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ska-dlm.ingest.labels" . | indent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8001
+      protocol: TCP
+  selector:
+    component: {{ .Values.ingest.component }}
+    subsystem: {{ .Values.ingest.subsystem }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ska-dlm.name" . }}-ingest
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ska-dlm.ingest.labels" . | indent 4 }}
+spec:
+  replicas: {{ .Values.ingest.replicas }}
+  selector:
+    matchLabels:
+      component: {{ .Values.ingest.component }}
+      subsystem: {{ .Values.ingest.subsystem }}
+  template:
+    metadata:
+      labels:
+        {{- include "ska-dlm.ingest.labels" . | indent 8 }}
+    spec:
+      containers:
+      - name: ingest
+        image: {{ .Values.ingest.image}}:{{ .Values.ingest.version }}
+        imagePullPolicy: {{ .Values.ingest.imagePullPolicy }}
+        command:
+          - uvicorn
+          - ska_dlm.dlm_ingest.dlm_ingest_requests:app
+          - --port
+          - "8001"

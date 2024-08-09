@@ -1,0 +1,77 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ska-dlm.name" . }}-storage
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ska-dlm.storage.labels" . | indent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8003
+      protocol: TCP
+  selector:
+    component: {{ .Values.storage.component }}
+    subsystem: {{ .Values.storage.subsystem }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ska-dlm.name" . }}-storage-configmap
+  namespace: {{ .Release.Namespace }}
+  labels: {{- include "ska-dlm.storage.labels" . | indent 4 }}
+data:
+  config.yaml: |-
+    DLM:
+      dlm_db: "ska_dlm_meta"
+      dlm_table: "data_item"
+      storage_table: "storage"
+      storage_config_table: "storage_config"
+      location_table: "location"
+      storage_manager:
+        storage_warning_percentage: 80.0
+        polling_interval: 10 # seconds
+    REST:
+      base_url: "http://dlm_postgrest:3000"
+    RCLONE:
+      url: "http://dlm_rclone:5572"
+    DATA_PRODUCT_API:
+      url: "http://localhost:8000"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ska-dlm.name" . }}-storage
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ska-dlm.storage.labels" . | indent 4 }}
+spec:
+  replicas: {{ .Values.storage.replicas }}
+  selector:
+    matchLabels:
+      component: {{ .Values.storage.component }}
+      subsystem: {{ .Values.storage.subsystem }}
+  template:
+    metadata:
+      labels:
+        {{- include "ska-dlm.storage.labels" . | indent 8 }}
+    spec:
+      containers:
+      - name: storage
+        image: {{ .Values.storage.image}}:{{ .Values.storage.version }}
+        imagePullPolicy: {{ .Values.storage.imagePullPolicy }}
+        command:
+          - uvicorn
+          - ska_dlm.dlm_storage.dlm_storage_requests:app
+          - --port
+          - "8003"
+        volumeMounts:
+        - name: dlm-config
+          mountPath: "/home/dlm/.config"
+          readOnly: true
+      volumes:
+      - name: dlm-config
+        configMap:
+          name: {{ include "ska-dlm.name" . }}-storage-configmap
