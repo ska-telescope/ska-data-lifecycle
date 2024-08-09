@@ -27,11 +27,9 @@ def test_notify_data_dashboard(caplog):
     assert "POSTed metadata (execution_block: block123) to" in caplog.text
 
 
-@pytest.mark.parametrize("metadata", [
-    "invalid metadata",
-    {"invalid": "metadata"},
-    Path("invalid metadata")
-])
+@pytest.mark.parametrize(
+    "metadata", ["invalid metadata", {"invalid": "metadata"}, Path("invalid metadata")]
+)
 def test_notify_data_dashboard_invalid_metadata(metadata, caplog):
     with Mocker() as req_mock:
         assert isinstance(req_mock, Mocker)
