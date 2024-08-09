@@ -14,7 +14,7 @@ fullnameOverride: ""
 request:
   component: request
   subsystem: data-lifecycle-management
-  image: nallack/ska-data-lifecycle
+  image: nallack/ska-data-lifecycle:0.0.2rc1
   version: latest
   imagePullPolicy: Always
   replicas: 1
@@ -22,7 +22,7 @@ request:
 migration:
   component: migration
   subsystem: data-lifecycle-management
-  image: nallack/ska-data-lifecycle
+  image: nallack/ska-data-lifecycle:0.0.2rc1
   version: latest
   imagePullPolicy: Always
   replicas: 1
@@ -30,7 +30,7 @@ migration:
 storage:
   component: storage
   subsystem: data-lifecycle-management
-  image: nallack/ska-data-lifecycle
+  image: nallack/ska-data-lifecycle:0.0.2rc1
   version: latest
   imagePullPolicy: Always
   replicas: 1
@@ -38,7 +38,7 @@ storage:
 ingest:
   component: ingest
   subsystem: data-lifecycle-management
-  image: nallack/ska-data-lifecycle
+  image: nallack/ska-data-lifecycle:0.0.2rc1
   version: latest
   imagePullPolicy: Always
   replicas: 1

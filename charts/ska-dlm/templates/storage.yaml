@@ -16,30 +16,6 @@ spec:
     component: {{ .Values.storage.component }}
     subsystem: {{ .Values.storage.subsystem }}
 ---
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ include "ska-dlm.name" . }}-storage-configmap
-  namespace: {{ .Release.Namespace }}
-  labels: {{- include "ska-dlm.storage.labels" . | indent 4 }}
-data:
-  config.yaml: |-
-    DLM:
-      dlm_db: "ska_dlm_meta"
-      dlm_table: "data_item"
-      storage_table: "storage"
-      storage_config_table: "storage_config"
-      location_table: "location"
-      storage_manager:
-        storage_warning_percentage: 80.0
-        polling_interval: 10 # seconds
-    REST:
-      base_url: "http://dlm_postgrest:3000"
-    RCLONE:
-      url: "http://dlm_rclone:5572"
-    DATA_PRODUCT_API:
-      url: "http://localhost:8000"
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -68,10 +44,10 @@ spec:
           - --port
           - "8003"
         volumeMounts:
-        - name: dlm-config
-          mountPath: "/home/dlm/.config"
+        - name: dlm-configmap
+          mountPath: "/home/dlm/.dlm"
           readOnly: true
       volumes:
-      - name: dlm-config
+      - name: dlm-configmap
         configMap:
-          name: {{ include "ska-dlm.name" . }}-storage-configmap
+          name: {{ include "ska-dlm.name" . }}-configmap
