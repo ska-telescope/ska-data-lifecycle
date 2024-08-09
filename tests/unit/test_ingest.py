@@ -1,5 +1,6 @@
 import json
 import logging
+from pathlib import Path
 
 import pytest
 import requests
@@ -20,13 +21,17 @@ def test_notify_data_dashboard(caplog):
             text="New data product metadata file loaded and store index updated",
             status_code=200,
         )
-        dlm_ingest.notify_data_dashboard(json.dumps({"execution_block": "block123"}))
+        dlm_ingest.notify_data_dashboard({"execution_block": "block123"})
 
     assert not any(record.levelno == logging.ERROR for record in caplog.records), caplog.text
     assert "POSTed metadata (execution_block: block123) to" in caplog.text
 
 
-@pytest.mark.parametrize("metadata", ["invalid json", MetaData()])
+@pytest.mark.parametrize("metadata", [
+    "invalid metadata",
+    {"invalid": "metadata"},
+    Path("invalid metadata")
+])
 def test_notify_data_dashboard_invalid_metadata(metadata, caplog):
     with Mocker() as req_mock:
         assert isinstance(req_mock, Mocker)
@@ -42,7 +47,7 @@ def test_notify_data_dashboard_invalid_metadata(metadata, caplog):
 
 
 def test_notify_data_dashboard_exception_response(caplog):
-    valid_metadata = json.dumps({"execution_block": "block123"})
+    valid_metadata = {"execution_block": "block123"}
     with Mocker() as req_mock:
         assert isinstance(req_mock, Mocker)
         req_mock.post(
@@ -58,7 +63,7 @@ def test_notify_data_dashboard_exception_response(caplog):
 @pytest.mark.parametrize("status_code", [400, 404, 500, 503])
 def test_notify_data_dashboard_http_errors(status_code, caplog):
     """Test that the write hook will post metadata file info to a URL."""
-    valid_metadata = json.dumps({"execution_block": "block123"})
+    valid_metadata = {"execution_block": "block123"}
     with Mocker() as req_mock:
         assert isinstance(req_mock, Mocker)
         req_mock.post(

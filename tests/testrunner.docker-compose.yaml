@@ -21,3 +21,4 @@ services:
       - dlm_request
       - dlm_storage
       - dlm_ingest
+      - dlm_migration
