@@ -5,9 +5,9 @@ import logging
 from typing import Any, Dict, List, Union
 
 import requests
-from ska_sdp_dataproduct_metadata import MetaData
 import ska_sdp_metadata_generator as metagen
 from fastapi import FastAPI
+from ska_sdp_dataproduct_metadata import MetaData
 
 from ska_dlm.dlm_storage.dlm_storage_requests import rclone_access
 
@@ -181,9 +181,7 @@ def notify_data_dashboard(metadata: dict | MetaData) -> None:
 
     if payload is not None:
         try:
-            resp = requests.request(
-                "POST", url, headers=headers, data=payload, timeout=2
-            )
+            resp = requests.request("POST", url, headers=headers, data=payload, timeout=2)
             resp.raise_for_status()
 
             logger.info(

@@ -1,9 +1,10 @@
 """DLM package for ska-data-lifecycle."""
 
-from pathlib import Path
 import shutil
-from benedict import benedict
+from pathlib import Path
+
 import yaml
+from benedict import benedict
 
 # from . import dlm_db, dlm_ingest, dlm_migration, dlm_request, dlm_storage
 from . import dlm_db
