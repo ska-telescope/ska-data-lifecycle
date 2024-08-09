@@ -1,4 +1,3 @@
 Dockerfile
 **/Dockerfile
 *.docker-compose.yaml
-charts/

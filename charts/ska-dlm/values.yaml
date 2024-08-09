@@ -14,32 +14,32 @@ fullnameOverride: ""
 request:
   component: request
   subsystem: data-lifecycle-management
-  image: nallack/ska-data-lifecycle
-  version: 0.0.2rc3
+  image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
+  version: 0.0.1-dev.c57c837e9
   imagePullPolicy: Always
   replicas: 1
 
 migration:
   component: migration
   subsystem: data-lifecycle-management
-  image: nallack/ska-data-lifecycle
-  version: 0.0.2rc3
+  image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
+  version: 0.0.1-dev.c57c837e9
   imagePullPolicy: Always
   replicas: 1
 
 storage:
   component: storage
   subsystem: data-lifecycle-management
-  image: nallack/ska-data-lifecycle
-  version: 0.0.2rc3
+  image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
+  version: 0.0.1-dev.c57c837e9
   imagePullPolicy: Always
   replicas: 1
 
 ingest:
   component: ingest
   subsystem: data-lifecycle-management
-  image: nallack/ska-data-lifecycle
-  version: 0.0.2rc3
+  image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
+  version: 0.0.1-dev.c57c837e9
   imagePullPolicy: Always
   replicas: 1
 

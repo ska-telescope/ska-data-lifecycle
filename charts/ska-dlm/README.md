@@ -68,17 +68,21 @@ make k8s-uninstall-chart
 
 ## Production Deployment
 
-A host can deploy to a production environment by setting up `KUBE_CONFIG` and using the following `helm` and `kubectl` commands from the repository root directory:
+To deploy in a production k8s environment, DevOps can:
+
+* Select the Kubernetes environment via `export KUBECONFIG="path to kubeconfig"`
+* Modify the `resources/initialized-dlm.yaml` file to override helm values
+* Install the release using the following commands:
 
 ```bash
 helm repo add bitnami https://charts.bitnami.com/bitnami
 make k8s-dep-build
 
-KUBE_NAMESPACE=<prod-namespace> HELM_RELEASE=<prod-release> make k8s-install-chart
+KUBE_NAMESPACE=<prod-namespace> HELM_RELEASE=<prod-release-name> K8S_SKIP_NAMESPACE=1 make k8s-install-chart
 ```
 
-To uninstall a previously deployed release use:
+* Uninstall a previously deployed release using the following commands:
 
 ```bash
-KUBE_NAMESPACE=<prod-namespace> HELM_RELEASE=<prod-release> make k8s-uninstall-chart
+KUBE_NAMESPACE=<prod-namespace> HELM_RELEASE=<prod-release-name> K8S_SKIP_NAMESPACE=1 make k8s-uninstall-chart
 ```
