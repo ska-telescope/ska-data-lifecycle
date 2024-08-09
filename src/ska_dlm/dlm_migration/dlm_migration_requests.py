@@ -50,6 +50,8 @@ def rclone_copy(src_fs: str, src_remote: str, dst_fs: str, dst_remote: str, item
         post_data = {
             "srcFs": f"{src_fs}{src_remote}",
             "dstFs": f"{dst_fs}{dst_remote}",
+            "no-check-dest": "true",
+            "s3-no-check-bucket": "true",
             "_async": "true",
         }
     else:
