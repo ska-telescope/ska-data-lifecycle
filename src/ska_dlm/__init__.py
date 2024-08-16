@@ -2,8 +2,8 @@
 
 import os
 
-from benedict import benedict
 import yaml
+from benedict import benedict
 
 # from . import dlm_db, dlm_ingest, dlm_migration, dlm_request, dlm_storage
 from . import dlm_db

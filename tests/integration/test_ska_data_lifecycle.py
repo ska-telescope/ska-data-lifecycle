@@ -323,7 +323,7 @@ def test_notify_data_dashboard(caplog):
             text='{"message": "success"}',
             status_code=200,
         )
-        valid_metadata = json.dumps({"execution_block": "block123"})
+        valid_metadata = {"execution_block": "block123"}
         notify_data_dashboard(valid_metadata)
         assert "POSTed metadata (execution_block: block123) to" in caplog.text, caplog.text
 

@@ -41,7 +41,7 @@ def register_data_item(
     uri: str = "",
     storage_name: str = "",
     storage_id: str = "",
-    metadata: JsonType = None,
+    metadata: dict = None,
     item_format: str | None = "unknown",
     eb_id: str | None = None,
 ) -> str:
@@ -68,7 +68,7 @@ def register_data_item(
         the name of the configured storage volume (name or ID required)
     storage_id: str, optional
         the ID of the configured storage.
-    metadata: json, optional
+    metadata: dict, optional
         metadata provided by the client
     eb_id: str, optional
         execution block ID provided by the client
