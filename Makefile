@@ -44,6 +44,10 @@ docker-do-test:
 docker-post-test:
 	docker compose --file tests/testrunner.docker-compose.yaml down
 
+oci-build-gateway:
+	make oci-build OCI_IMAGE=ska-data-lifecycle-test-gateway \
+	OCI_IMAGE_FILE_PATH=tests/Dockerfile-dlm-gateway
+
 k8s-recreate-namespace: k8s-delete-namespace k8s-namespace
 k8s-do-test:
 	$(PYTHON_VARS_BEFORE_PYTEST) $(PYTHON_RUNNER) pytest --env k8s $(PYTHON_VARS_AFTER_PYTEST) \
