@@ -1,7 +1,7 @@
 FROM python:3.10
 
 RUN apt-get update && apt-get install -y 
-RUN pip install fastapi python-keycloak
+RUN pip install "fastapi[standard]" python-keycloak
 
 WORKDIR /app
 COPY ./ ./

@@ -4,6 +4,9 @@ import json
 import logging
 
 import requests
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from ska_dlm.exceptions import InvalidQueryParameters
 
@@ -16,23 +19,57 @@ from ..exceptions import UnmetPreconditionForOperation
 
 logger = logging.getLogger(__name__)
 
+origins = ["http://localhost", "http://localhost:5000", "http://localhost:8004"]
 
-def rclone_copy(src_fs: str, src_remote: str, dst_fs: str, dst_remote: str):
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# pylint: disable=unused-argument
+@app.exception_handler(IOError)
+def ioerror_exception_handler(request: Request, exc: IOError):
+    """Catch IOError and send a JSONResponse."""
+    return JSONResponse(
+        status_code=500,
+        content={"exec": "IOError", "message": f"{str(exc)}"},
+    )
+
+
+def rclone_copy(src_fs: str, src_remote: str, dst_fs: str, dst_remote: str, item_type: str):
     """Copy a file from one place to another."""
-    request_url = f"{CONFIG.RCLONE.url}/operations/copyfile"
-    post_data = {
-        "srcFs": src_fs,
-        "srcRemote": src_remote,
-        "dstFs": dst_fs,
-        "dstRemote": dst_remote,
-    }
+    # if the item is a measurement set then use the copy directory command
+    if item_type == "ms":
+        request_url = f"{CONFIG.RCLONE.url}/sync/copy"
+        post_data = {
+            "srcFs": f"{src_fs}{src_remote}",
+            "dstFs": f"{dst_fs}{dst_remote}",
+            "no-check-dest": "true",
+            "s3-no-check-bucket": "true",
+            "_async": "true",
+        }
+    else:
+        request_url = f"{CONFIG.RCLONE.url}/operations/copyfile"
+        post_data = {
+            "srcFs": src_fs,
+            "srcRemote": src_remote,
+            "dstFs": dst_fs,
+            "dstRemote": dst_remote,
+        }
     logger.info("rclone copy request: %s, %s", request_url, post_data)
     request = requests.post(request_url, post_data, timeout=1800)
     logger.info("Response status code: %s", request.status_code)
-    return True
+    return request.status_code
 
 
-def copy_data_item(  # pylint: disable=too-many-arguments
+@app.get("/migration/copy_data_item")
+def copy_data_item(  # pylint: disable=too-many-arguments,too-many-locals
     item_name: str = "",
     oid: str = "",
     uid: str = "",
@@ -125,12 +162,13 @@ def copy_data_item(  # pylint: disable=too-many-arguments
     # mechanisms to perform the copy. Also needs to be a non-blocking call
     # scheduling a job for dlm_migration service.
     logger.info("source: %s", source)
-    rclone_copy(
-        source["backend"],
-        source["path"],
-        dest["backend"],
-        dest["path"],
+    status_code = rclone_copy(
+        source["backend"], source["path"], dest["backend"], dest["path"], orig_item["item_format"]
     )
+
+    if status_code != 200:
+        return IOError("rclone copy failed")
+
     # (6)
     set_uri(uid, dest["path"], destination_id)
     # all done! Set data_item state to READY

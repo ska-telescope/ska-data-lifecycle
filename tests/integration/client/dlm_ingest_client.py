@@ -1,9 +1,13 @@
 """dlm_ingest REST client"""
 
+from typing import Any, Dict, List, Union
+
 import requests
 
 INGEST_URL = ""
 INGEST_BEARER = None
+
+JsonType = Union[Dict[str, Any], List[Any], str, int, float, bool, None]
 
 
 # pylint: disable=unused-argument
@@ -31,12 +35,17 @@ def init_data_item(item_name: str = "", phase: str = "GAS", json_data: str = "")
     return response.json()
 
 
-# pylint: disable=unused-argument
-def ingest_data_item(
-    item_name: str, uri: str = "", storage_name: str = "", storage_id: str = ""
+# pylint: disable=unused-argument, too-many-arguments
+def register_data_item(
+    item_name: str,
+    uri: str = "",
+    storage_name: str = "",
+    storage_id: str = "",
+    metadata: JsonType = None,
+    item_format: str | None = "unknown",
+    eb_id: str | None = None,
 ) -> str:
-    """
-    Ingest a data_item (register function is an alias).
+    """Ingest a data_item (register function is an alias).
 
     This high level function is a combination of init_data_item, set_uri and set_state(READY).
     It also checks whether a data_item is already registered on the requested storage.
@@ -49,21 +58,34 @@ def ingest_data_item(
     (6) generate metadata
     (7) notify the data dashboard
 
-    Parameters:
-    -----------
-    item_name: could be empty, in which case the first 1000 items are returned
-    uri: the access path to the payload.
-    storage_name: the name of the configured storage volume (name or ID required)
-    storage_id: optional, the ID of the configured storage.
+    Parameters
+    ----------
+    item_name: str
+        could be empty, in which case the first 1000 items are returned
+    uri: str
+        the access path to the payload.
+    storage_name: str
+        the name of the configured storage volume (name or ID required)
+    storage_id: str, optional
+        the ID of the configured storage.
+    metadata: json, optional
+        metadata provided by the client
+    eb_id: str, optional
+        execution block ID provided by the client
 
-    Returns:
-    --------
-    str, data_item UID
+    Returns
+    -------
+    str
+        data_item UID
+
+    Raises
+    ------
+    UnmetPreconditionForOperation
     """
     params = {k: v for k, v in locals().items() if v}
     headers = {"Authorization": f"Bearer {INGEST_BEARER}"} if INGEST_BEARER else {}
     response = requests.post(
-        f"{INGEST_URL}/ingest/ingest_data_item", params=params, headers=headers, timeout=60
+        f"{INGEST_URL}/ingest/register_data_item", params=params, headers=headers, timeout=60
     )
     if response.status_code in [401, 403]:
         response.raise_for_status()

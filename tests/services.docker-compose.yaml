@@ -1,4 +1,24 @@
 services:
+
+  dlm_migration:
+    platform: linux/amd64
+    image: dlm_migration
+    container_name: dlm_migration
+    build:
+       context: ..
+       dockerfile: tests/Dockerfile-dlm-service
+    entrypoint: fastapi dev src/ska_dlm/dlm_migration/dlm_migration_requests.py --port 8004 --host 0.0.0.0
+    ports:
+      - 8004:8004
+    volumes:
+      - shared-tmpfs:/data
+    depends_on:
+      - dlm_postgrest
+      - dlm_rclone
+      - dlm_gateway
+    networks:
+      - dlm_network
+
   dlm_storage:
     platform: linux/amd64
     image: dlm_storage
@@ -78,6 +98,7 @@ services:
         INGEST_CLIENT: "http://dlm_ingest:8001"
         REQUESTS_CLIENT: "http://dlm_request:8002"
         STORAGE_CLIENT: "http://dlm_storage:8003"
+        MIGRATION_CLIENT: "http://dlm_storage:8004"
     healthcheck:
         test: curl --fail http://localhost:8000/heartbeat || exit 1
         interval: 5s
@@ -100,6 +121,7 @@ services:
       - --rc-addr
       - :5572
       - --rc-no-auth
+      - --rc-web-gui
     volumes:
       - shared-tmpfs:/data
     networks:
