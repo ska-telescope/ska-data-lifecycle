@@ -53,11 +53,11 @@ spec:
         - --port
         - "8000"
         {{- end }}
-        # readinessProbe:
-        #   httpGet:
-        #     path: /
-        #     port: 8000
-        #   periodSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /heartbeat
+            port: 8000
+          periodSeconds: 5
         env:
         - name: PORT
           value: "8000"

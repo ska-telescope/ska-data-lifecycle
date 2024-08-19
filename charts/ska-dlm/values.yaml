@@ -120,8 +120,8 @@ gateway:
 
 keycloak:
   enabled: true
-  image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-test-keycloak
-  version: 0.0.1
+  image: quay.io/keycloak/keycloak
+  version: 25.0.2
   imagePullPolicy: Always
   replicas: 1
 
