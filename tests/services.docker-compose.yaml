@@ -198,10 +198,7 @@ services:
       - dlm_network
 
   keycloak_db:
-    build: 
-        context: ..
-        dockerfile: tests/Dockerfile-keycloak-db
-    image: keycloak_db
+    image: library/postgres
     container_name: keycloak_db
     ports:
       - 5400:5432
