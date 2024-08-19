@@ -39,10 +39,19 @@ spec:
         image: {{ .Values.ingest.image}}:{{ .Values.ingest.version }}
         imagePullPolicy: {{ .Values.ingest.imagePullPolicy }}
         command:
+          {{- if $.Values.global.development }}
           - uvicorn
           - ska_dlm.dlm_ingest.dlm_ingest_requests:app
           - --port
           - "8001"
+          {{- else }}
+          - uvicorn
+          - ska_dlm.dlm_ingest.dlm_ingest_requests:app
+          - --port
+          - "8001"
+          - -k
+          - uvicorn.workers.UvicornWorker
+          {{- end }}
         volumeMounts:
         - name: dlm-configmap
           mountPath: "/home/ska-dlm/.dlm"

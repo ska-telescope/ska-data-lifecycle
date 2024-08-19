@@ -1,0 +1,89 @@
+{{- if $.Values.gateway.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ska-dlm.name" . }}-gateway
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ska-dlm.gateway.labels" . | indent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8000
+      protocol: TCP
+  selector:
+    component: {{ .Values.gateway.component }}
+    subsystem: {{ .Values.gateway.subsystem }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ska-dlm.name" . }}-gateway
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ska-dlm.gateway.labels" . | indent 4 }}
+spec:
+  replicas: {{ .Values.gateway.replicas }}
+  selector:
+    matchLabels:
+      component: {{ .Values.gateway.component }}
+      subsystem: {{ .Values.gateway.subsystem }}
+  template:
+    metadata:
+      labels:
+        {{- include "ska-dlm.gateway.labels" . | indent 8 }}
+    spec:
+      containers:
+      - name: gateway
+        image: {{ .Values.gateway.image }}:{{ .Values.gateway.version }}
+        imagePullPolicy: {{ .Values.gateway.imagePullPolicy }}
+        command:
+        {{- if $.Values.global.development }}
+        - fastapi
+        - dev
+        - /app/tests/integration/gateway/dlm_gateway.py
+        - --port
+        - "8000"
+        {{- else }}
+        - fastapi
+        - run
+        - /app/tests/integration/gateway/dlm_gateway.py
+        - --port
+        - "8000"
+        {{- end }}
+        # readinessProbe:
+        #   httpGet:
+        #     path: /
+        #     port: 8000
+        #   periodSeconds: 5
+        env:
+        - name: PORT
+          value: "8000"
+        - name: KEYCLOAK_URL
+          value: "https://keycloak:8443/"
+        - name: REDIRECT_URL
+          value: "http://{{ include "ska-dlm.name" . }}-gateway.{{ .Release.Namespace }}.svc.cluster.local:80/auth_callback/"
+        - name: REALM
+          value: "test"
+        - name: CLIENT_ID
+          value: "dlm"
+        # -name: CLIENT_SECRET
+        # valueFrom:
+        #   secretKeyRef: gateway-client-secret
+        - name: CLIENT_SECRET
+          value: "xU2a9SOTLJZSwvAzAlfoucqg4sCMgY6O"
+        - name: STATE
+          value: "magic_string"
+        - name: AUTH
+          value: "1"
+        - name: INGEST_CLIENT
+          value: "http://{{ include "ska-dlm.name" . }}-ingest.{{ .Release.Namespace }}.svc.cluster.local:80"
+        - name: REQUESTS_CLIENT
+          value: "http://{{ include "ska-dlm.name" . }}-requests.{{ .Release.Namespace }}.svc.cluster.local:80"
+        - name: STORAGE_CLIENT
+          value: "http://{{ include "ska-dlm.name" . }}-storage.{{ .Release.Namespace }}.svc.cluster.local:80"
+        - name: MIGRATION_CLIENT
+          value: "http://{{ include "ska-dlm.name" . }}-migration.{{ .Release.Namespace }}.svc.cluster.local:80"
+{{- end }}

@@ -126,4 +126,23 @@ subsystem: {{ .Values.rclone.subsystem }}
 intent: production
 {{- end }}
 
+{{/*
+Gateway labels
+*/}}
+{{- define "ska-dlm.gateway.labels" }}
+{{- include "ska-dlm.labels" . }}
+component: {{ .Values.gateway.component }}
+subsystem: {{ .Values.gateway.subsystem }}
+intent: production
+{{- end }}
+
+{{/*
+Keycloak labels
+*/}}
+{{- define "ska-dlm.keycloak.labels" }}
+{{- include "ska-dlm.labels" . }}
+component: {{ .Values.keycloak.component }}
+subsystem: {{ .Values.keycloak.subsystem }}
+intent: production
+{{- end }}
 

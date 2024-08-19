@@ -107,6 +107,24 @@ kubectl:
   version: 1.28.6
   imagePullPolicy: Always
 
+# Development and Testing Only
+
+gateway:
+  enabled: true
+  component: gateway
+  subsystem: data-lifecycle-management
+  image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-test-gateway
+  version: "0.0.1"
+  imagePullPolicy: Always
+  replicas: 1
+
+keycloak:
+  enabled: true
+  image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-test-keycloak
+  version: 0.0.1
+  imagePullPolicy: Always
+  replicas: 1
+
 pgweb:
   # see https://github.com/ectobit/charts/tree/main/pgweb
   enabled: false
