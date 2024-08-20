@@ -9,9 +9,13 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-    - name: keycloak
-      port: 8443
+    - name: https
+      port: 443
       targetPort: 8443
+      protocol: TCP
+    - name: http
+      port: 80
+      targetPort: 8080
       protocol: TCP
   selector:
     component: {{ .Values.keycloak.component }}
@@ -40,19 +44,27 @@ spec:
         image: {{ .Values.keycloak.image }}:{{ .Values.keycloak.version }}
         imagePullPolicy: {{ .Values.keycloak.imagePullPolicy }}
         command:
-        {{- if $.Values.global.development }}
         - /opt/keycloak/bin/kc.sh
-        - start-dev
+        - {{ ternary "start-dev" "start" .Values.global.development }}
         - --import-realm
-        {{- else }}
-        - /opt/keycloak/bin/kc.sh
-        - start
-        - --import-realm
-        {{- end }}
+        ports:
+        - containerPort: 8080
+          name: http-port
+        - containerPort: 8443
+          name: https-port
+        - containerPort: 9000
+          name: liveness-port
         readinessProbe:
           httpGet:
-            path: /
-            port: 9000
+            path: /health/ready
+            port: liveness-port
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /health/ready
+            port: liveness-port
+          initialDelaySeconds: 5
           periodSeconds: 5
         env:
         - name: KC_HEALTH_ENABLED

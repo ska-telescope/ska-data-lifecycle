@@ -1,2 +1,18 @@
+
+postgrest:
+  db_uri: ""
+
+# Testing only deployments
+
 postgresql:
+  enabled: true
   initialise: true
+
+gateway:
+  enabled: true
+
+keycloak:
+  enabled: true
+
+pgweb:
+  enabled: true

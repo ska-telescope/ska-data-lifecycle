@@ -11,7 +11,7 @@ spec:
   ports:
     - name: http
       port: 80
-      targetPort: 8000
+      targetPort: http-port
       protocol: TCP
   selector:
     component: {{ .Values.gateway.component }}
@@ -40,31 +40,41 @@ spec:
         image: {{ .Values.gateway.image }}:{{ .Values.gateway.version }}
         imagePullPolicy: {{ .Values.gateway.imagePullPolicy }}
         command:
-        {{- if $.Values.global.development }}
         - fastapi
-        - dev
+        - {{ ternary "dev" "run" .Values.global.development }}
         - /app/tests/integration/gateway/dlm_gateway.py
+        - --host
+        - "0.0.0.0"
         - --port
         - "8000"
-        {{- else }}
-        - fastapi
-        - run
-        - /app/tests/integration/gateway/dlm_gateway.py
-        - --port
-        - "8000"
-        {{- end }}
+        ports:
+        - containerPort: 8000
+          name: http-port
+        - containerPort: 8000
+          name: liveness-port
         readinessProbe:
           httpGet:
             path: /heartbeat
-            port: 8000
+            port: liveness-port
           periodSeconds: 5
+          initialDelaySeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /heartbeat
+            port: liveness-port
+          periodSeconds: 5
+          initialDelaySeconds: 5
         env:
         - name: PORT
           value: "8000"
         - name: KEYCLOAK_URL
-          value: "https://keycloak:8443/"
+        {{- if $.Values.keycloak.use_https }}
+          value: "https://{{ include "ska-dlm.name" . }}-keycloak.{{ .Release.Namespace }}.svc.cluster.local"
+        {{- else }}
+          value: "http://{{ include "ska-dlm.name" . }}-keycloak.{{ .Release.Namespace }}.svc.cluster.local"
+        {{- end }}
         - name: REDIRECT_URL
-          value: "http://{{ include "ska-dlm.name" . }}-gateway.{{ .Release.Namespace }}.svc.cluster.local:80/auth_callback/"
+          value: "http://{{ include "ska-dlm.name" . }}-gateway.{{ .Release.Namespace }}.svc.cluster.local/auth_callback/"
         - name: REALM
           value: "test"
         - name: CLIENT_ID

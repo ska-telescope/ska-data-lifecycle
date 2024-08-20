@@ -3,7 +3,7 @@
 import os
 
 import httpx
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.responses import RedirectResponse
 from keycloak import KeycloakOpenID, KeycloakUMA
 from keycloak.exceptions import KeycloakAuthenticationError
@@ -67,7 +67,7 @@ async def auth_callback(request: Request):
 @app.get("/heartbeat")
 async def heartbeat():
     """Endpoint to check if Gateway is contactable"""
-    return "ACK"
+    return Response({"status": "OK"}, status_code=200)
 
 
 # pylint: disable=redefined-outer-name
