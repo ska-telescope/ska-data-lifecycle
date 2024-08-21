@@ -120,5 +120,5 @@ spec:
       volumes:
       - name: keycloak-realm-configmap
         configMap:
-          name: {{ include "ska-dlm.name" . }}-configmap
+          name: {{ include "ska-dlm.name" . }}-keycloak-realm-configmap
 {{- end }}
