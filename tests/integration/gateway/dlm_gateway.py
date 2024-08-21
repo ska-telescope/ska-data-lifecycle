@@ -1,5 +1,6 @@
 """API Gateway"""
 
+import logging
 import os
 
 import httpx
@@ -39,6 +40,26 @@ keycloak_uma = KeycloakUMA(connection=keycloak_openid)
 app = FastAPI()
 
 
+class HealthCheckFilter(logging.Filter):
+    """Filter healthchecks from logging."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        """Filter function."""
+        return record.getMessage().find("GET /hearbeat") == -1
+
+
+# Remove /credentials/health from application server logs
+logging.getLogger("uvicorn.access").addFilter(HealthCheckFilter())
+
+logger = logging.getLogger(__name__)
+
+
+@app.get("/heartbeat")
+async def heartbeat():
+    """Endpoint to check if Gateway is contactable"""
+    return "ACK"
+
+
 @app.get("/login")
 async def login():
     """Redirect to IDP for user authorisation"""
@@ -62,12 +83,6 @@ async def auth_callback(request: Request):
     )
 
     return access_token["access_token"]
-
-
-@app.get("/heartbeat")
-async def heartbeat():
-    """Endpoint to check if Gateway is contactable"""
-    return Response({"status": "OK"}, status_code=200)
 
 
 # pylint: disable=redefined-outer-name

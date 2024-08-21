@@ -38,7 +38,10 @@ Common labels
 {{- if .Values.global.labels}}
 app: {{ coalesce .Values.global.labels.app "ska-dlm.name" }}
 {{- else }}
-app: {{ include "ska-dlm.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}-{{ .Chart.Name }}
+app.kubernetes.io/name: {{ .Chart.Name }}
+app.kubernetes.io/version: {{ .Chart.Version }}
+helm.sh/chart: {{ include "ska-dlm.chart" . }}
 {{- end }}
 chart: {{ include "ska-dlm.chart" . }}
 release: {{ .Release.Name }}
