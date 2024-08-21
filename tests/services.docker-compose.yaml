@@ -82,7 +82,7 @@ services:
     container_name: dlm_gateway
     build:
        context: ..
-       dockerfile: tests/Dockerfile-dlm-gateway
+       dockerfile: tests/Dockerfile-gateway
        args:
          - PORT=8000
     ports:

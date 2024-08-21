@@ -46,11 +46,11 @@ docker-post-test:
 
 oci-build-gateway:
 	make oci-build OCI_IMAGE=ska-data-lifecycle-test-gateway \
-	OCI_IMAGE_FILE_PATH=tests/Dockerfile-dlm-gateway
+	OCI_IMAGE_FILE_PATH=tests/Dockerfile-gateway
 
 oci-build-keycloak:
 	make oci-build OCI_IMAGE=ska-data-lifecycle-test-keycloak \
-	OCI_IMAGE_FILE_PATH=tests/Dockerfile-dlm-keycloak
+	OCI_IMAGE_FILE_PATH=tests/Dockerfile-keycloak
 
 k8s-recreate-namespace: k8s-delete-namespace k8s-namespace
 k8s-do-test:
