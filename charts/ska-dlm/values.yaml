@@ -137,7 +137,7 @@ keycloak:
   ##image: quay.io/keycloak/keycloak
   # version: "25.0"
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-test-keycloak
-  version: 0.0.1-dev.c48847abc
+  version: 0.0.1-dev.c11b4e8e8
   imagePullPolicy: Always
   replicas: 1
   use_https: True
