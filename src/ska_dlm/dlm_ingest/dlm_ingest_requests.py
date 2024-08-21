@@ -153,6 +153,8 @@ def register_data_item(  # noqa: C901 # pylint: disable=too-many-arguments
         # Check that metadata_temp is standard json?
         set_metadata(uid, metadata_temp)
         logger.info("Saved metadata provided by client.")
+    else:
+        metadata_temp = {}
 
     metadata_temp["uid"] = uid
     metadata_temp["item_name"] = item_name

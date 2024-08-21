@@ -69,4 +69,9 @@ def _get_pod_name(pod_name):
 
 def get_service_urls():
     """Returns named map of the client URLs for each of the DLM services"""
-    return {}
+    return {
+        "dlm_gateway": f"http://ska-dlm-gateway.{NAMESPACE}.svc.cluster.local",
+        "dlm_ingest": f"http://ska-dlm-gateway.{NAMESPACE}.svc.cluster.local",
+        "dlm_request": f"http://ska-dlm-gateway.{NAMESPACE}.svc.cluster.local",
+        "dlm_storage": f"http://ska-dlm-gateway.{NAMESPACE}.svc.cluster.local",
+    }
