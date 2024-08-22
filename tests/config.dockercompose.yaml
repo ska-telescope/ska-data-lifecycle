@@ -18,4 +18,4 @@ RCLONE:
   url: "http://dlm_rclone:5572"
 
 DATA_PRODUCT_API:
-  url: "http://localhost:8000"
+  url: "http://dlm_gateway:8000"

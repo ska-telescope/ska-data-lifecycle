@@ -67,7 +67,7 @@ async def auth_callback(request: Request):
 @app.get("/heartbeat")
 async def heartbeat():
     """Endpoint to check if Gateway is contactable"""
-    return Response({"status": "OK"}, status_code=200)
+    return "ACK"
 
 
 # pylint: disable=redefined-outer-name
@@ -144,12 +144,10 @@ async def _reverse_proxy(request: Request):
         try:
             bearer_token = auth.split(" ")[1]
             await _check_permissions(bearer_token, request)
-        except KeycloakAuthenticationError:
-            # pylint: disable=raise-missing-from
-            raise HTTPException(403, "Permissions error")
-        except Exception:
-            # pylint: disable=raise-missing-from
-            raise HTTPException(401, "Token error")
+        except KeycloakAuthenticationError as e:
+            raise HTTPException(403, "Permissions error") from e
+        except Exception as e:
+            raise HTTPException(401, "Token error") from e
 
     rp_resp = await _send_endpoint(url, request)
 

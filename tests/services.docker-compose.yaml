@@ -1,4 +1,38 @@
 services:
+  dlm_gateway:
+    platform: linux/amd64
+    image: dlm_gateway
+    container_name: dlm_gateway
+    build:
+       context: ..
+       dockerfile: tests/Dockerfile-gateway
+       args:
+         - PORT=8000
+    ports:
+      - 8000:8000
+    environment:
+        KEYCLOAK_URL: "https://keycloak:8443/"
+        REDIRECT_URL: "http://dlm_gateway:8000/auth_callback/"
+        REALM: "test"
+        CLIENT_ID: "dlm"
+        CLIENT_SECRET: "xU2a9SOTLJZSwvAzAlfoucqg4sCMgY6O"
+        STATE: "magic_string"
+        AUTH: "1"
+        INGEST_CLIENT: "http://dlm_ingest:8001"
+        REQUESTS_CLIENT: "http://dlm_request:8002"
+        STORAGE_CLIENT: "http://dlm_storage:8003"
+        MIGRATION_CLIENT: "http://dlm_storage:8004"
+    healthcheck:
+        test: curl --fail http://localhost:8000/heartbeat || exit 1
+        interval: 5s
+        timeout: 5s
+        retries: 5
+    depends_on:
+      keycloak:
+        condition: service_healthy
+    networks:
+      - dlm_network
+
   dlm_rclone:
     image: rclone/rclone
     container_name: dlm_rclone

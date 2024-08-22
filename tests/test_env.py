@@ -4,7 +4,7 @@ from abc import abstractmethod
 from types import ModuleType
 
 
-class TestClient:
+class DlmTestClient:
     """
     Test client helper class for a test environment.
 
@@ -16,7 +16,7 @@ class TestClient:
         """Write the given text to a file local to rclone."""
 
     @abstractmethod
-    def get_rclone_local_file_content(self, rclone_path: str):
+    def get_rclone_local_file_content(self, rclone_path: str) -> str:
         """Get the text content of a file local to rclone."""
 
     @abstractmethod
@@ -36,19 +36,19 @@ class TestClient:
     @property
     @abstractmethod
     def storage_requests(self) -> ModuleType:
-        pass
+        """Get storage requests module."""
 
     @property
     @abstractmethod
     def request_requests(self) -> ModuleType:
-        pass
+        """Get request requests module."""
 
     @property
     @abstractmethod
     def ingest_requests(self) -> ModuleType:
-        pass
+        """Get ingest requests module."""
 
     @property
     @abstractmethod
     def migration_requests(self) -> ModuleType:
-        pass
+        """Get migration requests module."""

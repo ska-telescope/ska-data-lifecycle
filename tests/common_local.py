@@ -3,19 +3,19 @@
 import logging
 import os
 import tarfile
-from typing import override
 
 import docker
+from overrides import override
 
 from ska_dlm import dlm_ingest, dlm_migration, dlm_request, dlm_storage
-from tests.test_env import TestClient
+from tests.test_env import DlmTestClient
 
 logger = logging.getLogger(__name__)
 
 RCLONE_DEPLOYMENT = "dlm_rclone"
 
 
-class TestEnvLocal(TestClient):
+class DlmTestClientLocal(DlmTestClient):
     """Local test environment utilities.
 
     Does not utilize containerised DLM production code.
@@ -69,7 +69,7 @@ class TestEnvLocal(TestClient):
         self._copy_to(f"/tmp/{rclone_path}", f"{RCLONE_DEPLOYMENT}:{rclone_path}")
 
     @override
-    def get_rclone_local_file_content(self, rclone_path: str):
+    def get_rclone_local_file_content(self, rclone_path: str) -> str:
         """Get the text content of a file local to rclone container"""
         self._copy_from(f"{RCLONE_DEPLOYMENT}:{rclone_path}", f"/tmp/{rclone_path}.tar")
 
@@ -85,7 +85,7 @@ class TestEnvLocal(TestClient):
         container.exec_run(["/bin/sh", "-c", f"rm -rf {path}/*"])
 
     @override
-    def get_service_urls(self):
+    def get_service_urls(self) -> dict:
         """Returns named map of the client URLs for each of the DLM services"""
         urls = {
             "dlm_gateway": "http://localhost:8000",

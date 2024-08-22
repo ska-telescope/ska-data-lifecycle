@@ -2,11 +2,15 @@
 
 import logging
 import os
-from typing import override
 
 from kubernetes import client, config, stream
+from overrides import override
 
-from tests.test_env import TestClient
+import tests.integration.client.dlm_ingest_client as dlm_ingest_requests
+import tests.integration.client.dlm_migration_client as dlm_migration_requests
+import tests.integration.client.dlm_request_client as dlm_request_requests
+import tests.integration.client.dlm_storage_client as dlm_storage_requests
+from tests.test_env import DlmTestClient
 
 logger = logging.getLogger(__name__)
 
@@ -14,13 +18,29 @@ NAMESPACE = os.getenv("KUBE_NAMESPACE")
 RCLONE_DEPLOYMENT = "ska-dlm-rclone"
 
 
-class TestEnvK8s(TestClient):
-    """kubernetes test environment utilities implementation."""
+class DlmTestClientK8s(DlmTestClient):
+    """kubernetes test environment utilities."""
 
     def __init__(self):
         config.load_kube_config()
         self.core_api = client.CoreV1Api()
         self.apps_api = client.AppsV1Api()
+
+    @property
+    def storage_requests(self):
+        return dlm_storage_requests
+
+    @property
+    def request_requests(self):
+        return dlm_request_requests
+
+    @property
+    def ingest_requests(self):
+        return dlm_ingest_requests
+
+    @property
+    def migration_requests(self):
+        return dlm_migration_requests
 
     @override
     def write_rclone_file_content(self, rclone_path: str, content: str):
@@ -35,7 +55,7 @@ class TestEnvK8s(TestClient):
         )
 
     @override
-    def get_rclone_local_file_content(self, rclone_path: str):
+    def get_rclone_local_file_content(self, rclone_path: str) -> str:
         """Get the text content of a file local to rclone"""
         pod_name = self._get_pod_name(RCLONE_DEPLOYMENT)
         content = stream.stream(

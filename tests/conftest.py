@@ -2,12 +2,14 @@
 
 import logging
 import os
-from abc import abstractmethod
 
 import pytest
 
 from ska_dlm import CONFIG
 from ska_dlm.dlm_db.db_access import DB
+from tests.common_docker import DlmTestClientDocker
+from tests.common_k8s import DlmTestClientK8s
+from tests.common_local import DlmTestClientLocal
 
 
 def pytest_addoption(parser):
@@ -16,41 +18,32 @@ def pytest_addoption(parser):
     parser.addoption("--auth", action="store", default="1", help="Use OAuth flow")
 
 
-@pytest.fixture(name="configure", scope="session", autouse=True)
-def configure(request):
-    """Setup tests to run against instance running in Minikube."""  # noqa: D401
+@pytest.fixture(name="env", scope="session")
+def env_fixture(request):
+    """Test client dependent utilties."""
+    match request.config.getoption("--env"):
+        case "local":
+            env = DlmTestClientLocal()
+        case "docker":
+            env = DlmTestClientDocker()
+        case "k8s":
+            CONFIG.REST.base_url = _generate_k8s_url(
+                ingress_path="postgrest", service_name="ska-dlm-postgrest"
+            )
+            # assert False, CONFIG.REST.base_url
+            CONFIG.RCLONE.url = _generate_k8s_url(
+                ingress_path="rclone", service_name="ska-dlm-rclone"
+            )
 
-    # Run as "pythest --env local" for local testing
-    # Run as "pythest --env docker" for Docker testing
-    # Run as "pytest --env k8s" for Kube testing
-    env = request.config.getoption("--env")
-    if env == "k8s":
-        CONFIG.REST.base_url = _generate_k8s_url(
-            ingress_path="postgrest", service_name="ska-dlm-postgrest"
-        )
-        # assert False, CONFIG.REST.base_url
-        CONFIG.RCLONE.url = _generate_k8s_url(ingress_path="rclone", service_name="ska-dlm-rclone")
+            # Horrible hacks that are necessary due to static instances
+            # pylint: disable-next=protected-access
+            DB._api_url = CONFIG.REST.base_url
+            env = DlmTestClientK8s()
+        case _:
+            raise ValueError("unknown test env configuration")
 
-        # Horrible hacks that are necessary due to static instances
-        # pylint: disable-next=protected-access
-        DB._api_url = CONFIG.REST.base_url
-
-    elif env == "docker":
-        CONFIG.REST.base_url = "http://dlm_postgrest:3000"
-        CONFIG.RCLONE.url = "http://dlm_rclone:5572"
-        # pylint: disable-next=protected-access
-        DB._api_url = CONFIG.REST.base_url
-
-    elif env == "local":
-        CONFIG.REST.base_url = "http://localhost:3000"
-        CONFIG.RCLONE.url = "http://localhost:5572"
-        # pylint: disable-next=protected-access
-        DB._api_url = CONFIG.REST.base_url
-
-    else:
-        raise ValueError("Unknown test configuration")
-
-    logging.info("using test environment config: %s", CONFIG)
+    logging.info("using test config: %s", CONFIG)
+    return env
 
 
 def _generate_k8s_url(ingress_path: str, service_name: str):
@@ -62,7 +55,8 @@ def _generate_k8s_url(ingress_path: str, service_name: str):
     namespace = os.getenv("KUBE_NAMESPACE")
     assert namespace
 
-    if ingress := os.getenv("TEST_INGRESS"):
-        return f"{ingress}/{namespace}/{ingress_path}"
+    if host := os.getenv("TEST_INGRESS"):
+        return f"http://{host}/{namespace}/{ingress_path}"
 
-    return f"http://{service_name}.{namespace}"
+    # k8s service
+    return f"http://{service_name}.{namespace}.svc.cluster.local"

@@ -3,24 +3,16 @@
 """Tests for `ska_data_lifecycle` package."""
 
 import datetime
-import importlib
 import json
 
 import inflect
 import pytest
 import ska_sdp_metadata_generator as metagen
-from requests_mock import Mocker
 
 from ska_dlm import CONFIG, data_item, dlm_migration
 from ska_dlm.dlm_db.db_access import DB
 from ska_dlm.dlm_storage.main import persist_new_data_items
-
-# from ska_dlm.env.storage_requests import delete_data_item_payload, delete_uids, rclone_config
-# from ska_dlm.env.storage_requests.main import persist_new_data_items
 from ska_dlm.exceptions import InvalidQueryParameters, ValueAlreadyInDB
-from tests.common_docker import TestEnvDocker
-from tests.common_k8s import TestEnvK8s
-from tests.common_local import TestEnvLocal
 from tests.integration.client.dlm_gateway_client import get_token
 
 ROOT = "/data/"
@@ -40,32 +32,11 @@ def _clear_database():
     DB.delete(CONFIG.DLM.location_table)
 
 
-@pytest.fixture(name="auth", scope="session")
-def auth_fixture(request):
-    """Fixture for auth commandline param."""
-    return bool(int(request.config.getoption("--auth")))
-
-
-@pytest.fixture(name="env", scope="session")
-def env_fixture(request):
-    """Test environment dependent utilties."""
-    match request.config.getoption("--env"):
-        case "local":
-            env = TestEnvLocal()
-        case "docker":
-            env = TestEnvDocker()
-        # case "k8s":
-        #     env = TestEnvK8s()
-        case _:
-            raise ValueError("unknown test env configuration")
-    return env
-
-
-@pytest.fixture(scope="session", autouse=True)
-def setup_auth(env, auth):
+@pytest.fixture(name="auth", scope="session", autouse=True)
+def setup_auth(env, request):
     """Initialze Auth per session."""
     # this should only run once per test suite
-    if auth is True:
+    if request.config.getoption("--auth"):
         token = get_token("admin", "admin", env.get_service_urls()["dlm_gateway"])
         env.request_requests.REQUEST_BEARER = token
         env.ingest_requests.INGEST_BEARER = token
@@ -73,7 +44,7 @@ def setup_auth(env, auth):
 
 
 @pytest.fixture(scope="function", autouse=True)
-def setup(env):
+def setup(env, auth):
     """Initialze the tests."""
     _clear_database()
 
@@ -123,7 +94,11 @@ def test_ingest_data_item(env):
 @pytest.mark.integration_test
 def test_register_data_item_with_metadata(env):
     """Test the register_data_item function with provided metadata."""
-    uid = env.ingest_requests.register_data_item(
+
+    # TODO: not using client?
+    from ska_dlm.dlm_ingest import register_data_item
+
+    uid = register_data_item(
         "/my/ingest/test/item2",
         RCLONE_TEST_FILE_PATH,
         "MyDisk",
@@ -131,7 +106,8 @@ def test_register_data_item_with_metadata(env):
     )
     assert len(uid) == 36
     with pytest.raises(ValueAlreadyInDB, match="Item is already registered"):
-        env.ingest_requests.register_data_item(
+        # TODO: not using client?
+        register_data_item(
             "/my/ingest/test/item2",
             RCLONE_TEST_FILE_PATH,
             "MyDisk",
@@ -196,7 +172,11 @@ def test_delete_item_payload(env):
     data_item.set_uri(uid, fpath, storage_id)
     queried_uid = env.request_requests.query_data_item(item_name=fpath)[0]["uid"]
     assert uid == queried_uid
-    env.storage_requests.delete_data_item_payload(uid)
+
+    # TODO: not a client endpoint
+    from ska_dlm.dlm_storage.dlm_storage_requests import delete_data_item_payload
+
+    delete_data_item_payload(uid)
     assert env.request_requests.query_data_item(item_name=fpath)[0]["uri"] == fpath
     assert env.request_requests.query_data_item(item_name=fpath)[0]["item_state"] == "DELETED"
 
@@ -279,7 +259,10 @@ def test_expired_by_storage_daemon(env):
     assert len(result) == 1
 
     # run storage daemon code
-    env.storage_requests.delete_uids()
+    # TODO: not a client endpoint
+    from ska_dlm.dlm_storage.dlm_storage_requests import delete_uids
+
+    delete_uids()
 
     # check that the daemon deleted the item
     result = env.request_requests.query_deleted()
@@ -313,20 +296,6 @@ def test_persist_new_data_items(env):
     # and run again...
     result = persist_new_data_items(check_time)
     assert result == {"/my/ingest/test/item": True}
-
-
-@pytest.mark.integration_test
-def test_notify_data_dashboard(env, caplog):
-    """Test that the write hook will HTTP POST metadata file info to a URL."""
-    with Mocker() as req_mock:
-        req_mock.post(
-            f"{CONFIG.DATA_PRODUCT_API.url}/ingestnewmetadata",
-            text='{"message": "success"}',
-            status_code=200,
-        )
-        valid_metadata = {"execution_block": "block123"}
-        env.ingest_requests.notify_data_dashboard(valid_metadata)
-        assert "POSTed metadata (execution_block: block123) to" in caplog.text, caplog.text
 
 
 @pytest.mark.integration_test

@@ -9,4 +9,4 @@ COPY ./ ./
 ARG PORT
 ENV PORT=${PORT}
 
-CMD fastapi dev /app/tests/integration/gateway/dlm_gateway.py --port ${PORT} --host 0.0.0.0
+CMD fastapi dev  /app/tests/integration/gateway/dlm_gateway.py --port ${PORT} --host 0.0.0.0

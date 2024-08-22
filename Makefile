@@ -33,7 +33,6 @@ docs-pre-build: ## setup the document build environment.
 
 python-pre-test:
 	docker compose --file tests/services.docker-compose.yaml -p dlm-test-services up --detach --wait
-python-do-test: PYTHON_VARS_AFTER_PYTEST=--env local
 python-post-test:
 	docker compose --file tests/services.docker-compose.yaml -p dlm-test-services down
 
@@ -41,9 +40,9 @@ docker-test: docker-pre-test docker-do-test docker-post-test
 docker-pre-test:
 	docker compose -f tests/testrunner.docker-compose.yaml build
 docker-do-test:
-	docker compose --file tests/testrunner.docker-compose.yaml run dlm_testrunner
+	docker compose --file tests/testrunner.docker-compose.yaml -p dlm-test-services run dlm_testrunner
 docker-post-test:
-	docker compose --file tests/testrunner.docker-compose.yaml down
+	docker compose --file tests/testrunner.docker-compose.yaml -p dlm-test-services down
 
 oci-build-gateway:
 	make oci-build OCI_IMAGE=ska-data-lifecycle-test-gateway \
