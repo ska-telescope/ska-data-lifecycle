@@ -66,6 +66,11 @@ addopts = [
     "--integration-cover",
     "-v",
 ]
+log_cli_level = "INFO"
+log_cli_format = "1|%(asctime)s.%(msecs)03dZ|%(levelname)s|%(threadName)s|%(funcName)s|%(filename)s#%(lineno)d||%(message)s"
+log_cli_date_format = "%Y-%m-%dT%H:%M:%S"
+log_file = "pytest-logs.txt"
+log_file_level = "INFO"
 # log_cli = true
 
 [tool.flake8]
