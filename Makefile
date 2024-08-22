@@ -32,7 +32,8 @@ docs-pre-build: ## setup the document build environment.
 	poetry install --only main,docs
 
 python-pre-test:
-	docker compose --file tests/services.docker-compose.yaml -p dlm-test-services up --detach
+	docker compose --file tests/services.docker-compose.yaml -p dlm-test-services up --detach --wait
+python-do-test: PYTHON_VARS_AFTER_PYTEST=--env local
 python-post-test:
 	docker compose --file tests/services.docker-compose.yaml -p dlm-test-services down
 

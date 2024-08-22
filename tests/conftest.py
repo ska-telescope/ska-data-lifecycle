@@ -2,6 +2,7 @@
 
 import logging
 import os
+from abc import abstractmethod
 
 import pytest
 
@@ -25,14 +26,10 @@ def configure(request):
     env = request.config.getoption("--env")
     if env == "k8s":
         CONFIG.REST.base_url = _generate_k8s_url(
-            ingress_path="postgrest",
-            service_name="ska-dlm-postgrest"
+            ingress_path="postgrest", service_name="ska-dlm-postgrest"
         )
         # assert False, CONFIG.REST.base_url
-        CONFIG.RCLONE.url = _generate_k8s_url(
-            ingress_path="rclone",
-            service_name="ska-dlm-rclone"
-        )
+        CONFIG.RCLONE.url = _generate_k8s_url(ingress_path="rclone", service_name="ska-dlm-rclone")
 
         # Horrible hacks that are necessary due to static instances
         # pylint: disable-next=protected-access
@@ -52,7 +49,7 @@ def configure(request):
 
     else:
         raise ValueError("Unknown test configuration")
-    
+
     logging.info("using test environment config: %s", CONFIG)
 
 

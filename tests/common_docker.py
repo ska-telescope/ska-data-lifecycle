@@ -3,38 +3,69 @@
 import glob
 import logging
 import os
+from typing import override
+
+import tests.integration.client.dlm_ingest_client as dlm_ingest_requests
+import tests.integration.client.dlm_migration_client as dlm_migration_requests
+import tests.integration.client.dlm_request_client as dlm_request_requests
+import tests.integration.client.dlm_storage_client as dlm_storage_requests
+from tests.test_env import TestClient
 
 logger = logging.getLogger(__name__)
 
-RCLONE_DEPLOYMENT = "ska-dlm-rclone"
 
+class TestEnvDocker(TestClient):
+    """docker compose test environment utilities.
 
-# Assume shared file system or docker shared volume
-def write_rclone_file_content(rclone_path: str, content: str):
-    """Write the given text to a file local to rclone."""
-    with open(f"{rclone_path}", "wt", encoding="ascii") as file:
-        file.write(content)
+    This requires the rclone path is hosted on shared filesystem
+    mount with the test runtime."""
 
+    @property
+    def storage_requests(self):
+        return dlm_storage_requests
 
-def get_rclone_local_file_content(rclone_path: str):
-    """Get the text content of a file local to rclone"""
-    with open(f"{rclone_path}", "rt", encoding="ascii") as file:
-        return file.read()
+    @property
+    def request_requests(self):
+        return dlm_request_requests
 
+    @property
+    def ingest_requests(self):
+        return dlm_ingest_requests
 
-def clear_rclone_data(path: str):
-    """Delete all local rclone data."""
-    files = glob.glob(f"{path}/*")
-    for file in files:
-        os.remove(file)
+    @property
+    def migration_requests(self):
+        return dlm_migration_requests
 
+    def __init__(self):
+        dlm_storage_requests.STORAGE_URL = "http://dlm_gateway:8000"
+        dlm_ingest_requests.INGEST_URL = "http://dlm_gateway:8000"
+        dlm_request_requests.REQUEST_URL = "http://dlm_gateway:8000"
+        dlm_migration_requests.MIGRATION_URL = "http://dlm_gateway:8000"
 
-def get_service_urls():
-    """Returns named map of the client URLs for each of the DLM services"""
-    urls = {
-        "dlm_gateway": "http://dlm_gateway:8000",
-        "dlm_ingest": "http://dlm_gateway:8000",
-        "dlm_request": "http://dlm_gateway:8000",
-        "dlm_storage": "http://dlm_gateway:8000",
-    }
-    return urls
+    # Assume shared file system or docker shared volume
+    @override
+    def write_rclone_file_content(self, rclone_path: str, content: str):
+        with open(f"{rclone_path}", "wt", encoding="ascii") as file:
+            file.write(content)
+
+    @override
+    def get_rclone_local_file_content(self, rclone_path: str):
+        with open(f"{rclone_path}", "rt", encoding="ascii") as file:
+            return file.read()
+
+    @override
+    def clear_rclone_data(self, path: str):
+        files = glob.glob(f"{path}/*")
+        for file in files:
+            os.remove(file)
+
+    @override
+    def get_service_urls(self):
+        """Returns named map of the client URLs for each of the DLM services"""
+        urls = {
+            "dlm_gateway": "http://dlm_gateway:8000",
+            "dlm_ingest": "http://dlm_gateway:8000",
+            "dlm_request": "http://dlm_gateway:8000",
+            "dlm_storage": "http://dlm_gateway:8000",
+        }
+        return urls

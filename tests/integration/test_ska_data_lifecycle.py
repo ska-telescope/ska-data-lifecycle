@@ -11,15 +11,16 @@ import pytest
 import ska_sdp_metadata_generator as metagen
 from requests_mock import Mocker
 
-import tests.integration.client.dlm_ingest_client as dlm_ingest
-import tests.integration.client.dlm_request_client as dlm_request
-import tests.integration.client.dlm_storage_client as dlm_storage
 from ska_dlm import CONFIG, data_item, dlm_migration
 from ska_dlm.dlm_db.db_access import DB
-from ska_dlm.dlm_ingest import notify_data_dashboard, register_data_item
-from ska_dlm.dlm_storage import delete_data_item_payload, delete_uids, rclone_config
 from ska_dlm.dlm_storage.main import persist_new_data_items
+
+# from ska_dlm.env.storage_requests import delete_data_item_payload, delete_uids, rclone_config
+# from ska_dlm.env.storage_requests.main import persist_new_data_items
 from ska_dlm.exceptions import InvalidQueryParameters, ValueAlreadyInDB
+from tests.common_docker import TestEnvDocker
+from tests.common_k8s import TestEnvK8s
+from tests.common_local import TestEnvLocal
 from tests.integration.client.dlm_gateway_client import get_token
 
 ROOT = "/data/"
@@ -46,26 +47,18 @@ def auth_fixture(request):
 
 
 @pytest.fixture(name="env", scope="session")
-def import_test_env_module(request):
-    """Dynamically import module based on testing environment."""
+def env_fixture(request):
+    """Test environment dependent utilties."""
     match request.config.getoption("--env"):
         case "local":
-            env_module_name = "tests.common_local"
+            env = TestEnvLocal()
         case "docker":
-            env_module_name = "tests.common_docker"
-        case "k8s":
-            env_module_name = "tests.common_k8s"
+            env = TestEnvDocker()
+        # case "k8s":
+        #     env = TestEnvK8s()
         case _:
-            raise ValueError("unknown test configuration")
-
-    mod = importlib.import_module(env_module_name)
-    client_urls = mod.get_service_urls()
-
-    # TODO: should not be reassigning global constants
-    dlm_storage.STORAGE_URL = client_urls["dlm_storage"]
-    dlm_ingest.INGEST_URL = client_urls["dlm_ingest"]
-    dlm_request.REQUEST_URL = client_urls["dlm_request"]
-    return mod
+            raise ValueError("unknown test env configuration")
+    return env
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -74,9 +67,9 @@ def setup_auth(env, auth):
     # this should only run once per test suite
     if auth is True:
         token = get_token("admin", "admin", env.get_service_urls()["dlm_gateway"])
-        dlm_request.REQUEST_BEARER = token
-        dlm_ingest.INGEST_BEARER = token
-        dlm_storage.STORAGE_BEARER = token
+        env.request_requests.REQUEST_BEARER = token
+        env.ingest_requests.INGEST_BEARER = token
+        env.storage_requests.STORAGE_BEARER = token
 
 
 @pytest.fixture(scope="function", autouse=True)
@@ -87,8 +80,8 @@ def setup(env):
     env.write_rclone_file_content(RCLONE_TEST_FILE_PATH, RCLONE_TEST_FILE_CONTENT)
 
     # we need a location to register the storage
-    location_id = dlm_storage.init_location("MyOwnStorage", "Server")
-    uuid = dlm_storage.init_storage(
+    location_id = env.storage_requests.init_location("MyOwnStorage", "Server")
+    uuid = env.storage_requests.init_storage(
         storage_name="MyDisk",
         location_id=location_id,
         storage_type="disk",
@@ -97,21 +90,21 @@ def setup(env):
     )
     config = {"name": "MyDisk", "type": "alias", "parameters": {"remote": "/"}}
     config = json.dumps(config)
-    dlm_storage.create_storage_config(uuid, config=config)
+    env.storage_requests.create_storage_config(uuid, config=config)
     # configure rclone
-    rclone_config(config)
+    env.storage_requests.rclone_config(config)
     yield
     _clear_database()
     env.clear_rclone_data(ROOT)
 
 
-def __initialize_data_item():
+def __initialize_data_item(env):
     """Test data_item init."""
     engine = inflect.engine()
     success = True
     for i in range(1, 51, 1):
         ordinal = engine.number_to_words(engine.ordinal(i))
-        uid = dlm_ingest.init_data_item(f"this/is/the/{ordinal}/test/item")
+        uid = env.ingest_requests.init_data_item(f"this/is/the/{ordinal}/test/item")
         if uid is None:
             success = False
     assert success
@@ -119,18 +112,18 @@ def __initialize_data_item():
 
 @pytest.mark.integration_test
 @pytest.mark.skip(reason="Placeholder. We removed the ingest_data_item alias.")
-def test_ingest_data_item():
+def test_ingest_data_item(env):
     """Test the ingest_data_item function."""
-    uid = register_data_item(
+    uid = env.ingest_requests.register_data_item(
         "/my/ingest/test/item", RCLONE_TEST_FILE_PATH, "MyDisk", metadata=None
     )
     assert len(uid) == 36
 
 
 @pytest.mark.integration_test
-def test_register_data_item_with_metadata():
+def test_register_data_item_with_metadata(env):
     """Test the register_data_item function with provided metadata."""
-    uid = register_data_item(
+    uid = env.ingest_requests.register_data_item(
         "/my/ingest/test/item2",
         RCLONE_TEST_FILE_PATH,
         "MyDisk",
@@ -138,7 +131,7 @@ def test_register_data_item_with_metadata():
     )
     assert len(uid) == 36
     with pytest.raises(ValueAlreadyInDB, match="Item is already registered"):
-        register_data_item(
+        env.ingest_requests.register_data_item(
             "/my/ingest/test/item2",
             RCLONE_TEST_FILE_PATH,
             "MyDisk",
@@ -147,46 +140,46 @@ def test_register_data_item_with_metadata():
 
 
 @pytest.mark.integration_test
-def test_query_expired_empty():
+def test_query_expired_empty(env):
     """Test the query expired returning an empty set."""
-    result = dlm_request.query_expired()
+    result = env.request_requests.query_expired()
     success = len(result) == 0
     assert success
 
 
 @pytest.mark.integration_test
-def test_query_expired():
+def test_query_expired(env):
     """Test the query expired returning records."""
-    __initialize_data_item()
-    uid = dlm_request.query_data_item()[0]["uid"]
+    __initialize_data_item(env)
+    uid = env.request_requests.query_data_item()[0]["uid"]
     offset = datetime.timedelta(days=1)
     data_item.set_state(uid=uid, state="READY")
-    result = dlm_request.query_expired(offset)
+    result = env.request_requests.query_expired(offset)
     success = len(result) != 0
     assert success
 
 
 @pytest.mark.integration_test
-def test_location_init():
+def test_location_init(env):
     """Test initialisation on a location."""
     # This returns an empty string if unsuccessful
     with pytest.raises(InvalidQueryParameters):
-        dlm_storage.init_location()
-    dlm_storage.init_location("TestLocation", "SKAO Data Centre")
-    location = dlm_storage.query_location(location_name="TestLocation")[0]
+        env.storage_requests.init_location()
+    env.storage_requests.init_location("TestLocation", "SKAO Data Centre")
+    location = env.storage_requests.query_location(location_name="TestLocation")[0]
     assert location["location_type"] == "SKAO Data Centre"
 
 
 @pytest.mark.integration_test
-def test_set_uri_state_phase():
+def test_set_uri_state_phase(env):
     """Update a data_item record with the pointer to a file."""
-    uid = dlm_ingest.init_data_item(item_name="this/is/the/first/test/item")
-    storage_id = dlm_storage.query_storage(storage_name="MyDisk")[0]["storage_id"]
+    uid = env.ingest_requests.init_data_item(item_name="this/is/the/first/test/item")
+    storage_id = env.storage_requests.query_storage(storage_name="MyDisk")[0]["storage_id"]
     data_item.set_uri(uid, RCLONE_TEST_FILE_PATH, storage_id)
-    assert dlm_request.query_data_item(uid=uid)[0]["uri"] == RCLONE_TEST_FILE_PATH
+    assert env.request_requests.query_data_item(uid=uid)[0]["uri"] == RCLONE_TEST_FILE_PATH
     data_item.set_state(uid, "READY")
     data_item.set_phase(uid, "PLASMA")
-    items = dlm_request.query_data_item(uid=uid)
+    items = env.request_requests.query_data_item(uid=uid)
     assert len(items) == 1
     assert items[0]["item_state"] == "READY"
     assert items[0]["item_phase"] == "PLASMA"
@@ -194,31 +187,31 @@ def test_set_uri_state_phase():
 
 # TODO: We don't want RCLONE_TEST_FILE_PATH to disappear after one test run.
 @pytest.mark.integration_test
-def test_delete_item_payload():
+def test_delete_item_payload(env):
     """Delete the payload of a data_item."""
     fpath = RCLONE_TEST_FILE_PATH
-    storage_id = dlm_storage.query_storage(storage_name="MyDisk")[0]["storage_id"]
-    uid = register_data_item(fpath, fpath, "MyDisk")
+    storage_id = env.storage_requests.query_storage(storage_name="MyDisk")[0]["storage_id"]
+    uid = env.ingest_requests.register_data_item(fpath, fpath, "MyDisk")
     data_item.set_state(uid, "READY")
     data_item.set_uri(uid, fpath, storage_id)
-    queried_uid = dlm_request.query_data_item(item_name=fpath)[0]["uid"]
+    queried_uid = env.request_requests.query_data_item(item_name=fpath)[0]["uid"]
     assert uid == queried_uid
-    delete_data_item_payload(uid)
-    assert dlm_request.query_data_item(item_name=fpath)[0]["uri"] == fpath
-    assert dlm_request.query_data_item(item_name=fpath)[0]["item_state"] == "DELETED"
+    env.storage_requests.delete_data_item_payload(uid)
+    assert env.request_requests.query_data_item(item_name=fpath)[0]["uri"] == fpath
+    assert env.request_requests.query_data_item(item_name=fpath)[0]["item_state"] == "DELETED"
 
 
-def __initialize_storage_config():
+def __initialize_storage_config(env):
     """Add a new location, storage and configuration to the rclone server."""
-    location = dlm_storage.query_location("MyHost")
+    location = env.storage_requests.query_location("MyHost")
     if location:
         location_id = location[0]["location_id"]
     else:
-        location_id = dlm_storage.init_location("MyHost", "Server")
+        location_id = env.storage_requests.init_location("MyHost", "Server")
     assert len(location_id) == 36
     config = {"name": "MyDisk2", "type": "alias", "parameters": {"remote": "/"}}
     config = json.dumps(config)
-    uuid = dlm_storage.init_storage(
+    uuid = env.storage_requests.init_storage(
         storage_name="MyDisk2",
         location_id=location_id,
         storage_type="disk",
@@ -226,18 +219,20 @@ def __initialize_storage_config():
         storage_capacity=100000000,
     )
     assert len(uuid) == 36
-    config_id = dlm_storage.create_storage_config(uuid, config=config)
+    config_id = env.storage_requests.create_storage_config(uuid, config=config)
     assert len(config_id) == 36
     # configure rclone
-    assert rclone_config(config) is True
+    assert env.storage_requests.rclone_config(config) is True
 
 
 @pytest.mark.integration_test
 def test_copy(env):
     """Copy a test file from one storage to another."""
-    __initialize_storage_config()
-    dest_id = dlm_storage.query_storage("MyDisk2")[0]["storage_id"]
-    uid = register_data_item("/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, "MyDisk")
+    __initialize_storage_config(env)
+    dest_id = env.storage_requests.query_storage("MyDisk2")[0]["storage_id"]
+    uid = env.ingest_requests.register_data_item(
+        "/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, "MyDisk"
+    )
     assert len(uid) == 36
     dest = "/data/testfile_copy"
     dlm_migration.copy_data_item(uid=uid, destination_id=dest_id, path=dest)
@@ -245,9 +240,11 @@ def test_copy(env):
 
 
 @pytest.mark.integration_test
-def test_update_item_tags():
+def test_update_item_tags(env):
     """Update the item_tags field of a data_item."""
-    _ = register_data_item("/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, "MyDisk")
+    _ = env.ingest_requests.register_data_item(
+        "/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, "MyDisk"
+    )
     res = data_item.update_item_tags(
         "/my/ingest/test/item2", item_tags={"a": "SKA", "b": "DLM", "c": "dummy"}
     )
@@ -256,66 +253,70 @@ def test_update_item_tags():
         "/my/ingest/test/item2", item_tags={"c": "Hello", "d": "World"}
     )
     assert res is True
-    tags = dlm_request.query_data_item(item_name="/my/ingest/test/item2")[0]["item_tags"]
+    tags = env.request_requests.query_data_item(item_name="/my/ingest/test/item2")[0]["item_tags"]
     assert tags == {"a": "SKA", "b": "DLM", "c": "Hello", "d": "World"}
 
 
 @pytest.mark.integration_test
-def test_expired_by_storage_daemon():
+def test_expired_by_storage_daemon(env):
     """Test an expired data item is deleted by the storage manager."""
     fname = RCLONE_TEST_FILE_PATH
     # test no expired items were found
-    result = dlm_request.query_expired()
+    result = env.request_requests.query_expired()
     assert len(result) == 0
 
     # test no deleted items were found
-    result = dlm_request.query_deleted()
+    result = env.request_requests.query_deleted()
     assert len(result) == 0
 
     # add an item, and expire immediately
-    uid = register_data_item(item_name=fname, uri=fname, storage_name="MyDisk")
+    uid = env.ingest_requests.register_data_item(item_name=fname, uri=fname, storage_name="MyDisk")
     data_item.set_state(uid=uid, state="READY")
     data_item.set_uid_expiration(uid, "2000-01-01")
 
     # check the expired item was found
-    result = dlm_request.query_expired()
+    result = env.request_requests.query_expired()
     assert len(result) == 1
 
     # run storage daemon code
-    delete_uids()
+    env.storage_requests.delete_uids()
 
     # check that the daemon deleted the item
-    result = dlm_request.query_deleted()
+    result = env.request_requests.query_deleted()
     assert result[0]["uid"] == uid
 
 
 @pytest.mark.integration_test
-def test_query_new():
+def test_query_new(env):
     """Test for newly created data_items."""
     check_time = "2024-01-01"
-    _ = register_data_item("/my/ingest/test/item", RCLONE_TEST_FILE_PATH, "MyDisk")
-    result = dlm_request.query_new(check_time)
+    _ = env.ingest_requests.register_data_item(
+        "/my/ingest/test/item", RCLONE_TEST_FILE_PATH, "MyDisk"
+    )
+    result = env.request_requests.query_new(check_time)
     assert len(result) == 1
 
 
 @pytest.mark.integration_test
-def test_persist_new_data_items():
+def test_persist_new_data_items(env):
     """Test making new data items persistent."""
     check_time = "2024-01-01"
-    _ = register_data_item("/my/ingest/test/item", RCLONE_TEST_FILE_PATH, "MyDisk")
+    _ = env.ingest_requests.register_data_item(
+        "/my/ingest/test/item", RCLONE_TEST_FILE_PATH, "MyDisk"
+    )
     result = persist_new_data_items(check_time)
     # negative test, since there is only a single volume registered
     assert result == {"/my/ingest/test/item": False}
 
     # configure additional storage volume
-    __initialize_storage_config()
+    __initialize_storage_config(env)
     # and run again...
     result = persist_new_data_items(check_time)
     assert result == {"/my/ingest/test/item": True}
 
 
 @pytest.mark.integration_test
-def test_notify_data_dashboard(caplog):
+def test_notify_data_dashboard(env, caplog):
     """Test that the write hook will HTTP POST metadata file info to a URL."""
     with Mocker() as req_mock:
         req_mock.post(
@@ -324,12 +325,12 @@ def test_notify_data_dashboard(caplog):
             status_code=200,
         )
         valid_metadata = {"execution_block": "block123"}
-        notify_data_dashboard(valid_metadata)
+        env.ingest_requests.notify_data_dashboard(valid_metadata)
         assert "POSTed metadata (execution_block: block123) to" in caplog.text, caplog.text
 
 
 @pytest.mark.integration_test
-def test_populate_metadata_col():
+def test_populate_metadata_col(env):
     """Test that the metadata is correctly saved to the metadata column."""
     META_FILE = "/tmp/testfile"  # pylint: disable=invalid-name
     with open(META_FILE, "wt", encoding="ascii") as file:
@@ -345,14 +346,14 @@ def test_populate_metadata_col():
         assert False, f"Failed to decode JSON: {err}. Check type."
 
     # Register data item
-    uid = register_data_item(
+    uid = env.ingest_requests.register_data_item(
         "/my/metadata/test/item",
         RCLONE_TEST_FILE_PATH,
         "MyDisk",
         metadata=json.loads(metadata_json),
     )
 
-    metadata_str_from_db = dlm_request.query_data_item(uid=uid)
+    metadata_str_from_db = env.request_requests.query_data_item(uid=uid)
     assert isinstance(metadata_str_from_db[0]["metadata"], dict)
 
     metadata_dict_from_db = metadata_str_from_db[0]["metadata"]

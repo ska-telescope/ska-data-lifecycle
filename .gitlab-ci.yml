@@ -57,12 +57,6 @@ python-test:
   image: docker:27.0.2
   services:
     - docker:27.0.2-dind
-  before_script:
-    - docker-compose -f tests/testrunner.docker-compose.yaml build
-  script:
-    - docker-compose -f tests/testrunner.docker-compose.yaml run dlm_testrunner
-  after_script:
-    - docker-compose -f tests/testrunner.docker-compose.yaml down
 
 oci-image-build-keycloak:
   extends:

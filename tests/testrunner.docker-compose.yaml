@@ -1,7 +1,5 @@
 include:
-- path: services.docker-compose.yaml
-
-name: dlm-testrunner
+- path: dlm.docker-compose.yaml
 
 services:
   dlm_testrunner:
