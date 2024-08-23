@@ -11,7 +11,7 @@ services:
        dockerfile: tests/Dockerfile-testrunner
     volumes:
       - shared-tmpfs:/data
-      - ./config.dockercompose.yaml:/root/.dlm/config.yaml
+      - ./config-dockercompose.yaml:/root/.dlm/config.yaml
     environment:
       DO_AUTH: "1"
     networks:
