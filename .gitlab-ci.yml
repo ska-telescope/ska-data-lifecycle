@@ -73,6 +73,17 @@ oci-image-build-gateway:
   script:
     make oci-build-gateway CAR_OCI_REGISTRY_HOST=${CI_REGISTRY}/${CI_PROJECT_NAMESPACE}/${CI_PROJECT_NAME}
 
+python-test:
+  image: docker:27.0.2
+  services:
+    - docker:27.0.2-dind
+  before_script:
+    - docker-compose -f tests/testrunner.docker-compose.yaml build
+  script:
+    - docker-compose -f tests/testrunner.docker-compose.yaml run dlm_testrunner
+  after_script:
+    - docker-compose -f tests/testrunner.docker-compose.yaml down
+
 k8s-test:
   variables:
     KUBE_NAMESPACE: ci-$CI_PROJECT_NAME-$CI_PIPELINE_ID
