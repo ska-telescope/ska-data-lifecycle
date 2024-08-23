@@ -53,11 +53,6 @@ include:
   - project: 'ska-telescope/templates-repository'
     file: 'gitlab-ci/includes/finaliser.gitlab-ci.yml'
 
-python-test:
-  image: docker:27.0.2
-  services:
-    - docker:27.0.2-dind
-
 oci-image-build-keycloak:
   extends:
     - .image_builder_template

@@ -97,7 +97,6 @@ services:
     container_name: keycloak
     ports:
       - 8443:8443
-      - 9000:9000
     environment:
         KC_DB: "postgres"
         KC_DB_URL: "jdbc:postgresql://keycloak_db:5432/keycloak"
@@ -107,11 +106,10 @@ services:
         KEYCLOAK_ADMIN: "admin"
         KEYCLOAK_ADMIN_PASSWORD: "affirm-monoxide-earthling"
     healthcheck:
-        # test: curl --insecure --fail https://localhost:9000/health/ready || exit 1
         test:
           [
             "CMD-SHELL",
-            'exec 3<>/dev/tcp/localhost/8080; echo -e "GET /health/ready HTTP/1.1\nhost: localhost:8080\n" >&3; timeout --preserve-status 1 cat <&3 | grep -m 1 status | grep -m 1 UP; ERROR=$?; exec 3<&-; exec 3>&-; exit $ERROR'
+            'exec 3<>/dev/tcp/localhost/9000; echo -e "GET /health/ready HTTP/1.1\nhost: localhost:9000\n" >&3; timeout --preserve-status 1 cat <&3 | grep -m 1 status | grep -m 1 UP; ERROR=$?; exec 3<&-; exec 3>&-; exit $ERROR'
           ]
         interval: 5s
         timeout: 5s
