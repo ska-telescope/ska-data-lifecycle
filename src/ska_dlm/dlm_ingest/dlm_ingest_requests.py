@@ -2,11 +2,12 @@
 
 import json
 import logging
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List
 
 import requests
 import ska_sdp_metadata_generator as metagen
 from fastapi import FastAPI
+from ska_sdp_dataproduct_metadata import MetaData
 
 from ska_dlm.dlm_storage.dlm_storage_requests import rclone_access
 
@@ -17,7 +18,7 @@ from ..dlm_request import query_data_item, query_exists
 from ..dlm_storage import check_storage_access, query_storage
 from ..exceptions import InvalidQueryParameters, UnmetPreconditionForOperation, ValueAlreadyInDB
 
-JsonType = Union[Dict[str, Any], List[Any], str, int, float, bool, None]
+JsonType = Dict[str, Any] | List[Any] | str | int | float | bool | None
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
@@ -59,7 +60,7 @@ def register_data_item(  # noqa: C901 # pylint: disable=too-many-arguments
     uri: str = "",
     storage_name: str = "",
     storage_id: str = "",
-    metadata: JsonType = None,
+    metadata: dict = None,
     item_format: str | None = "unknown",
     eb_id: str | None = None,
 ) -> str:
@@ -86,11 +87,11 @@ def register_data_item(  # noqa: C901 # pylint: disable=too-many-arguments
         the name of the configured storage volume (name or ID required)
     storage_id: str, optional
         the ID of the configured storage.
-    metadata: json, optional
+    metadata: dict, optional
         metadata provided by the client
     item_format: str, optional
         format of the data item
-    eb_id: str, optional
+    eb_id: str | None, optional
         execution block ID provided by the client
 
     Returns
@@ -136,46 +137,53 @@ def register_data_item(  # noqa: C901 # pylint: disable=too-many-arguments
     set_state(uid, "READY")
 
     # (6) Populate the metadata column in the database
-    metadata_temp = metadata
     if metadata is None:
         try:
             # TODO(yan-xxx) create another RESTful service associated with a storage type
             # and call into the endpoint
             metadata_object = metagen.generate_metadata_from_generator(uri, eb_id)
-            metadata_temp = metadata_object.get_data().to_json()
-            metadata_temp = json.loads(metadata_temp)
+            metadata = json.loads(metadata_object.get_data().to_json())
             logger.info("Metadata extracted successfully.")
-        except ValueError as err:
-            logger.info("ValueError occurred while attempting to extract metadata: %s", err)
-
-    if metadata_temp is not None:
+        except ValueError:
+            logger.exception("Error occured occurred while attempting to extract metadata")
+            metadata = {}
+    else:
         # Check that metadata_temp is standard json?
-        set_metadata(uid, metadata_temp)
+        set_metadata(uid, metadata)
         logger.info("Saved metadata provided by client.")
 
-    metadata_temp["uid"] = uid
-    metadata_temp["item_name"] = item_name
+    metadata["uid"] = uid
+    metadata["item_name"] = item_name
 
     # (7)
-    notify_data_dashboard(metadata_temp)
+    notify_data_dashboard(metadata)
 
     return uid
 
 
-def notify_data_dashboard(metadata: JsonType) -> None:
+def notify_data_dashboard(metadata: dict | MetaData) -> None:
     """HTTP POST MetaData json object to the Data Product Dashboard."""
     headers = {"Content-Type": "application/json"}
     url = CONFIG.DATA_PRODUCT_API.url + "/ingestnewmetadata"
 
+    if isinstance(metadata, MetaData):
+        metadata = metadata.get_data()
+
+    # Validation
     payload = None
     try:
+        if not isinstance(metadata, dict) or "execution_block" not in metadata:
+            raise TypeError(
+                f"metadata must contain an 'execution_block', got {type(metadata)} {metadata}"
+            )
         payload = json.dumps(metadata)  # --> python obj to json string
     except (TypeError, ValueError) as err:
         logger.error("Failed to parse metadata: %s. Not notifying dashboard.", err)
 
     if payload is not None:
         try:
-            requests.request("POST", url, headers=headers, data=payload, timeout=2)
+            resp = requests.request("POST", url, headers=headers, data=payload, timeout=2)
+            resp.raise_for_status()
             logger.info(
                 "POSTed metadata (execution_block: %s) to %s", metadata["execution_block"], url
             )

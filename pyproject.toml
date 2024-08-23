@@ -45,6 +45,7 @@ pylint = "^3.2.6"
 pylint-junit = "^0.3.2"
 pytest = "^7.3.1"
 pytest-cov = "^4.1.0"
+pytest-integration = "^0.2.3"
 darglint = "^1.8.1"
 flake8-docstrings = "^1.7.0"
 flake8-rst-docstrings = "^0.3.0"
@@ -62,6 +63,7 @@ m2r2 = "<0.3.3"
 
 [tool.pytest.ini_options]
 addopts = [
+    "--integration-cover",
     "-v",
 ]
 # log_cli = true

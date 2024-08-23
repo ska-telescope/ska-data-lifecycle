@@ -10,7 +10,6 @@ from ..dlm_db.db_access import DB
 from ..dlm_request import query_data_item
 
 JsonType = Union[Dict[str, Any], List[Any], str, int, float, bool, None]
-# pylint: disable=possibly-used-before-assignment
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +80,7 @@ def set_metadata(uid: str, metadata_post: JsonType):
     ----------
     uid : str
         the UID of the data_item to be updated
-    metadata_post : MetaData
+    metadata_post : JsonType
         a metadata JSON string
     """
     update_data_item(uid=uid, post_data={"metadata": metadata_post})
@@ -163,11 +162,7 @@ def set_user(oid: str = "", uid: str = "", user: str = "SKA") -> str | Literal[T
     if not (uid or oid):
         raise InvalidQueryParameters("Either oid or uid should be specified")
     post_data = {"user": user}
-    if uid:
-        res = update_data_item(uid=uid, post_data=post_data)
-    elif oid:
-        res = update_data_item(oid=oid, post_data=post_data)
-    return res
+    return update_data_item(uid=uid, oid=oid, post_data=post_data)
 
 
 def set_group(oid: str = "", uid: str = "", group: str = "SKA") -> str | Literal[True]:
@@ -195,11 +190,7 @@ def set_group(oid: str = "", uid: str = "", group: str = "SKA") -> str | Literal
     if not (uid or oid):
         raise InvalidQueryParameters("Either oid or uid should be specified")
     post_data = {"group": group}
-    if uid:
-        res = update_data_item(uid=uid, post_data=post_data)
-    elif oid:
-        res = update_data_item(oid=oid, post_data=post_data)
-    return res
+    return update_data_item(uid=uid, oid=oid, post_data=post_data)
 
 
 def set_acl(oid: str = "", uid: str = "", acl: str = "{}") -> str | Literal[True]:
@@ -227,11 +218,7 @@ def set_acl(oid: str = "", uid: str = "", acl: str = "{}") -> str | Literal[True
     if not (uid or oid):
         raise InvalidQueryParameters("Either oid or uid should be specified")
     post_data = {"acl": acl}
-    if uid:
-        res = update_data_item(uid=uid, post_data=post_data)
-    elif oid:
-        res = update_data_item(oid=oid, post_data=post_data)
-    return res
+    return update_data_item(uid=uid, oid=oid, post_data=post_data)
 
 
 def set_phase(uid: str, phase: str) -> str | Literal[True]:

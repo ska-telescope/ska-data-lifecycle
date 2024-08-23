@@ -51,12 +51,12 @@ def query_data_item(
 
 
 @app.get("/request/query_expired")
-def query_expired(offset: timedelta = None):
+def query_expired(offset: timedelta | None = None):
     """Query for all expired data_items using the uid_expiration timestamp.
 
     Parameters
     ----------
-    offset : str
+    offset : timedelta | None, optional
         optional offset for the query
     """
     now = datetime.now(timezone.utc)
@@ -106,7 +106,8 @@ def query_new(check_date: str, uid: str = "") -> list:
 
     Returns
     -------
-    list of dictionaries with UID, UID_creation and storage_id of new items.
+    list
+        list of dictionaries with UID, UID_creation and storage_id of new items.
     """
     params = {
         "uid_creation": f"gt.{check_date}",
@@ -133,6 +134,11 @@ def query_exists(item_name: str = "", oid: str = "", uid: str = "", ready: bool 
         this returns only one storage_id
     ready: bool, optional
         _description_
+
+    Returns
+    -------
+    bool
+        True if the data_item exists
     """
     if not item_name and not oid and not uid:
         raise InvalidQueryParameters("Either an item_name or an OID or an UID have to be provided")
@@ -165,12 +171,13 @@ def query_exists_and_ready(item_name: str = "", oid: str = "", uid: str = "") ->
     Returns
     -------
     bool
+        True if the item exists and is in ready state
     """
     return query_exists(item_name, oid, uid, ready=True)
 
 
 @app.get("/request/query_item_storage")
-def query_item_storage(item_name: str = "", oid: str = "", uid: str = "") -> str:
+def query_item_storage(item_name: str = "", oid: str = "", uid: str = "") -> list:
     """
     Query for the storage_ids of all backends holding a copy of a data_item.
 
@@ -184,6 +191,11 @@ def query_item_storage(item_name: str = "", oid: str = "", uid: str = "") -> str
         the oid to be searched for
     uid: str, optional
         this returns only one storage_id
+
+    Returns
+    -------
+    list
+        list of storage_ids
     """
     if not query_exists_and_ready(item_name, oid, uid):
         logger.warning("data_item does not exists or is not READY!")

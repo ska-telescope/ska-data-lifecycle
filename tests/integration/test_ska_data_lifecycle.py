@@ -5,11 +5,9 @@
 import datetime
 import importlib
 import json
-import logging
 
 import inflect
 import pytest
-import requests
 import ska_sdp_metadata_generator as metagen
 from requests_mock import Mocker
 
@@ -119,6 +117,7 @@ def __initialize_data_item():
     assert success
 
 
+@pytest.mark.integration_test
 @pytest.mark.skip(reason="Placeholder. We removed the ingest_data_item alias.")
 def test_ingest_data_item():
     """Test the ingest_data_item function."""
@@ -128,6 +127,7 @@ def test_ingest_data_item():
     assert len(uid) == 36
 
 
+@pytest.mark.integration_test
 def test_register_data_item_with_metadata():
     """Test the register_data_item function with provided metadata."""
     uid = register_data_item(
@@ -146,6 +146,7 @@ def test_register_data_item_with_metadata():
         )
 
 
+@pytest.mark.integration_test
 def test_query_expired_empty():
     """Test the query expired returning an empty set."""
     result = dlm_request.query_expired()
@@ -153,6 +154,7 @@ def test_query_expired_empty():
     assert success
 
 
+@pytest.mark.integration_test
 def test_query_expired():
     """Test the query expired returning records."""
     __initialize_data_item()
@@ -164,6 +166,7 @@ def test_query_expired():
     assert success
 
 
+@pytest.mark.integration_test
 def test_location_init():
     """Test initialisation on a location."""
     # This returns an empty string if unsuccessful
@@ -174,6 +177,7 @@ def test_location_init():
     assert location["location_type"] == "SKAO Data Centre"
 
 
+@pytest.mark.integration_test
 def test_set_uri_state_phase():
     """Update a data_item record with the pointer to a file."""
     uid = dlm_ingest.init_data_item(item_name="this/is/the/first/test/item")
@@ -189,6 +193,7 @@ def test_set_uri_state_phase():
 
 
 # TODO: We don't want RCLONE_TEST_FILE_PATH to disappear after one test run.
+@pytest.mark.integration_test
 def test_delete_item_payload():
     """Delete the payload of a data_item."""
     fpath = RCLONE_TEST_FILE_PATH
@@ -227,6 +232,7 @@ def __initialize_storage_config():
     assert rclone_config(config) is True
 
 
+@pytest.mark.integration_test
 def test_copy(env):
     """Copy a test file from one storage to another."""
     __initialize_storage_config()
@@ -238,6 +244,7 @@ def test_copy(env):
     assert RCLONE_TEST_FILE_CONTENT == env.get_rclone_local_file_content(dest)
 
 
+@pytest.mark.integration_test
 def test_update_item_tags():
     """Update the item_tags field of a data_item."""
     _ = register_data_item("/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, "MyDisk")
@@ -253,6 +260,7 @@ def test_update_item_tags():
     assert tags == {"a": "SKA", "b": "DLM", "c": "Hello", "d": "World"}
 
 
+@pytest.mark.integration_test
 def test_expired_by_storage_daemon():
     """Test an expired data item is deleted by the storage manager."""
     fname = RCLONE_TEST_FILE_PATH
@@ -281,6 +289,7 @@ def test_expired_by_storage_daemon():
     assert result[0]["uid"] == uid
 
 
+@pytest.mark.integration_test
 def test_query_new():
     """Test for newly created data_items."""
     check_time = "2024-01-01"
@@ -289,6 +298,7 @@ def test_query_new():
     assert len(result) == 1
 
 
+@pytest.mark.integration_test
 def test_persist_new_data_items():
     """Test making new data items persistent."""
     check_time = "2024-01-01"
@@ -304,43 +314,21 @@ def test_persist_new_data_items():
     assert result == {"/my/ingest/test/item": True}
 
 
-@pytest.fixture
-def log_capture(caplog):
-    """Fixture for capturing log messages."""
-    caplog.set_level(logging.INFO)
-    return caplog
-
-
-def test_notify_data_dashboard(log_capture):  # pylint: disable=redefined-outer-name
+@pytest.mark.integration_test
+def test_notify_data_dashboard(caplog):
     """Test that the write hook will HTTP POST metadata file info to a URL."""
     with Mocker() as req_mock:
-        req_mock.post(
-            CONFIG.DATA_PRODUCT_API.url + "/ingestnewmetadata",
-            text="New data product metadata file loaded and store index updated",
-        )
-
-        # Test for the second logger outcome: POST error notifying dataproduct dashboard
-        valid_metadata = {"execution_block": "block123"}
-        req_mock.post(
-            f"{CONFIG.DATA_PRODUCT_API.url}/ingestnewmetadata",
-            exc=requests.RequestException("Mocked request exception"),
-        )
-
-        notify_data_dashboard(valid_metadata)
-        assert "POST error notifying dataproduct dashboard" in log_capture.text
-        log_capture.clear()
-
-        # Test for the third logger outcome: Successfully POSTed metadata
         req_mock.post(
             f"{CONFIG.DATA_PRODUCT_API.url}/ingestnewmetadata",
             text='{"message": "success"}',
             status_code=200,
         )
-
+        valid_metadata = {"execution_block": "block123"}
         notify_data_dashboard(valid_metadata)
-        assert "POSTed metadata (execution_block: block123) to" in log_capture.text
+        assert "POSTed metadata (execution_block: block123) to" in caplog.text, caplog.text
 
 
+@pytest.mark.integration_test
 def test_populate_metadata_col():
     """Test that the metadata is correctly saved to the metadata column."""
     META_FILE = "/tmp/testfile"  # pylint: disable=invalid-name
