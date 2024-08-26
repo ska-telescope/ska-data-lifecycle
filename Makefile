@@ -23,8 +23,10 @@ else
 	TEST_INGRESS ?= http://$(shell minikube ip)
 endif
 
+SHARED_VOLUMES_DIR ?= ${PWD}/tests/volumes
+
 # Make these available as environment variables
-export KUBE_NAMESPACE TEST_INGRESS
+export KUBE_NAMESPACE TEST_INGRESS SHARED_VOLUMES_DIR
 
 .PHONY: docs-pre-build k8s-recreate-namespace k8s-do-test
 
@@ -38,7 +40,7 @@ python-post-test:
 
 docker-test: docker-pre-test docker-do-test docker-post-test
 docker-pre-test:
-	docker compose -f tests/testrunner.docker-compose.yaml build
+	docker compose --file tests/testrunner.docker-compose.yaml build
 docker-do-test:
 	docker compose --file tests/testrunner.docker-compose.yaml -p dlm-test-services run dlm_testrunner
 docker-post-test:
