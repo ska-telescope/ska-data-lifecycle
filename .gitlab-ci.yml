@@ -67,7 +67,7 @@ python-test:
 k8s-test:
   variables:
     KUBE_NAMESPACE: ci-$CI_PROJECT_NAME-$CI_PIPELINE_ID
-    HELM_VALUES: resources/initialised-dlm.yaml resources/gitlab-cluster.yaml
+    HELM_VALUES: resources/initialised-dlm.yaml
   before_script:
     - poetry self update $CI_POETRY_VERSION
     - poetry config virtualenvs.create $POETRY_CONFIG_VIRTUALENVS_CREATE

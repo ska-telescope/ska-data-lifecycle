@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ska-dlm.name" . }}-migration
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ska-dlm.migration.labels" . | indent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8004
+      protocol: TCP
+  selector:
+    component: {{ .Values.migration.component }}
+    subsystem: {{ .Values.migration.subsystem }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ska-dlm.name" . }}-migration
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ska-dlm.migration.labels" . | indent 4 }}
+spec:
+  replicas: {{ .Values.migration.replicas }}
+  selector:
+    matchLabels:
+      component: {{ .Values.migration.component }}
+      subsystem: {{ .Values.migration.subsystem }}
+  template:
+    metadata:
+      labels:
+        {{- include "ska-dlm.migration.labels" . | indent 8 }}
+    spec:
+      containers:
+      - name: migration
+        image: {{ .Values.migration.image}}:{{ .Values.migration.version }}
+        imagePullPolicy: {{ .Values.migration.imagePullPolicy }}
+        command:
+          - uvicorn
+          - ska_dlm.dlm_migration.dlm_migration_requests:app
+          - --port
+          - "8004"
+        volumeMounts:
+        - name: dlm-configmap
+          mountPath: "/home/ska-dlm/.dlm"
+          readOnly: true
+      volumes:
+      - name: dlm-configmap
+        configMap:
+          name: {{ include "ska-dlm.name" . }}-configmap

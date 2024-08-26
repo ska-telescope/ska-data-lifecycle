@@ -49,12 +49,12 @@ def auth_fixture(request):
 def import_test_env_module(request):
     """Dynamically import module based on testing environment."""
     match request.config.getoption("--env"):
-        case "k8s":
-            env_module_name = "tests.common_k8s"
         case "local":
             env_module_name = "tests.common_local"
         case "docker":
             env_module_name = "tests.common_docker"
+        case "k8s":
+            env_module_name = "tests.common_k8s"
         case _:
             raise ValueError("unknown test configuration")
 
