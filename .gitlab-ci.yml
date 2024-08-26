@@ -77,13 +77,7 @@ python-test:
   image: docker:27.0.2
   services:
     - docker:27.0.2-dind
-  variables:
-    SHARED_VOLUMES_DIR: ${CI_PROJECT_DIR}/build/shared
   before_script:
-    # volume mounts must be on the dind service filesystem
-    - cat ~/.gitlab-runner/config.toml
-    - mkdir -p ${SHARED_VOLUMES_DIR} && cp -r ./tests/volumes/* ${SHARED_VOLUMES_DIR}
-    - chown 1200:1201 ${SHARED_VOLUMES_DIR}
     - docker compose --file tests/testrunner.docker-compose.yaml build
   script:
     - docker compose --file tests/testrunner.docker-compose.yaml -p dlm-test-services run dlm_testrunner .

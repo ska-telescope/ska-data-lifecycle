@@ -8,13 +8,12 @@ services:
     container_name: dlm_migration
     build:
        context: ..
-       dockerfile: tests/Dockerfile-dlm-service
-    entrypoint: fastapi dev src/ska_dlm/dlm_migration/dlm_migration_requests.py --port 8004 --host 0.0.0.0
+       dockerfile: tests/Dockerfile-dlm-compose
+    entrypoint: uvicorn ska_dlm.dlm_migration.dlm_migration_requests:app --host 0.0.0.0 --port 8004
     ports:
       - 8004:8004
     volumes:
       - shared-tmpfs:/data
-      - ${SHARED_VOLUMES_DIR}/config-dockercompose.yaml:/root/.dlm/config.yaml
     depends_on:
       - dlm_postgrest
       - dlm_rclone
@@ -28,13 +27,12 @@ services:
     container_name: dlm_storage
     build:
        context: ..
-       dockerfile: tests/Dockerfile-dlm-service
-    entrypoint: fastapi dev src/ska_dlm/dlm_storage/dlm_storage_requests.py --port 8003 --host 0.0.0.0
+       dockerfile: tests/Dockerfile-dlm-compose
+    entrypoint: uvicorn ska_dlm.dlm_storage.dlm_storage_requests:app --host 0.0.0.0 --port 8003
     ports:
       - 8003:8003
     volumes:
       - shared-tmpfs:/data
-      - ${SHARED_VOLUMES_DIR}/config-dockercompose.yaml:/root/.dlm/config.yaml
     depends_on:
       - dlm_gateway
       - dlm_postgrest
@@ -48,13 +46,12 @@ services:
     platform: linux/amd64
     build:
        context: ..
-       dockerfile: tests/Dockerfile-dlm-service
-    entrypoint: fastapi dev src/ska_dlm/dlm_request/dlm_request_requests.py --port 8002 --host 0.0.0.0
+       dockerfile: tests/Dockerfile-dlm-compose
+    entrypoint: uvicorn ska_dlm.dlm_request.dlm_request_requests:app --host 0.0.0.0 --port 8002
     ports:
       - 8002:8002
     volumes:
       - shared-tmpfs:/data
-      - ${SHARED_VOLUMES_DIR}/config-dockercompose.yaml:/root/.dlm/config.yaml
     depends_on:
       - dlm_gateway
       - dlm_postgrest
@@ -68,13 +65,12 @@ services:
     container_name: dlm_ingest
     build:
        context: ..
-       dockerfile: tests/Dockerfile-dlm-service
-    entrypoint: fastapi dev src/ska_dlm/dlm_ingest/dlm_ingest_requests.py --port 8001 --host 0.0.0.0
+       dockerfile: tests/Dockerfile-dlm-compose
+    entrypoint: uvicorn ska_dlm.dlm_ingest.dlm_ingest_requests:app --host 0.0.0.0 --port 8001
     ports:
       - 8001:8001
     volumes:
       - shared-tmpfs:/data
-      - ${SHARED_VOLUMES_DIR}/config-dockercompose.yaml:/root/.dlm/config.yaml
     depends_on:
       - dlm_postgrest
       - dlm_rclone
