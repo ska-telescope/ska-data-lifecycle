@@ -128,6 +128,5 @@ def _generate_k8s_url(ingress_path: str, service_name: str):
         # ingress path
         return f"{host_url}/{NAMESPACE}/{ingress_path}"
 
-    raise ValueError("K8S_HOST_URL not defined", host_url)
     # k8s service
     return f"http://{service_name}.{NAMESPACE}.svc.cluster.local"
