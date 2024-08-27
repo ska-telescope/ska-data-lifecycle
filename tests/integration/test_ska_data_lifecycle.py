@@ -44,8 +44,8 @@ def setup_auth(env, request):
 
 
 @pytest.fixture(scope="function", autouse=True)
-def setup(env, auth):
-    """Initialze the tests."""
+def setup(env):
+    """Initialze test storage and rclone configuration."""
     _clear_database()
 
     env.write_rclone_file_content(RCLONE_TEST_FILE_PATH, RCLONE_TEST_FILE_CONTENT)
@@ -92,10 +92,11 @@ def test_ingest_data_item(env):
 
 
 @pytest.mark.integration_test
-def test_register_data_item_with_metadata(env):
+def test_register_data_item_with_metadata():
     """Test the register_data_item function with provided metadata."""
 
     # TODO: not using client?
+    # pylint: disable-next=import-outside-toplevel
     from ska_dlm.dlm_ingest import register_data_item
 
     uid = register_data_item(
@@ -174,6 +175,7 @@ def test_delete_item_payload(env):
     assert uid == queried_uid
 
     # TODO: not a client endpoint
+    # pylint: disable-next=import-outside-toplevel
     from ska_dlm.dlm_storage.dlm_storage_requests import delete_data_item_payload
 
     delete_data_item_payload(uid)
@@ -260,6 +262,7 @@ def test_expired_by_storage_daemon(env):
 
     # run storage daemon code
     # TODO: not a client endpoint
+    # pylint: disable-next=import-outside-toplevel
     from ska_dlm.dlm_storage.dlm_storage_requests import delete_uids
 
     delete_uids()

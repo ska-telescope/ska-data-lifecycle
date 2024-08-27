@@ -3,7 +3,7 @@
 import os
 
 import httpx
-from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from keycloak import KeycloakOpenID, KeycloakUMA
 from keycloak.exceptions import KeycloakAuthenticationError
