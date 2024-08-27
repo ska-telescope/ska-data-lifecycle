@@ -15,7 +15,7 @@ request:
   component: request
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: 0.0.1-dev.c57c837e9
+  version: 0.0.1-dev.ce75f33bd
   imagePullPolicy: Always
   replicas: 1
 
@@ -23,7 +23,7 @@ migration:
   component: migration
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: 0.0.1-dev.c57c837e9
+  version: 0.0.1-dev.ce75f33bd
   imagePullPolicy: Always
   replicas: 1
 
@@ -31,7 +31,7 @@ storage:
   component: storage
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: 0.0.1-dev.c57c837e9
+  version: 0.0.1-dev.ce75f33bd
   imagePullPolicy: Always
   replicas: 1
 
@@ -39,13 +39,47 @@ ingest:
   component: ingest
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: 0.0.1-dev.c57c837e9
+  version: 0.0.1-dev.ce75f33bd
   imagePullPolicy: Always
   replicas: 1
 
-# Postgresql DB
-postgresql:
-  enabled: true
+postgrest:
+  component: postgrest
+  subsystem: data-lifecycle-management
+
+  image: postgrest/postgrest
+  version: v12.0.2
+  imagePullPolicy: Always
+
+  replicas: 1
+  db_uri: ""
+  db_schema: public
+  db_anon_role: ska_dlm_admin
+  db_pool: 10
+  server_host: '*4'
+  secret_is_base64: false
+  max_rows: ""
+  pre_request: ""
+  role_claim_key: '.role'
+
+rclone:
+  component: rclone
+  subsystem: data-lifecycle-management
+  image: rclone/rclone
+  version: "1.65"
+  imagePullPolicy: Always
+  replicas: 1
+
+kubectl:
+  image: bitnami/kubectl
+  version: 1.28.6
+  imagePullPolicy: Always
+
+# Development and Testing Only
+
+# Test Database
+postgresql:  # see https://github.com/bitnami/charts/tree/main/bitnami/postgresql
+  enabled: false
   initialise: false
   nameOverride: ska-dlm-postgresql
 
@@ -74,41 +108,7 @@ postgresql:
     networkPolicy:
       enabled: false
 
-postgrest:
-  component: postgrest
-  subsystem: data-lifecycle-management
-
-  image: postgrest/postgrest
-  version: v12.0.2
-  imagePullPolicy: Always
-
-  replicas: 1
-  db_uri: ""
-  db_schema: public
-  db_anon_role: ska_dlm_admin
-  db_pool: 10
-  server_host: '*4'
-  secret_is_base64: false
-  max_rows: ""
-  pre_request: ""
-  role_claim_key: '.role'
-
-rclone:
-  component: rclone
-  subsystem: data-lifecycle-management
-  image: rclone/rclone
-  version: "1.65"
-  imagePullPolicy: Always
-
-  replicas: 1
-
-kubectl:
-  image: bitnami/kubectl
-  version: 1.28.6
-  imagePullPolicy: Always
-
-pgweb:
-  # see https://github.com/ectobit/charts/tree/main/pgweb
+pgweb:  # see https://github.com/ectobit/charts/tree/main/pgweb
   enabled: false
   ingress:
     enabled: false
@@ -118,3 +118,26 @@ pgweb:
     - paths:
       - path: /pgweb(/|$)(.*)
         pathType: ImplementationSpecific
+
+
+# Test Authentication
+gateway:
+  enabled: false
+  component: gateway
+  subsystem: data-lifecycle-management
+  image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-test-gateway
+  version: 0.0.1-dev.c2f4126a5
+  imagePullPolicy: Always
+  replicas: 1
+
+keycloak:
+  enabled: false
+  component: keycloak
+  subsystem: data-lifecycle-management
+  ##image: quay.io/keycloak/keycloak
+  # version: "25.0"
+  image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-test-keycloak
+  version: 0.0.1-dev.c11b4e8e8
+  imagePullPolicy: Always
+  replicas: 1
+  use_https: True

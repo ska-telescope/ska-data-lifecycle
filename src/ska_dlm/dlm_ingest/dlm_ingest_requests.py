@@ -137,26 +137,30 @@ def register_data_item(  # noqa: C901 # pylint: disable=too-many-arguments
     set_state(uid, "READY")
 
     # (6) Populate the metadata column in the database
+    metadata_temp = metadata
     if metadata is None:
         try:
             # TODO(yan-xxx) create another RESTful service associated with a storage type
             # and call into the endpoint
             metadata_object = metagen.generate_metadata_from_generator(uri, eb_id)
-            metadata = json.loads(metadata_object.get_data().to_json())
+            metadata_temp = metadata_object.get_data().to_json()
+            metadata_temp = json.loads(metadata_temp)
             logger.info("Metadata extracted successfully.")
-        except ValueError:
-            logger.exception("Error occured occurred while attempting to extract metadata")
-            metadata = {}
-    else:
-        # Check that metadata_temp is standard json?
-        set_metadata(uid, metadata)
-        logger.info("Saved metadata provided by client.")
+        except ValueError as err:
+            logger.info("ValueError occurred while attempting to extract metadata: %s", err)
 
-    metadata["uid"] = uid
-    metadata["item_name"] = item_name
+    if metadata_temp is not None:
+        # Check that metadata_temp is standard json?
+        set_metadata(uid, metadata_temp)
+        logger.info("Saved metadata provided by client.")
+    else:
+        metadata_temp = {}
+
+    metadata_temp["uid"] = uid
+    metadata_temp["item_name"] = item_name
 
     # (7)
-    notify_data_dashboard(metadata)
+    notify_data_dashboard(metadata_temp)
 
     return uid
 

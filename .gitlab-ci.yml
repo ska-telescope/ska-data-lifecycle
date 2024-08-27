@@ -64,6 +64,26 @@ python-test:
   after_script:
     - docker-compose -f tests/testrunner.docker-compose.yaml down
 
+oci-image-build-keycloak:
+  extends:
+    - .image_builder_template
+  stage: build
+  variables:
+    OCI_IMAGE: ska-data-lifecycle-test-keycloak
+    OCI_IMAGE_FILE_PATH: tests/Dockerfile-keycloak
+  script:
+    make oci-build-keycloak CAR_OCI_REGISTRY_HOST=${CI_REGISTRY}/${CI_PROJECT_NAMESPACE}/${CI_PROJECT_NAME}
+
+oci-image-build-gateway:
+  extends:
+    - .image_builder_template
+  stage: build
+  variables:
+    OCI_IMAGE: ska-data-lifecycle-test-gateway
+    OCI_IMAGE_FILE_PATH: tests/Dockerfile-gateway
+  script:
+    make oci-build-gateway CAR_OCI_REGISTRY_HOST=${CI_REGISTRY}/${CI_PROJECT_NAMESPACE}/${CI_PROJECT_NAME}
+
 k8s-test:
   variables:
     KUBE_NAMESPACE: ci-$CI_PROJECT_NAME-$CI_PIPELINE_ID

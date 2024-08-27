@@ -15,8 +15,8 @@ data:
         storage_warning_percentage: 80.0
         polling_interval: 10 # seconds
     REST:
-      base_url: "http://ska-dlm-postgrest.{{ .Release.Namespace }}.svc.cluster.local:80"
+      base_url: "http://{{ include "ska-dlm.name" . }}-postgrest.{{ .Release.Namespace }}.svc.cluster.local"
     RCLONE:
-      url: "http://ska-dlm-rclone.{{ .Release.Namespace }}.svc.cluster.local:80"
+      url: "http://{{ include "ska-dlm.name" . }}-rclone.{{ .Release.Namespace }}.svc.cluster.local"
     DATA_PRODUCT_API:
       url: "http://localhost:8000"

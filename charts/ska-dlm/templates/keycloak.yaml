@@ -1,0 +1,124 @@
+{{- if $.Values.keycloak.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ska-dlm.name" . }}-keycloak
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ska-dlm.keycloak.labels" . | indent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: https
+      port: 443
+      targetPort: 8443
+      protocol: TCP
+    - name: http
+      port: 80
+      targetPort: 8080
+      protocol: TCP
+  selector:
+    component: {{ .Values.keycloak.component }}
+    subsystem: {{ .Values.keycloak.subsystem }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "ska-dlm.name" . }}-keycloak
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ska-dlm.keycloak.labels" . | indent 4 }}
+spec:
+  replicas: {{ .Values.keycloak.replicas }}
+  selector:
+    matchLabels:
+      component: {{ .Values.keycloak.component }}
+      subsystem: {{ .Values.keycloak.subsystem }}
+  template:
+    metadata:
+      labels:
+        {{- include "ska-dlm.keycloak.labels" . | indent 8 }}
+    spec:
+      containers:
+      - name: keycloak
+        image: {{ .Values.keycloak.image }}:{{ .Values.keycloak.version }}
+        imagePullPolicy: {{ .Values.keycloak.imagePullPolicy }}
+        command:
+        - /opt/keycloak/bin/kc.sh
+        - {{ ternary "start-dev" "start" .Values.global.development }}
+        - --import-realm
+        ports:
+        - containerPort: 8080
+          name: http-port
+        - containerPort: 8443
+          name: https-port
+        - containerPort: 9000
+          name: liveness-port
+        startupProbe:
+          httpGet:
+            path: /health/started
+            port: liveness-port
+            scheme: {{ ternary "HTTPS" "HTTP" .Values.keycloak.use_https }}
+          failureThreshold: 30
+          periodSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: liveness-port
+            scheme: {{ ternary "HTTPS" "HTTP" .Values.keycloak.use_https }}
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: liveness-port
+            scheme: {{ ternary "HTTPS" "HTTP" .Values.keycloak.use_https }}
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        env:
+        - name: KC_HEALTH_ENABLED
+          value: "true"
+        - name: KC_METRICS_ENABLED
+          value: "true"
+        - name: KC_DB
+          value: postgres
+        - name: KC_DB_URL
+          value: "jdbc:postgresql://localhost:5432/keycloak"
+        - name: KC_DB_USERNAME
+          value: "admin"
+        - name: KC_DB_PASSWORD
+          value: "maximum-finishing-punk"
+        - name: KC_HOSTNAME
+          value: "localhost"
+        - name: KEYCLOAK_ADMIN
+          value: "admin"
+        - name: KEYCLOAK_ADMIN_PASSWORD
+          value: "affirm-monoxide-earthling"
+        volumeMounts:
+        - name: keycloak-realm-configmap
+          mountPath: "/opt/keycloak/data/import"
+          readOnly: true
+      - name: keycloak-db
+        image: library/postgres
+        imagePullPolicy: Always
+        env:
+        - name: POSTGRES_DB
+          value: "keycloak"
+        - name: POSTGRES_USER
+          value: "admin"
+        - name: POSTGRES_PASSWORD
+          value: "maximum-finishing-punk"
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - admin
+            - -d
+            - keycloak
+          periodSeconds: 5
+      volumes:
+      - name: keycloak-realm-configmap
+        configMap:
+          name: {{ include "ska-dlm.name" . }}-keycloak-realm-configmap
+{{- end }}

@@ -24,6 +24,7 @@ def read_config(user_config_file: Path = DLM_HOME / "config.yaml") -> benedict:
     """Read the config file and return the config dictionary."""
     if not user_config_file.exists():
         # create the default user config in DLM_HOME if it does not already exist
+        print(f"DLM config file {user_config_file} not found - creating and using default")
         user_config_file.parent.mkdir(exist_ok=True)
         default_user_config_file = DLM_LIB_DIR / "config.yaml"
         shutil.copy(default_user_config_file, user_config_file)

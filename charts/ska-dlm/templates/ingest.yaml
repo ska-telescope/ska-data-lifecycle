@@ -39,10 +39,27 @@ spec:
         image: {{ .Values.ingest.image}}:{{ .Values.ingest.version }}
         imagePullPolicy: {{ .Values.ingest.imagePullPolicy }}
         command:
-          - uvicorn
-          - ska_dlm.dlm_ingest.dlm_ingest_requests:app
-          - --port
-          - "8001"
+        - uvicorn
+        - ska_dlm.dlm_ingest.dlm_ingest_requests:app
+        - --host
+        - "0.0.0.0"
+        - --port
+        - "8001"
+        ports:
+        - containerPort: 8001
+          name: http-port
+        - containerPort: 8001
+          name: liveness-port
+        readinessProbe:
+          tcpSocket:
+            port: liveness-port
+          periodSeconds: 5
+          initialDelaySeconds: 5
+        livenessProbe:
+          tcpSocket:
+            port: liveness-port
+          periodSeconds: 5
+          initialDelaySeconds: 5
         volumeMounts:
         - name: dlm-configmap
           mountPath: "/home/ska-dlm/.dlm"

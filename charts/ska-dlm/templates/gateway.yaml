@@ -1,0 +1,99 @@
+{{- if $.Values.gateway.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ska-dlm.name" . }}-gateway
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ska-dlm.gateway.labels" . | indent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+      targetPort: http-port
+      protocol: TCP
+  selector:
+    component: {{ .Values.gateway.component }}
+    subsystem: {{ .Values.gateway.subsystem }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ska-dlm.name" . }}-gateway
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ska-dlm.gateway.labels" . | indent 4 }}
+spec:
+  replicas: {{ .Values.gateway.replicas }}
+  selector:
+    matchLabels:
+      component: {{ .Values.gateway.component }}
+      subsystem: {{ .Values.gateway.subsystem }}
+  template:
+    metadata:
+      labels:
+        {{- include "ska-dlm.gateway.labels" . | indent 8 }}
+    spec:
+      containers:
+      - name: gateway
+        image: {{ .Values.gateway.image }}:{{ .Values.gateway.version }}
+        imagePullPolicy: {{ .Values.gateway.imagePullPolicy }}
+        command:
+        - fastapi
+        - {{ ternary "dev" "run" .Values.global.development }}
+        - /app/tests/integration/gateway/dlm_gateway.py
+        - --host
+        - "0.0.0.0"
+        - --port
+        - "8000"
+        ports:
+        - containerPort: 8000
+          name: http-port
+        - containerPort: 8000
+          name: liveness-port
+        readinessProbe:
+          httpGet:
+            path: /heartbeat
+            port: liveness-port
+          periodSeconds: 5
+          initialDelaySeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /heartbeat
+            port: liveness-port
+          periodSeconds: 5
+          initialDelaySeconds: 5
+        env:
+        - name: PORT
+          value: "8000"
+        - name: KEYCLOAK_URL
+        {{- if $.Values.keycloak.use_https }}
+          value: "https://{{ include "ska-dlm.name" . }}-keycloak.{{ .Release.Namespace }}.svc.cluster.local"
+        {{- else }}
+          value: "http://{{ include "ska-dlm.name" . }}-keycloak.{{ .Release.Namespace }}.svc.cluster.local"
+        {{- end }}
+        - name: REDIRECT_URL
+          value: "http://{{ include "ska-dlm.name" . }}-gateway.{{ .Release.Namespace }}.svc.cluster.local/auth_callback/"
+        - name: REALM
+          value: "test"
+        - name: CLIENT_ID
+          value: "dlm"
+        # -name: CLIENT_SECRET
+        # valueFrom:
+        #   secretKeyRef: gateway-client-secret
+        - name: CLIENT_SECRET
+          value: "xU2a9SOTLJZSwvAzAlfoucqg4sCMgY6O"
+        - name: STATE
+          value: "magic_string"
+        - name: AUTH
+          value: "1"
+        - name: INGEST_CLIENT
+          value: "http://{{ include "ska-dlm.name" . }}-ingest.{{ .Release.Namespace }}.svc.cluster.local:80"
+        - name: REQUESTS_CLIENT
+          value: "http://{{ include "ska-dlm.name" . }}-requests.{{ .Release.Namespace }}.svc.cluster.local:80"
+        - name: STORAGE_CLIENT
+          value: "http://{{ include "ska-dlm.name" . }}-storage.{{ .Release.Namespace }}.svc.cluster.local:80"
+        - name: MIGRATION_CLIENT
+          value: "http://{{ include "ska-dlm.name" . }}-migration.{{ .Release.Namespace }}.svc.cluster.local:80"
+{{- end }}
