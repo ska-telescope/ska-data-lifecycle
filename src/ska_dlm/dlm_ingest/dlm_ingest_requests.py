@@ -177,7 +177,9 @@ def notify_data_dashboard(metadata: dict | MetaData) -> None:
     payload = None
     try:
         if not isinstance(metadata, dict) or "execution_block" not in metadata:
-            raise TypeError(f"metadata must contain an 'execution_block', got {metadata}")
+            raise TypeError(
+                f"metadata must contain an 'execution_block', got {type(metadata)} {metadata}"
+            )
         payload = json.dumps(metadata)  # --> python obj to json string
     except (TypeError, ValueError) as err:
         logger.error("Failed to parse metadata: %s. Not notifying dashboard.", err)
@@ -186,7 +188,6 @@ def notify_data_dashboard(metadata: dict | MetaData) -> None:
         try:
             resp = requests.request("POST", url, headers=headers, data=payload, timeout=2)
             resp.raise_for_status()
-
             logger.info(
                 "POSTed metadata (execution_block: %s) to %s", metadata["execution_block"], url
             )
