@@ -10,6 +10,8 @@ import tests.integration.client.dlm_ingest_client as dlm_ingest_requests
 import tests.integration.client.dlm_migration_client as dlm_migration_requests
 import tests.integration.client.dlm_request_client as dlm_request_requests
 import tests.integration.client.dlm_storage_client as dlm_storage_requests
+from ska_dlm import CONFIG
+from ska_dlm.dlm_db.db_access import DB
 from tests.test_env import DlmTestClient
 
 logger = logging.getLogger(__name__)
@@ -25,6 +27,13 @@ class DlmTestClientK8s(DlmTestClient):
         config.load_kube_config()
         self.core_api = client.CoreV1Api()
         self.apps_api = client.AppsV1Api()
+
+        # Horrible hacks that are necessary due to static instances
+        CONFIG.REST.base_url = _generate_k8s_url(
+            ingress_path="postgrest", service_name="ska-dlm-postgrest"
+        )
+        CONFIG.RCLONE.url = _generate_k8s_url(ingress_path="rclone", service_name="ska-dlm-rclone")
+        DB.api_url = CONFIG.REST.base_url
 
     @property
     def storage_requests(self):
@@ -102,3 +111,19 @@ class DlmTestClientK8s(DlmTestClient):
             "dlm_request": f"http://ska-dlm-gateway.{NAMESPACE}.svc.cluster.local",
             "dlm_storage": f"http://ska-dlm-gateway.{NAMESPACE}.svc.cluster.local",
         }
+
+
+def _generate_k8s_url(ingress_path: str, service_name: str):
+    """
+    Generate a URL appropriate to query depending on whether
+    ingress is running or not.
+    """
+
+    namespace = os.getenv("KUBE_NAMESPACE")
+    assert namespace
+
+    if host := os.getenv("TEST_INGRESS"):
+        return f"http://{host}/{namespace}/{ingress_path}"
+
+    # k8s service
+    return f"http://{service_name}.{namespace}.svc.cluster.local"
