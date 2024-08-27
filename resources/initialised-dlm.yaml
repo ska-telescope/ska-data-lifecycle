@@ -1,4 +1,8 @@
 
+global:
+  ingress:
+    enabled: true
+
 postgrest:
   db_uri: ""
 

@@ -24,14 +24,8 @@ class DlmTestClient:
         """Delete all rclone local data."""
 
     @abstractmethod
-    def get_service_urls(self) -> dict:
-        """Get the named map of the DLM client URLs reachable from the test suite.
-
-        Returns
-        -------
-        dict
-            named map of services to urls
-        """
+    def get_gateway_url(self) -> str:
+        """Get the gateway url."""
 
     @property
     @abstractmethod

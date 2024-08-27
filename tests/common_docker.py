@@ -16,7 +16,10 @@ logger = logging.getLogger(__name__)
 
 
 class DlmTestClientDocker(DlmTestClient):
-    """docker-compose test environment utilities.
+    """Docker test environment utilities.
+
+    Test client for a deployment where all services and tests run from
+    inside docker.
 
     This requires the rclone path is hosted on shared filesystem
     mount with the test runtime."""
@@ -61,12 +64,6 @@ class DlmTestClientDocker(DlmTestClient):
             os.remove(file)
 
     @override
-    def get_service_urls(self) -> dict:
-        """Returns named map of the client URLs for each of the DLM services"""
-        urls = {
-            "dlm_gateway": "http://dlm_gateway:8000",
-            "dlm_ingest": "http://dlm_gateway:8000",
-            "dlm_request": "http://dlm_gateway:8000",
-            "dlm_storage": "http://dlm_gateway:8000",
-        }
-        return urls
+    def get_gateway_url(self) -> str:
+        """Get the gateway url."""
+        return "http://dlm_gateway:8000"

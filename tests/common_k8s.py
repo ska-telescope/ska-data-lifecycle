@@ -21,7 +21,12 @@ RCLONE_DEPLOYMENT = "ska-dlm-rclone"
 
 
 class DlmTestClientK8s(DlmTestClient):
-    """kubernetes test environment utilities."""
+    """Kubernetes test environment utilities.
+
+    Test client for a deployment where all services run from within k8s
+    and tests running outside the cluster if K8S_HOST_URL is defined, otherwise
+    tests running inside the cluster.
+    """
 
     def __init__(self):
         config.load_kube_config()
@@ -29,6 +34,11 @@ class DlmTestClientK8s(DlmTestClient):
         self.apps_api = client.AppsV1Api()
 
         # Horrible hacks that are necessary due to static instances
+        dlm_storage_requests.STORAGE_URL = _generate_k8s_url("dlm", "ska-dlm-gateway")
+        dlm_ingest_requests.INGEST_URL = _generate_k8s_url("dlm", "ska-dlm-gateway")
+        dlm_request_requests.REQUEST_URL = _generate_k8s_url("dlm", "ska-dlm-gateway")
+        dlm_migration_requests.MIGRATION_URL = _generate_k8s_url("dlm", "ska-dlm-gateway")
+
         CONFIG.REST.base_url = _generate_k8s_url(
             ingress_path="postgrest", service_name="ska-dlm-postgrest"
         )
@@ -71,7 +81,7 @@ class DlmTestClientK8s(DlmTestClient):
             self.core_api.connect_get_namespaced_pod_exec,
             pod_name,
             NAMESPACE,
-            command=["/bin/cat", f"]{rclone_path}"],
+            command=["/bin/cat", f"{rclone_path}"],
             stdout=True,
         )
         return content
@@ -103,14 +113,9 @@ class DlmTestClientK8s(DlmTestClient):
         return pod_name
 
     @override
-    def get_service_urls(self) -> dict:
-        """Returns named map of the client URLs for each of the DLM services"""
-        return {
-            "dlm_gateway": f"http://ska-dlm-gateway.{NAMESPACE}.svc.cluster.local",
-            "dlm_ingest": f"http://ska-dlm-gateway.{NAMESPACE}.svc.cluster.local",
-            "dlm_request": f"http://ska-dlm-gateway.{NAMESPACE}.svc.cluster.local",
-            "dlm_storage": f"http://ska-dlm-gateway.{NAMESPACE}.svc.cluster.local",
-        }
+    def get_gateway_url(self) -> str:
+        """Get the gateway url."""
+        return _generate_k8s_url(ingress_path="dlm", service_name="ska-dlm-gateway")
 
 
 def _generate_k8s_url(ingress_path: str, service_name: str):
@@ -119,11 +124,10 @@ def _generate_k8s_url(ingress_path: str, service_name: str):
     ingress is running or not.
     """
 
-    namespace = os.getenv("KUBE_NAMESPACE")
-    assert namespace
+    if host_url := os.getenv("K8S_HOST_URL"):
+        # ingress path
+        return f"{host_url}/{NAMESPACE}/{ingress_path}"
 
-    if host := os.getenv("TEST_INGRESS"):
-        return f"http://{host}/{namespace}/{ingress_path}"
-
+    raise ValueError("K8S_HOST_URL not defined", host_url)
     # k8s service
-    return f"http://{service_name}.{namespace}.svc.cluster.local"
+    return f"http://{service_name}.{NAMESPACE}.svc.cluster.local"
