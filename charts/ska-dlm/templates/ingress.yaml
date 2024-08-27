@@ -2,7 +2,27 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: ska-dlm-postgrest-{{ .Release.Name }}
+  name: {{ include "ska-dlm.name" . }}-gateway-{{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+  annotations:
+      nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+        - path: /{{ .Release.Namespace }}/dlm(/|$)(.*)
+          pathType: ImplementationSpecific
+          backend:
+           service:
+            name: {{ include "ska-dlm.name" . }}-gateway
+            port:
+              number: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "ska-dlm.name" . }}-postgrest-{{ .Release.Name }}
   namespace: {{ .Release.Namespace }}
   annotations:
       nginx.ingress.kubernetes.io/rewrite-target: /$2
@@ -22,7 +42,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ include "ska-dlm.name" . }}-rclone
+  name: {{ include "ska-dlm.name" . }}-rclone-{{ .Release.Name }}
   namespace: {{ .Release.Namespace }}
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /$2

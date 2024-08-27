@@ -28,7 +28,7 @@ def test_notify_data_dashboard(caplog):
 
 
 @pytest.mark.parametrize(
-    "metadata", ["invalid metadata", {"invalid": "metadata"}, Path("invalid metadata")]
+    "metadata", ["invalid metadata", {"invalid": "metadata"}, Path("invalid metadata"), None]
 )
 def test_notify_data_dashboard_invalid_metadata(metadata, caplog):
     with Mocker() as req_mock:
