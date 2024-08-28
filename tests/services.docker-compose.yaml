@@ -21,7 +21,7 @@ services:
         INGEST_CLIENT: "http://dlm_ingest:8001"
         REQUESTS_CLIENT: "http://dlm_request:8002"
         STORAGE_CLIENT: "http://dlm_storage:8003"
-        MIGRATION_CLIENT: "http://dlm_storage:8004"
+        MIGRATION_CLIENT: "http://dlm_migration:8004"
     healthcheck:
         test: curl --fail http://localhost:8000/heartbeat || exit 1
         interval: 5s

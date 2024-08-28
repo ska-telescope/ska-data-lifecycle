@@ -1,5 +1,6 @@
 """API Gateway"""
 
+import logging
 import os
 
 import httpx
@@ -35,6 +36,8 @@ keycloak_openid = KeycloakOpenID(
 )
 
 keycloak_uma = KeycloakUMA(connection=keycloak_openid)
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
@@ -88,6 +91,7 @@ async def has_scope(token: str, permission: str):
 async def _check_permissions(token: str, request: Request):
     """Check is client can access endpoint based on token and permissions"""
     path = request.url.path
+    logger.info("checking permissions for: %s", request)
     if path.startswith("/request"):
         res = "res:request"
         scope = "scope:read"
@@ -114,7 +118,7 @@ async def _check_permissions(token: str, request: Request):
     await keycloak_openid.a_uma_permissions(token, f"{res}#{scope}")
 
 
-async def _send_endpoint(url: str, request: Request):
+async def _send_endpoint(url: httpx.URL, request: Request):
     client = None
     if request.url.path.startswith("/request"):
         client = requests_client
@@ -130,6 +134,7 @@ async def _send_endpoint(url: str, request: Request):
     rp_req = client.build_request(
         request.method, url, headers=request.headers.raw, content=await request.body()
     )
+    logger.info("send endpoint: %s", rp_req)
     return await client.send(rp_req, stream=True)
 
 

@@ -60,7 +60,7 @@ def register_data_item(  # noqa: C901 # pylint: disable=too-many-arguments
     uri: str = "",
     storage_name: str = "",
     storage_id: str = "",
-    metadata: dict = None,
+    metadata: dict | None = None,
     item_format: str | None = "unknown",
     eb_id: str | None = None,
 ) -> str:
