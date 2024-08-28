@@ -39,6 +39,9 @@ def mock_data_items_fixture(mock_db):
 
 def test_query_expired(mock_data_items):
     """Test the query expired returning records."""
+    import logging
+    logging.info("got URL %s", DB._api_url)
+    raise ValueError(DB._api_url)
     uid = dlm_request.query_data_item()[0]["uid"]
     data_item.set_state(uid=uid, state="READY")
     assert len(dlm_request.query_expired(offset=timedelta(0))) == 0
