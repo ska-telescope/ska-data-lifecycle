@@ -23,8 +23,8 @@ ifeq ($(shell uname -m), arm64)
 else
 	K8S_HOST_URL ?= http://$(shell minikube ip)
 endif
-	K8S_HOST_URL ?= $(TEST_INGRESS)
 else  # GITLAB_CI
+	K8S_HOST_URL ?= $(TEST_INGRESS)
 endif  # GITLAB_CI
 
 SHARED_VOLUMES_DIR ?= ${PWD}/tests/volumes
