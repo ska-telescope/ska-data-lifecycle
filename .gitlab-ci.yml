@@ -4,6 +4,7 @@ variables:
   GIT_SUBMODULE_STRATEGY: recursive
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
   CI_POETRY_VERSION: 1.8.2
+  TEST_INGRESS: ""
 
 # Enable caching for python
 cache:

@@ -19,18 +19,16 @@ include .make/k8s.mk
 # See https://github.com/kubernetes/minikube/issues/13510
 ifndef GITLAB_CI
 ifeq ($(shell uname -m), arm64)
-	K8S_HOST_URL ?= http://localhost
+	TEST_INGRESS ?= http://localhost
 else
-	K8S_HOST_URL ?= http://$(shell minikube ip)
+	TEST_INGRESS ?= http://$(shell minikube ip)
 endif
-else  # GITLAB_CI
-	K8S_HOST_URL ?= $(TEST_INGRESS)
 endif  # GITLAB_CI
 
 SHARED_VOLUMES_DIR ?= ${PWD}/tests/volumes
 
 # Make these available as environment variables
-export KUBE_NAMESPACE K8S_HOST_URL SHARED_VOLUMES_DIR
+export KUBE_NAMESPACE TEST_INGRESS SHARED_VOLUMES_DIR
 
 .PHONY: docs-pre-build k8s-recreate-namespace k8s-do-test
 
