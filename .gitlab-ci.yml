@@ -4,7 +4,6 @@ variables:
   GIT_SUBMODULE_STRATEGY: recursive
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
   CI_POETRY_VERSION: 1.8.2
-  TEST_INGRESS: ""
 
 # Enable caching for python
 cache:
@@ -87,6 +86,7 @@ k8s-test:
   variables:
     KUBE_NAMESPACE: ci-$CI_PROJECT_NAME-$CI_PIPELINE_ID
     HELM_VALUES: resources/initialised-dlm.yaml
+    # K8S_HOST_URL: ""  # k8s host unknown, not using public ingress
   before_script:
     - poetry self update $CI_POETRY_VERSION
     - poetry config virtualenvs.create $POETRY_CONFIG_VIRTUALENVS_CREATE

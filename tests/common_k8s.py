@@ -24,7 +24,7 @@ class DlmTestClientK8s(DlmTestClient):
     """Kubernetes test environment utilities.
 
     Test client for a deployment where all services run from within k8s
-    and tests running outside the cluster if TEST_INGRESS is defined, otherwise
+    and tests running outside the cluster if K8S_HOST_URL is defined, otherwise
     tests running inside the cluster.
     """
 
@@ -124,8 +124,8 @@ def _generate_k8s_url(ingress_path: str, service_name: str):
     ingress is running or not.
     """
 
-    if host_url := os.getenv("TEST_INGRESS"):
-        # ingress path
+    if host_url := os.getenv("K8S_HOST_URL"):
+        # public host with ingress path
         return f"{host_url}/{NAMESPACE}/{ingress_path}"
 
     # k8s service
