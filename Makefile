@@ -5,8 +5,8 @@ K8S_CHART = ska-dlm
 KUBE_NAMESPACE ?= ska-dlm
 HELM_RELEASE ?= test
 HELM_TIMEOUT ?= 5m
-HELM_VALUES ?= resources/initialised-dlm.yaml
-K8S_CHART_PARAMS ?= $(foreach file,$(HELM_VALUES),--values $(file)) --wait --timeout=$(HELM_TIMEOUT)
+HELM_VALUES ?= resources/values/development-minikube.yaml
+K8S_CHART_PARAMS ?= $(foreach file,$(HELM_VALUES),-f $(file)) --wait --timeout=$(HELM_TIMEOUT)
 
 include .make/base.mk
 include .make/helm.mk
@@ -14,10 +14,10 @@ include .make/python.mk
 include .make/oci.mk
 include .make/k8s.mk
 
+ifndef GITLAB_CI
 # MacOS Arm64 ingress has issues. Workaround is to run with
 # `minikube tunnel` and connect via localhost
 # See https://github.com/kubernetes/minikube/issues/13510
-ifndef GITLAB_CI
 ifeq ($(shell uname -m), arm64)
 	K8S_HOST_URL ?= http://localhost
 else

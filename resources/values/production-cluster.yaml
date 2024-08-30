@@ -1,0 +1,9 @@
+
+global:
+  ingress:
+    enabled: true
+  storageClass: nfss1
+  development: false
+
+postgrest:
+  db_uri: ""

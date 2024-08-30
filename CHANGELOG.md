@@ -2,11 +2,12 @@
 
 ## 0.0.1
 
-* Add FastAPI and Keycloak OAuth
+* Added Keycloak OAuth2 authentication to dev deployments
+* Addeed FastAPI services for requests, ingest, storage, and migration
 * Set up k8s tests to run only on CI scheduled builds
 * Set up docker-compose as the main test target for gitlab testing
 * Decouple DLM unit testing from Minikube
-* Add optional pgweb IDE deployment
+* Added database pgweb IDE to dev deployments
 
 ## Unreleased
 

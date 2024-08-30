@@ -53,20 +53,27 @@ With public network access to the development k8s cluster:
 
 ### Running Helm Chart Tests
 
-#### k8s tests
+Its recommended setting a personal namespace as a default for all development environments (can alternatively prepend the definition to per command):
+
+```sh
+export KUBE_NAMESPACE=<dp-team-firstname>
+```
+
+#### k8s tests using Minikube (Makefile default)
 
 Run the following to test against the running test deployment:
 ```sh
 make k8s-install-chart
 make k8s-test
+make k8s-uninstall-chart
 ```
 
-Alternatively, installing, testing and uninstalling can be performed manually by running the following respective commands:
+#### k8s tests using DP Cluster
 
 ```sh
-make k8s-install-chart
-make k8s-do-test
-make k8s-uninstall-chart
+K8S_SKIP_NAMESPACE=1 HELM_VALUES=resources/values/development-cluster.yaml K8S_HOST_URL="https://sdhp.stfc.skao.int" make k8s-install-chart
+K8S_SKIP_NAMESPACE=1 HELM_VALUES=resources/values/development-cluster.yaml K8S_HOST_URL="https://sdhp.stfc.skao.int" make k8s-test
+K8S_SKIP_NAMESPACE=1 HELM_VALUES=resources/values/development-cluster.yaml K8S_HOST_URL="https://sdhp.stfc.skao.int" make k8s-uninstall-chart
 ```
 
 ## Production Deployment
@@ -74,18 +81,18 @@ make k8s-uninstall-chart
 To deploy in a production k8s environment, DevOps can:
 
 * Select the Kubernetes environment via `export KUBECONFIG="path to kubeconfig"`
-* Modify the `resources/initialized-dlm.yaml` file to override helm values
+* Check and modify `resources/values/production-cluster.yaml` file to override helm values
 * Install the release using the following commands:
 
 ```bash
 helm repo add bitnami https://charts.bitnami.com/bitnami
 make k8s-dep-build
 
-KUBE_NAMESPACE=<prod-namespace> HELM_RELEASE=<prod-release-name> K8S_SKIP_NAMESPACE=1 make k8s-install-chart
+KUBE_NAMESPACE=<prod-namespace> HELM_RELEASE=<prod-release-name> K8S_SKIP_NAMESPACE=1 HELM_VALUES=resources/values/production-cluster.yaml make k8s-install-chart
 ```
 
 * Uninstall a previously deployed release using the following commands:
 
 ```bash
-KUBE_NAMESPACE=<prod-namespace> HELM_RELEASE=<prod-release-name> K8S_SKIP_NAMESPACE=1 make k8s-uninstall-chart
+KUBE_NAMESPACE=<prod-namespace> HELM_RELEASE=<prod-release-name> K8S_SKIP_NAMESPACE=1 HELM_VALUES=resources/values/production-cluster.yaml make k8s-uninstall-chart
 ```

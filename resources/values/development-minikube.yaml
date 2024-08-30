@@ -1,12 +1,10 @@
 
 global:
+  development: true
   ingress:
     enabled: true
 
-postgrest:
-  db_uri: ""
-
-# Testing only deployments
+# Development only deployments
 
 postgresql:
   enabled: true

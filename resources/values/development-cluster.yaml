@@ -1,0 +1,21 @@
+
+global:
+  development: true
+  ingress:
+    enabled: true
+  storageClass: nfss1
+
+# Development only deployments
+
+postgresql:
+  enabled: true
+  initialise: true
+
+gateway:
+  enabled: true
+
+keycloak:
+  enabled: true
+
+pgweb:
+  enabled: true
