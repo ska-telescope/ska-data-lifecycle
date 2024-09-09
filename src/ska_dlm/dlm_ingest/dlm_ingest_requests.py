@@ -10,6 +10,7 @@ from fastapi import FastAPI
 from ska_sdp_dataproduct_metadata import MetaData
 
 from ska_dlm.dlm_storage.dlm_storage_requests import rclone_access
+from ska_dlm.typer_types import JsonObjectOption
 
 from .. import CONFIG
 from ..data_item import set_metadata, set_state, set_uri
@@ -60,7 +61,7 @@ def register_data_item(  # noqa: C901 # pylint: disable=too-many-arguments
     uri: str = "",
     storage_name: str = "",
     storage_id: str = "",
-    metadata: dict | None = None,
+    metadata: JsonObjectOption = None,
     item_format: str | None = "unknown",
     eb_id: str | None = None,
 ) -> str:
