@@ -5,15 +5,6 @@ from typing import Annotated, Any
 
 import typer
 
-__all__ = [
-    "JsonObjectArg",
-    "JsonObjectOption",
-    "JsonArrayArg",
-    "JsonArrayOption",
-    "JsonContainerArg",
-    "JsonContainerOption",
-]
-
 
 def json_object_or_array(value: str) -> dict | list:
     """Parse shell string to JSON object or array."""
@@ -39,29 +30,25 @@ def json_array(value: str) -> list:
     return value
 
 
-JsonObjectArg = Annotated[dict, typer.Argument(parser=json_object, help="JSON object")]
+JsonObjectArg = Annotated[dict, typer.Argument(parser=json_object)]
 """dict literal type alias for typer."""
 
-JsonObjectOption = Annotated[dict | None, typer.Option(parser=json_object, help="JSON object")]
+JsonObjectOption = Annotated[dict | None, typer.Option(parser=json_object)]
 """dict | None literal type alias for typer."""
 
-JsonArrayArg = Annotated[list, typer.Argument(parser=json_array, help="JSON array")]
+JsonArrayArg = Annotated[list, typer.Argument(parser=json_array)]
 """list literal type alias for typer."""
 
-JsonArrayOption = Annotated[list | None, typer.Option(parser=json_array, help="JSON array")]
+JsonArrayOption = Annotated[list | None, typer.Option(parser=json_array)]
 """list | None literal type alias for typer."""
 
-JsonContainerArg = Annotated[
-    Any, typer.Argument(parser=json_object_or_array, help="JSON object or array")
-]
+JsonContainerArg = Annotated[Any, typer.Argument(parser=json_object_or_array)]
 """dict | list literal type alias for typer.
 
 NOTE: typer does not support union annotations.
 """
 
-JsonContainerOption = Annotated[
-    Any | None, typer.Option(parser=json_object_or_array, help="JSON object or array")
-]
+JsonContainerOption = Annotated[Any | None, typer.Option(parser=json_object_or_array)]
 """dict | list | None literal type alias for typer.
 
 NOTE: typer does not support union annotations.

@@ -11,6 +11,7 @@
 **/htmlcov/
 counter_*.txt
 **/_autosummary
+pytest-logs.txt
 
 # Python temp files
 **/__pycache__/

@@ -37,6 +37,7 @@ rich = "^13.0"
 ska-sdp-metadata-generator = "^0.0.5"
 fastapi = "^0.111.0"
 overrides = "^7.7.0"
+docstring-parser = "^0.16"
 
 [tool.poetry.group.test.dependencies]
 black = "^23.3.0"
@@ -90,7 +91,7 @@ rst-roles = [
     "py:mod",
 ]
 enable = "DAR104"
-max-complexity = 10
+max-complexity = 12
 exclude = [
     "tests/",
 ]
