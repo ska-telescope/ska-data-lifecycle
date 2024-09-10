@@ -154,6 +154,7 @@ services:
     ports:
       - 5432:5432
     environment:
+      - LANG=C
       - POSTGRES_DB=ska_dlm
       - POSTGRES_USER=ska_dlm_admin
       - POSTGRES_PASSWORD=password

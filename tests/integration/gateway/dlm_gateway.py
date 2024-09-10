@@ -67,7 +67,7 @@ async def auth_callback(request: Request):
 @app.get("/heartbeat")
 async def heartbeat():
     """Endpoint to check if Gateway is contactable"""
-    return Response({"status": "OK"}, status_code=200)
+    return Response('{"status": "OK"}', status_code=200)
 
 
 # pylint: disable=redefined-outer-name
