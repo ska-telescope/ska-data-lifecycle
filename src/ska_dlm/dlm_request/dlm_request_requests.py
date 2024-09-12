@@ -5,6 +5,8 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import FastAPI
 
+import ska_dlm
+from ska_dlm.cli_utils import fastapi_auto_annotate
 from ska_dlm.dlm_db.db_access import DB
 
 from .. import CONFIG
@@ -12,30 +14,41 @@ from ..exceptions import InvalidQueryParameters
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI()
+app = fastapi_auto_annotate(
+    FastAPI(
+        title="DLM Request API",
+        version=ska_dlm.__version__,
+        license_info={"name": "BSD-3-Clause", "identifier": "BSD-3-Clause"},
+    )
+)
 
 
 @app.get("/request/query_data_item")
 def query_data_item(
     item_name: str = "", oid: str = "", uid: str = "", params: str | None = None
 ) -> list:
-    """
-    Query a new data_item by at least specifying an item_name.
+    """Query a new data_item by at least specifying an item_name.
 
     Parameters
     ----------
-    item_name: str
-        could be empty, in which case the first 1000 items are returned
+    item_name : str
+        could be empty, in which case the first 1000 items are returned.
     oid : str
         Return data_items referred to by the OID provided.
     uid : str
         Return data_item referred to by the UID provided.
-    params: str | None
+    params : str | None
         specify the query parameters
+
+    Raises
+    ------
+    ValueError
+        bad value.
 
     Returns
     -------
     list
+        data item ids.
     """
     if bool(params) == (item_name or oid or uid):
         raise InvalidQueryParameters("give either params or item_name/oid/uid")
@@ -53,7 +66,7 @@ def query_data_item(
 @app.get("/request/query_expired")
 def query_expired(offset: timedelta | None = None):
     """Query for all expired data_items using the uid_expiration timestamp.
-
+    \f
     Parameters
     ----------
     offset : timedelta | None, optional
@@ -76,7 +89,7 @@ def query_expired(offset: timedelta | None = None):
 @app.get("/request/query_deleted")
 def query_deleted(uid: str = "") -> list:
     """Query for all deleted data_items using the deleted state.
-
+    \f
     Parameters
     ----------
     uid: str
@@ -96,7 +109,7 @@ def query_deleted(uid: str = "") -> list:
 @app.get("/request/query_new")
 def query_new(check_date: str, uid: str = "") -> list:
     """Query for all data_items newer than the date provided.
-
+    \f
     Parameters
     ----------
     check_date: str
@@ -123,7 +136,7 @@ def query_new(check_date: str, uid: str = "") -> list:
 @app.get("/request/query_exists")
 def query_exists(item_name: str = "", oid: str = "", uid: str = "", ready: bool = False) -> bool:
     """Query to check for existence of a data_item.
-
+    \f
     Parameters
     ----------
     item_name: str, optional

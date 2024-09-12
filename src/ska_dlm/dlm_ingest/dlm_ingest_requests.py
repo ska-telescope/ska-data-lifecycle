@@ -4,11 +4,12 @@ import json
 import logging
 from typing import Any, Dict, List
 
+from fastapi import FastAPI
 import requests
 import ska_sdp_metadata_generator as metagen
-from fastapi import FastAPI
 from ska_sdp_dataproduct_metadata import MetaData
 
+from ska_dlm.cli_utils import fastapi_auto_annotate
 from ska_dlm.dlm_storage.dlm_storage_requests import rclone_access
 from ska_dlm.typer_types import JsonObjectOption
 
@@ -22,7 +23,7 @@ from ..exceptions import InvalidQueryParameters, UnmetPreconditionForOperation, 
 JsonType = Dict[str, Any] | List[Any] | str | int | float | bool | None
 logger = logging.getLogger(__name__)
 
-app = FastAPI()
+app = fastapi_auto_annotate(FastAPI(title="DLM Ingest API"))
 
 
 @app.post("/ingest/init_data_item")
@@ -70,12 +71,12 @@ def register_data_item(  # noqa: C901 # pylint: disable=too-many-arguments
     This high level function is a combination of init_data_item, set_uri and set_state(READY).
     It also checks whether a data_item is already registered on the requested storage.
 
-    (1) check whether requested storage is known and accessible
-    (2) check whether item is accessible/exists on that storage
-    (3) check whether item is already registered on that storage
-    (4) initialize the new item with the same OID on the new storage
-    (5) set state to READY
-    (6) generate metadata
+    (1) check whether requested storage is known and accessible\n
+    (2) check whether item is accessible/exists on that storage\n
+    (3) check whether item is already registered on that storage\n
+    (4) initialize the new item with the same OID on the new storage\n
+    (5) set state to READY\n
+    (6) generate metadata\n
     (7) notify the data dashboard
 
     Parameters

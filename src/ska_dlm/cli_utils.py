@@ -4,10 +4,16 @@ import copy
 import functools
 import inspect
 import re
+import types
 import typing
+from types import NoneType
+from typing import ParamSpec, TypeVar, get_args
 
+import fastapi
+import fastapi.params
 import typer
-from docstring_parser import Docstring, parse
+from docstring_parser import Docstring, DocstringStyle, compose, parse
+from pydantic.fields import FieldInfo
 from requests import HTTPError
 from rich import print as rich_print
 
@@ -66,19 +72,134 @@ def add_as_typer_command(
 PARAGRAPH_RE = re.compile(r"(.)\n(?!\n)")
 
 
-def typer_docstring(func: typing.Callable) -> typing.Callable:
-    """A decorator that generates typer docs from the function signature and docstring.
+ParamsT = ParamSpec("ParamsT")
+T = TypeVar("T")
+
+
+def fastapi_auto_annotate(app: fastapi.FastAPI):
+    """Automatically applies `fastapi_docstring_annotate` to all FastAPI app routes."""
+
+    def api_route(
+        self,
+        path: str,
+        *_,
+        **kwargs,
+    ):
+        def decorator(func):
+            app.router.add_api_route(path, fastapi_docstring_annotate(func), **kwargs)
+            return func
+
+        return decorator
+
+    app.router.api_route = types.MethodType(api_route, app)
+    return app
+
+
+def fastapi_docstring_annotate(func: typing.Callable[ParamsT, T]) -> typing.Callable[ParamsT, T]:
+    """Decorator that generates FastAPI annotations from the function signature and docstring.
 
     Parameters
     ----------
-    func : typing.Callable
+    func : typing.Callable[ParamsT, T]
+        _description_
+
+    Returns
+    -------
+    typing.Callable[ParamsT, T]
+        _description_
+    """
+    output_func = copy.copy(func)
+    # Collect information about the parameters of the function
+    parameters: dict[str, dict] = {}
+    kinds: dict[str, type] = {}
+
+    # Parse signature first so all parameter names are populated
+    signature = inspect.signature(func)
+    for arg_name, param in signature.parameters.items():
+        parameters[arg_name] = {}
+        kinds[arg_name] = (
+            fastapi.params.Query
+            if set(get_args(param.annotation)).issubset((str, float, int, NoneType))
+            else fastapi.params.Body
+        )
+
+    # Parse docstring
+    assert func.__doc__
+    docstring: Docstring = parse(func.__doc__)
+
+    # extract as help messages from docstring (if present)
+    for par in docstring.params:
+        if par.arg_name in parameters:
+            parameters[par.arg_name]["description"] = par.description
+            # print(par.is_optional)
+
+    def create_param(
+        param_type: type,
+        **param_kwargs,
+    ) -> FieldInfo:
+        match param_type:
+            case fastapi.params.Query:
+                return fastapi.Query(**param_kwargs)
+            case fastapi.params.Body:
+                return fastapi.Body(**param_kwargs)
+            case _:
+                raise NotImplementedError()
+
+    # Transform the parameters into info instances
+    docstring_infos: dict[str, FieldInfo] = {
+        arg_name: create_param(kinds[arg_name], **param_kwargs)
+        for arg_name, param_kwargs in parameters.items()
+    }
+
+    output_annotations: dict = {}
+    for arg_name, info in docstring_infos.items():
+        updated_annotation: type | typing.Annotated = copy.deepcopy(func.__annotations__[arg_name])
+        if hasattr(updated_annotation, "__metadata__"):
+            updated = False
+            for meta in updated_annotation.__metadata__:
+                if isinstance(meta, FieldInfo):
+                    # override missing help with docstring
+                    if meta.description is None:
+                        meta.description = copy.deepcopy(info.description)
+
+                    updated = True
+            if not updated:
+                # annotations found but not for typer
+                updated_annotation.__metadata__ += (info,)
+        else:
+            # create annotation
+            updated_annotation = typing.Annotated[updated_annotation, info]
+        output_annotations[arg_name] = updated_annotation
+
+    if "return" in output_annotations:
+        output_annotations["return"] = func.__annotations__["return"]
+
+    output_func.__annotations__ = output_annotations
+    docstring.blank_after_short_description = docstring.long_description is not None
+    docstring.blank_after_long_description = docstring.long_description is not None
+    # insert form feed \f to end FastAPI description
+    docstring.long_description = f"{docstring.long_description or ''}\f"
+    docstring.style = DocstringStyle.NUMPYDOC
+    output_func.__doc__ = compose(docstring)
+    return output_func
+
+
+def typer_docstring(func: typing.Callable[ParamsT, T]) -> typing.Callable[ParamsT, T]:
+    """Decorator that generates Typer annotations from the function signature and docstring.
+
+    NOTE: This strips parameters from the resulting docstring.
+
+    Parameters
+    ----------
+    func : typing.Callable[ParamsT, T]
         Typer compatible function signature.
 
     Returns
     -------
-    typing.Callable
+    typing.Callable[ParamsT, T]
         Decorated function with updated annotations and docstring.
     """
+    output_func = copy.copy(func)
     # Collect information about the parameters of the function
     parameters: dict[str, dict] = {}
     kinds: dict[str, type] = {}
@@ -142,15 +263,20 @@ def typer_docstring(func: typing.Callable) -> typing.Callable:
     if "return" in output_annotations:
         output_annotations["return"] = func.__annotations__["return"]
 
-    func.__annotations__ = output_annotations
+    output_func.__annotations__ = output_annotations
 
     # Only keep the main description as docstring so the CLI won't print
     # the whole docstring, including the parameters
-    func.__doc__ = "\n\n".join(
-        [
-            docstring.short_description or "",
-            PARAGRAPH_RE.sub(r"\1 ", docstring.long_description or ""),
-        ]
-    )
+    # alternatively can place a \f after the long description.
+    # func.__doc__ = docstring.description
+    # func.__doc__ = "\n\n".join(
+    #     [
+    #         docstring.description or "",
+    #         "\f",
+    #         *(s.description or "" for s in docstring.params),
+    #         # docstring.short_description or "",
+    #         # PARAGRAPH_RE.sub(r"\1 ", docstring.long_description or ""),
+    #     ]
+    # )
 
-    return func
+    return output_func

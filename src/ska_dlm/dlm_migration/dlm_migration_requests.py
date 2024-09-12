@@ -8,6 +8,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from ska_dlm.cli_utils import fastapi_auto_annotate
 from ska_dlm.exceptions import InvalidQueryParameters
 
 from .. import CONFIG
@@ -21,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 origins = ["http://localhost", "http://localhost:5000", "http://localhost:8004"]
 
-app = FastAPI()
+app = fastapi_auto_annotate(FastAPI(title="DLM Migration API"))
 
 app.add_middleware(
     CORSMiddleware,

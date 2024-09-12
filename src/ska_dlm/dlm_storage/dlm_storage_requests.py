@@ -7,6 +7,7 @@ import requests
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
+from ska_dlm.cli_utils import fastapi_auto_annotate
 from ska_dlm.dlm_db.db_access import DB
 
 from .. import CONFIG
@@ -16,7 +17,7 @@ from ..exceptions import InvalidQueryParameters, UnmetPreconditionForOperation, 
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI()
+app = fastapi_auto_annotate(FastAPI(title="DLM Storage API"))
 
 
 # pylint: disable=unused-argument

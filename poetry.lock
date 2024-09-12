@@ -794,6 +794,20 @@ files = [
 ]
 
 [[package]]
+name = "deepmerge"
+version = "2.0"
+description = "A toolset for deeply merging Python dictionaries."
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "deepmerge-2.0-py3-none-any.whl", hash = "sha256:6de9ce507115cff0bed95ff0ce9ecc31088ef50cbdf09bc90a09349a318b3d00"},
+    {file = "deepmerge-2.0.tar.gz", hash = "sha256:5c3d86081fbebd04dd5de03626a0607b809a98fb6ccba5770b62466fe940ff20"},
+]
+
+[package.extras]
+dev = ["black", "build", "mypy", "pytest", "pyupgrade", "twine", "validate-pyproject[all]"]
+
+[[package]]
 name = "deprecated"
 version = "1.2.14"
 description = "Python @deprecated decorator to deprecate old python classes, functions or methods."
@@ -904,13 +918,13 @@ files = [
 
 [[package]]
 name = "docutils"
-version = "0.18.1"
+version = "0.20.1"
 description = "Docutils -- Python Documentation Utilities"
 optional = false
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
+python-versions = ">=3.7"
 files = [
-    {file = "docutils-0.18.1-py2.py3-none-any.whl", hash = "sha256:23010f129180089fbcd3bc08cfefccb3b890b0050e1ca00c867036e9d161b98c"},
-    {file = "docutils-0.18.1.tar.gz", hash = "sha256:679987caf361a7539d76e584cbeddc311e3aee937877c87346f31debc63e9d06"},
+    {file = "docutils-0.20.1-py3-none-any.whl", hash = "sha256:96f387a2c5562db4476f09f13bbab2192e764cac08ebbf3a34a95d9b1e4a59d6"},
+    {file = "docutils-0.20.1.tar.gz", hash = "sha256:f08a4e276c3a1583a86dce3e34aba3fe04d02bba2dd51ed16106244e8a923e3b"},
 ]
 
 [[package]]
@@ -1685,18 +1699,18 @@ adal = ["adal (>=1.0.2)"]
 
 [[package]]
 name = "m2r2"
-version = "0.3.2"
+version = "0.3.1"
 description = "Markdown and reStructuredText in a single file."
 optional = false
 python-versions = "*"
 files = [
-    {file = "m2r2-0.3.2-py3-none-any.whl", hash = "sha256:d3684086b61b4bebe2307f15189495360f05a123c9bda2a66462649b7ca236aa"},
-    {file = "m2r2-0.3.2.tar.gz", hash = "sha256:ccd95b052dcd1ac7442ecb3111262b2001c10e4119b459c34c93ac7a5c2c7868"},
+    {file = "m2r2-0.3.1-py3-none-any.whl", hash = "sha256:c2b62b8dec16f82d9e4d8aecf58830a87835ca90441716fc571e573e32c7d829"},
+    {file = "m2r2-0.3.1.tar.gz", hash = "sha256:6bf2d74e4cd15ce8a795999326cc7a4924af69ac1d114cac8064c1599ab11892"},
 ]
 
 [package.dependencies]
 docutils = "*"
-mistune = "0.8.4"
+mistune = "*"
 
 [[package]]
 name = "markdown-it-py"
@@ -1829,13 +1843,13 @@ files = [
 
 [[package]]
 name = "mistune"
-version = "0.8.4"
-description = "The fastest markdown parser in pure Python"
+version = "3.0.2"
+description = "A sane and fast Markdown parser with useful plugins and renderers"
 optional = false
-python-versions = "*"
+python-versions = ">=3.7"
 files = [
-    {file = "mistune-0.8.4-py2.py3-none-any.whl", hash = "sha256:88a1051873018da288eee8538d476dffe1262495144b33ecb586c4ab266bb8d4"},
-    {file = "mistune-0.8.4.tar.gz", hash = "sha256:59a3429db53c50b5c6bcc8a07f8848cb00d7dc8bdb431a4ab41920d201d4756e"},
+    {file = "mistune-3.0.2-py3-none-any.whl", hash = "sha256:71481854c30fdbc938963d3605b72501f5c10a9320ecd412c121c163a1c7d205"},
+    {file = "mistune-3.0.2.tar.gz", hash = "sha256:fc7f93ded930c92394ef2cb6f04a8aabab4117a91449e72dcc8dfa646a508be8"},
 ]
 
 [[package]]
@@ -2092,6 +2106,17 @@ files = [
 
 [package.dependencies]
 ptyprocess = ">=0.5"
+
+[[package]]
+name = "picobox"
+version = "4.0.0"
+description = "Dependency injection framework designed with Python in mind."
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "picobox-4.0.0-py3-none-any.whl", hash = "sha256:4c27eb689fe45dabd9e64c382e04418147d0b746d155b4e80057dbb7ff82027e"},
+    {file = "picobox-4.0.0.tar.gz", hash = "sha256:114da1b5606b2f615e8b0eb68d04198ad9de75af5adbcf5b36fe4f664ab927b6"},
+]
 
 [[package]]
 name = "platformdirs"
@@ -3253,23 +3278,22 @@ reference = "skao"
 
 [[package]]
 name = "ska-ser-sphinx-theme"
-version = "0.1.3"
+version = "0.2.1"
 description = "A Sphinx ReadTheDocs theme for SKA"
 optional = false
-python-versions = ">=3.8.1,<4.0.0"
-files = [
-    {file = "ska_ser_sphinx_theme-0.1.3-py3-none-any.whl", hash = "sha256:cdde3c8061dc781cc7dcee23f250b46f607e20a8a21163d05dc84a8ee8ce6553"},
-    {file = "ska_ser_sphinx_theme-0.1.3.tar.gz", hash = "sha256:6b997c2088ed8f4a906a16faebec671ce217110c915a35ed920cc2c532f1b80d"},
-]
+python-versions = "^3.8.1"
+files = []
+develop = false
 
 [package.dependencies]
 sphinx = ">4"
-sphinx-rtd-theme = ">=1.2.2,<2.0.0"
+sphinx-rtd-theme = "^3.0.0rc1"
 
 [package.source]
-type = "legacy"
-url = "https://artefact.skao.int/repository/pypi-internal/simple"
-reference = "skao"
+type = "git"
+url = "https://gitlab.com/ska-telescope/ska-ser-sphinx-theme.git"
+reference = "yan-1851"
+resolved_reference = "d64b3cc32ffe855d93e551b2ad1bd5c630efa999"
 
 [[package]]
 name = "sniffio"
@@ -3295,26 +3319,26 @@ files = [
 
 [[package]]
 name = "sphinx"
-version = "7.3.7"
+version = "8.0.2"
 description = "Python documentation generator"
 optional = false
-python-versions = ">=3.9"
+python-versions = ">=3.10"
 files = [
-    {file = "sphinx-7.3.7-py3-none-any.whl", hash = "sha256:413f75440be4cacf328f580b4274ada4565fb2187d696a84970c23f77b64d8c3"},
-    {file = "sphinx-7.3.7.tar.gz", hash = "sha256:a4a7db75ed37531c05002d56ed6948d4c42f473a36f46e1382b0bd76ca9627bc"},
+    {file = "sphinx-8.0.2-py3-none-any.whl", hash = "sha256:56173572ae6c1b9a38911786e206a110c9749116745873feae4f9ce88e59391d"},
+    {file = "sphinx-8.0.2.tar.gz", hash = "sha256:0cce1ddcc4fd3532cf1dd283bc7d886758362c5c1de6598696579ce96d8ffa5b"},
 ]
 
 [package.dependencies]
-alabaster = ">=0.7.14,<0.8.0"
-babel = ">=2.9"
-colorama = {version = ">=0.4.5", markers = "sys_platform == \"win32\""}
-docutils = ">=0.18.1,<0.22"
+alabaster = ">=0.7.14"
+babel = ">=2.13"
+colorama = {version = ">=0.4.6", markers = "sys_platform == \"win32\""}
+docutils = ">=0.20,<0.22"
 imagesize = ">=1.3"
-Jinja2 = ">=3.0"
-packaging = ">=21.0"
-Pygments = ">=2.14"
-requests = ">=2.25.0"
-snowballstemmer = ">=2.0"
+Jinja2 = ">=3.1"
+packaging = ">=23.0"
+Pygments = ">=2.17"
+requests = ">=2.30.0"
+snowballstemmer = ">=2.2"
 sphinxcontrib-applehelp = "*"
 sphinxcontrib-devhelp = "*"
 sphinxcontrib-htmlhelp = ">=2.0.0"
@@ -3325,8 +3349,8 @@ tomli = {version = ">=2", markers = "python_version < \"3.11\""}
 
 [package.extras]
 docs = ["sphinxcontrib-websupport"]
-lint = ["flake8 (>=3.5.0)", "importlib_metadata", "mypy (==1.9.0)", "pytest (>=6.0)", "ruff (==0.3.7)", "sphinx-lint", "tomli", "types-docutils", "types-requests"]
-test = ["cython (>=3.0)", "defusedxml (>=0.7.1)", "pytest (>=6.0)", "setuptools (>=67.0)"]
+lint = ["flake8 (>=6.0)", "mypy (==1.11.0)", "pytest (>=6.0)", "ruff (==0.5.5)", "sphinx-lint (>=0.9)", "tomli (>=2)", "types-Pillow (==10.2.0.20240520)", "types-Pygments (==2.18.0.20240506)", "types-colorama (==0.4.15.20240311)", "types-defusedxml (==0.7.0.20240218)", "types-docutils (==0.21.0.20240724)", "types-requests (>=2.30.0)"]
+test = ["cython (>=3.0)", "defusedxml (>=0.7.1)", "pytest (>=8.0)", "setuptools (>=70.0)", "typing_extensions (>=4.9)"]
 
 [[package]]
 name = "sphinx-autodoc-typehints"
@@ -3348,23 +3372,43 @@ numpy = ["nptyping (>=2.5)"]
 testing = ["covdefaults (>=2.3)", "coverage (>=7.3.2)", "diff-cover (>=8.0.1)", "pytest (>=7.4.3)", "pytest-cov (>=4.1)", "sphobjinv (>=2.3.1)", "typing-extensions (>=4.8)"]
 
 [[package]]
-name = "sphinx-rtd-theme"
-version = "1.3.0"
-description = "Read the Docs theme for Sphinx"
+name = "sphinx-mdinclude"
+version = "0.6.1"
+description = "Markdown extension for Sphinx"
 optional = false
-python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,>=2.7"
+python-versions = ">=3.8"
 files = [
-    {file = "sphinx_rtd_theme-1.3.0-py2.py3-none-any.whl", hash = "sha256:46ddef89cc2416a81ecfbeaceab1881948c014b1b6e4450b815311a89fb977b0"},
-    {file = "sphinx_rtd_theme-1.3.0.tar.gz", hash = "sha256:590b030c7abb9cf038ec053b95e5380b5c70d61591eb0b552063fbe7c41f0931"},
+    {file = "sphinx_mdinclude-0.6.1-py3-none-any.whl", hash = "sha256:d96cb01b8ab23dc8e5e3932c8fbc91d402e7e708aa5ba8d63a8e627d00275ae6"},
+    {file = "sphinx_mdinclude-0.6.1.tar.gz", hash = "sha256:ece3d812e2d559b4e7e47f67b6a87b0e2a689b6b2f5114795c8ed47ffb39c169"},
 ]
 
 [package.dependencies]
-docutils = "<0.19"
-sphinx = ">=1.6,<8"
+docutils = ">=0.16,<1.0"
+mistune = ">=3.0,<4.0"
+pygments = ">=2.8"
+sphinx = ">=6"
+
+[package.extras]
+dev = ["attribution (==1.7.1)", "black (==24.4.2)", "coverage (==7.5.1)", "docutils (==0.20.1)", "docutils (==0.21.2)", "flake8 (==7.0.0)", "flit (==3.9.0)", "mistune (==3.0.2)", "mypy (==1.10.0)", "sphinx (==7.1.2)", "sphinx (==7.3.7)", "ufmt (==2.5.1)", "usort (==1.0.8.post1)"]
+
+[[package]]
+name = "sphinx-rtd-theme"
+version = "3.0.0rc1"
+description = "Read the Docs theme for Sphinx"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "sphinx_rtd_theme-3.0.0rc1-py2.py3-none-any.whl", hash = "sha256:5942c963c36525ae25386d22b565dc07daf0862e2757fe83ba679414fabba406"},
+    {file = "sphinx_rtd_theme-3.0.0rc1.tar.gz", hash = "sha256:fa5b5f2fcfa067038d4e362295275d959529bedde94f929d899f88c97f9939fa"},
+]
+
+[package.dependencies]
+docutils = ">0.18,<0.22"
+sphinx = ">=6,<9"
 sphinxcontrib-jquery = ">=4,<5"
 
 [package.extras]
-dev = ["bump2version", "sphinxcontrib-httpdomain", "transifex-client", "wheel"]
+dev = ["bump2version", "transifex-client", "twine", "wheel"]
 
 [[package]]
 name = "sphinxcontrib-applehelp"
@@ -3415,6 +3459,21 @@ standalone = ["Sphinx (>=5)"]
 test = ["html5lib", "pytest"]
 
 [[package]]
+name = "sphinxcontrib-httpdomain"
+version = "1.8.1"
+description = "Sphinx domain for documenting HTTP APIs"
+optional = false
+python-versions = ">=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*"
+files = [
+    {file = "sphinxcontrib-httpdomain-1.8.1.tar.gz", hash = "sha256:6c2dfe6ca282d75f66df333869bb0ce7331c01b475db6809ff9d107b7cdfe04b"},
+    {file = "sphinxcontrib_httpdomain-1.8.1-py2.py3-none-any.whl", hash = "sha256:21eefe1270e4d9de8d717cc89ee92cc4871b8736774393bafc5e38a6bb77b1d5"},
+]
+
+[package.dependencies]
+six = "*"
+Sphinx = ">=1.6"
+
+[[package]]
 name = "sphinxcontrib-jquery"
 version = "4.1"
 description = "Extension to include jQuery on newer Sphinx releases"
@@ -3441,6 +3500,26 @@ files = [
 
 [package.extras]
 test = ["flake8", "mypy", "pytest"]
+
+[[package]]
+name = "sphinxcontrib-openapi"
+version = "0.8.4"
+description = "OpenAPI (fka Swagger) spec renderer for Sphinx"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "sphinxcontrib-openapi-0.8.4.tar.gz", hash = "sha256:df883808a5b5e4b4113ad697185c43a3f42df3dce70453af78ba7076907e9a20"},
+    {file = "sphinxcontrib_openapi-0.8.4-py3-none-any.whl", hash = "sha256:50911c18d452d9390ee3a384ef8dc8bde6135f542ba55691f81e1fbc0b71014e"},
+]
+
+[package.dependencies]
+deepmerge = ">=0.1"
+jsonschema = ">=2.5.1"
+picobox = ">=2.2"
+PyYAML = ">=3.12"
+sphinx = ">=2.0"
+sphinx-mdinclude = ">=0.5.2"
+sphinxcontrib-httpdomain = ">=1.5.0"
 
 [[package]]
 name = "sphinxcontrib-qthelp"
@@ -4091,4 +4170,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "fe5d523fa4b69c7fca06f988cc010c253349771f1be0632d20e0f9559d2d0dbd"
+content-hash = "b922a98cfd5af5571d89dcc1d04ccd89de011ef378181e3fbc4b1fff0843c73a"
