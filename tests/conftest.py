@@ -1,11 +1,14 @@
 """Global test setup/teardown."""
 
-import os
+import logging
 
 import pytest
 
 from ska_dlm import CONFIG
-from ska_dlm.dlm_db.db_access import DB
+from tests.common_docker import DlmTestClientDocker
+from tests.common_k8s import DlmTestClientK8s
+from tests.common_local import DlmTestClientLocal
+from tests.test_env import DlmTestClient
 
 
 def pytest_addoption(parser):
@@ -14,48 +17,36 @@ def pytest_addoption(parser):
     parser.addoption("--auth", action="store", default="1", help="Use OAuth flow")
 
 
-@pytest.fixture(name="configure", scope="session", autouse=True)
-def configure(request):
-    """Setup tests to run against instance running in Minikube."""  # noqa: D401
+@pytest.fixture(name="env", scope="session")
+def env_fixture(request) -> DlmTestClient:
+    """Fixture that creates deployment environment specific client.
 
-    # Run as "pythest --env local" for local testing
-    # Run as "pythest --env docker" for Docker testing
-    # Run as "pytest --env k8s" for Kube testing
-    env = request.config.getoption("--env")
-    if env == "k8s":
-        CONFIG.REST.base_url = _generate_k8s_url("postgrest", "ska-dlm-postgrest")
-        CONFIG.RCLONE.url = _generate_k8s_url("rclone", "ska-dlm-rclone")
+    Additionally overrides ska_dlm.CONFIG with the environment in the test runner runtime.
 
-        # Horrible hacks that are necessary due to static instances
-        # pylint: disable-next=protected-access
-        DB._api_url = CONFIG.REST.base_url
+    Parameters
+    ----------
+    request : FixtureRequest
+        pytest fixture request context.
 
-    elif env == "docker":
-        CONFIG.REST.base_url = "http://dlm_postgrest:3000"
-        CONFIG.RCLONE.url = "http://dlm_rclone:5572"
-        # pylint: disable-next=protected-access
-        DB._api_url = CONFIG.REST.base_url
+    Returns
+    -------
+    DlmTestClient
+        client interface to a test DLM deployment.
 
-    elif env == "local":
-        CONFIG.REST.base_url = "http://localhost:3000"
-        CONFIG.RCLONE.url = "http://localhost:5572"
-        # pylint: disable-next=protected-access
-        DB._api_url = CONFIG.REST.base_url
-
-    else:
-        raise ValueError("Unknown test configuration")
-
-
-def _generate_k8s_url(ingress_path: str, service_name: str):
+    Raises
+    ------
+    ValueError
+        Invalid `--env` option provided to pytest
     """
-    Generate a URL appropriate to query depending on whether we are
-    running with ingress or not.
-    """
+    match request.config.getoption("--env"):
+        case "local":
+            env = DlmTestClientLocal()
+        case "docker":
+            env = DlmTestClientDocker()
+        case "k8s":
+            env = DlmTestClientK8s()
+        case _:
+            raise ValueError("unknown test env configuration")
 
-    namespace = os.getenv("KUBE_NAMESPACE")
-    assert namespace
-
-    if ingress := os.getenv("TEST_INGRESS"):
-        return f"{ingress}/{namespace}/{ingress_path}"
-
-    return f"http://{service_name}.{namespace}"
+    logging.info("using test config: %s", CONFIG)
+    return env

@@ -17,14 +17,18 @@ include .make/k8s.mk
 # MacOS Arm64 ingress has issues. Workaround is to run with
 # `minikube tunnel` and connect via localhost
 # See https://github.com/kubernetes/minikube/issues/13510
+ifndef GITLAB_CI
 ifeq ($(shell uname -m), arm64)
-	TEST_INGRESS ?= http://localhost
+	K8S_HOST_URL ?= http://localhost
 else
-	TEST_INGRESS ?= http://$(shell minikube ip)
+	K8S_HOST_URL ?= http://$(shell minikube ip)
 endif
+endif  # GITLAB_CI
+
+SHARED_VOLUMES_DIR ?= ${PWD}/tests/volumes
 
 # Make these available as environment variables
-export KUBE_NAMESPACE TEST_INGRESS
+export KUBE_NAMESPACE K8S_HOST_URL SHARED_VOLUMES_DIR
 
 .PHONY: docs-pre-build k8s-recreate-namespace k8s-do-test
 
@@ -32,13 +36,13 @@ docs-pre-build: ## setup the document build environment.
 	poetry install --only main,docs
 
 python-pre-test:
-	docker compose --file tests/services.docker-compose.yaml -p dlm-test-services up --detach
+	docker compose --file tests/services.docker-compose.yaml -p dlm-test-services up --detach --wait
 python-post-test:
 	docker compose --file tests/services.docker-compose.yaml -p dlm-test-services down
 
 docker-test: docker-pre-test docker-do-test docker-post-test
 docker-pre-test:
-	docker compose -f tests/testrunner.docker-compose.yaml -p dlm-test-services build
+	docker compose --file tests/testrunner.docker-compose.yaml -p dlm-test-services build
 docker-do-test:
 	docker compose --file tests/testrunner.docker-compose.yaml -p dlm-test-services run dlm_testrunner
 docker-post-test:

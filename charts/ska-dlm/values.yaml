@@ -15,7 +15,7 @@ request:
   component: request
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: 0.0.1-dev.ce75f33bd
+  version: 0.0.1-dev.c65ec9196
   imagePullPolicy: Always
   replicas: 1
 
@@ -23,7 +23,7 @@ migration:
   component: migration
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: 0.0.1-dev.ce75f33bd
+  version: 0.0.1-dev.c65ec9196
   imagePullPolicy: Always
   replicas: 1
 
@@ -31,7 +31,7 @@ storage:
   component: storage
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: 0.0.1-dev.ce75f33bd
+  version: 0.0.1-dev.c65ec9196
   imagePullPolicy: Always
   replicas: 1
 
@@ -39,7 +39,7 @@ ingest:
   component: ingest
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: 0.0.1-dev.ce75f33bd
+  version: 0.0.1-dev.c65ec9196
   imagePullPolicy: Always
   replicas: 1
 

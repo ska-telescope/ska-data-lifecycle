@@ -17,8 +17,8 @@ def _clear_database():
 
 
 @pytest.fixture(name="mock_db")
-def mock_database_fixture():
-    # NOTE: dlm_postgres service required
+def mock_database_fixture(env):
+    # NOTE: postgrest service required
     _clear_database()
     yield
     _clear_database()

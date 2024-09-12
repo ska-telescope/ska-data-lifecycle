@@ -46,7 +46,7 @@ class PostgRESTAccess(contextlib.AbstractContextManager):
 
     def __init__(self, api_url: str, timeout: int | float = 10, headers: dict | None = None):
         """Create the DB access."""
-        self._api_url = api_url
+        self.api_url = api_url
         self._session = requests.Session()
         self._session.headers = dict(headers if headers else _DEFAULT_HEADERS)
         self._session.timeout = timeout
@@ -80,7 +80,7 @@ class PostgRESTAccess(contextlib.AbstractContextManager):
         json: object | None = None,
         **kwargs,
     ) -> str:
-        url = f"{self._api_url}/{table}"
+        url = f"{self.api_url}/{table}"
         try:
             response = self._session.request(method, url, params=params, json=json, **kwargs)
             response.raise_for_status()

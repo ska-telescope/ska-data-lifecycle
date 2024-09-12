@@ -21,4 +21,6 @@ ARG DO_AUTH
 ENV DO_AUTH=${DO_AUTH}
 
 ENV PATH="/app/.venv/bin:${PATH}"
+
+COPY ./tests/volumes/config-dockercompose.yaml /root/.dlm/config.yaml
 ENTRYPOINT pytest --env docker --auth ${DO_AUTH}

@@ -53,8 +53,11 @@ With public network access to the development k8s cluster:
 
 ### Running Helm Chart Tests
 
+#### k8s tests
+
 Run the following to test against the running test deployment:
 ```sh
+make k8s-install-chart
 make k8s-test
 ```
 

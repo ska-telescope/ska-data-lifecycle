@@ -36,6 +36,7 @@ typer = "^0.12.3"
 rich = "^13.0"
 ska-sdp-metadata-generator = "^0.0.5"
 fastapi = "^0.111.0"
+overrides = "^7.7.0"
 
 [tool.poetry.group.test.dependencies]
 black = "^23.3.0"
@@ -66,6 +67,11 @@ addopts = [
     "--integration-cover",
     "-v",
 ]
+log_cli_level = "INFO"
+log_cli_format = "1|%(asctime)s.%(msecs)03dZ|%(levelname)s|%(threadName)s|%(funcName)s|%(filename)s#%(lineno)d||%(message)s"
+log_cli_date_format = "%Y-%m-%dT%H:%M:%S"
+log_file = "pytest-logs.txt"
+log_file_level = "INFO"
 # log_cli = true
 
 [tool.flake8]
@@ -73,6 +79,7 @@ docstring-style = "numpy"  # darglint
 docstring-convention = "numpy"  # flake8-docstrings
 strictness = "short"
 rst-directives = "literalinclude"
+ignore-decorator = "overrides"
 rst-roles = [
     "py:attr",
     "py:class",

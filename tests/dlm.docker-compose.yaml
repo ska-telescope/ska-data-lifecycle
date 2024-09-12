@@ -1,0 +1,80 @@
+include:
+- path: services.docker-compose.yaml
+
+services:
+  dlm_migration:
+    platform: linux/amd64
+    image: dlm_migration
+    container_name: dlm_migration
+    build:
+       context: ..
+       dockerfile: tests/Dockerfile-dlm-compose
+    entrypoint: uvicorn ska_dlm.dlm_migration.dlm_migration_requests:app --host 0.0.0.0 --port 8004
+    ports:
+      - 8004:8004
+    volumes:
+      - shared-tmpfs:/data
+    depends_on:
+      - dlm_postgrest
+      - dlm_rclone
+      - dlm_gateway
+    networks:
+      - dlm_network
+
+  dlm_storage:
+    platform: linux/amd64
+    image: dlm_storage
+    container_name: dlm_storage
+    build:
+       context: ..
+       dockerfile: tests/Dockerfile-dlm-compose
+    entrypoint: uvicorn ska_dlm.dlm_storage.dlm_storage_requests:app --host 0.0.0.0 --port 8003
+    ports:
+      - 8003:8003
+    volumes:
+      - shared-tmpfs:/data
+    depends_on:
+      - dlm_gateway
+      - dlm_postgrest
+      - dlm_rclone
+    networks:
+      - dlm_network
+
+  dlm_request:
+    image: dlm_request
+    container_name: dlm_request
+    platform: linux/amd64
+    build:
+       context: ..
+       dockerfile: tests/Dockerfile-dlm-compose
+    entrypoint: uvicorn ska_dlm.dlm_request.dlm_request_requests:app --host 0.0.0.0 --port 8002
+    ports:
+      - 8002:8002
+    volumes:
+      - shared-tmpfs:/data
+    depends_on:
+      - dlm_gateway
+      - dlm_postgrest
+      - dlm_rclone
+    networks:
+      - dlm_network
+
+  dlm_ingest:
+    platform: linux/amd64
+    image: dlm_ingest
+    container_name: dlm_ingest
+    build:
+       context: ..
+       dockerfile: tests/Dockerfile-dlm-compose
+    entrypoint: uvicorn ska_dlm.dlm_ingest.dlm_ingest_requests:app --host 0.0.0.0 --port 8001
+    ports:
+      - 8001:8001
+    volumes:
+      - shared-tmpfs:/data
+    depends_on:
+      - dlm_postgrest
+      - dlm_rclone
+      - dlm_gateway
+    networks:
+      - dlm_network
+

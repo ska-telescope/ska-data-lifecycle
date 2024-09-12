@@ -1,81 +1,4 @@
 services:
-
-  dlm_migration:
-    platform: linux/amd64
-    image: dlm_migration
-    container_name: dlm_migration
-    build:
-       context: ..
-       dockerfile: tests/Dockerfile-dlm-service
-    entrypoint: fastapi dev src/ska_dlm/dlm_migration/dlm_migration_requests.py --port 8004 --host 0.0.0.0
-    ports:
-      - 8004:8004
-    volumes:
-      - shared-tmpfs:/data
-    depends_on:
-      - dlm_postgrest
-      - dlm_rclone
-      - dlm_gateway
-    networks:
-      - dlm_network
-
-  dlm_storage:
-    platform: linux/amd64
-    image: dlm_storage
-    container_name: dlm_storage
-    build:
-       context: ..
-       dockerfile: tests/Dockerfile-dlm-service
-    entrypoint: fastapi dev src/ska_dlm/dlm_storage/dlm_storage_requests.py --port 8003 --host 0.0.0.0
-    ports:
-      - 8003:8003
-    volumes:
-      - shared-tmpfs:/data
-    depends_on:
-      - dlm_gateway
-      - dlm_postgrest
-      - dlm_rclone
-    networks:
-      - dlm_network
-
-  dlm_request:
-    image: dlm_request
-    container_name: dlm_request
-    platform: linux/amd64
-    build:
-       context: ..
-       dockerfile: tests/Dockerfile-dlm-service
-    entrypoint: fastapi dev src/ska_dlm/dlm_request/dlm_request_requests.py --port 8002 --host 0.0.0.0
-    ports:
-      - 8002:8002
-    volumes:
-      - shared-tmpfs:/data
-    depends_on:
-      - dlm_gateway
-      - dlm_postgrest
-      - dlm_rclone
-    networks:
-      - dlm_network
-
-  dlm_ingest:
-    platform: linux/amd64
-    image: dlm_ingest
-    container_name: dlm_ingest
-    build:
-       context: ..
-       dockerfile: tests/Dockerfile-dlm-service
-    entrypoint: fastapi dev src/ska_dlm/dlm_ingest/dlm_ingest_requests.py --port 8001 --host 0.0.0.0
-    ports:
-      - 8001:8001
-    volumes:
-      - shared-tmpfs:/data
-    depends_on:
-      - dlm_postgrest
-      - dlm_rclone
-      - dlm_gateway
-    networks:
-      - dlm_network
-
   dlm_gateway:
     platform: linux/amd64
     image: dlm_gateway
@@ -98,7 +21,7 @@ services:
         INGEST_CLIENT: "http://dlm_ingest:8001"
         REQUESTS_CLIENT: "http://dlm_request:8002"
         STORAGE_CLIENT: "http://dlm_storage:8003"
-        MIGRATION_CLIENT: "http://dlm_storage:8004"
+        MIGRATION_CLIENT: "http://dlm_migration:8004"
     healthcheck:
         test: curl --fail http://localhost:8000/heartbeat || exit 1
         interval: 5s
@@ -186,7 +109,7 @@ services:
         test:
           [
             "CMD-SHELL",
-            'exec 3<>/dev/tcp/localhost/8080; echo -e "GET /health/ready HTTP/1.1\nhost: localhost:8080\n" >&3; timeout --preserve-status 1 cat <&3 | grep -m 1 status | grep -m 1 UP; ERROR=$?; exec 3<&-; exec 3>&-; exit $ERROR'
+            'exec 3<>/dev/tcp/localhost/9000; echo -e "GET /health/ready HTTP/1.1\nhost: localhost:9000\n" >&3; timeout --preserve-status 1 cat <&3 | grep -m 1 status | grep -m 1 UP; ERROR=$?; exec 3<&-; exec 3>&-; exit $ERROR'
           ]
         interval: 5s
         timeout: 5s
@@ -213,7 +136,6 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-
 
 networks:
   dlm_network:

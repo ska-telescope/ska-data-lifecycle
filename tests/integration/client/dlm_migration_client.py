@@ -2,7 +2,7 @@
 
 import requests
 
-REQUEST_URL = ""
+MIGRATION_URL = ""
 REQUEST_BEARER = None
 
 
@@ -54,7 +54,7 @@ def copy_data_item(  # pylint: disable=too-many-arguments, unused-argument
     params = {k: v for k, v in locals().items() if v}
     headers = {"Authorization": f"Bearer {REQUEST_BEARER}"} if REQUEST_BEARER else {}
     response = requests.get(
-        f"{REQUEST_URL}/migration/copy_data_item", params=params, headers=headers, timeout=60
+        f"{MIGRATION_URL}/migration/copy_data_item", params=params, headers=headers, timeout=60
     )
     if response.status_code in [401, 403]:
         response.raise_for_status()
