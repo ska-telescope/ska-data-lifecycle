@@ -35,7 +35,7 @@ def query_data_item(item_name: str = "", oid: str = "", uid: str = "", params: s
 
 
 # pylint: disable=unused-argument
-def query_expired(offset: timedelta = None):
+def query_expired(offset: timedelta | None = None):
     """
     Query for all expired data_items using the uid_expiration timestamp.
 

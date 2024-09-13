@@ -4,6 +4,7 @@ import copy
 import inspect
 import types
 import typing
+from datetime import timedelta
 from types import NoneType
 from typing import Callable, ParamSpec, TypeVar, get_args
 
@@ -111,7 +112,7 @@ def fastapi_docstring_annotate(
         parameters[arg_name] = {}
         kinds[arg_name] = (
             fastapi.params.Query
-            if set(get_args(param.annotation)).issubset((str, float, int, NoneType))
+            if set(get_args(param.annotation)).issubset((str, timedelta, float, int, NoneType))
             else fastapi.params.Body
         )
 
