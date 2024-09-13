@@ -115,19 +115,19 @@ OPEN_API_DIR = Path("api/_openapi")
 if not os.path.isdir(OPEN_API_DIR):
    os.makedirs(OPEN_API_DIR)
 extract_openapi(
-    "ska_dlm.dlm_request.dlm_request_requests:app",
+    "ska_dlm.dlm_request.dlm_request_requests:rest",
     out=str(OPEN_API_DIR / "request.yaml"),
 )
 extract_openapi(
-    "ska_dlm.dlm_ingest.dlm_ingest_requests:app",
+    "ska_dlm.dlm_ingest.dlm_ingest_requests:rest",
     out=str(OPEN_API_DIR / "ingest.yaml"),
 )
 extract_openapi(
-    "ska_dlm.dlm_storage.dlm_storage_requests:app",
+    "ska_dlm.dlm_storage.dlm_storage_requests:rest",
     out=str(OPEN_API_DIR / "storage.yaml"),
 )
 extract_openapi(
-    "ska_dlm.dlm_migration.dlm_migration_requests:app",
+    "ska_dlm.dlm_migration.dlm_migration_requests:rest",
     out=str(OPEN_API_DIR / "migration.yaml"),
 )
 

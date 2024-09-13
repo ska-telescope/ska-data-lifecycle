@@ -7,8 +7,10 @@ import requests
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
+import ska_dlm
 from ska_dlm.cli_utils import fastapi_auto_annotate
 from ska_dlm.dlm_db.db_access import DB
+from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
 
 from .. import CONFIG
 from ..data_item import set_state
@@ -17,11 +19,18 @@ from ..exceptions import InvalidQueryParameters, UnmetPreconditionForOperation, 
 
 logger = logging.getLogger(__name__)
 
-app = fastapi_auto_annotate(FastAPI(title="DLM Storage API"))
+cli = ExceptionHandlingTyper()
+rest = fastapi_auto_annotate(
+    FastAPI(
+        title="DLM Storage API",
+        version=ska_dlm.__version__,
+        license_info={"name": "BSD-3-Clause", "identifier": "BSD-3-Clause"},
+    )
+)
 
 
 # pylint: disable=unused-argument
-@app.exception_handler(ValueAlreadyInDB)
+@rest.exception_handler(ValueAlreadyInDB)
 def valuealreadyindb_exception_handler(request: Request, exc: ValueAlreadyInDB):
     """Catch ValueAlreadyInDB and send a JSONResponse."""
     return JSONResponse(
@@ -31,7 +40,7 @@ def valuealreadyindb_exception_handler(request: Request, exc: ValueAlreadyInDB):
 
 
 # pylint: disable=unused-argument
-@app.exception_handler(UnmetPreconditionForOperation)
+@rest.exception_handler(UnmetPreconditionForOperation)
 def unmetprecondition_exception_handler(request: Request, exc: UnmetPreconditionForOperation):
     """Catch UnmetPreconditionForOperation and send a JSONResponse."""
     return JSONResponse(
@@ -41,7 +50,7 @@ def unmetprecondition_exception_handler(request: Request, exc: UnmetPrecondition
 
 
 # pylint: disable=unused-argument
-@app.exception_handler(InvalidQueryParameters)
+@rest.exception_handler(InvalidQueryParameters)
 def invalidquery_exception_handler(request: Request, exc: InvalidQueryParameters):
     """Catch InvalidQueryParameters and send a JSONResponse."""
     return JSONResponse(
@@ -50,7 +59,8 @@ def invalidquery_exception_handler(request: Request, exc: InvalidQueryParameters
     )
 
 
-@app.get("/storage/query_location")
+@cli.command()
+@rest.get("/storage/query_location")
 def query_location(location_name: str = "", location_id: str = "") -> list:
     """
     Query a location by at least specifying an location_name.
@@ -75,7 +85,8 @@ def query_location(location_name: str = "", location_id: str = "") -> list:
     return DB.select(CONFIG.DLM.location_table, params=params)
 
 
-@app.post("/storage/init_storage")
+@cli.command()
+@rest.post("/storage/init_storage")
 def init_storage(  # pylint: disable=R0913
     storage_name: str = "",  # pylint: disable=W0613
     location_name: str = "",
@@ -143,7 +154,8 @@ def init_storage(  # pylint: disable=R0913
     return DB.insert(CONFIG.DLM.storage_table, json=post_data)[0]["storage_id"]
 
 
-@app.post("/storage/create_storage_config")
+@cli.command()
+@rest.post("/storage/create_storage_config")
 def create_storage_config(
     storage_id: str = "", config: str = "", storage_name: str = "", config_type: str = "rclone"
 ) -> str:
@@ -180,6 +192,7 @@ def create_storage_config(
     raise UnmetPreconditionForOperation("Configuring rclone server failed!")
 
 
+@cli.command()
 def get_storage_config(
     storage_id: str = "", storage_name: str = "", config_type: str = "rclone"
 ) -> list[str]:
@@ -224,7 +237,7 @@ def get_storage_config(
     return [json.loads(entry["config"]) for entry in result] if result else []
 
 
-@app.post("/storage/rclone_config")
+@rest.post("/storage/rclone_config")
 def rclone_config(config: str) -> bool:
     """Create a new rclone backend configuration entry on the rclone server.
 
@@ -345,7 +358,8 @@ def rclone_delete(volume: str, fpath: str) -> bool:
     return True
 
 
-@app.post("/storage/init_location")
+@cli.command()
+@rest.post("/storage/init_location")
 def init_location(
     location_name: str = "",
     location_type: str = "",
@@ -368,7 +382,8 @@ def init_location(
     return DB.insert(CONFIG.DLM.location_table, json=post_data)[0]["location_id"]
 
 
-@app.get("/storage/query_storage")
+@cli.command()
+@rest.get("/storage/query_storage")
 def query_storage(storage_name: str = "", storage_id: str = "") -> list:
     """
     Query a storage by at least specifying a storage_name.

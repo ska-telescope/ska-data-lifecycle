@@ -7,26 +7,26 @@ from requests import HTTPError
 
 from ska_dlm.cli_utils import dump_short_stacktrace
 from ska_dlm.dlm_db.db_access import DBQueryError
-from ska_dlm.error_handling_typer import ErrorHandlingTyper
+from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
 from ska_dlm.exceptions import UnmetPreconditionForOperation
 
-from .data_item.cli import app as item_app
-from .dlm_ingest.cli import app as ingest_app
-from .dlm_migration.cli import app as migration_app
-from .dlm_request.cli import app as request_app
-from .dlm_storage.cli import app as storage_app
+from .data_item.data_item_requests import cli as item_app
+from .dlm_ingest.dlm_ingest_requests import cli as ingest_app
+from .dlm_migration.dlm_migration_requests import cli as migration_app
+from .dlm_request.dlm_request_requests import cli as request_app
+from .dlm_storage.dlm_storage_requests import cli as storage_app
 
-app = ErrorHandlingTyper(pretty_exceptions_show_locals=False)
+app = ExceptionHandlingTyper(pretty_exceptions_show_locals=False)
 app.add_typer(ingest_app, name="ingest", help="Ingest data items")
 app.add_typer(item_app, name="data-item", help="Manage data_item information")
 app.add_typer(request_app, name="request", help="Request queries")
 app.add_typer(storage_app, name="storage", help="Manage storage and location information")
-app.add_typer(migration_app, name="migration", help="Manage storage and location information")
+app.add_typer(migration_app, name="migration", help="Manage data movement and migration")
 
 
-app.error_handler(HTTPError)(dump_short_stacktrace)
-app.error_handler(DBQueryError)(dump_short_stacktrace)
-app.error_handler(UnmetPreconditionForOperation)(dump_short_stacktrace)
+app.exception_handler(HTTPError)(dump_short_stacktrace)
+app.exception_handler(DBQueryError)(dump_short_stacktrace)
+app.exception_handler(UnmetPreconditionForOperation)(dump_short_stacktrace)
 
 
 def main():

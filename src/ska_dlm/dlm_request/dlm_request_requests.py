@@ -2,19 +2,23 @@
 
 import logging
 from datetime import datetime, timedelta, timezone
+from typing import Annotated
 
+import typer
 from fastapi import FastAPI
 
 import ska_dlm
 from ska_dlm.cli_utils import fastapi_auto_annotate
 from ska_dlm.dlm_db.db_access import DB
+from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
 
 from .. import CONFIG
 from ..exceptions import InvalidQueryParameters
 
 logger = logging.getLogger(__name__)
 
-app = fastapi_auto_annotate(
+cli = ExceptionHandlingTyper()
+rest = fastapi_auto_annotate(
     FastAPI(
         title="DLM Request API",
         version=ska_dlm.__version__,
@@ -23,7 +27,8 @@ app = fastapi_auto_annotate(
 )
 
 
-@app.get("/request/query_data_item")
+@cli.command()
+@rest.get("/request/query_data_item")
 def query_data_item(
     item_name: str = "", oid: str = "", uid: str = "", params: str | None = None
 ) -> list:
@@ -63,7 +68,7 @@ def query_data_item(
     return DB.select(CONFIG.DLM.dlm_table, params=params)
 
 
-@app.get("/request/query_expired")
+@rest.get("/request/query_expired")
 def query_expired(offset: timedelta | None = None):
     """Query for all expired data_items using the uid_expiration timestamp.
 
@@ -86,7 +91,8 @@ def query_expired(offset: timedelta | None = None):
     return query_data_item(params=params)
 
 
-@app.get("/request/query_deleted")
+@cli.command()
+@rest.get("/request/query_deleted")
 def query_deleted(uid: str = "") -> list:
     """Query for all deleted data_items using the deleted state.
 
@@ -106,7 +112,8 @@ def query_deleted(uid: str = "") -> list:
     return query_data_item(params=params)
 
 
-@app.get("/request/query_new")
+@cli.command()
+@rest.get("/request/query_new")
 def query_new(check_date: str, uid: str = "") -> list:
     """Query for all data_items newer than the date provided.
 
@@ -133,7 +140,8 @@ def query_new(check_date: str, uid: str = "") -> list:
     return query_data_item(params=params)
 
 
-@app.get("/request/query_exists")
+@cli.command()
+@rest.get("/request/query_exists")
 def query_exists(item_name: str = "", oid: str = "", uid: str = "", ready: bool = False) -> bool:
     """Query to check for existence of a data_item.
 
@@ -146,7 +154,7 @@ def query_exists(item_name: str = "", oid: str = "", uid: str = "", ready: bool 
     uid: str, optional
         this returns only one storage_id
     ready: bool, optional
-        _description_
+        whether the item must be in ready state.
 
     Returns
     -------
@@ -168,7 +176,8 @@ def query_exists(item_name: str = "", oid: str = "", uid: str = "", ready: bool 
     return bool(query_data_item(params=params))
 
 
-@app.get("/request/query_exist_and_ready")
+@cli.command()
+@rest.get("/request/query_exist_and_ready")
 def query_exists_and_ready(item_name: str = "", oid: str = "", uid: str = "") -> bool:
     """Check whether a data_item exists and is in ready state.
 
@@ -189,7 +198,8 @@ def query_exists_and_ready(item_name: str = "", oid: str = "", uid: str = "") ->
     return query_exists(item_name, oid, uid, ready=True)
 
 
-@app.get("/request/query_item_storage")
+@cli.command()
+@rest.get("/request/query_item_storage")
 def query_item_storage(item_name: str = "", oid: str = "", uid: str = "") -> list:
     """
     Query for the storage_ids of all backends holding a copy of a data_item.

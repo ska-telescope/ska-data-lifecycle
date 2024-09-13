@@ -180,7 +180,7 @@ def create_typer_parameter(
 def typer_docstring(func: typing.Callable[ParamsT, ReturnT]) -> typing.Callable[ParamsT, ReturnT]:
     """Decorator that generates Typer annotations from the function signature and docstring.
 
-    NOTE: This strips parameters from the resulting docstring.
+    NOTE: This does not modify the __doc__ member.
 
     Parameters
     ----------
@@ -240,7 +240,6 @@ def typer_docstring(func: typing.Callable[ParamsT, ReturnT]) -> typing.Callable[
                 updated_annotation.__metadata__ += (info,)
         else:
             # create annotation
-            # NOTE:
             updated_annotation = typing.Annotated[updated_annotation, info]
         output_annotations[arg_name] = updated_annotation
 
@@ -248,5 +247,5 @@ def typer_docstring(func: typing.Callable[ParamsT, ReturnT]) -> typing.Callable[
         output_annotations["return"] = func.__annotations__["return"]
 
     output_func.__annotations__ = output_annotations
-
+    output_func.__doc__ = docstring.description
     return output_func

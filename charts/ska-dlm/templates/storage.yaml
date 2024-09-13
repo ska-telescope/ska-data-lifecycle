@@ -40,7 +40,7 @@ spec:
         imagePullPolicy: {{ .Values.storage.imagePullPolicy }}
         command:
         - uvicorn
-        - ska_dlm.dlm_storage.dlm_storage_requests:app
+        - ska_dlm.dlm_storage.dlm_storage_requests:rest
         - --host
         - "0.0.0.0"
         - --port

@@ -9,7 +9,7 @@ services:
     build:
        context: ..
        dockerfile: tests/Dockerfile-dlm-compose
-    entrypoint: uvicorn ska_dlm.dlm_migration.dlm_migration_requests:app --host 0.0.0.0 --port 8004
+    entrypoint: uvicorn ska_dlm.dlm_migration.dlm_migration_requests:rest --host 0.0.0.0 --port 8004
     ports:
       - 8004:8004
     volumes:
@@ -28,7 +28,7 @@ services:
     build:
        context: ..
        dockerfile: tests/Dockerfile-dlm-compose
-    entrypoint: uvicorn ska_dlm.dlm_storage.dlm_storage_requests:app --host 0.0.0.0 --port 8003
+    entrypoint: uvicorn ska_dlm.dlm_storage.dlm_storage_requests:rest --host 0.0.0.0 --port 8003
     ports:
       - 8003:8003
     volumes:
@@ -47,7 +47,7 @@ services:
     build:
        context: ..
        dockerfile: tests/Dockerfile-dlm-compose
-    entrypoint: uvicorn ska_dlm.dlm_request.dlm_request_requests:app --host 0.0.0.0 --port 8002
+    entrypoint: uvicorn ska_dlm.dlm_request.dlm_request_requests:rest --host 0.0.0.0 --port 8002
     ports:
       - 8002:8002
     volumes:
@@ -66,7 +66,7 @@ services:
     build:
        context: ..
        dockerfile: tests/Dockerfile-dlm-compose
-    entrypoint: uvicorn ska_dlm.dlm_ingest.dlm_ingest_requests:app --host 0.0.0.0 --port 8001
+    entrypoint: uvicorn ska_dlm.dlm_ingest.dlm_ingest_requests:rest --host 0.0.0.0 --port 8001
     ports:
       - 8001:8001
     volumes:
