@@ -1,52 +1,45 @@
 """Common utilities for CLI modules."""
 
 import copy
-import functools
 import inspect
-import re
 import types
 import typing
 from types import NoneType
-from typing import Callable, Iterable, ParamSpec, TypeVar, get_args
+from typing import Callable, ParamSpec, TypeVar, get_args
 
 import fastapi
 import fastapi.params
 import typer
 from docstring_parser import Docstring, DocstringStyle, compose, parse
 from pydantic.fields import FieldInfo
-from requests import HTTPError
 from rich import print as rich_print
-
-from ska_dlm.dlm_db.db_access import DBQueryError
-from ska_dlm.exceptions import UnmetPreconditionForOperation
-
 
 ParamsT = ParamSpec("ParamsT")
 ReturnT = TypeVar("ReturnT")
 
 
+def _iterate_exception_causes(ex: Exception):
+    while ex:
+        yield ex
+        ex = ex.__cause__
+
+
+def dump_short_stacktrace(ex: Exception):
+    """Register custom stacktrace print for DBQueryError."""
+    full_msg = ", caused by: ".join(f"{ex}" for ex in _iterate_exception_causes(ex))
+    rich_print(f"[bold red]ERROR![/bold red]: {full_msg}")
+    return 1
+
+
 def add_as_typer_command(
     app: typer.Typer,
     func: Callable[ParamsT, ReturnT],
-    include_excs: Iterable[type[Exception]] | None = None,
-    exclude_excs: Iterable[type[Exception]] | None = None,
 ):
     """Add a typer command for the given callable function.
 
     The result of invoking the function is printed onto the screen. Certain exceptions are
     summarised in a single line instead of resulting on a full stack trace. Users can add/remove
     exceptions from getting this special treatment.
-
-    Parameters
-    ----------
-    app : typer.Typer
-        _description_
-    func : Callable[ParamsT, ReturnT]
-        _description_
-    include_excs : Iterable[type[Exception]] | None, optional
-        _description_, by default None
-    exclude_excs : Iterable[type[Exception]] | None, optional
-        _description_, by default None
     """
     app.command()(typer_docstring(func))
 
@@ -70,7 +63,9 @@ def fastapi_auto_annotate(app: fastapi.FastAPI):
     return app
 
 
-def fastapi_docstring_annotate(func: typing.Callable[ParamsT, ReturnT]) -> typing.Callable[ParamsT, ReturnT]:
+def fastapi_docstring_annotate(
+    func: typing.Callable[ParamsT, ReturnT]
+) -> typing.Callable[ParamsT, ReturnT]:
     """Decorator that generates FastAPI annotations from the function signature and docstring.
 
     Parameters

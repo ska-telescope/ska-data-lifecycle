@@ -4,9 +4,9 @@ import json
 import logging
 from typing import Any, Dict, List
 
-from fastapi import FastAPI
 import requests
 import ska_sdp_metadata_generator as metagen
+from fastapi import FastAPI
 from ska_sdp_dataproduct_metadata import MetaData
 
 from ska_dlm.cli_utils import fastapi_auto_annotate
