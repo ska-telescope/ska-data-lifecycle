@@ -7,7 +7,7 @@ import re
 import types
 import typing
 from types import NoneType
-from typing import ParamSpec, TypeVar, get_args
+from typing import Callable, Iterable, ParamSpec, TypeVar, get_args
 
 import fastapi
 import fastapi.params
@@ -21,20 +21,17 @@ from ska_dlm.dlm_db.db_access import DBQueryError
 from ska_dlm.exceptions import UnmetPreconditionForOperation
 
 
-def _exception_chain(ex: Exception):
-    while ex:
-        yield ex
-        ex = ex.__cause__
+ParamsT = ParamSpec("ParamsT")
+ReturnT = TypeVar("ReturnT")
 
 
 def add_as_typer_command(
     app: typer.Typer,
-    func: typing.Callable,
-    include_excs: typing.Iterable[type[Exception]] | None = None,
-    exclude_excs: typing.Iterable[type[Exception]] | None = None,
+    func: Callable[ParamsT, ReturnT],
+    include_excs: Iterable[type[Exception]] | None = None,
+    exclude_excs: Iterable[type[Exception]] | None = None,
 ):
-    """
-    Add a typer command for the given callable function.
+    """Add a typer command for the given callable function.
 
     The result of invoking the function is printed onto the screen. Certain exceptions are
     summarised in a single line instead of resulting on a full stack trace. Users can add/remove
@@ -44,36 +41,14 @@ def add_as_typer_command(
     ----------
     app : typer.Typer
         _description_
-    func : typing.Callable
+    func : Callable[ParamsT, ReturnT]
         _description_
-    include_excs : typing.Iterable[type[Exception]] | None, optional
+    include_excs : Iterable[type[Exception]] | None, optional
         _description_, by default None
-    exclude_excs : typing.Iterable[type[Exception]] | None, optional
+    exclude_excs : Iterable[type[Exception]] | None, optional
         _description_, by default None
     """
-    exceptions_to_handle = {HTTPError, DBQueryError, UnmetPreconditionForOperation}
-    exceptions_to_handle.update(set(include_excs or []))
-    exceptions_to_handle.difference_update(set(exclude_excs or []))
-
-    @functools.wraps(func)
-    def _wrapper(*args, **kwargs):
-        try:
-            func(*args, **kwargs)
-        except Exception as ex:
-            if isinstance(ex, tuple(exceptions_to_handle)):
-                full_msg = ", caused by: ".join(f"{ex}" for ex in _exception_chain(ex))
-                rich_print(f"[bold red]ERROR![/bold red]: {full_msg}")
-                raise typer.Exit(1)
-            raise
-
     app.command()(typer_docstring(func))
-
-
-PARAGRAPH_RE = re.compile(r"(.)\n(?!\n)")
-
-
-ParamsT = ParamSpec("ParamsT")
-T = TypeVar("T")
 
 
 def fastapi_auto_annotate(app: fastapi.FastAPI):
@@ -95,7 +70,7 @@ def fastapi_auto_annotate(app: fastapi.FastAPI):
     return app
 
 
-def fastapi_docstring_annotate(func: typing.Callable[ParamsT, T]) -> typing.Callable[ParamsT, T]:
+def fastapi_docstring_annotate(func: typing.Callable[ParamsT, ReturnT]) -> typing.Callable[ParamsT, ReturnT]:
     """Decorator that generates FastAPI annotations from the function signature and docstring.
 
     Parameters
@@ -109,6 +84,7 @@ def fastapi_docstring_annotate(func: typing.Callable[ParamsT, T]) -> typing.Call
         _description_
     """
     output_func = copy.copy(func)
+
     # Collect information about the parameters of the function
     parameters: dict[str, dict] = {}
     kinds: dict[str, type] = {}
@@ -184,7 +160,7 @@ def fastapi_docstring_annotate(func: typing.Callable[ParamsT, T]) -> typing.Call
     return output_func
 
 
-def typer_docstring(func: typing.Callable[ParamsT, T]) -> typing.Callable[ParamsT, T]:
+def typer_docstring(func: typing.Callable[ParamsT, ReturnT]) -> typing.Callable[ParamsT, ReturnT]:
     """Decorator that generates Typer annotations from the function signature and docstring.
 
     NOTE: This strips parameters from the resulting docstring.
@@ -200,6 +176,7 @@ def typer_docstring(func: typing.Callable[ParamsT, T]) -> typing.Callable[Params
         Decorated function with updated annotations and docstring.
     """
     output_func = copy.copy(func)
+
     # Collect information about the parameters of the function
     parameters: dict[str, dict] = {}
     kinds: dict[str, type] = {}
@@ -264,19 +241,5 @@ def typer_docstring(func: typing.Callable[ParamsT, T]) -> typing.Callable[Params
         output_annotations["return"] = func.__annotations__["return"]
 
     output_func.__annotations__ = output_annotations
-
-    # Only keep the main description as docstring so the CLI won't print
-    # the whole docstring, including the parameters
-    # alternatively can place a \f after the long description.
-    # func.__doc__ = docstring.description
-    # func.__doc__ = "\n\n".join(
-    #     [
-    #         docstring.description or "",
-    #         "\f",
-    #         *(s.description or "" for s in docstring.params),
-    #         # docstring.short_description or "",
-    #         # PARAGRAPH_RE.sub(r"\1 ", docstring.long_description or ""),
-    #     ]
-    # )
 
     return output_func
