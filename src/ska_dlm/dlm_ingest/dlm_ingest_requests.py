@@ -71,12 +71,12 @@ def register_data_item(  # noqa: C901 # pylint: disable=too-many-arguments
     This high level function is a combination of init_data_item, set_uri and set_state(READY).
     It also checks whether a data_item is already registered on the requested storage.
 
-    (1) check whether requested storage is known and accessible\n
-    (2) check whether item is accessible/exists on that storage\n
-    (3) check whether item is already registered on that storage\n
-    (4) initialize the new item with the same OID on the new storage\n
-    (5) set state to READY\n
-    (6) generate metadata\n
+    (1) check whether requested storage is known and accessible
+    (2) check whether item is accessible/exists on that storage
+    (3) check whether item is already registered on that storage
+    (4) initialize the new item with the same OID on the new storage
+    (5) set state to READY
+    (6) generate metadata
     (7) notify the data dashboard
 
     Parameters

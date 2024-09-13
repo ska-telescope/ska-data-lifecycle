@@ -1,6 +1,4 @@
 """CLI support for dlm_ingest package."""
-import typer
-
 from ska_dlm.cli_utils import add_as_typer_command, dump_short_stacktrace
 from ska_dlm.error_handling_typer import ErrorHandlingTyper
 

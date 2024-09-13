@@ -1,3 +1,4 @@
+"""Error handler typer module."""
 import sys
 from typing import Any, Callable, Type
 
@@ -25,16 +26,16 @@ class ErrorHandlingTyper(typer.Typer):
         return decorator
 
     def __call__(self, *args, **kwargs):
+        """Call the registered typer function."""
         try:
-            super(ErrorHandlingTyper, self).__call__(*args, **kwargs)
-        except Exception as e:
+            super().__call__(*args, **kwargs)
+        except Exception as e:  # pylint: disable=broad-exception-caught
             try:
                 if type(e) in self.error_handlers:
                     callback = self.error_handlers[type(e)]
                     exit_code = callback(e)
                     raise typer.Exit(code=exit_code)
-                else:
-                    # Raise to typer default exception handler
-                    raise
-            except typer.Exit as e:
-                sys.exit(e.exit_code)
+                # Raise to typer default exception handler
+                raise
+            except typer.Exit as exit_exc:
+                sys.exit(exit_exc.exit_code)

@@ -40,6 +40,13 @@ def add_as_typer_command(
     The result of invoking the function is printed onto the screen. Certain exceptions are
     summarised in a single line instead of resulting on a full stack trace. Users can add/remove
     exceptions from getting this special treatment.
+
+    Parameters
+    ----------
+    app : typer.Typer
+        _description_
+    func : Callable[ParamsT, ReturnT]
+        _description_
     """
     app.command()(typer_docstring(func))
 
@@ -48,7 +55,7 @@ def fastapi_auto_annotate(app: fastapi.FastAPI):
     """Automatically applies `fastapi_docstring_annotate` to all FastAPI app routes."""
 
     def api_route(
-        self,
+        self,  # pylint: disable=unused-argument
         path: str,
         *_,
         **kwargs,

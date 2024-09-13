@@ -62,9 +62,7 @@ sphinx = "^8.0.2"
 ska-ser-sphinx-theme = { git = "https://gitlab.com/ska-telescope/ska-ser-sphinx-theme.git", branch="yan-1851" }
 sphinx-autodoc-typehints = ">=1.23.0"
 m2r2 = ">=0.3.1"
-# swagger-plugin-for-sphinx = ">=3.6.0"
 sphinxcontrib-openapi = ">=0.8.4"
-# docutils = "0.20.1"
 
 [tool.pytest.ini_options]
 addopts = [

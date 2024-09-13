@@ -58,7 +58,6 @@ def mock_command(  # pylint: disable=unused-argument, too-many-arguments
 
 def test_typerdoc_generator():
     """Test typer doc generator."""
-    # pylint: disable=no-member
     typed = typer_docstring(mock_command)
     assert typed.__doc__ == ("Short description.\n\nLong description across multiple lines.")
     ann = typed.__annotations__

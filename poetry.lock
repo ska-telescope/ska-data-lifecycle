@@ -3293,7 +3293,7 @@ sphinx-rtd-theme = "^3.0.0rc1"
 type = "git"
 url = "https://gitlab.com/ska-telescope/ska-ser-sphinx-theme.git"
 reference = "yan-1851"
-resolved_reference = "d64b3cc32ffe855d93e551b2ad1bd5c630efa999"
+resolved_reference = "28787358ec1f27d8e595fe6b2c60abe1b2ecaf82"
 
 [[package]]
 name = "sniffio"

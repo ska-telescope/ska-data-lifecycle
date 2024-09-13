@@ -1,3 +1,4 @@
+"""extract openapi utility module."""
 import argparse
 import json
 import sys
@@ -14,6 +15,7 @@ parser.add_argument("--out", help="Output file ending in .json or .yaml", defaul
 def extract_openapi(
     app_module: str = "main.app", app_dir: str | None = None, out: str = "openapi.yaml"
 ):
+    """Generate OpenAPI schema file."""
     if app_dir is not None:
         print(f"adding {app_dir} to sys.path")
         sys.path.insert(0, app_dir)
@@ -24,7 +26,7 @@ def extract_openapi(
     version = openapi.get("openapi", "unknown version")
 
     print(f"writing openapi spec v{version}")
-    with open(out, "w") as f:
+    with open(out, "w", encoding="utf-8") as f:
         if out.endswith(".json"):
             json.dump(openapi, f, indent=2)
         else:
