@@ -70,6 +70,20 @@ def fastapi_auto_annotate(app: fastapi.FastAPI):
     return app
 
 
+def create_fastapi_field(
+    param_type: type,
+    **param_kwargs,
+) -> FieldInfo:
+    """Create a FastAPI field from kwargs."""
+    match param_type:
+        case fastapi.params.Query:
+            return fastapi.Query(**param_kwargs)
+        case fastapi.params.Body:
+            return fastapi.Body(**param_kwargs)
+        case _:
+            raise NotImplementedError()
+
+
 def fastapi_docstring_annotate(
     func: typing.Callable[ParamsT, ReturnT]
 ) -> typing.Callable[ParamsT, ReturnT]:
@@ -111,21 +125,9 @@ def fastapi_docstring_annotate(
             parameters[par.arg_name]["description"] = par.description
             # print(par.is_optional)
 
-    def create_param(
-        param_type: type,
-        **param_kwargs,
-    ) -> FieldInfo:
-        match param_type:
-            case fastapi.params.Query:
-                return fastapi.Query(**param_kwargs)
-            case fastapi.params.Body:
-                return fastapi.Body(**param_kwargs)
-            case _:
-                raise NotImplementedError()
-
     # Transform the parameters into info instances
     docstring_infos: dict[str, FieldInfo] = {
-        arg_name: create_param(kinds[arg_name], **param_kwargs)
+        arg_name: create_fastapi_field(kinds[arg_name], **param_kwargs)
         for arg_name, param_kwargs in parameters.items()
     }
 
@@ -160,6 +162,18 @@ def fastapi_docstring_annotate(
     docstring.style = DocstringStyle.NUMPYDOC
     output_func.__doc__ = compose(docstring)
     return output_func
+
+
+def create_typer_parameter(
+    kind: type,
+    **param_kwargs,
+) -> typer.models.ParameterInfo:
+    """Create typer parameter from kwargs."""
+    match kind:
+        case typer.models.ArgumentInfo:
+            return typer.Argument(**param_kwargs, show_default=False)
+        case _:
+            return typer.Option(**param_kwargs)
 
 
 def typer_docstring(func: typing.Callable[ParamsT, ReturnT]) -> typing.Callable[ParamsT, ReturnT]:
@@ -202,19 +216,9 @@ def typer_docstring(func: typing.Callable[ParamsT, ReturnT]) -> typing.Callable[
         if par.arg_name in parameters:
             parameters[par.arg_name]["help"] = par.description
 
-    def create_param(
-        kind: type,
-        **param_kwargs,
-    ) -> typer.models.ParameterInfo:
-        match kind:
-            case typer.models.ArgumentInfo:
-                return typer.Argument(**param_kwargs, show_default=False)
-            case _:
-                return typer.Option(**param_kwargs)
-
     # Transform the parameters into info instances
     docstring_infos: dict[str, typer.models.ParameterInfo] = {
-        arg_name: create_param(kinds[arg_name], **param_kwargs)
+        arg_name: create_typer_parameter(kinds[arg_name], **param_kwargs)
         for arg_name, param_kwargs in parameters.items()
     }
 
