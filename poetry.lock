@@ -3283,17 +3283,10 @@ description = "A Sphinx ReadTheDocs theme for SKA"
 optional = false
 python-versions = "^3.8.1"
 files = []
-develop = false
 
 [package.dependencies]
 sphinx = ">4"
 sphinx-rtd-theme = "^3.0.0rc1"
-
-[package.source]
-type = "git"
-url = "https://gitlab.com/ska-telescope/ska-ser-sphinx-theme.git"
-reference = "yan-1851"
-resolved_reference = "28787358ec1f27d8e595fe6b2c60abe1b2ecaf82"
 
 [[package]]
 name = "sniffio"
@@ -4170,4 +4163,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "b922a98cfd5af5571d89dcc1d04ccd89de011ef378181e3fbc4b1fff0843c73a"
+content-hash = "360172186ea2972ff97ed5578230c3208571f65d82ec62e0a40c40b97e83c699"

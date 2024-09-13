@@ -24,6 +24,10 @@ priority = 'primary'
 name = 'skao'
 url = 'https://artefact.skao.int/repository/pypi-internal/simple'
 
+[[tool.poetry.source]]
+name = 'ska-ser-sphinx-theme'
+url = 'https://gitlab.com/api/v4/projects/47734451/packages/pypi'
+
 [tool.poetry.dependencies]
 python = "^3.10"
 ska-ser-logging = "^0.4.1"
@@ -59,7 +63,7 @@ python-keycloak = "^4.2.0"
 
 [tool.poetry.group.docs.dependencies]
 sphinx = "^8.0.2"
-ska-ser-sphinx-theme = { git = "https://gitlab.com/ska-telescope/ska-ser-sphinx-theme.git", branch="yan-1851" }
+ska-ser-sphinx-theme = { version = "0.2.1", allow-prereleases = true, source = "ska-ser-sphinx-theme" }
 sphinx-autodoc-typehints = ">=1.23.0"
 m2r2 = ">=0.3.1"
 sphinxcontrib-openapi = ">=0.8.4"
