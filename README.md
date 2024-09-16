@@ -15,9 +15,10 @@ The current design consists of five modules/services and this repository is orga
 - Migration management service (DLMmigration)
 
 ## Installation
-The repository contains helm charts to install the services, including the DB. However, the DLM in operations is supposed to run continuously and use SKAO-wide services like a HA DB service as well as the authentication system.
+The repository contains helm charts to install the services, including the DB. However, in operations the DLM is supposed to run continuously and use SKAO-wide services like a HA DB service as well as the authentication system. Thus this is not really practical for any evaluation or even DLM internal testing.
 
 ## Testing
+In order to provide practical test and evaluation scenarios, the DLM can be build and deployed in a variety of ways, depending on the use case and environment.
 
 ### Test against Docker Compose
 
@@ -35,7 +36,7 @@ Subsequent testing can be performed using the command:
 ```bash
 make python-test
 ```
-If you want to start the services used during the tests to try out the system you can use the command:
+If you want to start the services used during the tests to evaluate the system you can use the command:
 
 ```bash
 make python-pre-test
