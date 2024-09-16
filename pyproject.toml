@@ -57,8 +57,8 @@ docker = "^7.1.0"
 python-keycloak = "^4.2.0"
 
 [tool.poetry.group.docs.dependencies]
-Sphinx = "^7.2.0"
-ska-ser-sphinx-theme = "^0.1.1"
+Sphinx = "^7.4.7"
+ska-ser-sphinx-theme = "^0.2.0"
 sphinx-autodoc-typehints = "^1.23.0"
 m2r2 = "<0.3.3"
 
