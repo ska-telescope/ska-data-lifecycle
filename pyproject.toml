@@ -60,7 +60,7 @@ python-keycloak = "^4.2.0"
 Sphinx = "^7.4.7"
 ska-ser-sphinx-theme = "^0.2.0"
 sphinx-autodoc-typehints = "^1.23.0"
-m2r2 = "<0.3.3"
+m2r2 = "0.3.3.post2"
 
 [tool.pytest.ini_options]
 addopts = [
