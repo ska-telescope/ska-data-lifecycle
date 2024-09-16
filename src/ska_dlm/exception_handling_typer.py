@@ -7,7 +7,7 @@ from overrides import override
 from typer.core import TyperCommand
 from typer.models import CommandFunctionType, CommandInfo, Default
 
-from ska_dlm.cli_utils import typer_docstring
+from ska_dlm.typer_utils import typer_docstring
 
 ErrorHandlingCallback = Callable[[Exception], int]
 
@@ -31,13 +31,13 @@ class ExceptionHandlingTyper(typer.Typer):
         return decorator
 
     @override
-    def command(
+    def command(  # pylint: disable=too-many-arguments
         self,
         name: Optional[str] = None,
         *,
         cls: Optional[Type[TyperCommand]] = None,
         context_settings: Optional[dict[Any, Any]] = None,
-        help: Optional[str] = None,
+        help: Optional[str] = None,  # pylint: disable=redefined-builtin
         epilog: Optional[str] = None,
         short_help: Optional[str] = None,
         options_metavar: str = "[OPTIONS]",
@@ -45,9 +45,9 @@ class ExceptionHandlingTyper(typer.Typer):
         no_args_is_help: bool = False,
         hidden: bool = False,
         deprecated: bool = False,
-        # Rich settings
         rich_help_panel: str | None = Default(None),
     ) -> Callable[[CommandFunctionType], CommandFunctionType]:
+        """Registers typer command with generated docstring."""
         if cls is None:
             cls = TyperCommand
 

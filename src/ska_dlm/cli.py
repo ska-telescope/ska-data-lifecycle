@@ -5,10 +5,10 @@ import logging
 import ska_ser_logging
 from requests import HTTPError
 
-from ska_dlm.cli_utils import dump_short_stacktrace
 from ska_dlm.dlm_db.db_access import DBQueryError
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
 from ska_dlm.exceptions import UnmetPreconditionForOperation
+from ska_dlm.typer_utils import dump_short_stacktrace
 
 from .data_item.data_item_requests import cli as item_app
 from .dlm_ingest.dlm_ingest_requests import cli as ingest_app

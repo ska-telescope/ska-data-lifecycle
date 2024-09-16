@@ -2,15 +2,13 @@
 
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import Annotated
 
-import typer
 from fastapi import FastAPI
 
 import ska_dlm
-from ska_dlm.cli_utils import fastapi_auto_annotate
 from ska_dlm.dlm_db.db_access import DB
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
+from ska_dlm.fastapi_utils import fastapi_auto_annotate
 
 from .. import CONFIG
 from ..exceptions import InvalidQueryParameters

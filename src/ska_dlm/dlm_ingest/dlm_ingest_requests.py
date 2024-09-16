@@ -9,10 +9,11 @@ from fastapi import FastAPI
 from ska_sdp_dataproduct_metadata import MetaData
 
 import ska_dlm
-from ska_dlm.cli_utils import dump_short_stacktrace, fastapi_auto_annotate
 from ska_dlm.dlm_storage.dlm_storage_requests import rclone_access
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
+from ska_dlm.fastapi_utils import fastapi_auto_annotate
 from ska_dlm.typer_types import JsonObjectOption
+from ska_dlm.typer_utils import dump_short_stacktrace
 
 from .. import CONFIG
 from ..data_item import set_metadata, set_state, set_uri

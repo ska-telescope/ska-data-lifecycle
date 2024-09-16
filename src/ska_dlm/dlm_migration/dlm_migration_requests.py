@@ -9,9 +9,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 import ska_dlm
-from ska_dlm.cli_utils import dump_short_stacktrace, fastapi_auto_annotate, typer_docstring
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
 from ska_dlm.exceptions import InvalidQueryParameters, ValueAlreadyInDB
+from ska_dlm.fastapi_utils import fastapi_auto_annotate
+from ska_dlm.typer_utils import dump_short_stacktrace
 
 from .. import CONFIG
 from ..data_item import set_state, set_uri

@@ -8,9 +8,9 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 import ska_dlm
-from ska_dlm.cli_utils import fastapi_auto_annotate
 from ska_dlm.dlm_db.db_access import DB
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
+from ska_dlm.fastapi_utils import fastapi_auto_annotate
 
 from .. import CONFIG
 from ..data_item import set_state
