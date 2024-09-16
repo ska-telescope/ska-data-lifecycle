@@ -6,7 +6,7 @@ The SKA data lifecycle management system (DLM) is designed to manage all interme
 
 The DLM is designed as a service oriented system sitting on-top of a database. The external interfaces and APIs are based on the REST paradigm. The deployed system will need to be highly available and dependable, since the whole observatory and all its internal and external users will eventually depend on the DLM functioning properly. The number and frequency of transactions as well as the total data volume managed by the DLM will be very significant and thus the system will need to consider scalability as one of the main drivers for the implementation.
 
-The current design consists of five services and this repository is organised accordingly:
+The current design consists of five modules/services and this repository is organised accordingly:
 
 - Database management service (DLMdb)
 - Ingest management service (DLMingest)
@@ -35,6 +35,17 @@ Subsequent testing can be performed using the command:
 ```bash
 make python-test
 ```
+If you want to start the services used during the tests to try out the system you can use the command:
+
+```bash
+make python-pre-test
+```
+ To stop that environment again use the command:
+
+ ```bash
+ make python-post-test
+ ```
+
 
 #### Run tests using a Docker Testrunner
 
