@@ -21,7 +21,10 @@ logger = logging.getLogger(__name__)
 
 origins = ["http://localhost", "http://localhost:5000", "http://localhost:8004"]
 
-app = FastAPI()
+app = FastAPI(
+    title="SKA-DLM: Migration Service REST I/F",
+    description="The REST calls accepted by the SKA-DLM Migration service"
+)
 
 app.add_middleware(
     CORSMiddleware,

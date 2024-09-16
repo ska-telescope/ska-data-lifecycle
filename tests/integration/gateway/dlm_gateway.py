@@ -39,7 +39,10 @@ keycloak_uma = KeycloakUMA(connection=keycloak_openid)
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI()
+app = FastAPI(
+    title="SKA-DLM: Test API Gateway REST I/F",
+    description="The REST calls accepted by the SKA-DLM test API gateway."   
+)
 
 
 @app.get("/login")

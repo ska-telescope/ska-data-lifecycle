@@ -16,7 +16,10 @@ from ..exceptions import InvalidQueryParameters, UnmetPreconditionForOperation, 
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI()
+app = FastAPI(
+    title="SKA-DLM: Storage Service REST I/F",
+    description="The REST calls accepted by the SKA-DLM Storage service"
+)
 
 
 # pylint: disable=unused-argument
