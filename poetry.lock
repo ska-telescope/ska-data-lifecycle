@@ -1745,17 +1745,17 @@ adal = ["adal (>=1.0.2)"]
 
 [[package]]
 name = "m2r2"
-version = "0.3.2"
+version = "0.3.3.post2"
 description = "Markdown and reStructuredText in a single file."
 optional = false
-python-versions = "*"
+python-versions = ">=3.7"
 files = [
-    {file = "m2r2-0.3.2-py3-none-any.whl", hash = "sha256:d3684086b61b4bebe2307f15189495360f05a123c9bda2a66462649b7ca236aa"},
-    {file = "m2r2-0.3.2.tar.gz", hash = "sha256:ccd95b052dcd1ac7442ecb3111262b2001c10e4119b459c34c93ac7a5c2c7868"},
+    {file = "m2r2-0.3.3.post2-py3-none-any.whl", hash = "sha256:86157721eb6eabcd54d4eea7195890cc58fa6188b8d0abea633383cfbb5e11e3"},
+    {file = "m2r2-0.3.3.post2.tar.gz", hash = "sha256:e62bcb0e74b3ce19cda0737a0556b04cf4a43b785072fcef474558f2c1482ca8"},
 ]
 
 [package.dependencies]
-docutils = "*"
+docutils = ">=0.19"
 mistune = "0.8.4"
 
 [[package]]
@@ -4204,4 +4204,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "72caa3e70eaa8b99b9e857deed2e281dcf27546a28db0dccbb5d274845e59f42"
+content-hash = "c088a4584a1f6af3f5877a30c280768c5bb5d1df37712ca290d9875a64564305"
