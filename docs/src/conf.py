@@ -92,7 +92,7 @@ master_doc = "index"
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = "En-en"
+language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -118,15 +118,10 @@ html_theme = "sphinx_rtd_theme"
 # documentation.
 #
 html_theme_options = {
-    # 'logo_only' : False,
-    # 'logo_only' : 'ska_logo.jpg',
-    # 'logo' : 'ska_logo.jpg',
 }
 
 html_context = {
     "display_github": True,  # Integrate GitHub
-    "favicon": "_static/img/favicon.ico",
-    "logo": "_static/img/logo.jpg",
     "theme_logo_only": True,
     "github_user": "",  # Username
     "github_repo": "",  # Repo name
