@@ -15,6 +15,7 @@ Then the package can be imported into python:
    >>> import ska_dlm
    >>> print(ska_dlm.__doc__)
 
+Here is the complete API reference documentation:
 
 .. autosummary::
    :toctree: _autosummary
