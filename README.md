@@ -31,7 +31,7 @@ That also enables all the REST interfaces and they can be explored on their indi
 - http://localhost:8000/docs for the AAA API gateway
 - http://localhost:8001/docs for the Ingest Manager REST I/F
 - http://localhost:8002/docs for the Request Manager REST I/F
-- http://localhost:8003/docs for the Stroage Manager service REST I/F
+- http://localhost:8003/docs for the Storage Manager service REST I/F
 - http://localhost:8003/docs for the Migration Manager REST I/F
 
  To stop that environment again use the command:
