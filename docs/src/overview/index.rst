@@ -1,6 +1,8 @@
 SKA DLM Overview
 ================
-As outlined in the design, the DLM consists of five main services (managers):
+The SKA Data Lifecycle Management system provides the SKAO with the means to register, trace, query, retrieve and also move, copy and delete data of any type on the storage volumes managed by this system. It's focus is on the data lifecycle management part, not the management of domain specific metadata. Storage volumes in general are assumed to be geographically distributed as well as featuring a range of different access mechanisms, for example local POSIX file systems and S3 compliant object stores in some remote private or public cloud environment. The system has been designed to be flexible and scalable, but in the current state it is far from a complete solution and has also not been used in operations, yet. The SKA-DLM design is loosely based on previous experience with implementing and operating the `Next Generation Archive System  (NGAS) <https://github.com/ICRAR/NGAS>`_. However, the implementation is completely independent and it also adds the focus on lifecycle management, rather than just final persistent archive like NGAS.
+
+As outlined in the `design <https://confluence.skatelescope.org/display/SE/YAN-1589+%28SP-3809%29%3A+Design+of+Bulk+Data+product+Ingest+Service>`_, the DLM consists of five main services (managers):
 
   - DLM Ingest Manager
   - DLM Storage Manager
@@ -10,24 +12,24 @@ As outlined in the design, the DLM consists of five main services (managers):
 
 These managers are bound together by a 'hidden' service, which is the DLM database. For operations, the DB engine is assumed to be provided, maintained and operated by other SKAO teams (and trains), but for the testing and evaluation a DB is installed and started locally. As a system the first thing which has to be up and running is the DLM DB. In operations this will require a HA DB setup and the load on this DB will be quite substantial. Actual numbers are dependent on the kind of data products from all over the organisation, which will eventually be managed by the DLM. There is now a process in place to collect such information.
 
-The DLM is designed to accept arbitrary types and categories of data. It also allows to register and track relationships between data items. The most important features are centred around the management of the lifecycle and resilience of data items as well as the distribution over and across multiple, geographically distributed storage volumes featuring heterogenous performance and interface characteristics. The SKA-DLM initially targets posix based file systems as well as S3 storage. The end-user (or system) does not need to know any of the details of these storage volumes or even their existence. This separation will also allow the operators to add new types of volumes and remove retired or broken ones. Such functionality is foreseen and reflected by the DLM DB schema, but some of the functionality is not implemented yet. 
+The DLM is designed to accept arbitrary types and categories of data. It also allows to register and track relationships between data items. The most important features are centred around the management of the lifecycle and resilience of data items as well as the distribution over and across multiple, geographically distributed storage volumes featuring heterogenous performance and interface characteristics. The SKA-DLM initially targets posix based file systems as well as S3 storage. The end-user (or system) does not need to know any of the details of these storage volumes or even their existence. This separation will also allow the operators to add new types of volumes and remove retired or broken ones. Such functionality is foreseen and reflected by the DLM DB schema, but some of the functionality is not yet implemented. 
 
-The DLM DB service is not intended to be used in an operational deployment, but the DLM system will be a client of the observatory wide DB setup. The DLMingest and DLMrequest services are the main input and output services, respectively exposed to other subsystems and users. This requires APIs for subsystems and at least administrator and operator level user interfaces. Apart from a future Request Manager interface, end-users are not expected to access or use the DLM directly. One of the early user interfaces is the SKA Data Product Dashboard.
+The DLM DB service included with the code is not intended to be used in an operational deployment, but the DLM system will be a client of the observatory wide DB setup. The DLMingest and DLMrequest services are the main input and output services, respectively exposed to other subsystems and users. This requires APIs for subsystems and at least administrator and operator level user interfaces. Apart from a future Request Manager interface, end-users are not expected to access or use the DLM directly. One of the early user interfaces is the SKA Data Product Dashboard.
 
 Please also refer to the DLM design description: https://confluence.skatelescope.org/x/rCYLDw
 
 The implementation structures the code accordingly into the following sub-modules:
 
-  - data_item, setter and update functions for the data_item table
-  - dlm_db, DB maintenance functions (currently empty)
-  - dlm_ingest, data_item ingest and initialization functions
-  - dlm_migration, migration and copy functions
-  - dlm_request, query functions
-  - dlm_storage, location and storage initialization, configuration and query functions as well as data_item payload deletion.
+  - ``data_item``, setter and update functions
+  - ``dlm_db``, DB maintenance functions (currently empty)
+  - ``dlm_ingest``, data_item ingest and initialization functions
+  - ``dlm_migration``, migration and copy functions
+  - ``dlm_request``, query functions
+  - ``dlm_storage``, location and storage initialization, configuration and query functions as well as data_item payload deletion.
 
-With exception of the dlm_migration and the dlm_storage modules these are currently implemented as (FAST)API libraries and can be used through direct REST calls as well as by using the provided python function calls. All the managers are running their own FASTApi daemon.
+With exception of the ``dlm_db`` and the ``data_item`` modules these are currently implemented as FASTApi libraries and can be used through direct REST calls as well as by using the provided python function calls. All the managers are running their own FASTApi daemon.
 
-The data_item Module
+The Data Item Module
 --------------------
 This module collects all the setter and updating functions related to the data_item table in a separate module to avoid cyclic imports. It is not exposed through REST directly but the functions are called from the managers.
 
@@ -86,3 +88,11 @@ The current implementation of this FASTApi based manager is limited to a number 
   - query_expired, returns all expired data_items given a datetime. 
   - query_item_storage, returns a list of all storage volumes containing a copy of a data_item identified by an item_name, OID or UID.
 
+Interfaces
+----------
+The SKA-DLM provides four different ways of interacting with it, which can be used in different scenarios.
+
+    - A python library, exposing plain python functions (see :ref:`api <api>`).
+    - A Command Line Interface (CLI).
+    - REST interfaces to each of the managers.
+    - A stand-alone ska-dlm-client package, which provides the most transparent way of registering data with the SKA-DLM.
