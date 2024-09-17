@@ -41,7 +41,7 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="SKA-DLM: Test AAA API Gateway REST I/F",
-    description="The REST calls accepted by the SKA-DLM test AAA API gateway."   
+    description="The REST calls accepted by the SKA-DLM test AAA API gateway.",
 )
 
 
