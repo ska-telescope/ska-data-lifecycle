@@ -14,39 +14,59 @@ The current design consists of five modules/services and this repository is orga
 - Storage management service (DLMstorage)
 - Migration management service (DLMmigration)
 
+In addition we have implemented an AAA API gateway to enable testing of the authentication and authorization functionality of the SKA-DLM. This is run locally against a Keycloak authentication layer, which is started inside a docker container. In production the gateway and the Keycloak container will be replaced by a SKA wide AAA gateway running against the SKA Entra authentication layer.
+
 ## Installation
 The repository contains helm charts to install the services, including the DB. However, in operations the DLM is supposed to run continuously and use SKAO-wide services like a HA DB service as well as the authentication system. Thus this is not really practical for any evaluation or even DLM internal testing.
 
-## Testing
-In order to provide practical test and evaluation scenarios, the DLM can be build and deployed in a variety of ways, depending on the use case and environment.
+## SKA-DLM evaluation environment
 
-### Test against Docker Compose
-
-#### Run tests locally
-
-Python testing is available on the local machine using poetry virtual environments. First install and enter a poetry shell:
+If you want to start all the services locally for evaluation purposes you can use the command:
 
 ```bash
+docker compose --file tests/dlm.docker-compose.yaml up
+```
+That also enables all the REST interfaces and they can be explored on their individual ports by opening browser pages:
+
+- http://localhost:8000/docs for the AAA API gateway
+- http://localhost:8001/docs for the Ingest Manager REST I/F
+- http://localhost:8002/docs for the Request Manager REST I/F
+- http://localhost:8003/docs for the Stroage Manager service REST I/F
+- http://localhost:8003/docs for the Migration Manager REST I/F
+
+ To stop that environment again use the command:
+
+ ```bash
+ docker compose --file tests/dlm.docker-compose.yaml down
+ ```
+
+## Testing
+In order to support mutiple test environments, the DLM can be build and deployed in a variety of ways, depending on the use case and scenario.
+
+### Test against Docker Compose
+For code developers all tests can be executed without having to rely on the complexity of the Kubernetes environment.
+
+#### Run full test suite locally
+
+Python testing is available on the local machine using poetry virtual environments. First clone the repo:
+
+```bash
+git clone https://gitlab.com/ska-telescope/ska-data-lifecycle.git
+```
+
+Then install the package and enter a poetry shell:
+
+```bash
+cd ska-data-lifecycle
 poetry install
 poetry shell
 ```
 
-Subsequent testing can be performed using the command:
+Subsequent the tests can be executed using the command:
 
 ```bash
 make python-test
 ```
-If you want to start the services used during the tests to evaluate the system you can use the command:
-
-```bash
-make python-pre-test
-```
- To stop that environment again use the command:
-
- ```bash
- make python-post-test
- ```
-
 
 #### Run tests using a Docker Testrunner
 
@@ -76,7 +96,7 @@ docker compose --file tests/testrunner.docker-compose.yaml down
 
 #### FastAPI and Authentication
 
-The test platform makes REST requests to DLM services and are proxied through the `dlm_gateway`.
+The REST requests issued through the test environment to DLM services are proxied through the `dlm_gateway`.
 
 The `dlm_gateway` checks the destination, unpacks the token and checks the permissions based on the user profile.
 
@@ -103,7 +123,7 @@ To turn off authentication:
 
 ### Test against Helm Chart
 
-DLM also provides a helm chart tested weekly that can also be tested locally using Minikube. The following commands only need to be executed once to prepare a test environment.
+DLM also provides a helm chart tested weekly through the SKA gitlab test runners that can also be executed locally using Minikube. The following commands only need to be executed once to prepare a test environment.
 
 ```bash
 helm repo add bitnami https://charts.bitnami.com/bitnami
