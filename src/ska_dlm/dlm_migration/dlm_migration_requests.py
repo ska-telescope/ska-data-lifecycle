@@ -23,7 +23,7 @@ origins = ["http://localhost", "http://localhost:5000", "http://localhost:8004"]
 
 app = FastAPI(
     title="SKA-DLM: Migration Manager REST I/F",
-    description="The REST calls accepted by the SKA-DLM Migration Manager"
+    description="The REST calls accepted by the SKA-DLM Migration Manager",
 )
 
 app.add_middleware(

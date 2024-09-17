@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="SKA-DLM: Request Manager REST I/F",
-    description="The REST calls accepted by the SKA-DLM Request Manager"
+    description="The REST calls accepted by the SKA-DLM Request Manager",
 )
 
 

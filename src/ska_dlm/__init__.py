@@ -1,7 +1,9 @@
 """
-This is the SKA Data Lifecycle Management (DLM) package. To fully utilize the functionality
-of this package requires some of the serivces to be started and deployed as well. Please refer
-to the README file within this package to learn about the options to do that.
+SKA Data Lifecycle Management (DLM) package.
+
+To fully utilize the functionality of this package requires some of the serivces
+to be started and deployed as well. Please refer to the README file within this
+package to learn about the options to do that.
 """
 
 import shutil
