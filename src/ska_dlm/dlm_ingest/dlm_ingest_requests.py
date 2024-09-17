@@ -22,8 +22,8 @@ JsonType = Dict[str, Any] | List[Any] | str | int | float | bool | None
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
-    title="SKA-DLM: Ingest Service REST I/F",
-    description="The REST calls accepted by the SKA-DLM Ingest service"
+    title="SKA-DLM: Ingest Manager REST I/F",
+    description="The REST calls accepted by the SKA-DLM Ingest Manager"
 )
 
 
