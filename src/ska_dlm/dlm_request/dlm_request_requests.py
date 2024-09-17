@@ -13,8 +13,8 @@ from ..exceptions import InvalidQueryParameters
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
-    title="SKA-DLM: Request Service REST I/F",
-    description="The REST calls accepted by the SKA-DLM Request service"
+    title="SKA-DLM: Request Manager REST I/F",
+    description="The REST calls accepted by the SKA-DLM Request Manager"
 )
 
 
