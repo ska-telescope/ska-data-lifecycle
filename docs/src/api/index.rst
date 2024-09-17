@@ -18,6 +18,7 @@ Then the package can be imported into python:
 Here is the complete API reference documentation:
 
 .. autosummary::
+   :caption: Package API:
    :toctree: _autosummary
    :recursive:
 
