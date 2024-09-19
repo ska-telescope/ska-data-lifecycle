@@ -856,6 +856,20 @@ files = [
 ]
 
 [[package]]
+name = "deepmerge"
+version = "2.0"
+description = "A toolset for deeply merging Python dictionaries."
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "deepmerge-2.0-py3-none-any.whl", hash = "sha256:6de9ce507115cff0bed95ff0ce9ecc31088ef50cbdf09bc90a09349a318b3d00"},
+    {file = "deepmerge-2.0.tar.gz", hash = "sha256:5c3d86081fbebd04dd5de03626a0607b809a98fb6ccba5770b62466fe940ff20"},
+]
+
+[package.extras]
+dev = ["black", "build", "mypy", "pytest", "pyupgrade", "twine", "validate-pyproject[all]"]
+
+[[package]]
 name = "deprecated"
 version = "1.2.14"
 description = "Python @deprecated decorator to deprecate old python classes, functions or methods."
@@ -951,6 +965,17 @@ optional = false
 python-versions = "*"
 files = [
     {file = "docopt-0.6.2.tar.gz", hash = "sha256:49b3a825280bd66b3aa83585ef59c4a8c82f2c8a522dbe754a8bc8d08c85c491"},
+]
+
+[[package]]
+name = "docstring-parser"
+version = "0.16"
+description = "Parse Python docstrings in reST, Google and Numpydoc format"
+optional = false
+python-versions = ">=3.6,<4.0"
+files = [
+    {file = "docstring_parser-0.16-py3-none-any.whl", hash = "sha256:bf0a1387354d3691d102edef7ec124f219ef639982d096e26e3b60aeffa90637"},
+    {file = "docstring_parser-0.16.tar.gz", hash = "sha256:538beabd0af1e2db0146b6bd3caa526c35a34d61af9fd2887f3a8a27a739aa6e"},
 ]
 
 [[package]]
@@ -1745,18 +1770,18 @@ adal = ["adal (>=1.0.2)"]
 
 [[package]]
 name = "m2r2"
-version = "0.3.3.post2"
+version = "0.3.1"
 description = "Markdown and reStructuredText in a single file."
 optional = false
-python-versions = ">=3.7"
+python-versions = "*"
 files = [
-    {file = "m2r2-0.3.3.post2-py3-none-any.whl", hash = "sha256:86157721eb6eabcd54d4eea7195890cc58fa6188b8d0abea633383cfbb5e11e3"},
-    {file = "m2r2-0.3.3.post2.tar.gz", hash = "sha256:e62bcb0e74b3ce19cda0737a0556b04cf4a43b785072fcef474558f2c1482ca8"},
+    {file = "m2r2-0.3.1-py3-none-any.whl", hash = "sha256:c2b62b8dec16f82d9e4d8aecf58830a87835ca90441716fc571e573e32c7d829"},
+    {file = "m2r2-0.3.1.tar.gz", hash = "sha256:6bf2d74e4cd15ce8a795999326cc7a4924af69ac1d114cac8064c1599ab11892"},
 ]
 
 [package.dependencies]
-docutils = ">=0.19"
-mistune = "0.8.4"
+docutils = "*"
+mistune = "*"
 
 [[package]]
 name = "markdown-it-py"
@@ -1889,13 +1914,13 @@ files = [
 
 [[package]]
 name = "mistune"
-version = "0.8.4"
-description = "The fastest markdown parser in pure Python"
+version = "3.0.2"
+description = "A sane and fast Markdown parser with useful plugins and renderers"
 optional = false
-python-versions = "*"
+python-versions = ">=3.7"
 files = [
-    {file = "mistune-0.8.4-py2.py3-none-any.whl", hash = "sha256:88a1051873018da288eee8538d476dffe1262495144b33ecb586c4ab266bb8d4"},
-    {file = "mistune-0.8.4.tar.gz", hash = "sha256:59a3429db53c50b5c6bcc8a07f8848cb00d7dc8bdb431a4ab41920d201d4756e"},
+    {file = "mistune-3.0.2-py3-none-any.whl", hash = "sha256:71481854c30fdbc938963d3605b72501f5c10a9320ecd412c121c163a1c7d205"},
+    {file = "mistune-3.0.2.tar.gz", hash = "sha256:fc7f93ded930c92394ef2cb6f04a8aabab4117a91449e72dcc8dfa646a508be8"},
 ]
 
 [[package]]
@@ -2159,6 +2184,17 @@ files = [
 ptyprocess = ">=0.5"
 
 [[package]]
+name = "picobox"
+version = "4.0.0"
+description = "Dependency injection framework designed with Python in mind."
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "picobox-4.0.0-py3-none-any.whl", hash = "sha256:4c27eb689fe45dabd9e64c382e04418147d0b746d155b4e80057dbb7ff82027e"},
+    {file = "picobox-4.0.0.tar.gz", hash = "sha256:114da1b5606b2f615e8b0eb68d04198ad9de75af5adbcf5b36fe4f664ab927b6"},
+]
+
+[[package]]
 name = "platformdirs"
 version = "4.3.3"
 description = "A small Python package for determining appropriate platform-specific dirs, e.g. a `user data dir`."
@@ -2339,8 +2375,8 @@ files = [
 annotated-types = ">=0.6.0"
 pydantic-core = "2.23.3"
 typing-extensions = [
-    {version = ">=4.12.2", markers = "python_version >= \"3.13\""},
     {version = ">=4.6.1", markers = "python_version < \"3.13\""},
+    {version = ">=4.12.2", markers = "python_version >= \"3.13\""},
 ]
 
 [package.extras]
@@ -2532,8 +2568,8 @@ files = [
 astroid = ">=3.2.4,<=3.3.0-dev0"
 colorama = {version = ">=0.4.5", markers = "sys_platform == \"win32\""}
 dill = [
-    {version = ">=0.3.7", markers = "python_version >= \"3.12\""},
     {version = ">=0.2", markers = "python_version < \"3.11\""},
+    {version = ">=0.3.7", markers = "python_version >= \"3.12\""},
     {version = ">=0.3.6", markers = "python_version >= \"3.11\" and python_version < \"3.12\""},
 ]
 isort = ">=4.2.5,<5.13.0 || >5.13.0,<6"
@@ -3437,6 +3473,26 @@ numpy = ["nptyping (>=2.5)"]
 testing = ["covdefaults (>=2.3)", "coverage (>=7.3.2)", "diff-cover (>=8.0.1)", "pytest (>=7.4.3)", "pytest-cov (>=4.1)", "sphobjinv (>=2.3.1)", "typing-extensions (>=4.8)"]
 
 [[package]]
+name = "sphinx-mdinclude"
+version = "0.6.2"
+description = "Markdown extension for Sphinx"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "sphinx_mdinclude-0.6.2-py3-none-any.whl", hash = "sha256:648e78edb067c0e4bffc22943278d49d54a0714494743592032fa3ad82a86984"},
+    {file = "sphinx_mdinclude-0.6.2.tar.gz", hash = "sha256:447462e82cb8be61404a2204227f920769eb923d2f57608e3325f3bb88286b4c"},
+]
+
+[package.dependencies]
+docutils = ">=0.19,<1.0"
+mistune = ">=3.0,<4.0"
+pygments = ">=2.8"
+sphinx = ">=6"
+
+[package.extras]
+dev = ["attribution (==1.7.1)", "black (==24.4.2)", "coverage (==7.5.1)", "docutils (==0.20.1)", "docutils (==0.21.2)", "flake8 (==7.0.0)", "flit (==3.9.0)", "mistune (==3.0.2)", "mypy (==1.10.0)", "sphinx (==7.1.2)", "sphinx (==7.3.7)", "ufmt (==2.5.1)", "usort (==1.0.8.post1)"]
+
+[[package]]
 name = "sphinx-rtd-theme"
 version = "2.0.0"
 description = "Read the Docs theme for Sphinx"
@@ -3504,6 +3560,21 @@ standalone = ["Sphinx (>=5)"]
 test = ["html5lib", "pytest"]
 
 [[package]]
+name = "sphinxcontrib-httpdomain"
+version = "1.8.1"
+description = "Sphinx domain for documenting HTTP APIs"
+optional = false
+python-versions = ">=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*"
+files = [
+    {file = "sphinxcontrib-httpdomain-1.8.1.tar.gz", hash = "sha256:6c2dfe6ca282d75f66df333869bb0ce7331c01b475db6809ff9d107b7cdfe04b"},
+    {file = "sphinxcontrib_httpdomain-1.8.1-py2.py3-none-any.whl", hash = "sha256:21eefe1270e4d9de8d717cc89ee92cc4871b8736774393bafc5e38a6bb77b1d5"},
+]
+
+[package.dependencies]
+six = "*"
+Sphinx = ">=1.6"
+
+[[package]]
 name = "sphinxcontrib-jquery"
 version = "4.1"
 description = "Extension to include jQuery on newer Sphinx releases"
@@ -3530,6 +3601,26 @@ files = [
 
 [package.extras]
 test = ["flake8", "mypy", "pytest"]
+
+[[package]]
+name = "sphinxcontrib-openapi"
+version = "0.8.4"
+description = "OpenAPI (fka Swagger) spec renderer for Sphinx"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "sphinxcontrib-openapi-0.8.4.tar.gz", hash = "sha256:df883808a5b5e4b4113ad697185c43a3f42df3dce70453af78ba7076907e9a20"},
+    {file = "sphinxcontrib_openapi-0.8.4-py3-none-any.whl", hash = "sha256:50911c18d452d9390ee3a384ef8dc8bde6135f542ba55691f81e1fbc0b71014e"},
+]
+
+[package.dependencies]
+deepmerge = ">=0.1"
+jsonschema = ">=2.5.1"
+picobox = ">=2.2"
+PyYAML = ">=3.12"
+sphinx = ">=2.0"
+sphinx-mdinclude = ">=0.5.2"
+sphinxcontrib-httpdomain = ">=1.5.0"
 
 [[package]]
 name = "sphinxcontrib-qthelp"
@@ -4204,4 +4295,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "c088a4584a1f6af3f5877a30c280768c5bb5d1df37712ca290d9875a64564305"
+content-hash = "547c6f2644b93467acae6366ae3f1e3932983dad1205125851a47cf26f0a71e2"
