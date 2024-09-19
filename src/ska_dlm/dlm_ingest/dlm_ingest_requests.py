@@ -26,7 +26,8 @@ logger = logging.getLogger(__name__)
 
 rest = fastapi_auto_annotate(
     FastAPI(
-        title="DLM Ingest API",
+        title="SKA-DLM: Ingest Manager REST API",
+        description="The REST calls accepted by the SKA-DLM Ingest Manager",
         version=ska_dlm.__version__,
         license_info={"name": "BSD-3-Clause", "identifier": "BSD-3-Clause"},
     )

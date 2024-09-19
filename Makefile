@@ -8,6 +8,10 @@ HELM_TIMEOUT ?= 5m
 HELM_VALUES ?= resources/initialised-dlm.yaml
 K8S_CHART_PARAMS ?= $(foreach file,$(HELM_VALUES),--values $(file)) --wait --timeout=$(HELM_TIMEOUT)
 
+ifndef ERROR
+	export ERROR := ""
+endif
+
 include .make/base.mk
 include .make/helm.mk
 include .make/python.mk
