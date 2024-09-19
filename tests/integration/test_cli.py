@@ -1,4 +1,4 @@
-"""Cli test module."""
+d"""Cli test module."""
 
 import pytest
 from typer.testing import CliRunner
