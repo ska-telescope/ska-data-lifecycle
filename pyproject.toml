@@ -92,7 +92,7 @@ rst-roles = [
     "py:mod",
 ]
 enable = "DAR104"
-max-complexity = 12
+max-complexity = 10
 exclude = [
     "tests/",
 ]
