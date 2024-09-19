@@ -105,27 +105,29 @@ def test_typer_docstring_generator():
 
 def assert_typer_annotation(annotation: Any, info_type: type, helpdoc: str):
     """Assert annotation countains specified typer info."""
-    found = False
-    for parameter_info in annotation.__metadata__:
-        if isinstance(parameter_info, info_type):
-            found = True
-            break
+    found = 0
+    info = None
+    for meta in annotation.__metadata__:
+        if isinstance(meta, info_type):
+            info = meta
+            found += 1
 
-    assert found, f"{info_type} not in {annotation.__metadata__}"
-    assert isinstance(parameter_info, info_type)
-    assert parameter_info.help == helpdoc
-    assert parameter_info.default == ...
+    assert found == 1, f"expected a single {info_type} in {annotation.__metadata__}"
+    assert isinstance(info, info_type)
+    assert info.help == helpdoc
+    assert info.default == ...
 
 
 def assert_fastapi_annotation(annotation: Any, info_type: type, helpdoc: str):
     """Assert annotations contains specificed fastapi info."""
-    found = False
-    for info in annotation.__metadata__:
-        if isinstance(info, info_type):
-            found = True
-            break
+    found = 0
+    info = None
+    for meta in annotation.__metadata__:
+        if isinstance(meta, info_type):
+            info = meta
+            found += 1
 
-    assert found, f"{info_type} not in {annotation.__metadata__}"
+    assert found == 1, f"expected a single {info_type} in {annotation.__metadata__}"
     assert isinstance(info, info_type)
     assert info.description == helpdoc
     assert info.default == PydanticUndefined
