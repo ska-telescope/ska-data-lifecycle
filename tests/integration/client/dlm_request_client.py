@@ -9,7 +9,9 @@ REQUEST_BEARER = None
 
 
 # pylint: disable=unused-argument
-def query_data_item(item_name: str = "", oid: str = "", uid: str = "", params: str = None) -> list:
+def query_data_item(
+    item_name: str = "", oid: str = "", uid: str = "", params: str | None = None
+) -> list:
     """
     Query a new data_item by at least specifying an item_name.
 
@@ -35,7 +37,7 @@ def query_data_item(item_name: str = "", oid: str = "", uid: str = "", params: s
 
 
 # pylint: disable=unused-argument
-def query_expired(offset: timedelta = None):
+def query_expired(offset: timedelta | None = None):
     """
     Query for all expired data_items using the uid_expiration timestamp.
 

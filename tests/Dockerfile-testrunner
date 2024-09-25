@@ -10,12 +10,13 @@ RUN mkdir -p /data
 
 WORKDIR /app
 
+# cache external dependencies
 COPY pyproject.toml poetry.lock ./
 RUN poetry config virtualenvs.in-project true \
-    && poetry install --no-root
+    && poetry install --only main,test --no-root
 
 COPY ./ ./
-RUN poetry install
+RUN poetry install --only main,test
 
 ARG DO_AUTH
 ENV DO_AUTH=${DO_AUTH}

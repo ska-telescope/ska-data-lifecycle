@@ -6,7 +6,7 @@ import typer
 from docstring_parser import parse
 from typer.models import ArgumentInfo, OptionInfo
 
-from ska_dlm.cli_utils import typer_docstring
+from ska_dlm.typer_utils import typer_docstring
 
 
 def mock_command(  # pylint: disable=unused-argument, too-many-arguments
