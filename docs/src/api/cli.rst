@@ -15,7 +15,7 @@ As can be seen the CLI features highlighting and on-line help:
 
 .. image:: ../_static/img/ska-dlm-help.png
 
-Typer also provides command line completion and those are the two first options shown along with the ``--help`` option. Just to show a couple of more example of the help hierarchy for the storage manager.
+Typer also provides command line completion and those are the two first options shown along with the ``--help`` option. Just to show a couple more examples of the help hierarchy for the storage manager.
 
 This is showing the available sub-commands of ``ska-dlm storage``:
 
@@ -25,4 +25,5 @@ The following is showing the actual command options for the ``ska-dlm storage in
 
 .. image:: ../_static/img/ska-dlm-location.png
 
-Like this all options of the SKA-DLM can be explored and used.
+All options of the SKA-DLM can be explored and used in this way.
+
