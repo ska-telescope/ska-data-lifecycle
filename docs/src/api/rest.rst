@@ -6,7 +6,7 @@ As described already in the overview, the SKA-DLM is exposing all the managers a
 - http://localhost:8001/docs for the Ingest Manager REST I/F
 - http://localhost:8002/docs for the Request Manager REST I/F
 - http://localhost:8003/docs for the Storage Manager service REST I/F
-- http://localhost:8003/docs for the Migration Manager REST I/F
+- http://localhost:8004/docs for the Migration Manager REST I/F
 
 As an example the Request Manager REST page looks like this:
 

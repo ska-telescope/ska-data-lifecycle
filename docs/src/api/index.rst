@@ -1,6 +1,6 @@
 SKA_DLM Interfaces
 ==================
-This is the Python package level documentation of the SKA Data Lifecycle Management system. Using this package requires it to be installed inside a python environment. The ska_dlm is using the poetry package manager and thus installation is pretty straight foward:
+This is the Python package level documentation of the SKA Data Lifecycle Management system. Using this package requires it to be installed inside a python environment. The ska_dlm is using the poetry package manager and thus installation is pretty straightforward:
 
 .. code:: bash
 
