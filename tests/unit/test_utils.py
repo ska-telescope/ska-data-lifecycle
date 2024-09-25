@@ -1,4 +1,4 @@
-"""Cli utilties test module."""
+"""Typer and FastAPI utilties test module."""
 
 import types
 from typing import Annotated, Any
