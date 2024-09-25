@@ -1,3 +1,5 @@
+.. _cli api:
+
 Command Line Interface
 ----------------------
 
