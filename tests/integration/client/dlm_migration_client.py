@@ -3,7 +3,7 @@
 import requests
 
 MIGRATION_URL = ""
-REQUEST_BEARER = None
+SESSION = None
 
 
 def copy_data_item(  # pylint: disable=too-many-arguments, unused-argument
@@ -52,10 +52,7 @@ def copy_data_item(  # pylint: disable=too-many-arguments, unused-argument
         No data item found for copying.
     """
     params = {k: v for k, v in locals().items() if v}
-    headers = {"Authorization": f"Bearer {REQUEST_BEARER}"} if REQUEST_BEARER else {}
-    response = requests.get(
-        f"{MIGRATION_URL}/migration/copy_data_item", params=params, headers=headers, timeout=60
-    )
+    response = SESSION.get(f"{MIGRATION_URL}/migration/copy_data_item", params=params, timeout=60)
     if response.status_code in [401, 403]:
         response.raise_for_status()
     return response.json()

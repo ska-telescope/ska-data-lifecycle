@@ -13,7 +13,7 @@ from ska_dlm import CONFIG, data_item, dlm_migration
 from ska_dlm.dlm_db.db_access import DB
 from ska_dlm.dlm_storage.main import persist_new_data_items
 from ska_dlm.exceptions import InvalidQueryParameters, ValueAlreadyInDB
-from tests.integration.client.dlm_gateway_client import get_token
+from tests.integration.client.dlm_gateway_client import get_token, start_session
 
 ROOT = "/data/"
 RCLONE_TEST_FILE_PATH = "/data/testfile"
@@ -38,9 +38,10 @@ def setup_auth(env, request):
     # this should only run once per test suite
     if request.config.getoption("--auth"):
         token = get_token("admin", "admin", env.get_gateway_url())
-        env.request_requests.REQUEST_BEARER = token
-        env.ingest_requests.INGEST_BEARER = token
-        env.storage_requests.STORAGE_BEARER = token
+        session = start_session(token, env.get_gateway_url())
+        env.request_requests.SESSION = session
+        env.ingest_requests.SESSION = session
+        env.storage_requests.SESSION = session
 
 
 @pytest.fixture(scope="function", autouse=True)

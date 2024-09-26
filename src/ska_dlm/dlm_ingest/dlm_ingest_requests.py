@@ -2,10 +2,11 @@
 
 import json
 import logging
+from typing import Annotated
 
 import requests
 import ska_sdp_metadata_generator as metagen
-from fastapi import FastAPI
+from fastapi import FastAPI, Header
 from ska_sdp_dataproduct_metadata import MetaData
 
 import ska_dlm
@@ -38,7 +39,10 @@ cli.exception_handler(ValueAlreadyInDB)(dump_short_stacktrace)
 @cli.command()
 @rest.post("/ingest/init_data_item")
 def init_data_item(
-    item_name: str = "", phase: str = "GAS", json_data: JsonObjectOption = None
+    item_name: str = "",
+    phase: str = "GAS",
+    json_data: JsonObjectOption = None,
+    token: Annotated[str | None, Header()] = None,
 ) -> str:
     """Intialize a new data_item by at least specifying an item_name.
 
@@ -50,6 +54,8 @@ def init_data_item(
         the phase this item is set to (usually inherited from the storage)
     json_data : str
         provides the ability to specify all values.
+    token : str
+        JWT UserInfo if Authorization is enabled.
 
     Returns
     -------
