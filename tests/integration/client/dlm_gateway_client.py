@@ -4,11 +4,10 @@ import requests
 from requests import Session
 
 
-def start_session(token: str, gateway_url: str):
+def start_session(auth: str, gateway_url: str):
     """Get OAUTH token based on username and password"""
     session = Session()
-    headers = {"Authorization": f"Bearer {token}"}
-    response = session.post(f"{gateway_url}/start_session", headers=headers, timeout=60)
+    response = session.post(f"{gateway_url}/start_session", json=auth, timeout=60)
     response.raise_for_status()
     return session
 

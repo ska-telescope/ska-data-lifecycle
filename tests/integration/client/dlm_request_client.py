@@ -2,8 +2,6 @@
 
 from datetime import timedelta
 
-import requests
-
 REQUEST_URL = ""
 SESSION = None
 

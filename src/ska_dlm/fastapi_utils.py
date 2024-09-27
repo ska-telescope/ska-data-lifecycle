@@ -10,6 +10,7 @@ from typing import ParamSpec, TypeVar, get_args
 
 import fastapi
 import fastapi.params
+import jwt
 from docstring_parser import Docstring, DocstringStyle, compose, parse
 from pydantic.fields import FieldInfo
 from typing_extensions import _AnnotatedAlias
@@ -145,3 +146,11 @@ def fastapi_docstring_annotate(
     docstring.style = DocstringStyle.NUMPYDOC
     output_func.__doc__ = compose(docstring)
     return output_func
+
+
+def decode_bearer(bearer: str) -> dict:
+    """Extract token from Bearer string and decode."""
+    if bearer:
+        bearer_token = bearer.split(" ")[1]
+        return jwt.decode(bearer_token, options={"verify_signature": False})
+    return None

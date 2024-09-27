@@ -37,8 +37,8 @@ def setup_auth(env, request):
     """Initialze Auth per session."""
     # this should only run once per test suite
     if request.config.getoption("--auth"):
-        token = get_token("admin", "admin", env.get_gateway_url())
-        session = start_session(token, env.get_gateway_url())
+        auth = get_token("admin", "admin", env.get_gateway_url())
+        session = start_session(auth, env.get_gateway_url())
         env.request_requests.SESSION = session
         env.ingest_requests.SESSION = session
         env.storage_requests.SESSION = session

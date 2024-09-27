@@ -12,7 +12,7 @@ from ska_sdp_dataproduct_metadata import MetaData
 import ska_dlm
 from ska_dlm.dlm_storage.dlm_storage_requests import rclone_access
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
-from ska_dlm.fastapi_utils import fastapi_auto_annotate
+from ska_dlm.fastapi_utils import decode_bearer, fastapi_auto_annotate
 from ska_dlm.typer_types import JsonObjectOption
 from ska_dlm.typer_utils import dump_short_stacktrace
 
@@ -42,7 +42,7 @@ def init_data_item(
     item_name: str = "",
     phase: str = "GAS",
     json_data: JsonObjectOption = None,
-    token: Annotated[str | None, Header()] = None,
+    authorization: Annotated[str | None, Header()] = None,
 ) -> str:
     """Intialize a new data_item by at least specifying an item_name.
 
@@ -54,8 +54,8 @@ def init_data_item(
         the phase this item is set to (usually inherited from the storage)
     json_data : str
         provides the ability to specify all values.
-    token : str
-        JWT UserInfo if Authorization is enabled.
+    authorization : str
+        Validated Bearer token with UserInfo
 
     Returns
     -------
@@ -65,8 +65,14 @@ def init_data_item(
     ------
     InvalidQueryParameters
     """
+    user_info = decode_bearer(authorization)
+
     if item_name:
-        post_data = {"item_name": item_name, "item_phase": phase}
+        post_data = {
+            "item_name": item_name,
+            "item_phase": phase,
+            "item_owner": user_info["preferred_username"] if user_info else None,
+        }
     elif json_data:
         post_data = json.loads(json_data)
     else:
@@ -76,7 +82,7 @@ def init_data_item(
 
 @cli.command()
 @rest.post("/ingest/register_data_item")
-def register_data_item(  # noqa: C901 # pylint: disable=too-many-arguments
+def register_data_item(  # pylint: disable=too-many-arguments, too-many-locals
     item_name: str,
     uri: str = "",
     storage_name: str = "",
@@ -84,6 +90,7 @@ def register_data_item(  # noqa: C901 # pylint: disable=too-many-arguments
     metadata: JsonObjectOption = None,
     item_format: str | None = "unknown",
     eb_id: str | None = None,
+    authorization: Annotated[str | None, Header()] = None,
 ) -> str:
     """Ingest a data_item (register function is an alias).
 
@@ -114,6 +121,8 @@ def register_data_item(  # noqa: C901 # pylint: disable=too-many-arguments
         format of the data item
     eb_id: str | None, optional
         execution block ID provided by the client
+    authorization : str
+        Validated Bearer token with UserInfo
 
     Returns
     -------
@@ -124,6 +133,8 @@ def register_data_item(  # noqa: C901 # pylint: disable=too-many-arguments
     ------
     UnmetPreconditionForOperation
     """
+    user_info = decode_bearer(authorization)
+
     # (1)
     storages = query_storage(storage_name=storage_name, storage_id=storage_id)
     if not storages:
@@ -148,6 +159,7 @@ def register_data_item(  # noqa: C901 # pylint: disable=too-many-arguments
         "storage_id": storage_id,
         "item_phase": storages[0]["storage_phase_level"],
         "item_format": item_format,
+        "item_owner": user_info["preferred_username"] if user_info else None,
     }
     uid = init_data_item(json_data=json.dumps(init_item))
 
