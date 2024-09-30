@@ -111,3 +111,130 @@ make k8s-test
 ```
 
 For more information see [helm chart README.md](./charts/ska-dlm/README.md)
+
+
+## Example Usage
+
+Typical usage of the DLM:
+
+1. Determine the location of the files you wish to add
+2. Register that location with the DLM system. Note the location must be accessible (via rclone) from the DLM.
+3. Ingest the files into DLM one-by-one
+4. Access/query the items via the ska-dataproduct-dashboard
+
+Interaction with DLM can be done in a number of ways:
+
+1. ska-dlm-client - a standalone DLM client that can be configured to automatically ingest data items
+2. ska-dlm REST API
+
+### ska-dlm-client
+
+The recommended way of using the DLM. Once configured, the ska-dlm-client will trigger on creation of a new file, or on reception of a kafka message, automatically ingesting the specified item into the DLM.
+
+For more complete information, refer to the ska-dlm-client [repository](https://gitlab.com/ska-telescope/ska-dlm-client/) and [readthedocs](https://ska-telescope-ska-dlm-client.readthedocs.io/en/latest/).
+
+### ska-dlm REST API
+
+```python
+# urls for DLM deployment
+STORAGE_URL = "http://dlm_gateway:8000"
+INGEST_URL = "http://dlm_gateway:8000"
+REQUEST_URL = "http://dlm_gateway:8000"
+MIGRATION_URL = "http://dlm_gateway:8000"
+
+# create a name for this storage location
+location_name="ThisLocationName"
+
+# check is this storage location is already known to DLM
+#location = dlm_storage.query_location(location_name=location_name)
+params = {"location_name": location_name}
+location = requests.get(
+  f"{STORAGE_URL}/storage/query_location", params=params, headers=headers, timeout=60
+)
+print(location.json())
+
+# otherwise, register this location:
+#location = dlm_storage.init_location(location_name, "SKAO Data Centre")
+params = {
+  "location_name": location_name,
+  "location_type": "",
+  "location_country": "",
+  "location_city": "",
+  "location_facility": "SKAO Data Centre",
+}
+
+location = requests.post(
+  f"{STORAGE_URL}/storage/init_storage", params=params, headers=headers, timeout=60
+)
+print(location.json())
+
+# get the location id
+location_id = location[0]["location_id"]
+
+# initialise a storage, if it doesn’t already exist:
+#uuid = dlm_storage.init_storage(
+#    storage_name="MyDisk",
+#    location_id=location_id,
+#    storage_type="disk",
+#    storage_interface="posix",
+#    storage_capacity=100000000,
+#)
+params = {
+  storage_name: "MyDisk",
+  location_id: location_id,
+  storage_type: "disk",
+  storage_interface: "posix",
+  storage_capacity=100000000,
+}
+storage = requests.post(
+  f"{STORAGE_URL}/storage/init_storage", params=params, headers=headers, timeout=60
+)
+print(storage.json())
+
+# supply a rclone config for this storage, if it doesn’t already exist
+#config = '{"name":"MyDisk","type":"local", "parameters":{}}'
+#config_id = dlm_storage.create_storage_config(uuid, config=config)
+params = {
+  config: {
+    "name": "MyDisk",
+    "type":"local",
+    "parameters":{},
+  }
+}
+config = requests.post(
+  f"{STORAGE_URL}/storage/create_storage_config", params=params, headers=headers, timeout=60
+)
+print(config.json())
+
+
+# then begin adding data items
+#uid = dlm_ingest.register_data_item(
+#    "/my/ingest/item",
+#    path,
+#    "MyDisk",
+#    metadata=None
+#)
+params = {
+  item_name: "/my/ingest/item",
+  uri: "/some/path/to/the/file",
+  storage_name: "MyDisk",
+  storage_id: "",
+  metadata: None,
+  item_format: None,
+  eb_id: None,
+}
+response = requests.post(
+  f"{INGEST_URL}/ingest/register_data_item", params=params, headers=headers, timeout=60
+)
+print(response.json())
+
+```
+
+
+## Known DLM deployments
+
+At time of writing, here are the known medium-term deployments of the DLM system:
+
+| Location        | Storage URL | Ingest URL | Request URL | Migration URL | Data Product Dashboard URL |
+| --------------- | ----------- | ---------- | ----------- | ------------- | -------------------------- |
+| DP Integration  |             |            |             |               | https://sdhp.stfc.skao.int/integration-ska-dataproduct-dashboard/dashboard/ | 
