@@ -153,7 +153,7 @@ class Keycloak(Provider):
 
     async def token_by_username_password(self, username: str, password: str):
         auth = await self.kc.a_token(username, password)
-        return auth
+        return auth["access_token"]
 
     async def has_scope(self, token: str, permission: str):
         return await self.kc.a_has_uma_access(token, permission)
@@ -181,7 +181,7 @@ class Keycloak(Provider):
     async def start_session(self, auth: str, request: Request):
         try:
             await self._check_token(auth["access_token"])
-            request.session["auth"] = auth
+            request.session["auth"] = auth["access_token"]
         # pylint: disable=raise-missing-from
         except jwt.exceptions.PyJWTError as e:
             raise HTTPException(401, str(e))
@@ -202,7 +202,7 @@ class Keycloak(Provider):
         auth = request.session.get("auth")
         if not auth:
             raise HTTPException(403, "Session token not found")
-        await self._check_token(auth["access_token"])
+        await self._check_token(auth)
         return auth
 
 
@@ -249,14 +249,14 @@ class Entra(Provider):
             access_token = await loop.run_in_executor(
                 None, self.entra.acquire_token_by_auth_code_flow, flow, dict(request.query_params)
             )
-            return access_token
+            return access_token["id_token"]
         # pylint: disable=raise-missing-from
         except Exception as e:
             raise HTTPException(status_code=403, detail=str(e))
 
     async def start_session(self, auth: str, request: Request):
         try:
-            await self._check_token(auth["id_token"])
+            await self._check_token(auth)
             request.session["auth"] = auth
         # pylint: disable=raise-missing-from
         except jwt.exceptions.PyJWTError as e:
@@ -296,7 +296,7 @@ class Entra(Provider):
         if not auth:
             raise HTTPException(403, "Session auth not found")
 
-        await self._check_token(auth["id_token"])
+        await self._check_token(auth)
         return auth
 
 
