@@ -32,4 +32,4 @@ __all__ = [
 
 __author__ = """Andreas Wicenec"""
 __email__ = "andreas.wicenec@icrar.org"
-__version__ = "0.0.1"
+__version__ = "0.1.0"
