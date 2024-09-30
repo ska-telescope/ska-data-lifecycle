@@ -213,6 +213,7 @@ class Entra(Provider):
         self.tenant_id = os.environ["TENANT_ID"]
         self.client_id = os.environ["CLIENT_ID"]
         self.client_cred = os.environ["CLIENT_CRED"]
+        self.redirect_url = os.environ["REDIRECT_URL"]
         m_cache = msal.TokenCache()
         self.entra = msal.ConfidentialClientApplication(
             client_id=self.client_id,
@@ -232,7 +233,7 @@ class Entra(Provider):
             None,
             self.entra.initiate_auth_code_flow,
             [],
-            "https://dlm-test.icrar.org/auth_callback",
+            self.redirect_url,
         )
         request.session["flow"] = auth
 
