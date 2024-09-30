@@ -180,8 +180,8 @@ class Keycloak(Provider):
 
     async def start_session(self, auth: str, request: Request):
         try:
-            await self._check_token(auth["access_token"])
-            request.session["auth"] = auth["access_token"]
+            await self._check_token(auth)
+            request.session["auth"] = auth
         # pylint: disable=raise-missing-from
         except jwt.exceptions.PyJWTError as e:
             raise HTTPException(401, str(e))
@@ -343,13 +343,17 @@ async def auth_callback(request: Request):
 @app.post("/start_session", status_code=status.HTTP_200_OK)
 async def session(request: Request):
     """Start client session with cookies"""
+
+    auth = request.headers.get("authorization", None)
+    if not auth:
+        raise HTTPException(401, "No authorization header")
     try:
-        auth = await request.json()
+        bearer_token = auth.split(" ")[1]
     # pylint: disable=raise-missing-from
     except Exception:
         raise HTTPException(401, "Invalid getting auth")
 
-    await PROVIDER.start_session(auth, request)
+    await PROVIDER.start_session(bearer_token, request)
     return {"Result": "OK"}
 
 
@@ -393,7 +397,7 @@ async def _send_endpoint(url: httpx.URL, auth: dict, request: Request):
 
     headers = request.headers.mutablecopy()
     if auth:
-        headers["Authorization"] = f"Bearer {auth['id_token']}"
+        headers["Authorization"] = f"Bearer {auth}"
 
     rp_req = client.build_request(
         request.method, url, headers=headers.raw, content=await request.body()
