@@ -139,14 +139,29 @@ For more complete information, refer to the ska-dlm-client [repository](https://
 
 Otherwise, to interact with the DLM manually, first obtain an API token. There are both manual and programmatic ways to obtain a token. To obtain an API token manually:
 
-* Open an browser and go to https://sdhp.stfc.skao.int/dp-yanda/dlm/token_by_auth_flow.
+* Open an browser and go to the `/token_by_auth_flow` endpoint on the DLM server URL. For example: https://sdhp.stfc.skao.int/dp-yanda/dlm/token_by_auth_flow.
 * Login via your SKAO credentials
 * If successful, a token will be returned. Copy the token.
 
-Alternatively, it is also possible to obtain an API token programmatically.
+Alternatively, it is also possible to obtain an API token programmatically. Programmatic access is via a [ConfidentialClientApplication](https://learn.microsoft.com/en-us/entra/identity-platform/msal-client-applications), whose API can be found [here](https://msal-python.readthedocs.io/en/latest/index.html#confidentialclientapplication).
 
 ```python
-# TODO: obtain an API token
+# query the config database for "confidential client" information
+# this exact process is not yet known, so "?" is used in place of the actual method
+# contact team YANDA for the latest developments
+id = "?"
+secret = "?"
+tenant_id = "?"
+scope_id = "?"
+
+# obtain an API token programmatically
+import msal # Microsoft Auth package
+entra = msal.ConfidentialClientApplication(
+            client_id="{id}",
+            client_credential="{secret}",
+            authority="https://login.microsoftonline.com/{tenant_id}/")
+
+token = entra.acquire_token_for_client(scopes=["api://{scope_id}/.default"])
 ```
 
 Once a token is ready, further interaction with the DLM is possible via the REST API. The source code below is a typical example.
