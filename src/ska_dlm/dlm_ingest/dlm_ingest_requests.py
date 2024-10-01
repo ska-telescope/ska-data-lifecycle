@@ -71,7 +71,7 @@ def init_data_item(
         post_data = {
             "item_name": item_name,
             "item_phase": phase,
-            "item_owner": user_info["preferred_username"] if user_info else None,
+            "item_owner": user_info.get("preferred_username", "SKA_SYSTEM") if user_info else None,
         }
     elif json_data:
         post_data = json.loads(json_data)
@@ -159,7 +159,7 @@ def register_data_item(  # pylint: disable=too-many-arguments, too-many-locals
         "storage_id": storage_id,
         "item_phase": storages[0]["storage_phase_level"],
         "item_format": item_format,
-        "item_owner": user_info["preferred_username"] if user_info else None,
+        "item_owner": user_info.get("preferred_username", "SKA_SYSTEM") if user_info else None,
     }
     uid = init_data_item(json_data=json.dumps(init_item))
 
