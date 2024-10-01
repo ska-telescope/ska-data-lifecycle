@@ -117,49 +117,49 @@ For more information see [helm chart README.md](./charts/ska-dlm/README.md)
 
 Typical usage of the DLM:
 
-1. Obtain an API token for use of the DLM
+1. Obtain an API token, authorizing use of the DLM by a specific user
 2. Contact the gateway to exchange the API token for a session cookie
 3. Determine the location of the files you wish to add
-4. Register that location with the DLM system. Note the location must be accessible (via rclone) from the DLM.
+4. Register that location with the DLM system. Note the location must be accessible (via rclone) from the DLM
 5. Ingest the files into DLM one-by-one
 6. Access/query the items via the ska-dataproduct-dashboard
 
-### Step 1: Obtain an API Token
-
-To obtain an API token:
-
-* Open an browser and go to https://sdhp.stfc.skao.int/dp-yanda/dlm/token_by_auth_flow. Login via your SKAO credentials. If successful, a token will be returned.
-
-### Steps 2-6: Data Lifecycle Management
-
-Interactions with DLM can be done in a number of ways:
+Interactions with DLM can be done in two ways:
 
 1. ska-dlm-client - a standalone DLM client that can be configured to automatically ingest data items
 2. ska-dlm REST API - a (more) manual way to configure storage locations and ingest data items
 
-Steps 2-6 can either be performed manually using the REST API, or handled automatically by the ska-dlm-client.
-
 ### ska-dlm-client
 
-The recommended way of using the DLM. Once configured, the ska-dlm-client will trigger on creation of a new file, or on reception of a kafka message, automatically ingesting the specified item into the DLM.
-
-The ska-dlm-client software needs to be configured with an API token, as obtained via step 1, and various other settings.
+The ska-dlm-client is the recommended way of using the DLM. Once configured, the ska-dlm-client will trigger on creation of a new file, or on reception of a kafka message, automatically ingesting the specified item into the DLM.
 
 For more complete information, refer to the ska-dlm-client [repository](https://gitlab.com/ska-telescope/ska-dlm-client/) and [readthedocs](https://ska-telescope-ska-dlm-client.readthedocs.io/en/latest/).
 
 ### ska-dlm REST API
 
+Otherwise, to interact with the DLM manually, first obtain an API token. There are both manual and programmatic ways to obtain a token. To obtain an API token manually:
+
+* Open an browser and go to https://sdhp.stfc.skao.int/dp-yanda/dlm/token_by_auth_flow.
+* Login via your SKAO credentials
+* If successful, a token will be returned. Copy the token.
+
+Alternatively, it is also possible to obtain an API token programmatically.
+
 ```python
-# urls for DLM deployment
-STORAGE_URL = "http://dlm_gateway:8000"
-INGEST_URL = "http://dlm_gateway:8000"
-REQUEST_URL = "http://dlm_gateway:8000"
-MIGRATION_URL = "http://dlm_gateway:8000"
+# TODO: obtain an API token
+```
+
+Once a token is ready, further interaction with the DLM is possible via the REST API. The source code below is a typical example.
+
+```python
+# this URL is for DLM deployment in the Yanda namespace on the DP integration cluster
+# other known locations are shown below
+DLM_URL = "https://sdhp.stfc.skao.int/dp-yanda/dlm"
 
 # exchange the token for a session cookie
 session = Session()
 bearer = {"Authorization": f"Bearer {your token}"}
-response = session.post(f"https://sdhp.stfc.skao.int/dp-yanda/dlm/start_session", headers=bearer, timeout=60)
+response = session.post(f"{DLM_URL}/start_session", headers=bearer, timeout=60)
 response.raise_for_status()
 
 # create a name for this storage location
@@ -169,7 +169,7 @@ location_name="ThisLocationName"
 #location = dlm_storage.query_location(location_name=location_name)
 params = {"location_name": location_name}
 location = session.get(
-  f"{STORAGE_URL}/storage/query_location", params=params, timeout=60
+  f"{DLM_URL}/storage/query_location", params=params, timeout=60
 )
 print(location.json())
 
@@ -184,7 +184,7 @@ params = {
 }
 
 location = session.post(
-  f"{STORAGE_URL}/storage/init_storage", params=params, timeout=60
+  f"{DLM_URL}/storage/init_storage", params=params, timeout=60
 )
 print(location.json())
 
@@ -207,7 +207,7 @@ params = {
   storage_capacity=100000000,
 }
 storage = session.post(
-  f"{STORAGE_URL}/storage/init_storage", params=params, timeout=60
+  f"{DLM_URL}/storage/init_storage", params=params, timeout=60
 )
 print(storage.json())
 
@@ -222,7 +222,7 @@ params = {
   }
 }
 config = session.post(
-  f"{STORAGE_URL}/storage/create_storage_config", params=params, timeout=60
+  f"{DLM_URL}/storage/create_storage_config", params=params, timeout=60
 )
 print(config.json())
 
@@ -244,7 +244,7 @@ params = {
   eb_id: None,
 }
 response = session.post(
-  f"{INGEST_URL}/ingest/register_data_item", params=params, timeout=60
+  f"{DLM_URL}/ingest/register_data_item", params=params, timeout=60
 )
 print(response.json())
 
@@ -255,6 +255,6 @@ print(response.json())
 
 At time of writing, here are the known medium-term deployments of the DLM system:
 
-| Location        | Storage URL | Ingest URL | Request URL | Migration URL | Data Product Dashboard URL |
-| --------------- | ----------- | ---------- | ----------- | ------------- | -------------------------- |
-| DP Integration  | https://sdhp.stfc.skao.int/dp-yanda/dlm/storage/ | https://sdhp.stfc.skao.int/dp-yanda/dlm/ingest/ | https://sdhp.stfc.skao.int/dp-yanda/dlm/request/ | https://sdhp.stfc.skao.int/dp-yanda/dlm/migration/ | https://sdhp.stfc.skao.int/integration-ska-dataproduct-dashboard/dashboard/ |
+| Location                         | Data Lifecycle Management URL           | Data Product Dashboard URL                                                  |
+| -------------------------------- | --------------------------------------- | --------------------------------------------------------------------------- |
+| DP Integration (yanda namespace) | https://sdhp.stfc.skao.int/dp-yanda/dlm | https://sdhp.stfc.skao.int/integration-ska-dataproduct-dashboard/dashboard/ |
