@@ -311,6 +311,8 @@ if ENV_PROVIDER == "KC":
     PROVIDER = Keycloak()
 elif ENV_PROVIDER == "ENTRA":
     PROVIDER = Entra()
+else:
+    raise ValueError("Unknown Provider")
 
 ingest_client = httpx.AsyncClient(base_url=os.getenv("INGEST_CLIENT", "http://localhost:8001"))
 requests_client = httpx.AsyncClient(base_url=os.getenv("REQUESTS_CLIENT", "http://localhost:8002"))
@@ -322,7 +324,9 @@ migration_client = httpx.AsyncClient(
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
-app.add_middleware(SessionMiddleware, secret_key="some-random-string")
+app.add_middleware(
+    SessionMiddleware, secret_key=os.getenv("COOKIE_SECRET", "this_is_a_secret"), max_age=None
+)
 ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
 ssl_context.load_cert_chain("./cert.pem", keyfile="./key.pem")
 
