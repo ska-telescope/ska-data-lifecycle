@@ -62,7 +62,7 @@ poetry install
 poetry shell
 ```
 
-Subsequent the tests can be executed using the command:
+Subsequently, the tests can be executed using the command:
 
 ```bash
 make python-test
