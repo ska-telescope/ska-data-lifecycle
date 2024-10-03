@@ -41,7 +41,7 @@ class Provider:
         raise HTTPException(404, "Not implemented")
 
     async def has_scope(self, token: str, permission: str):
-        """Check if a token as the permission scope
+        """Check if a token has the permission scope
 
         Parameters
         ----------
