@@ -190,7 +190,7 @@ class Keycloak(Provider):
         request.session["auth"] = None
 
     async def _check_token(self, token: str):
-        """Check is client can access endpoint based on token and permissions"""
+        """Check if client can access endpoint based on token and permissions"""
         try:
             return await self.kc.a_userinfo(token)
         except KeycloakAuthenticationError as e:
