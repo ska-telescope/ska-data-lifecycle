@@ -73,11 +73,7 @@ def init_data_item(
             raise ValueError("Username not found in profile")
 
     if item_name:
-        post_data = {
-            "item_name": item_name,
-            "item_phase": phase,
-            "item_owner": username
-        }
+        post_data = {"item_name": item_name, "item_phase": phase, "item_owner": username}
     elif json_data:
         post_data = json.loads(json_data)
     else:
