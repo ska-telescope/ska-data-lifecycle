@@ -163,7 +163,7 @@ response.raise_for_status()
 # create a name for this storage location
 location_name="ThisLocationName"
 
-# check is this storage location is already known to DLM
+# check if this storage location is already known to DLM
 #location = dlm_storage.query_location(location_name=location_name)
 params = {"location_name": location_name}
 location = session.get(
