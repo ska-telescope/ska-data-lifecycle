@@ -65,13 +65,18 @@ def init_data_item(
     ------
     InvalidQueryParameters
     """
+    username = None
     user_info = decode_bearer(authorization)
+    if user_info:
+        username = user_info.get("preferred_username", None)
+        if username is None:
+            raise ValueError("Username not found in profile")
 
     if item_name:
         post_data = {
             "item_name": item_name,
             "item_phase": phase,
-            "item_owner": user_info.get("preferred_username", "SKA_SYSTEM") if user_info else None,
+            "item_owner": username
         }
     elif json_data:
         post_data = json.loads(json_data)
@@ -133,7 +138,12 @@ def register_data_item(  # pylint: disable=too-many-arguments, too-many-locals
     ------
     UnmetPreconditionForOperation
     """
+    username = None
     user_info = decode_bearer(authorization)
+    if user_info:
+        username = user_info.get("preferred_username", None)
+        if username is None:
+            raise ValueError("Username not found in profile")
 
     # (1)
     storages = query_storage(storage_name=storage_name, storage_id=storage_id)
@@ -159,7 +169,7 @@ def register_data_item(  # pylint: disable=too-many-arguments, too-many-locals
         "storage_id": storage_id,
         "item_phase": storages[0]["storage_phase_level"],
         "item_format": item_format,
-        "item_owner": user_info.get("preferred_username", "SKA_SYSTEM") if user_info else None,
+        "item_owner": username,
     }
     uid = init_data_item(json_data=json.dumps(init_item))
 
