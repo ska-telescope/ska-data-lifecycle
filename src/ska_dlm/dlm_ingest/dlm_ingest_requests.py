@@ -83,7 +83,8 @@ def init_data_item(
 
 @cli.command()
 @rest.post("/ingest/register_data_item")
-def register_data_item(  # pylint: disable=too-many-arguments, too-many-locals
+def register_data_item(  # noqa: C901
+    # pylint: disable=R0913,R0914
     item_name: str,
     uri: str = "",
     storage_name: str = "",
