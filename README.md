@@ -111,3 +111,149 @@ make k8s-test
 ```
 
 For more information see [helm chart README.md](./charts/ska-dlm/README.md)
+
+
+## Example Usage
+
+Typical usage of the DLM:
+
+1. Obtain an API token, authorizing use of the DLM by a specific user
+2. Contact the gateway to exchange the API token for a session cookie
+3. Determine the location of the files you wish to add
+4. Register that location with the DLM system. Note the location must be accessible (via rclone) from the DLM
+5. Ingest the files into DLM one-by-one
+6. Access/query the items via the ska-dataproduct-dashboard
+
+### Step 1: Obtain an API token
+
+To obtain an API token:
+
+* Open an browser and go to the `/token_by_auth_flow` endpoint on the DLM server URL. For example: https://sdhp.stfc.skao.int/dp-yanda/dlm/token_by_auth_flow.
+* Login with your SKAO credentials
+* If successful, a token will be returned. Copy the token.
+
+### Steps 2-6: Data Lifecycle Management
+
+Once a token is ready, interactions with DLM can be done in two ways:
+
+1. ska-dlm-client - a standalone DLM client that can be configured to automatically ingest data items
+2. ska-dlm REST API - a (more) manual way to configure storage locations and ingest data items
+
+### ska-dlm-client
+
+The ska-dlm-client is the recommended way of using the DLM. Once configured, the ska-dlm-client will trigger on creation of a new file, or on reception of a kafka message, automatically ingesting the specified item into the DLM.
+
+For more complete information, refer to the ska-dlm-client [repository](https://gitlab.com/ska-telescope/ska-dlm-client/) and [readthedocs](https://ska-telescope-ska-dlm-client.readthedocs.io/en/latest/).
+
+### ska-dlm REST API
+
+Interaction with the DLM is also possible via the REST API. The source code below is a typical example.
+
+```python
+# this URL is for DLM deployment in the Yanda namespace on the DP integration cluster
+# other known locations are shown below
+DLM_URL = "https://sdhp.stfc.skao.int/dp-yanda/dlm"
+
+# exchange the token for a session cookie
+from requests import Session
+session = Session()
+bearer = {"Authorization": f"Bearer {your token}"}
+response = session.post(f"{DLM_URL}/start_session", headers=bearer, timeout=60)
+response.raise_for_status()
+
+# create a name for this storage location
+location_name="ThisLocationName"
+
+# check if this storage location is already known to DLM
+#location = dlm_storage.query_location(location_name=location_name)
+params = {"location_name": location_name}
+location = session.get(
+  f"{DLM_URL}/storage/query_location", params=params, timeout=60
+)
+print(location.json())
+
+# otherwise, register this location:
+#location = dlm_storage.init_location(location_name, "SKAO Data Centre")
+params = {
+  "location_name": location_name,
+  "location_type": "",
+  "location_country": "",
+  "location_city": "",
+  "location_facility": "SKAO Data Centre",
+}
+
+location = session.post(
+  f"{DLM_URL}/storage/init_storage", params=params, timeout=60
+)
+print(location.json())
+
+# get the location id
+location_id = location[0]["location_id"]
+
+# initialise a storage, if it doesn’t already exist:
+#uuid = dlm_storage.init_storage(
+#    storage_name="MyDisk",
+#    location_id=location_id,
+#    storage_type="disk",
+#    storage_interface="posix",
+#    storage_capacity=100000000,
+#)
+params = {
+  storage_name: "MyDisk",
+  location_id: location_id,
+  storage_type: "disk",
+  storage_interface: "posix",
+  storage_capacity=100000000,
+}
+storage = session.post(
+  f"{DLM_URL}/storage/init_storage", params=params, timeout=60
+)
+print(storage.json())
+
+# supply a rclone config for this storage, if it doesn’t already exist
+#config = '{"name":"MyDisk","type":"local", "parameters":{}}'
+#config_id = dlm_storage.create_storage_config(uuid, config=config)
+params = {
+  config: {
+    "name": "MyDisk",
+    "type":"local",
+    "parameters":{},
+  }
+}
+config = session.post(
+  f"{DLM_URL}/storage/create_storage_config", params=params, timeout=60
+)
+print(config.json())
+
+
+# then begin adding data items
+#uid = dlm_ingest.register_data_item(
+#    "/my/ingest/item",
+#    path,
+#    "MyDisk",
+#    metadata=None
+#)
+params = {
+  item_name: "/my/ingest/item",
+  uri: "/some/path/to/the/file",
+  storage_name: "MyDisk",
+  storage_id: "",
+  metadata: None,
+  item_format: None,
+  eb_id: None,
+}
+response = session.post(
+  f"{DLM_URL}/ingest/register_data_item", params=params, timeout=60
+)
+print(response.json())
+
+```
+
+
+## Known DLM deployments
+
+At time of writing, here are the known medium-term deployments of the DLM system:
+
+| Location                         | Data Lifecycle Management URL           | Data Product Dashboard URL                                                  |
+| -------------------------------- | --------------------------------------- | --------------------------------------------------------------------------- |
+| DP Integration (yanda namespace) | https://sdhp.stfc.skao.int/dp-yanda/dlm | https://sdhp.stfc.skao.int/integration-ska-dataproduct-dashboard/dashboard/ |
