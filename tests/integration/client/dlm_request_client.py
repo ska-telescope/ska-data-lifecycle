@@ -2,10 +2,8 @@
 
 from datetime import timedelta
 
-import requests
-
 REQUEST_URL = ""
-REQUEST_BEARER = None
+SESSION = None
 
 
 # pylint: disable=unused-argument
@@ -27,10 +25,7 @@ def query_data_item(
     list
     """
     params = {k: v for k, v in locals().items() if v}
-    headers = {"Authorization": f"Bearer {REQUEST_BEARER}"} if REQUEST_BEARER else {}
-    response = requests.get(
-        f"{REQUEST_URL}/request/query_data_item", params=params, headers=headers, timeout=60
-    )
+    response = SESSION.get(f"{REQUEST_URL}/request/query_data_item", params=params, timeout=60)
     if response.status_code in [401, 403]:
         response.raise_for_status()
     return response.json()
@@ -46,10 +41,7 @@ def query_expired(offset: timedelta | None = None):
     offset: optional offset for the query
     """
     params = {k: v for k, v in locals().items() if v}
-    headers = {"Authorization": f"Bearer {REQUEST_BEARER}"} if REQUEST_BEARER else {}
-    response = requests.get(
-        f"{REQUEST_URL}/request/query_expired", params=params, headers=headers, timeout=60
-    )
+    response = SESSION.get(f"{REQUEST_URL}/request/query_expired", params=params, timeout=60)
     if response.status_code in [401, 403]:
         response.raise_for_status()
     return response.json()
@@ -68,10 +60,7 @@ def query_deleted(uid: str = "") -> list:
     list of dictionaries with UIDs of deleted items.
     """
     params = {k: v for k, v in locals().items() if v}
-    headers = {"Authorization": f"Bearer {REQUEST_BEARER}"} if REQUEST_BEARER else {}
-    response = requests.get(
-        f"{REQUEST_URL}/request/query_deleted", params=params, headers=headers, timeout=60
-    )
+    response = SESSION.get(f"{REQUEST_URL}/request/query_deleted", params=params, timeout=60)
     if response.status_code in [401, 403]:
         response.raise_for_status()
     return response.json()
@@ -91,10 +80,7 @@ def query_new(check_date: str, uid: str = "") -> list:
     list of dictionaries with UID, UID_creation and storage_id of new items.
     """
     params = {k: v for k, v in locals().items() if v}
-    headers = {"Authorization": f"Bearer {REQUEST_BEARER}"} if REQUEST_BEARER else {}
-    response = requests.get(
-        f"{REQUEST_URL}/request/query_new", params=params, headers=headers, timeout=60
-    )
+    response = SESSION.get(f"{REQUEST_URL}/request/query_new", params=params, timeout=60)
     if response.status_code in [401, 403]:
         response.raise_for_status()
     return response.json()
@@ -111,10 +97,7 @@ def query_exists(item_name: str = "", oid: str = "", uid: str = "", ready: bool 
     uid: optional, this returns only one storage_id
     """
     params = {k: v for k, v in locals().items() if v}
-    headers = {"Authorization": f"Bearer {REQUEST_BEARER}"} if REQUEST_BEARER else {}
-    response = requests.get(
-        f"{REQUEST_URL}/request/query_exists", params=params, headers=headers, timeout=60
-    )
+    response = SESSION.get(f"{REQUEST_URL}/request/query_exists", params=params, timeout=60)
     if response.status_code in [401, 403]:
         response.raise_for_status()
     return response.json()
@@ -135,9 +118,8 @@ def query_exists_and_ready(item_name: str = "", oid: str = "", uid: str = "") ->
     boolean
     """
     params = {k: v for k, v in locals().items() if v}
-    headers = {"Authorization": f"Bearer {REQUEST_BEARER}"} if REQUEST_BEARER else {}
-    response = requests.get(
-        f"{REQUEST_URL}/request/query_exist_and_ready", params=params, headers=headers, timeout=60
+    response = SESSION.get(
+        f"{REQUEST_URL}/request/query_exist_and_ready", params=params, timeout=60
     )
     if response.status_code in [401, 403]:
         response.raise_for_status()
@@ -158,10 +140,7 @@ def query_item_storage(item_name: str = "", oid: str = "", uid: str = "") -> str
     uid: optional, this returns only one storage_id
     """
     params = {k: v for k, v in locals().items() if v}
-    headers = {"Authorization": f"Bearer {REQUEST_BEARER}"} if REQUEST_BEARER else {}
-    response = requests.get(
-        f"{REQUEST_URL}/request/query_item_storage", params=params, headers=headers, timeout=60
-    )
+    response = SESSION.get(f"{REQUEST_URL}/request/query_item_storage", params=params, timeout=60)
     if response.status_code in [401, 403]:
         response.raise_for_status()
     return response.json()
