@@ -59,7 +59,7 @@ class Provider:
         raise HTTPException(404, "Not implemented")
 
     async def token_by_username_password(self, username: str, password: str):
-        """Get token via username nad password. Should not be used in production.
+        """Get token via username and password. Should not be used in production.
 
         Parameters
         ----------
