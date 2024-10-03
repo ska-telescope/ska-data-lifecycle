@@ -155,6 +155,7 @@ Interaction with the DLM is also possible via the REST API. The source code belo
 DLM_URL = "https://sdhp.stfc.skao.int/dp-yanda/dlm"
 
 # exchange the token for a session cookie
+from requests import Session
 session = Session()
 bearer = {"Authorization": f"Bearer {your token}"}
 response = session.post(f"{DLM_URL}/start_session", headers=bearer, timeout=60)
