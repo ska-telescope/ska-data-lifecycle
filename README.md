@@ -174,9 +174,6 @@ print(location.json())
 #location = dlm_storage.init_location(location_name, "SKAO Data Centre")
 params = {
   "location_name": location_name,
-  "location_type": "",
-  "location_country": "",
-  "location_city": "",
   "location_facility": "SKAO Data Centre",
 }
 
@@ -184,7 +181,7 @@ location = session.post(f"{DLM_URL}/storage/init_location", params=params, timeo
 print(location.json())
 
 # get the location id
-location_id = location[0]["location_id"]
+location_id = location.json()[0]["location_id"]
 
 # initialise a storage, if it doesn’t already exist:
 #uuid = dlm_storage.init_storage(
@@ -199,7 +196,7 @@ params = {
   location_id: location_id,
   storage_type: "disk",
   storage_interface: "posix",
-  storage_capacity=100000000,
+  storage_capacity: 100000000,
 }
 storage = session.post(f"{DLM_URL}/storage/init_storage", params=params, timeout=60)
 print(storage.json())
