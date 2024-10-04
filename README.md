@@ -147,7 +147,7 @@ For more complete information, refer to the ska-dlm-client [repository](https://
 
 ### ska-dlm REST API
 
-Interaction with the DLM is also possible via the REST API. The source code below is a typical example.
+Interaction with the DLM is also possible via the REST API. The source code below is a typical example. The comments preceding each REST call are the python method alternatives.
 
 ```python
 # this URL is for DLM deployment in the Yanda namespace on the DP integration cluster
