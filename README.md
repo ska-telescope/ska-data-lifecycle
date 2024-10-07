@@ -147,7 +147,7 @@ For more complete information, refer to the ska-dlm-client [repository](https://
 
 ### ska-dlm REST API
 
-Interaction with the DLM is also possible via the REST API. The source code below is a typical example.
+Interaction with the DLM is also possible via the REST API. The source code below is a typical example. The comments preceding each REST call are the python method alternatives.
 
 ```python
 # this URL is for DLM deployment in the Yanda namespace on the DP integration cluster
@@ -167,28 +167,21 @@ location_name="ThisLocationName"
 # check if this storage location is already known to DLM
 #location = dlm_storage.query_location(location_name=location_name)
 params = {"location_name": location_name}
-location = session.get(
-  f"{DLM_URL}/storage/query_location", params=params, timeout=60
-)
+location = session.get(f"{DLM_URL}/storage/query_location", params=params, timeout=60)
 print(location.json())
 
 # otherwise, register this location:
 #location = dlm_storage.init_location(location_name, "SKAO Data Centre")
 params = {
   "location_name": location_name,
-  "location_type": "",
-  "location_country": "",
-  "location_city": "",
   "location_facility": "SKAO Data Centre",
 }
 
-location = session.post(
-  f"{DLM_URL}/storage/init_storage", params=params, timeout=60
-)
+location = session.post(f"{DLM_URL}/storage/init_location", params=params, timeout=60)
 print(location.json())
 
 # get the location id
-location_id = location[0]["location_id"]
+location_id = location.json()[0]["location_id"]
 
 # initialise a storage, if it doesn’t already exist:
 #uuid = dlm_storage.init_storage(
@@ -203,11 +196,9 @@ params = {
   location_id: location_id,
   storage_type: "disk",
   storage_interface: "posix",
-  storage_capacity=100000000,
+  storage_capacity: 100000000,
 }
-storage = session.post(
-  f"{DLM_URL}/storage/init_storage", params=params, timeout=60
-)
+storage = session.post(f"{DLM_URL}/storage/init_storage", params=params, timeout=60)
 print(storage.json())
 
 # supply a rclone config for this storage, if it doesn’t already exist
@@ -220,9 +211,7 @@ params = {
     "parameters":{},
   }
 }
-config = session.post(
-  f"{DLM_URL}/storage/create_storage_config", params=params, timeout=60
-)
+config = session.post(f"{DLM_URL}/storage/create_storage_config", params=params, timeout=60)
 print(config.json())
 
 
@@ -242,9 +231,7 @@ params = {
   item_format: None,
   eb_id: None,
 }
-response = session.post(
-  f"{DLM_URL}/ingest/register_data_item", params=params, timeout=60
-)
+response = session.post(f"{DLM_URL}/ingest/register_data_item", params=params, timeout=60)
 print(response.json())
 
 ```
