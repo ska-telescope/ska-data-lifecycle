@@ -1,5 +1,7 @@
-SKA-DLM Command Line Interface
-==============================
+.. _cli api:
+
+Command Line Interface
+----------------------
 
 The SKA-DLM provides a concise command line interface (CLI) implemented using the `typer package <https://typer.tiangolo.com>`_. After installation the CLI is available as a hierarchical command interface simply starting with:
 

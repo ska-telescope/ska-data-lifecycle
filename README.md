@@ -29,10 +29,10 @@ docker compose --file tests/dlm.docker-compose.yaml up
 That also enables all the REST interfaces and they can be explored on their individual ports by opening browser pages:
 
 - http://localhost:8000/docs for the AAA API gateway
-- http://localhost:8001/docs for the Ingest Manager REST I/F
-- http://localhost:8002/docs for the Request Manager REST I/F
-- http://localhost:8003/docs for the Storage Manager service REST I/F
-- http://localhost:8003/docs for the Migration Manager REST I/F
+- http://localhost:8001/docs for the Ingest Manager REST API
+- http://localhost:8002/docs for the Request Manager REST API
+- http://localhost:8003/docs for the Storage Manager service REST API
+- http://localhost:8003/docs for the Migration Manager REST API
 
  To stop that environment again use the command:
 

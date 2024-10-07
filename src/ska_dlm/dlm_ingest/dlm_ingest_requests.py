@@ -2,14 +2,18 @@
 
 import json
 import logging
-from typing import Any, Dict, List
 
 import requests
 import ska_sdp_metadata_generator as metagen
 from fastapi import FastAPI
 from ska_sdp_dataproduct_metadata import MetaData
 
+import ska_dlm
 from ska_dlm.dlm_storage.dlm_storage_requests import rclone_access
+from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
+from ska_dlm.fastapi_utils import fastapi_auto_annotate
+from ska_dlm.typer_types import JsonObjectOption
+from ska_dlm.typer_utils import dump_short_stacktrace
 
 from .. import CONFIG
 from ..data_item import set_metadata, set_state, set_uri
@@ -18,17 +22,25 @@ from ..dlm_request import query_data_item, query_exists
 from ..dlm_storage import check_storage_access, query_storage
 from ..exceptions import InvalidQueryParameters, UnmetPreconditionForOperation, ValueAlreadyInDB
 
-JsonType = Dict[str, Any] | List[Any] | str | int | float | bool | None
 logger = logging.getLogger(__name__)
 
-app = FastAPI(
-    title="SKA-DLM: Ingest Manager REST I/F",
-    description="The REST calls accepted by the SKA-DLM Ingest Manager",
+rest = fastapi_auto_annotate(
+    FastAPI(
+        title="SKA-DLM: Ingest Manager REST API",
+        description="The REST calls accepted by the SKA-DLM Ingest Manager",
+        version=ska_dlm.__version__,
+        license_info={"name": "BSD-3-Clause", "identifier": "BSD-3-Clause"},
+    )
 )
+cli = ExceptionHandlingTyper()
+cli.exception_handler(ValueAlreadyInDB)(dump_short_stacktrace)
 
 
-@app.post("/ingest/init_data_item")
-def init_data_item(item_name: str = "", phase: str = "GAS", json_data: str = "") -> str:
+@cli.command()
+@rest.post("/ingest/init_data_item")
+def init_data_item(
+    item_name: str = "", phase: str = "GAS", json_data: JsonObjectOption = None
+) -> str:
     """Intialize a new data_item by at least specifying an item_name.
 
     Parameters
@@ -57,13 +69,14 @@ def init_data_item(item_name: str = "", phase: str = "GAS", json_data: str = "")
     return DB.insert(CONFIG.DLM.dlm_table, json=post_data)[0]["uid"]
 
 
-@app.post("/ingest/register_data_item")
+@cli.command()
+@rest.post("/ingest/register_data_item")
 def register_data_item(  # noqa: C901 # pylint: disable=too-many-arguments
     item_name: str,
     uri: str = "",
     storage_name: str = "",
     storage_id: str = "",
-    metadata: dict | None = None,
+    metadata: JsonObjectOption = None,
     item_format: str | None = "unknown",
     eb_id: str | None = None,
 ) -> str:

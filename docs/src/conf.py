@@ -21,7 +21,10 @@
 # pylint: disable=invalid-name,redefined-builtin,missing-module-docstring
 
 import os
+from pathlib import Path
 import sys
+
+from ska_dlm.extract_openapi import extract_openapi
 
 autodoc_mock_imports = []
 
@@ -72,7 +75,8 @@ extensions = [
     "sphinx.ext.ifconfig",
     "sphinx.ext.viewcode",
     "sphinx.ext.githubpages",
-    "m2r2",
+    # "m2r2",  # needs sphinx 8 support
+    "sphinxcontrib.openapi",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -105,6 +109,27 @@ pygments_style = "sphinx"
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
 
+# -- Generate OpenAPI ----------------------------------
+
+OPEN_API_DIR = Path("api/_openapi")
+if not os.path.isdir(OPEN_API_DIR):
+   os.makedirs(OPEN_API_DIR)
+extract_openapi(
+    "ska_dlm.dlm_request.dlm_request_requests:rest",
+    out=str(OPEN_API_DIR / "request.yaml"),
+)
+extract_openapi(
+    "ska_dlm.dlm_ingest.dlm_ingest_requests:rest",
+    out=str(OPEN_API_DIR / "ingest.yaml"),
+)
+extract_openapi(
+    "ska_dlm.dlm_storage.dlm_storage_requests:rest",
+    out=str(OPEN_API_DIR / "storage.yaml"),
+)
+extract_openapi(
+    "ska_dlm.dlm_migration.dlm_migration_requests:rest",
+    out=str(OPEN_API_DIR / "migration.yaml"),
+)
 
 # -- Options for HTML output ----------------------------------------------
 
