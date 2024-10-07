@@ -1,4 +1,10 @@
-"""DLM package for ska-data-lifecycle."""
+"""
+SKA Data Lifecycle Management (DLM) package.
+
+To fully utilize the functionality of this package requires some of the serivces
+to be started and deployed as well. Please refer to the README file within this
+package to learn about the options to do that.
+"""
 
 import shutil
 from pathlib import Path
@@ -11,7 +17,7 @@ from . import dlm_db
 
 __author__ = """Andreas Wicenec"""
 __email__ = "andreas.wicenec@icrar.org"
-__version__ = "0.0.1"
+__version__ = "0.1.0"
 
 DLM_LIB_DIR = Path(__file__).parent
 """The library install path of dlm."""

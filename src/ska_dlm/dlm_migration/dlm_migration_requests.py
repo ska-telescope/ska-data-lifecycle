@@ -8,7 +8,11 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from ska_dlm.exceptions import InvalidQueryParameters
+import ska_dlm
+from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
+from ska_dlm.exceptions import InvalidQueryParameters, ValueAlreadyInDB
+from ska_dlm.fastapi_utils import fastapi_auto_annotate
+from ska_dlm.typer_utils import dump_short_stacktrace
 
 from .. import CONFIG
 from ..data_item import set_state, set_uri
@@ -21,9 +25,15 @@ logger = logging.getLogger(__name__)
 
 origins = ["http://localhost", "http://localhost:5000", "http://localhost:8004"]
 
-app = FastAPI()
-
-app.add_middleware(
+rest = fastapi_auto_annotate(
+    FastAPI(
+        title="SKA-DLM: Migration Manager REST API",
+        description="The REST calls accepted by the SKA-DLM Migration Manager",
+        version=ska_dlm.__version__,
+        license_info={"name": "BSD-3-Clause", "identifier": "BSD-3-Clause"},
+    )
+)
+rest.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
@@ -31,9 +41,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+cli = ExceptionHandlingTyper()
+cli.exception_handler(ValueAlreadyInDB)(dump_short_stacktrace)
+
 
 # pylint: disable=unused-argument
-@app.exception_handler(IOError)
+@rest.exception_handler(IOError)
 def ioerror_exception_handler(request: Request, exc: IOError):
     """Catch IOError and send a JSONResponse."""
     return JSONResponse(
@@ -68,7 +81,8 @@ def rclone_copy(src_fs: str, src_remote: str, dst_fs: str, dst_remote: str, item
     return request.status_code
 
 
-@app.get("/migration/copy_data_item")
+@cli.command()
+@rest.get("/migration/copy_data_item")
 def copy_data_item(  # pylint: disable=too-many-arguments,too-many-locals
     item_name: str = "",
     oid: str = "",

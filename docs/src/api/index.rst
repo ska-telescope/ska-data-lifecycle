@@ -1,7 +1,11 @@
-ska_dlm Package
-===============
-.. autosummary::
-   :toctree: _autosummary
-   :recursive:
+.. _api:
 
-   ska_dlm
+API
+===
+
+.. toctree::
+   :maxdepth: 1
+
+   rest
+   cli
+   python

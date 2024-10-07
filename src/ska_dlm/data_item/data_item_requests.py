@@ -1,24 +1,26 @@
 """Convenience functions to update data_item records."""
 
 import logging
-from typing import Any, Dict, List, Literal, Union
+from typing import Literal
 
+from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
 from ska_dlm.exceptions import InvalidQueryParameters
+from ska_dlm.typer_types import JsonContainerOption, JsonObjectOption
 
 from .. import CONFIG
 from ..dlm_db.db_access import DB
 from ..dlm_request import query_data_item
 
-JsonType = Union[Dict[str, Any], List[Any], str, int, float, bool, None]
-
 logger = logging.getLogger(__name__)
+
+cli = ExceptionHandlingTyper()
 
 
 def update_data_item(
     item_name: str = "",
     oid: str = "",
     uid: str = "",
-    post_data: dict | list[dict] = "",
+    post_data: JsonContainerOption = None,
 ) -> str | Literal[True]:
     """Update fields of an existing data_item.
 
@@ -57,6 +59,7 @@ def update_data_item(
     return DB.update(CONFIG.DLM.dlm_table, params=params, json=post_data)[0]["uid"]
 
 
+@cli.command()
 def set_uri(uid: str, uri: str, storage_id: str):
     """Set the URI field of the uid data_item.
 
@@ -72,7 +75,8 @@ def set_uri(uid: str, uri: str, storage_id: str):
     update_data_item(uid=uid, post_data={"uri": uri, "storage_id": storage_id})
 
 
-def set_metadata(uid: str, metadata_post: JsonType):
+@cli.command()
+def set_metadata(uid: str, metadata_post: JsonContainerOption = None):
     """
     Populate the metadata column for a data_item with the metadata.
 
@@ -80,12 +84,13 @@ def set_metadata(uid: str, metadata_post: JsonType):
     ----------
     uid : str
         the UID of the data_item to be updated
-    metadata_post : JsonType
+    metadata_post : dict | list
         a metadata JSON string
     """
     update_data_item(uid=uid, post_data={"metadata": metadata_post})
 
 
+@cli.command()
 def set_state(uid: str, state: str) -> str | Literal[True]:
     """Set the state field of the uid data_item.
 
@@ -103,6 +108,7 @@ def set_state(uid: str, state: str) -> str | Literal[True]:
     return update_data_item(uid=uid, post_data={"item_state": state})
 
 
+@cli.command()
 def set_oid_expiration(oid: str, expiration: str) -> str:
     """Set the oid_expiration field of the data_items with the given OID.
 
@@ -120,6 +126,7 @@ def set_oid_expiration(oid: str, expiration: str) -> str:
     return update_data_item(oid=oid, post_data={"oid_expiration": expiration})
 
 
+@cli.command()
 def set_uid_expiration(uid: str, expiration: str) -> str | Literal[True]:
     """Set the uid_expiration field of the data_item with the given UID.
 
@@ -137,6 +144,7 @@ def set_uid_expiration(uid: str, expiration: str) -> str | Literal[True]:
     return update_data_item(uid=uid, post_data={"uid_expiration": expiration})
 
 
+@cli.command()
 def set_user(oid: str = "", uid: str = "", user: str = "SKA") -> str | Literal[True]:
     """
     Set the user field of the data_item(s) with the given OID or UID.
@@ -165,6 +173,7 @@ def set_user(oid: str = "", uid: str = "", user: str = "SKA") -> str | Literal[T
     return update_data_item(uid=uid, oid=oid, post_data=post_data)
 
 
+@cli.command()
 def set_group(oid: str = "", uid: str = "", group: str = "SKA") -> str | Literal[True]:
     """
     Set the user field of the data_item(s) with the given OID or UID.
@@ -193,6 +202,7 @@ def set_group(oid: str = "", uid: str = "", group: str = "SKA") -> str | Literal
     return update_data_item(uid=uid, oid=oid, post_data=post_data)
 
 
+@cli.command()
 def set_acl(oid: str = "", uid: str = "", acl: str = "{}") -> str | Literal[True]:
     """
     Set the user field of the data_item(s) with the given OID or UID.
@@ -221,6 +231,7 @@ def set_acl(oid: str = "", uid: str = "", acl: str = "{}") -> str | Literal[True
     return update_data_item(uid=uid, oid=oid, post_data=post_data)
 
 
+@cli.command()
 def set_phase(uid: str, phase: str) -> str | Literal[True]:
     """
     Set the phase field of the data_item(s) with given UID.
@@ -239,7 +250,10 @@ def set_phase(uid: str, phase: str) -> str | Literal[True]:
     return update_data_item(uid=uid, post_data={"item_phase": phase})
 
 
-def update_item_tags(item_name: str = "", oid: str = "", item_tags: dict | None = None) -> bool:
+@cli.command()
+def update_item_tags(
+    item_name: str = "", oid: str = "", item_tags: JsonObjectOption = None
+) -> bool:
     """
     Update/set the item_tags field of a data_item with given item_name/OID.
 

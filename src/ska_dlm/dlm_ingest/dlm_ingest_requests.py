@@ -2,14 +2,19 @@
 
 import json
 import logging
-from typing import Any, Dict, List
+from typing import Annotated
 
 import requests
 import ska_sdp_metadata_generator as metagen
-from fastapi import FastAPI
+from fastapi import FastAPI, Header
 from ska_sdp_dataproduct_metadata import MetaData
 
+import ska_dlm
 from ska_dlm.dlm_storage.dlm_storage_requests import rclone_access
+from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
+from ska_dlm.fastapi_utils import decode_bearer, fastapi_auto_annotate
+from ska_dlm.typer_types import JsonObjectOption
+from ska_dlm.typer_utils import dump_short_stacktrace
 
 from .. import CONFIG
 from ..data_item import set_metadata, set_state, set_uri
@@ -18,14 +23,28 @@ from ..dlm_request import query_data_item, query_exists
 from ..dlm_storage import check_storage_access, query_storage
 from ..exceptions import InvalidQueryParameters, UnmetPreconditionForOperation, ValueAlreadyInDB
 
-JsonType = Dict[str, Any] | List[Any] | str | int | float | bool | None
 logger = logging.getLogger(__name__)
 
-app = FastAPI()
+rest = fastapi_auto_annotate(
+    FastAPI(
+        title="SKA-DLM: Ingest Manager REST API",
+        description="The REST calls accepted by the SKA-DLM Ingest Manager",
+        version=ska_dlm.__version__,
+        license_info={"name": "BSD-3-Clause", "identifier": "BSD-3-Clause"},
+    )
+)
+cli = ExceptionHandlingTyper()
+cli.exception_handler(ValueAlreadyInDB)(dump_short_stacktrace)
 
 
-@app.post("/ingest/init_data_item")
-def init_data_item(item_name: str = "", phase: str = "GAS", json_data: str = "") -> str:
+@cli.command()
+@rest.post("/ingest/init_data_item")
+def init_data_item(
+    item_name: str = "",
+    phase: str = "GAS",
+    json_data: JsonObjectOption = None,
+    authorization: Annotated[str | None, Header()] = None,
+) -> str:
     """Intialize a new data_item by at least specifying an item_name.
 
     Parameters
@@ -36,6 +55,8 @@ def init_data_item(item_name: str = "", phase: str = "GAS", json_data: str = "")
         the phase this item is set to (usually inherited from the storage)
     json_data : str
         provides the ability to specify all values.
+    authorization : str
+        Validated Bearer token with UserInfo
 
     Returns
     -------
@@ -45,8 +66,15 @@ def init_data_item(item_name: str = "", phase: str = "GAS", json_data: str = "")
     ------
     InvalidQueryParameters
     """
+    username = None
+    user_info = decode_bearer(authorization)
+    if user_info:
+        username = user_info.get("preferred_username", None)
+        if username is None:
+            raise ValueError("Username not found in profile")
+
     if item_name:
-        post_data = {"item_name": item_name, "item_phase": phase}
+        post_data = {"item_name": item_name, "item_phase": phase, "item_owner": username}
     elif json_data:
         post_data = json.loads(json_data)
     else:
@@ -54,15 +82,18 @@ def init_data_item(item_name: str = "", phase: str = "GAS", json_data: str = "")
     return DB.insert(CONFIG.DLM.dlm_table, json=post_data)[0]["uid"]
 
 
-@app.post("/ingest/register_data_item")
-def register_data_item(  # noqa: C901 # pylint: disable=too-many-arguments
+@cli.command()
+@rest.post("/ingest/register_data_item")
+def register_data_item(  # noqa: C901
+    # pylint: disable=R0913,R0914
     item_name: str,
     uri: str = "",
     storage_name: str = "",
     storage_id: str = "",
-    metadata: dict | None = None,
+    metadata: JsonObjectOption = None,
     item_format: str | None = "unknown",
     eb_id: str | None = None,
+    authorization: Annotated[str | None, Header()] = None,
 ) -> str:
     """Ingest a data_item (register function is an alias).
 
@@ -93,6 +124,8 @@ def register_data_item(  # noqa: C901 # pylint: disable=too-many-arguments
         format of the data item
     eb_id: str | None, optional
         execution block ID provided by the client
+    authorization : str
+        Validated Bearer token with UserInfo
 
     Returns
     -------
@@ -103,6 +136,13 @@ def register_data_item(  # noqa: C901 # pylint: disable=too-many-arguments
     ------
     UnmetPreconditionForOperation
     """
+    username = None
+    user_info = decode_bearer(authorization)
+    if user_info:
+        username = user_info.get("preferred_username", None)
+        if username is None:
+            raise ValueError("Username not found in profile")
+
     # (1)
     storages = query_storage(storage_name=storage_name, storage_id=storage_id)
     if not storages:
@@ -127,6 +167,7 @@ def register_data_item(  # noqa: C901 # pylint: disable=too-many-arguments
         "storage_id": storage_id,
         "item_phase": storages[0]["storage_phase_level"],
         "item_format": item_format,
+        "item_owner": username,
     }
     uid = init_data_item(json_data=json.dumps(init_item))
 

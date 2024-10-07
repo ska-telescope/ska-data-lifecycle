@@ -11,7 +11,7 @@ from ska_dlm.exceptions import (
 )
 
 STORAGE_URL = ""
-STORAGE_BEARER = None
+SESSION = None
 
 
 # pylint: disable=no-else-raise
@@ -39,10 +39,7 @@ def init_location(
 ) -> str:
     """Initialize a new location for a storage by specifying the location_name or location_id."""
     params = {k: v for k, v in locals().items() if v}
-    headers = {"Authorization": f"Bearer {STORAGE_BEARER}"} if STORAGE_BEARER else {}
-    response = requests.post(
-        f"{STORAGE_URL}/storage/init_location", params=params, headers=headers, timeout=60
-    )
+    response = SESSION.post(f"{STORAGE_URL}/storage/init_location", params=params, timeout=60)
     _except(response)
     return response.json()
 
@@ -70,10 +67,7 @@ def init_storage(  # pylint: disable=R0913
     Either a storage_ID or an empty string
     """
     params = {k: v for k, v in locals().items() if v}
-    headers = {"Authorization": f"Bearer {STORAGE_BEARER}"} if STORAGE_BEARER else {}
-    response = requests.post(
-        f"{STORAGE_URL}/storage/init_storage", params=params, headers=headers, timeout=60
-    )
+    response = SESSION.post(f"{STORAGE_URL}/storage/init_storage", params=params, timeout=60)
     _except(response)
     return response.json()
 
@@ -93,10 +87,7 @@ def query_location(location_name: str = "", location_id: str = "") -> list:
     str
     """
     params = {k: v for k, v in locals().items() if v}
-    headers = {"Authorization": f"Bearer {STORAGE_BEARER}"} if STORAGE_BEARER else {}
-    response = requests.get(
-        f"{STORAGE_URL}/storage/query_location", params=params, headers=headers, timeout=60
-    )
+    response = SESSION.get(f"{STORAGE_URL}/storage/query_location", params=params, timeout=60)
     _except(response)
     return response.json()
 
@@ -120,9 +111,8 @@ def create_storage_config(
     str, the ID of the configuration entry.
     """
     params = {k: v for k, v in locals().items() if v}
-    headers = {"Authorization": f"Bearer {STORAGE_BEARER}"} if STORAGE_BEARER else {}
-    response = requests.post(
-        f"{STORAGE_URL}/storage/create_storage_config", params=params, headers=headers, timeout=60
+    response = SESSION.post(
+        f"{STORAGE_URL}/storage/create_storage_config", params=params, timeout=60
     )
     _except(response)
     return response.json()
@@ -138,10 +128,7 @@ def rclone_config(config: str) -> bool:
     config: a json string containing the configuration
     """
     params = {k: v for k, v in locals().items() if v}
-    headers = {"Authorization": f"Bearer {STORAGE_BEARER}"} if STORAGE_BEARER else {}
-    response = requests.post(
-        f"{STORAGE_URL}/storage/rclone_config", params=params, headers=headers, timeout=60
-    )
+    response = SESSION.post(f"{STORAGE_URL}/storage/rclone_config", params=params, timeout=60)
     _except(response)
     return bool(response.text)
 
@@ -161,9 +148,6 @@ def query_storage(storage_name: str = "", storage_id: str = "") -> list:
     list
     """
     params = {k: v for k, v in locals().items() if v}
-    headers = {"Authorization": f"Bearer {STORAGE_BEARER}"} if STORAGE_BEARER else {}
-    response = requests.get(
-        f"{STORAGE_URL}/storage/query_storage", params=params, headers=headers, timeout=60
-    )
+    response = SESSION.get(f"{STORAGE_URL}/storage/query_storage", params=params, timeout=60)
     _except(response)
     return response.json()
