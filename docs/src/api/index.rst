@@ -1,34 +1,11 @@
+.. _api:
+
 API
 ===
 
-REST API
---------
+.. toctree::
+   :maxdepth: 1
 
-Request
-^^^^^^^
-
-.. openapi:: _openapi/request.yaml
-
-Ingest
-^^^^^^
-
-.. openapi:: _openapi/ingest.yaml
-
-Storage
-^^^^^^^
-
-.. openapi:: _openapi/storage.yaml
-
-Migration
-^^^^^^^^^
-
-.. openapi:: _openapi/migration.yaml
-
-Python API
-----------
-
-.. autosummary::
-   :toctree: _autosummary
-   :recursive:
-
-   ska_dlm
+   rest
+   cli
+   python
