@@ -1,4 +1,16 @@
-"""CLI support for ska_dlm package."""
+"""
+CLI support for ska_dlm package.
+
+The SKA DLM is using typer to provide a convenient user experience
+on the command line, including help and command completion. After
+installation of the package it can be used with the command:
+
+```bash
+$ ska-dlm
+Usage: ska-dlm [OPTIONS] COMMAND [ARGS]...
+Try 'ska-dlm --help' for help.
+```
+"""
 
 import logging
 

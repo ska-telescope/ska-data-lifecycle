@@ -22,7 +22,8 @@ logger = logging.getLogger(__name__)
 cli = ExceptionHandlingTyper()
 rest = fastapi_auto_annotate(
     FastAPI(
-        title="DLM Storage API",
+        title="SKA-DLM: Storage Manager REST API",
+        description="The REST calls accepted by the SKA-DLM Storage Manager",
         version=ska_dlm.__version__,
         license_info={"name": "BSD-3-Clause", "identifier": "BSD-3-Clause"},
     )

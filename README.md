@@ -6,7 +6,7 @@ The SKA data lifecycle management system (DLM) is designed to manage all interme
 
 The DLM is designed as a service oriented system sitting on-top of a database. The external interfaces and APIs are based on the REST paradigm. The deployed system will need to be highly available and dependable, since the whole observatory and all its internal and external users will eventually depend on the DLM functioning properly. The number and frequency of transactions as well as the total data volume managed by the DLM will be very significant and thus the system will need to consider scalability as one of the main drivers for the implementation.
 
-The current design consists of five services and this repository is organised accordingly:
+The current design consists of five modules/services and this repository is organised accordingly:
 
 - Database management service (DLMdb)
 - Ingest management service (DLMingest)
@@ -14,23 +14,55 @@ The current design consists of five services and this repository is organised ac
 - Storage management service (DLMstorage)
 - Migration management service (DLMmigration)
 
+In addition we have implemented an AAA API gateway to enable testing of the authentication and authorization functionality of the SKA-DLM. This is run locally against a Keycloak authentication layer, which is started inside a docker container. In production the gateway and the Keycloak container will be replaced by a SKA wide AAA gateway running against the SKA Entra authentication layer.
+
 ## Installation
-The repository contains helm charts to install the services, including the DB. However, the DLM in operations is supposed to run continuously and use SKAO-wide services like a HA DB service as well as the authentication system.
+The repository contains helm charts to install the services, including the DB. However, in operations the DLM is supposed to run continuously and use SKAO-wide services like a HA DB service as well as the authentication system. Thus this is not really practical for any evaluation or even DLM internal testing.
 
-## Testing
+## SKA-DLM evaluation environment
 
-### Test against Docker Compose
-
-#### Run tests locally
-
-Python testing is available on the local machine using poetry virtual environments. First install and enter a poetry shell:
+If you want to start all the services locally for evaluation purposes you can use the command:
 
 ```bash
+docker compose --file tests/dlm.docker-compose.yaml up
+```
+That also enables all the REST interfaces and they can be explored on their individual ports by opening browser pages:
+
+- http://localhost:8000/docs for the AAA API gateway
+- http://localhost:8001/docs for the Ingest Manager REST API
+- http://localhost:8002/docs for the Request Manager REST API
+- http://localhost:8003/docs for the Storage Manager service REST API
+- http://localhost:8003/docs for the Migration Manager REST API
+
+ To stop that environment again use the command:
+
+ ```bash
+ docker compose --file tests/dlm.docker-compose.yaml down
+ ```
+
+## Testing
+In order to support mutiple test environments, the DLM can be build and deployed in a variety of ways, depending on the use case and scenario.
+
+### Test against Docker Compose
+For code developers all tests can be executed without having to rely on the complexity of the Kubernetes environment.
+
+#### Run full test suite locally
+
+Python testing is available on the local machine using poetry virtual environments. First clone the repo:
+
+```bash
+git clone https://gitlab.com/ska-telescope/ska-data-lifecycle.git
+```
+
+Then install the package and enter a poetry shell:
+
+```bash
+cd ska-data-lifecycle
 poetry install
 poetry shell
 ```
 
-Subsequent testing can be performed using the command:
+Subsequently, the tests can be executed using the command:
 
 ```bash
 make python-test
@@ -64,7 +96,7 @@ docker compose --file tests/testrunner.docker-compose.yaml down
 
 #### FastAPI and Authentication
 
-The test platform makes REST requests to DLM services and are proxied through the `dlm_gateway`.
+The REST requests issued through the test environment to DLM services are proxied through the `dlm_gateway`.
 
 The `dlm_gateway` checks the destination, unpacks the token and checks the permissions based on the user profile.
 
@@ -91,7 +123,7 @@ To turn off authentication:
 
 ### Test against Helm Chart
 
-DLM also provides a helm chart tested weekly that can also be tested locally using Minikube. The following commands only need to be executed once to prepare a test environment.
+DLM also provides a helm chart tested weekly through the SKA gitlab test runners that can also be executed locally using Minikube. The following commands only need to be executed once to prepare a test environment.
 
 ```bash
 helm repo add bitnami https://charts.bitnami.com/bitnami
