@@ -15,8 +15,6 @@ from benedict import benedict
 # from . import dlm_db, dlm_ingest, dlm_migration, dlm_request, dlm_storage
 from . import dlm_db
 
-__author__ = """Andreas Wicenec"""
-__email__ = "andreas.wicenec@icrar.org"
 __version__ = "0.1.0"
 
 DLM_LIB_DIR = Path(__file__).parent
