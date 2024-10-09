@@ -25,7 +25,3 @@ __all__ = [
     "set_user",
     "update_item_tags",
 ]
-
-__author__ = """Andreas Wicenec"""
-__email__ = "andreas.wicenec@icrar.org"
-__version__ = "0.0.1"

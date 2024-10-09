@@ -19,7 +19,3 @@ __all__ = [
     "query_item_storage",
     "query_new",
 ]
-
-__author__ = """Andreas Wicenec"""
-__email__ = "andreas.wicenec@icrar.org"
-__version__ = "0.1.0"

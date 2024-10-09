@@ -29,7 +29,3 @@ __all__ = [
     "rclone_access",
     "rclone_config",
 ]
-
-__author__ = """Andreas Wicenec"""
-__email__ = "andreas.wicenec@icrar.org"
-__version__ = "0.1.0"

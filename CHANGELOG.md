@@ -14,7 +14,7 @@
 
 * Decoupled unit testing from Minikube
 
-## 0.1.0
+## 0.0.1
 
 * Bootstrap repo with ska-cookiecutter-pypackage
 * Add `ska-dlm` CLI tool with initial set of sub-commands.
