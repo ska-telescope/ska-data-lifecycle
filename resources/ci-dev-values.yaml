@@ -1,19 +1,14 @@
-
 global:
+  storageClass: nfss1
   ingress:
     enabled: true
 
-postgrest:
-  db_uri: ""
-
-# Testing only deployments
+gateway:
+  enabled: true
 
 postgresql:
   enabled: true
   initialise: true
-
-gateway:
-  enabled: true
 
 keycloak:
   enabled: true

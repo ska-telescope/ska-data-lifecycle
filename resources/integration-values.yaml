@@ -1,0 +1,17 @@
+global:
+  storageClass: nfss1
+  ingress:
+    enabled: true
+
+gateway:
+  enabled: true
+
+postgresql:
+  enabled: true
+  initialise: true
+
+keycloak:
+  enabled: false
+
+pgweb:
+  enabled: true

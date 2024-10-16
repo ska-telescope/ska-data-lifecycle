@@ -113,7 +113,7 @@ deploy-dev-environment-dp:
   tags:
     - ska-k8srunner-dp
   variables:
-    K8S_CHART_PARAMS: ''
+    HELM_VALUES: resources/ci-dev-values.yaml
 
 test-dev-environment-dp:
   stage: deploy-dp
@@ -145,7 +145,7 @@ deploy-integration-dp:
   tags:
     - ska-k8srunner-dp
   variables:
-    K8S_CHART_PARAMS: ''
+    HELM_VALUES: resources/integration-values.yaml
 
 info-integration-dp:
   stage: integration-dp
@@ -161,7 +161,7 @@ redeploy-integration-dp:
   tags:
     - ska-k8srunner-dp
   variables:
-    K8S_CHART_PARAMS: ''
+    HELM_VALUES: resources/integration-values.yaml
 
 stop-integration-dp:
   stage: integration-dp
@@ -178,7 +178,7 @@ deploy-staging-dp:
   tags:
     - ska-k8srunner-dp
   variables:
-    K8S_CHART_PARAMS: ''
+    HELM_VALUES: resources/deploy-values.yaml
 
 info-staging-dp:
   stage: staging-dp
@@ -194,7 +194,7 @@ redeploy-staging-dp:
   tags:
     - ska-k8srunner-dp
   variables:
-    K8S_CHART_PARAMS: ''
+    HELM_VALUES: resources/deploy-values.yaml
 
 stop-staging-dp:
   stage: staging-dp
