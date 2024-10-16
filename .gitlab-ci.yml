@@ -105,3 +105,101 @@ k8s-test:
       allow_failure: true
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: always
+
+deploy-dev-environment-dp:
+  stage: deploy-dp
+  extends: deploy-dev-environment
+  when: manual
+  tags:
+    - ska-k8srunner-dp
+  variables:
+    K8S_CHART_PARAMS: ''
+
+test-dev-environment-dp:
+  stage: deploy-dp
+  extends: test-dev-environment
+  when: manual
+  tags:
+    - ska-k8srunner-dp
+  needs:
+    - deploy-dev-environment-dp
+
+info-dev-environment-dp:
+  stage: deploy-dp
+  extends: info-dev-environment
+  tags:
+    - ska-k8srunner-dp
+  script:
+    - *info_script
+
+stop-dev-environment-dp:
+  stage: deploy-dp
+  extends: stop-dev-environment
+  tags:
+    - ska-k8srunner-dp
+
+deploy-integration-dp:
+  stage: integration-dp
+  extends: deploy-integration
+  when: manual
+  tags:
+    - ska-k8srunner-dp
+  variables:
+    K8S_CHART_PARAMS: ''
+
+info-integration-dp:
+  stage: integration-dp
+  extends: info-integration
+  tags:
+    - ska-k8srunner-dp
+  script:
+    - *info_script
+
+redeploy-integration-dp:
+  stage: integration-dp
+  extends: redeploy-integration
+  tags:
+    - ska-k8srunner-dp
+  variables:
+    K8S_CHART_PARAMS: ''
+
+stop-integration-dp:
+  stage: integration-dp
+  extends: stop-integration
+  tags:
+    - ska-k8srunner-dp
+  needs:
+    - deploy-integration-dp
+
+deploy-staging-dp:
+  stage: staging-dp
+  extends: deploy-staging
+  when: manual
+  tags:
+    - ska-k8srunner-dp
+  variables:
+    K8S_CHART_PARAMS: ''
+
+info-staging-dp:
+  stage: staging-dp
+  extends: info-staging
+  tags:
+    - ska-k8srunner-dp
+  script:
+    - *info_script
+
+redeploy-staging-dp:
+  stage: staging-dp
+  extends: redeploy-staging
+  tags:
+    - ska-k8srunner-dp
+  variables:
+    K8S_CHART_PARAMS: ''
+
+stop-staging-dp:
+  stage: staging-dp
+  extends: stop-staging
+  tags:
+    - ska-k8srunner-dp
+  needs:
+    - deploy-staging-dp
