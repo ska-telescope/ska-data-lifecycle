@@ -14,32 +14,32 @@ fullnameOverride: ""
 request:
   component: request
   subsystem: data-lifecycle-management
-  image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: 0.0.1-dev.c65ec9196
+  image: harbor.skao.int/production/ska-data-lifecycle
+  version: "0.1.0"
   imagePullPolicy: Always
   replicas: 1
 
 migration:
   component: migration
   subsystem: data-lifecycle-management
-  image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: 0.0.1-dev.c65ec9196
+  image: harbor.skao.int/production/ska-data-lifecycle
+  version: "0.1.0"
   imagePullPolicy: Always
   replicas: 1
 
 storage:
   component: storage
   subsystem: data-lifecycle-management
-  image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: 0.0.1-dev.c65ec9196
+  image: harbor.skao.int/production/ska-data-lifecycle
+  version: "0.1.0"
   imagePullPolicy: Always
   replicas: 1
 
 ingest:
   component: ingest
   subsystem: data-lifecycle-management
-  image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: 0.0.1-dev.c65ec9196
+  image: harbor.skao.int/production/ska-data-lifecycle
+  version: "0.1.0"
   imagePullPolicy: Always
   replicas: 1
 
@@ -126,7 +126,7 @@ gateway:
   component: gateway
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-test-gateway
-  version: 0.0.1-dev.c2f4126a5
+  version: "0.1.0"
   imagePullPolicy: Always
   replicas: 1
 
@@ -137,7 +137,7 @@ keycloak:
   ##image: quay.io/keycloak/keycloak
   # version: "25.0"
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-test-keycloak
-  version: 0.0.1-dev.c11b4e8e8
+  version: "0.1.0"
   imagePullPolicy: Always
   replicas: 1
   use_https: True

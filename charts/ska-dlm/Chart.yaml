@@ -1,6 +1,6 @@
 apiVersion: v2
 name: ska-dlm
-version: 0.1.0
+version: 0.1.1
 appVersion: 0.1.0
 description: SKA Data Lifecycle Manager
 home: https://developer.skao.int/projects/
@@ -9,6 +9,8 @@ sources:
 maintainers:
 - name: Mark Boulton
   email: mark.boulton@icrar.org
+- name: Callan Gray
+  email: callan.gray@icrar.org
 - name: Andreas Wicenec
   email: andreas.wicenec@icrar.org
 - name: Rodrigo Tobar
