@@ -1,0 +1,35 @@
+{{- if $.Values.keycloak.enabled }}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ska-dlm.name" . }}-keycloak-realm-configmap
+  namespace: {{ .Release.Namespace }}
+data:
+{{ (.Files.Glob "keycloak/realm-export.json").AsConfig | indent 2 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ska-dlm.name" . }}-keycloak-gateway-configmap
+  namespace: {{ .Release.Namespace }}
+data:
+  PROVIDER: KC
+  AUTH: "1"
+  {{- if $.Values.keycloak.use_https }}
+  KEYCLOAK_URL: "https://{{ include "ska-dlm.name" . }}-keycloak.{{ .Release.Namespace }}.svc.cluster.local"
+  {{- else }}
+  KEYCLOAK_URL: "http://{{ include "ska-dlm.name" . }}-keycloak.{{ .Release.Namespace }}.svc.cluster.local"
+  {{- end }}
+
+{{- else }}
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ska-dlm.name" . }}-entra-gateway-configmap
+  namespace: {{ .Release.Namespace }}
+data:
+  PROVIDER: ENTRA
+  AUTH: "1"
+{{- end }}

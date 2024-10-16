@@ -52,7 +52,7 @@ postgrest:
   imagePullPolicy: Always
 
   replicas: 1
-  db_uri: ""
+  db_uri: ""  # no value auto-generates to test postgresql database
   db_schema: public
   db_anon_role: ska_dlm_admin
   db_pool: 10
@@ -122,7 +122,7 @@ pgweb:  # see https://github.com/ectobit/charts/tree/main/pgweb
 
 # Test Authentication
 gateway:
-  enabled: false
+  enabled: true
   component: gateway
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-test-gateway
@@ -140,4 +140,4 @@ keycloak:
   version: "0.1.0"
   imagePullPolicy: Always
   replicas: 1
-  use_https: True
+  use_https: true

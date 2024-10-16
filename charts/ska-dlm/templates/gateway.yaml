@@ -67,27 +67,8 @@ spec:
         env:
         - name: PORT
           value: "8000"
-        - name: KEYCLOAK_URL
-        {{- if $.Values.keycloak.use_https }}
-          value: "https://{{ include "ska-dlm.name" . }}-keycloak.{{ .Release.Namespace }}.svc.cluster.local"
-        {{- else }}
-          value: "http://{{ include "ska-dlm.name" . }}-keycloak.{{ .Release.Namespace }}.svc.cluster.local"
-        {{- end }}
         - name: REDIRECT_URL
           value: "http://{{ include "ska-dlm.name" . }}-gateway.{{ .Release.Namespace }}.svc.cluster.local/auth_callback/"
-        - name: REALM
-          value: "test"
-        - name: CLIENT_ID
-          value: "dlm"
-        # -name: CLIENT_SECRET
-        # valueFrom:
-        #   secretKeyRef: gateway-client-secret
-        - name: CLIENT_SECRET
-          value: "xU2a9SOTLJZSwvAzAlfoucqg4sCMgY6O"
-        - name: STATE
-          value: "magic_string"
-        - name: AUTH
-          value: "1"
         - name: INGEST_CLIENT
           value: "http://{{ include "ska-dlm.name" . }}-ingest.{{ .Release.Namespace }}.svc.cluster.local:80"
         - name: REQUESTS_CLIENT
@@ -96,4 +77,16 @@ spec:
           value: "http://{{ include "ska-dlm.name" . }}-storage.{{ .Release.Namespace }}.svc.cluster.local:80"
         - name: MIGRATION_CLIENT
           value: "http://{{ include "ska-dlm.name" . }}-migration.{{ .Release.Namespace }}.svc.cluster.local:80"
+        envFrom:
+        {{- if $.Values.keycloak.enabled }}
+        - configMapRef:
+            name: "{{ include "ska-dlm.name" . }}-keycloak-gateway-configmap"
+        - secretRef:
+            name: "{{ include "ska-dlm.name" . }}-keycloak-gateway-secret"
+        {{- else }}
+        - configMapRef:
+            name: "{{ include "ska-dlm.name" . }}-entra-gateway-configmap"
+        - secretRef:
+            name: "{{ include "ska-dlm.name" . }}-entra-gateway-secret"
+        {{- end }}
 {{- end }}
