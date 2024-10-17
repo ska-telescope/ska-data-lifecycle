@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "ska-dlm.name" . }}-rclone
+  name: {{ include "ska-dlm.fullname" . }}-rclone
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "ska-dlm.rclone.labels" . | indent 4 }}
@@ -19,7 +19,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "ska-dlm.name" . }}-rclone
+  name: {{ include "ska-dlm.fullname" . }}-rclone
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "ska-dlm.rclone.labels" . | indent 4 }}

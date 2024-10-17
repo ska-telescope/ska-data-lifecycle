@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "ska-dlm.name" . }}-configmap
+  name: {{ include "ska-dlm.fullname" . }}-configmap
   namespace: {{ .Release.Namespace }}
 data:
   config.yaml: |-
@@ -15,8 +15,8 @@ data:
         storage_warning_percentage: 80.0
         polling_interval: 10 # seconds
     REST:
-      base_url: "http://{{ include "ska-dlm.name" . }}-postgrest.{{ .Release.Namespace }}.svc.cluster.local"
+      base_url: "http://{{ include "ska-dlm.fullname" . }}-postgrest.{{ .Release.Namespace }}.svc.cluster.local"
     RCLONE:
-      url: "http://{{ include "ska-dlm.name" . }}-rclone.{{ .Release.Namespace }}.svc.cluster.local"
+      url: "http://{{ include "ska-dlm.fullname" . }}-rclone.{{ .Release.Namespace }}.svc.cluster.local"
     DATA_PRODUCT_API:
       url: "http://localhost:8000"
