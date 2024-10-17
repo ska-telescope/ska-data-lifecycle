@@ -1,0 +1,11 @@
+# https://v2.helm.sh/docs/developing_charts/
+# https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/
+dependencies:
+- name: postgresql
+  version: 14.0.1
+  repository: https://charts.bitnami.com/bitnami
+  condition: postgresql.enabled
+- name: pgweb
+  version: 0.1.9
+  repository: https://charts.ectobit.com
+  condition: pgweb.enabled
