@@ -12,7 +12,7 @@ KUBE_NAMESPACE ?= ska-dlm
 HELM_RELEASE ?= test
 HELM_TIMEOUT ?= 5m
 HELM_VALUES ?= resources/ci-dev-values.yaml
-K8S_CHART_PARAMS ?= $(foreach file,$(HELM_VALUES),--values $(file)) --wait --timeout=$(HELM_TIMEOUT)
+K8S_CHART_PARAMS = $(foreach file,$(HELM_VALUES),--values $(file)) --wait --timeout=$(HELM_TIMEOUT)
 
 # MacOS Arm64 ingress has issues. Workaround is to run with
 # `minikube tunnel` and connect via localhost

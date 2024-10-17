@@ -178,7 +178,7 @@ deploy-staging-dp:
   tags:
     - ska-k8srunner-dp
   variables:
-    HELM_VALUES: resources/deploy-values.yaml
+    HELM_VALUES: resources/staging-values.yaml
 
 info-staging-dp:
   stage: staging-dp
@@ -194,7 +194,7 @@ redeploy-staging-dp:
   tags:
     - ska-k8srunner-dp
   variables:
-    HELM_VALUES: resources/deploy-values.yaml
+    HELM_VALUES: resources/staging-values.yaml
 
 stop-staging-dp:
   stage: staging-dp

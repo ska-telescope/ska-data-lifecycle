@@ -21,9 +21,7 @@ data:
   {{- else }}
   KEYCLOAK_URL: "http://{{ include "ska-dlm.name" . }}-keycloak.{{ .Release.Namespace }}.svc.cluster.local"
   {{- end }}
-
 {{- else }}
-
 apiVersion: v1
 kind: ConfigMap
 metadata:

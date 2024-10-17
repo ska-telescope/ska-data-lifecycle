@@ -69,9 +69,9 @@ make k8s-do-test
 make k8s-uninstall-chart
 ```
 
-## Production Deployment
+## Cluster Deployment
 
-To deploy in a production k8s environment, DevOps can:
+To deploy in a cluster k8s environment, DevOps can:
 
 * Select the Kubernetes environment via `export KUBECONFIG="path to kubeconfig"`
 * Modify the `resources/initialized-dlm.yaml` file to override helm values

@@ -108,19 +108,6 @@ postgresql:  # see https://github.com/bitnami/charts/tree/main/bitnami/postgresq
     networkPolicy:
       enabled: false
 
-pgweb:  # see https://github.com/ectobit/charts/tree/main/pgweb
-  enabled: false
-  ingress:
-    enabled: false
-    annotations:
-      nginx.ingress.kubernetes.io/rewrite-target: /$2
-    hosts:
-    - paths:
-      - path: /pgweb(/|$)(.*)
-        pathType: ImplementationSpecific
-
-
-# Test Authentication
 gateway:
   enabled: true
   component: gateway
@@ -141,3 +128,14 @@ keycloak:
   imagePullPolicy: Always
   replicas: 1
   use_https: true
+
+pgweb:  # see https://github.com/ectobit/charts/tree/main/pgweb
+  enabled: false
+  ingress:
+    enabled: false
+    annotations:
+      nginx.ingress.kubernetes.io/rewrite-target: /$2
+    hosts:
+    - paths:
+      - path: /pgweb(/|$)(.*)
+        pathType: ImplementationSpecific
