@@ -75,13 +75,11 @@ kubectl:
   version: 1.28.6
   imagePullPolicy: Always
 
-# Development and Testing Only
-
 # Test Database
 postgresql:  # see https://github.com/bitnami/charts/tree/main/bitnami/postgresql
   enabled: false
   initialise: false
-  nameOverride: ska-dlm-postgresql
+  nameOverride: postgresql
 
   # Custom user/password/db to create, has to match postgrest's config below
   # and primary.initdb authentication
