@@ -17,9 +17,15 @@ stages:
   - test
   - post-test
   - lint
-  - publish
   - pages
+  - deploy
+  - deploy-dp
+  - integration
+  - integration-dp
+  - staging
+  - staging-dp
   - scan
+  - publish
 
 # Include CI templates
 include:
@@ -50,6 +56,11 @@ include:
     # .post step finalisers eg: badges
   - project: 'ska-telescope/templates-repository'
     file: 'gitlab-ci/includes/finaliser.gitlab-ci.yml'
+
+    # deploy steps
+  - project: 'ska-telescope/templates-repository'
+    file: 'gitlab-ci/includes/deploy.gitlab-ci.yml'
+
 
 oci-image-build-keycloak:
   extends:
@@ -105,6 +116,15 @@ k8s-test:
       allow_failure: true
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: always
+
+.info_script: &info_script
+  - |-
+    echo "Status of pods in $KUBE_NAMESPACE namespace:"
+    kubectl get pods -n $KUBE_NAMESPACE -o jsonpath="{range .items[*]}{'Pod: '}{.metadata.name}:{'\n'}{'\t'}{'Image: '}{.spec.containers[*].image}{'\n'}{'\t'}{'Status: '}{.status.phase}{'\n'}{end}{'\n'}"
+    echo "Addresses to connect to the deployment of the Dataproduct Dashboard: "
+    echo "  https://sdhp.stfc.skao.int/$KUBE_NAMESPACE/dashboard/"
+    echo "Backend API:"
+    echo "  https://sdhp.stfc.skao.int/$KUBE_NAMESPACE/api/"
 
 deploy-dev-environment-dp:
   stage: deploy-dp
