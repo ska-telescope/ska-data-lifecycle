@@ -5,6 +5,9 @@ global:
 
 gateway:
   enabled: true
+  vault:
+    enabled: true
+    path: kv/data/users/calgray/sdhp-stfc/ska-dlm/integration
 
 postgresql:
   enabled: true
