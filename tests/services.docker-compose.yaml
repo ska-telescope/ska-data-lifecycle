@@ -12,7 +12,7 @@ services:
       - 8000:8000
     environment:
         KEYCLOAK_URL: "https://keycloak:8443/"
-        REDIRECT_URL: "http://dlm_gateway:8000/auth_callback/"
+        REDIRECT_URL: "http://dlm_gateway:8000/auth_callback"
         REALM: "test"
         CLIENT_ID: "dlm"
         CLIENT_SECRET: "xU2a9SOTLJZSwvAzAlfoucqg4sCMgY6O"
