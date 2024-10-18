@@ -33,6 +33,7 @@ Create chart name and version as used by the chart label.
 
 {{/*
 Common labels
+see https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/
 */}}
 {{- define "ska-dlm.labels" }}
 {{- if .Values.global.labels}}
