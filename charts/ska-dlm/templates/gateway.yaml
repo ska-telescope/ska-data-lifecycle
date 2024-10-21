@@ -65,17 +65,17 @@ spec:
         - containerPort: 8000
           name: http-port
         - containerPort: 8000
-          name: liveness-port
+          name: probe-port
         readinessProbe:
           httpGet:
             path: /heartbeat
-            port: liveness-port
+            port: probe-port
           periodSeconds: 5
           initialDelaySeconds: 5
         livenessProbe:
           httpGet:
             path: /heartbeat
-            port: liveness-port
+            port: probe-port
           periodSeconds: 5
           initialDelaySeconds: 5
         env:
