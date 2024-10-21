@@ -104,7 +104,7 @@ spec:
         {{- else }}
         - configMapRef:
             name: "{{ include "ska-dlm.fullname" . }}-entra-gateway-configmap"
-        # - secretRef:
-        #     name: "{{ include "ska-dlm.fullname" . }}-entra-gateway-secret"
+        - secretRef:
+            name: "{{ include "ska-dlm.fullname" . }}-entra-gateway-secret"
         {{- end }}
 {{- end }}
