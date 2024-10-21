@@ -19,4 +19,4 @@ data:
     RCLONE:
       url: "http://{{ include "ska-dlm.fullname" . }}-rclone.{{ .Release.Namespace }}.svc.cluster.local"
     DATA_PRODUCT_API:
-      url: {{ $.Values.global.dataProductApi.url }}
+      url: {{ $.Values.global.dataProduct.api.url }}
