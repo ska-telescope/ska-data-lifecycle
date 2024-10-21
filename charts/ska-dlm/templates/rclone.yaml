@@ -50,3 +50,10 @@ spec:
             path: /
             port: 5572
           periodSeconds: 5
+        volumeMounts:
+        - name: data-product-storage
+          mountPath: /data
+      volumes:
+      - name: data-product-storage
+        persistentVolumeClaim:
+          claimName: "{{ $.Values.global.dataProductVolume.pvc.name }}"

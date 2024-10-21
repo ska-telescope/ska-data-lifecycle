@@ -5,6 +5,7 @@
 ### Added
 
 * Added CICD deployment jobs for 3 for targets `ci-dev`, `integration` and `staging`
+* Added configurable shared PVC to relavent Helm chart services
 
 ### Updated
 
