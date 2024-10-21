@@ -6,6 +6,8 @@ global:
     name: shared
     pvc:
       name: shared
+  dataProductApi:
+    url: http://ska-dataproduct-dashboard-api-service.integration-ska-dataproduct-dashboard.svc:8000
 
 gateway:
   enabled: true
