@@ -1,5 +1,11 @@
 # Version History
 
+## Unreleased
+
+### Added
+
+* Added CICD deployment jobs for 3 for `ci-dev`, `integration` and `staging`
+
 ## 0.1.0
 
 ### Added
