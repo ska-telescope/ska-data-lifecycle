@@ -4,6 +4,7 @@ system: dlm
 global:
   ingress:
     enabled: false
+    domainName: "sdhp.stfc.skao.int"  # required for whitelisting redirects
   storageClass: nfss1
   development: true
 

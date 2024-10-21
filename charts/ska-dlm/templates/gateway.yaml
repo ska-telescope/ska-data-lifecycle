@@ -68,7 +68,11 @@ spec:
         - name: PORT
           value: "8000"
         - name: REDIRECT_URL
-          value: "http://{{ include "ska-dlm.fullname" . }}-gateway.{{ .Release.Namespace }}.svc.cluster.local/auth_callback/"
+        {{- if $.Values.global.ingress.enabled }}
+          value: "https://{{ .Values.global.ingress.domainName }}/{{ .Release.Namespace }}/auth_callback"
+        {{- else }}
+          value: "http://{{ include "ska-dlm.fullname" . }}-gateway.{{ .Release.Namespace }}.svc.cluster.local/auth_callback"
+        {{- end }}
         - name: INGEST_CLIENT
           value: "http://{{ include "ska-dlm.fullname" . }}-ingest.{{ .Release.Namespace }}.svc.cluster.local:80"
         - name: REQUESTS_CLIENT
