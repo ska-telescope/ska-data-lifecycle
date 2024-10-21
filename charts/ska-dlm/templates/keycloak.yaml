@@ -53,25 +53,25 @@ spec:
         - containerPort: 8443
           name: https-port
         - containerPort: 9000
-          name: liveness-port
+          name: probe-port
         startupProbe:
           httpGet:
             path: /health/started
-            port: liveness-port
+            port: probe-port
             scheme: {{ ternary "HTTPS" "HTTP" .Values.keycloak.use_https }}
           failureThreshold: 30
           periodSeconds: 5
         readinessProbe:
           httpGet:
             path: /health/ready
-            port: liveness-port
+            port: probe-port
             scheme: {{ ternary "HTTPS" "HTTP" .Values.keycloak.use_https }}
           initialDelaySeconds: 10
           periodSeconds: 5
         livenessProbe:
           httpGet:
             path: /health/live
-            port: liveness-port
+            port: probe-port
             scheme: {{ ternary "HTTPS" "HTTP" .Values.keycloak.use_https }}
           initialDelaySeconds: 5
           periodSeconds: 5

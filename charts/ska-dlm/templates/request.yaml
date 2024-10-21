@@ -49,15 +49,15 @@ spec:
         - containerPort: 8002
           name: http-port
         - containerPort: 8002
-          name: liveness-port
+          name: probe-port
         readinessProbe:
           tcpSocket:
-            port: liveness-port
+            port: probe-port
           periodSeconds: 5
           initialDelaySeconds: 5
         livenessProbe:
           tcpSocket:
-            port: liveness-port
+            port: probe-port
           periodSeconds: 5
           initialDelaySeconds: 5
         volumeMounts:
