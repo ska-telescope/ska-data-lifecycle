@@ -33,16 +33,18 @@ Create chart name and version as used by the chart label.
 
 {{/*
 Common labels
+see https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/
 */}}
 {{- define "ska-dlm.labels" }}
 {{- if .Values.global.labels}}
-app: {{ coalesce .Values.global.labels.app "ska-dlm.name" }}
+app.kubernetes.io/name: {{ coalesce .Values.global.labels.app "ska-dlm.name" }}
 {{- else }}
-app: {{ include "ska-dlm.name" . }}
+app.kubernetes.io/name: {{ include "ska-dlm.name" . }}
 {{- end }}
-chart: {{ include "ska-dlm.chart" . }}
-release: {{ .Release.Name }}
-heritage: {{ .Release.Service }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+helm.sh/chart: {{ include "ska-dlm.chart" . }}
 system: {{ .Values.system }}
 {{- end }}
 

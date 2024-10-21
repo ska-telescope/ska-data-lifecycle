@@ -3,7 +3,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "ska-dlm.name" . }}-keycloak-realm-configmap
+  name: {{ include "ska-dlm.fullname" . }}-keycloak-realm-configmap
   namespace: {{ .Release.Namespace }}
 data:
 {{ (.Files.Glob "keycloak/realm-export.json").AsConfig | indent 2 }}
@@ -11,21 +11,21 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "ska-dlm.name" . }}-keycloak-gateway-configmap
+  name: {{ include "ska-dlm.fullname" . }}-keycloak-gateway-configmap
   namespace: {{ .Release.Namespace }}
 data:
   PROVIDER: KC
   AUTH: "1"
   {{- if $.Values.keycloak.use_https }}
-  KEYCLOAK_URL: "https://{{ include "ska-dlm.name" . }}-keycloak.{{ .Release.Namespace }}.svc.cluster.local"
+  KEYCLOAK_URL: "https://{{ include "ska-dlm.fullname" . }}-keycloak.{{ .Release.Namespace }}.svc.cluster.local"
   {{- else }}
-  KEYCLOAK_URL: "http://{{ include "ska-dlm.name" . }}-keycloak.{{ .Release.Namespace }}.svc.cluster.local"
+  KEYCLOAK_URL: "http://{{ include "ska-dlm.fullname" . }}-keycloak.{{ .Release.Namespace }}.svc.cluster.local"
   {{- end }}
 {{- else }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "ska-dlm.name" . }}-entra-gateway-configmap
+  name: {{ include "ska-dlm.fullname" . }}-entra-gateway-configmap
   namespace: {{ .Release.Namespace }}
 data:
   PROVIDER: ENTRA

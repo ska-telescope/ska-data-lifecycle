@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "ska-dlm.name" . }}-gateway
+  name: {{ include "ska-dlm.fullname" . }}-gateway
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "ska-dlm.gateway.labels" . | indent 4 }}
@@ -20,7 +20,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "ska-dlm.name" . }}-gateway
+  name: {{ include "ska-dlm.fullname" . }}-gateway
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "ska-dlm.gateway.labels" . | indent 4 }}
@@ -51,17 +51,17 @@ spec:
         - containerPort: 8000
           name: http-port
         - containerPort: 8000
-          name: liveness-port
+          name: probe-port
         readinessProbe:
           httpGet:
             path: /heartbeat
-            port: liveness-port
+            port: probe-port
           periodSeconds: 5
           initialDelaySeconds: 5
         livenessProbe:
           httpGet:
             path: /heartbeat
-            port: liveness-port
+            port: probe-port
           periodSeconds: 5
           initialDelaySeconds: 5
         env:
@@ -71,26 +71,26 @@ spec:
         {{- if $.Values.global.ingress.enabled }}
           value: "https://{{ .Values.global.ingress.domainName }}/{{ .Release.Namespace }}/auth_callback"
         {{- else }}
-          value: "http://{{ include "ska-dlm.name" . }}-gateway.{{ .Release.Namespace }}.svc.cluster.local/auth_callback"
+          value: "http://{{ include "ska-dlm.fullname" . }}-gateway.{{ .Release.Namespace }}.svc.cluster.local/auth_callback"
         {{- end }}
         - name: INGEST_CLIENT
-          value: "http://{{ include "ska-dlm.name" . }}-ingest.{{ .Release.Namespace }}.svc.cluster.local:80"
+          value: "http://{{ include "ska-dlm.fullname" . }}-ingest.{{ .Release.Namespace }}.svc.cluster.local:80"
         - name: REQUESTS_CLIENT
-          value: "http://{{ include "ska-dlm.name" . }}-request.{{ .Release.Namespace }}.svc.cluster.local:80"
+          value: "http://{{ include "ska-dlm.fullname" . }}-request.{{ .Release.Namespace }}.svc.cluster.local:80"
         - name: STORAGE_CLIENT
-          value: "http://{{ include "ska-dlm.name" . }}-storage.{{ .Release.Namespace }}.svc.cluster.local:80"
+          value: "http://{{ include "ska-dlm.fullname" . }}-storage.{{ .Release.Namespace }}.svc.cluster.local:80"
         - name: MIGRATION_CLIENT
-          value: "http://{{ include "ska-dlm.name" . }}-migration.{{ .Release.Namespace }}.svc.cluster.local:80"
+          value: "http://{{ include "ska-dlm.fullname" . }}-migration.{{ .Release.Namespace }}.svc.cluster.local:80"
         envFrom:
         {{- if $.Values.keycloak.enabled }}
         - configMapRef:
-            name: "{{ include "ska-dlm.name" . }}-keycloak-gateway-configmap"
+            name: "{{ include "ska-dlm.fullname" . }}-keycloak-gateway-configmap"
         - secretRef:
-            name: "{{ include "ska-dlm.name" . }}-keycloak-gateway-secret"
+            name: "{{ include "ska-dlm.fullname" . }}-keycloak-gateway-secret"
         {{- else }}
         - configMapRef:
-            name: "{{ include "ska-dlm.name" . }}-entra-gateway-configmap"
+            name: "{{ include "ska-dlm.fullname" . }}-entra-gateway-configmap"
         - secretRef:
-            name: "{{ include "ska-dlm.name" . }}-entra-gateway-secret"
+            name: "{{ include "ska-dlm.fullname" . }}-entra-gateway-secret"
         {{- end }}
 {{- end }}
