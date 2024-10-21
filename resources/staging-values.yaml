@@ -1,0 +1,20 @@
+global:
+  storageClass: nfss1
+  ingress:
+    enabled: true
+
+gateway:
+  enabled: true
+
+postgresql:
+  enabled: false
+  initialise: false
+
+postgrest:
+  db_uri: "postgres://ska_dlm_admin:password@productiondb:5432/ska_dlm"
+
+keycloak:
+  enabled: false
+
+pgweb:
+  enabled: false

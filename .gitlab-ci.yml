@@ -17,9 +17,15 @@ stages:
   - test
   - post-test
   - lint
-  - publish
   - pages
+  - deploy
+  - deploy-dp
+  - integration
+  - integration-dp
+  - staging
+  - staging-dp
   - scan
+  - publish
 
 # Include CI templates
 include:
@@ -50,6 +56,11 @@ include:
     # .post step finalisers eg: badges
   - project: 'ska-telescope/templates-repository'
     file: 'gitlab-ci/includes/finaliser.gitlab-ci.yml'
+
+    # deploy steps
+  - project: 'ska-telescope/templates-repository'
+    file: 'gitlab-ci/includes/deploy.gitlab-ci.yml'
+
 
 oci-image-build-keycloak:
   extends:
@@ -105,3 +116,110 @@ k8s-test:
       allow_failure: true
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: always
+
+.info_script: &info_script
+  - |-
+    echo "Status of pods in $KUBE_NAMESPACE namespace:"
+    kubectl get pods -n $KUBE_NAMESPACE -o jsonpath="{range .items[*]}{'Pod: '}{.metadata.name}:{'\n'}{'\t'}{'Image: '}{.spec.containers[*].image}{'\n'}{'\t'}{'Status: '}{.status.phase}{'\n'}{end}{'\n'}"
+    echo "Addresses to connect to the deployment of the Dataproduct Dashboard: "
+    echo "  https://sdhp.stfc.skao.int/$KUBE_NAMESPACE/dashboard/"
+    echo "Backend API:"
+    echo "  https://sdhp.stfc.skao.int/$KUBE_NAMESPACE/api/"
+
+deploy-dev-environment-dp:
+  stage: deploy-dp
+  extends: deploy-dev-environment
+  when: manual
+  tags:
+    - ska-k8srunner-dp
+  variables:
+    K8S_CHART_PARAMS: --values resources/ci-dev-values.yaml --set global.ingress.domainName="sdhp.stfc.skao.int" --wait --timeout=5m
+
+test-dev-environment-dp:
+  stage: deploy-dp
+  extends: test-dev-environment
+  when: manual
+  tags:
+    - ska-k8srunner-dp
+  needs:
+    - deploy-dev-environment-dp
+
+info-dev-environment-dp:
+  stage: deploy-dp
+  extends: info-dev-environment
+  tags:
+    - ska-k8srunner-dp
+  script:
+    - *info_script
+
+stop-dev-environment-dp:
+  stage: deploy-dp
+  extends: stop-dev-environment
+  tags:
+    - ska-k8srunner-dp
+
+deploy-integration-dp:
+  stage: integration-dp
+  extends: deploy-integration
+  when: manual
+  tags:
+    - ska-k8srunner-dp
+  variables:
+    K8S_CHART_PARAMS: --values resources/integration-values.yaml --set global.ingress.domainName="sdhp.stfc.skao.int" --wait --timeout=5m
+
+info-integration-dp:
+  stage: integration-dp
+  extends: info-integration
+  tags:
+    - ska-k8srunner-dp
+  script:
+    - *info_script
+
+redeploy-integration-dp:
+  stage: integration-dp
+  extends: redeploy-integration
+  tags:
+    - ska-k8srunner-dp
+  variables:
+    K8S_CHART_PARAMS: --values resources/integration-values.yaml --set global.ingress.domainName="sdhp.stfc.skao.int" --wait --timeout=5m
+
+stop-integration-dp:
+  stage: integration-dp
+  extends: stop-integration
+  tags:
+    - ska-k8srunner-dp
+  needs:
+    - deploy-integration-dp
+
+deploy-staging-dp:
+  stage: staging-dp
+  extends: deploy-staging
+  when: manual
+  tags:
+    - ska-k8srunner-dp
+  variables:
+    K8S_CHART_PARAMS: --values resources/staging-values.yaml --set global.ingress.domainName="sdhp.stfc.skao.int" --wait --timeout=5m
+
+info-staging-dp:
+  stage: staging-dp
+  extends: info-staging
+  tags:
+    - ska-k8srunner-dp
+  script:
+    - *info_script
+
+redeploy-staging-dp:
+  stage: staging-dp
+  extends: redeploy-staging
+  tags:
+    - ska-k8srunner-dp
+  variables:
+    K8S_CHART_PARAMS: --values resources/staging-values.yaml --set global.ingress.domainName="sdhp.stfc.skao.int" --wait --timeout=5m
+
+stop-staging-dp:
+  stage: staging-dp
+  extends: stop-staging
+  tags:
+    - ska-k8srunner-dp
+  needs:
+    - deploy-staging-dp

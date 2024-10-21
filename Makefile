@@ -5,12 +5,8 @@ K8S_CHART = ska-dlm
 KUBE_NAMESPACE ?= ska-dlm
 HELM_RELEASE ?= test
 HELM_TIMEOUT ?= 5m
-HELM_VALUES ?= resources/initialised-dlm.yaml
+HELM_VALUES ?= resources/ci-dev-values.yaml
 K8S_CHART_PARAMS ?= $(foreach file,$(HELM_VALUES),--values $(file)) --wait --timeout=$(HELM_TIMEOUT)
-
-ifndef ERROR
-	export ERROR := ""
-endif
 
 include .make/base.mk
 include .make/helm.mk

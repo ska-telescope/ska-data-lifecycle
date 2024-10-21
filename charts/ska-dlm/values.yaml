@@ -4,6 +4,7 @@ system: dlm
 global:
   ingress:
     enabled: false
+    domainName: "sdhp.stfc.skao.int"  # required for whitelisting redirects
   storageClass: nfss1
   development: true
 
@@ -52,7 +53,7 @@ postgrest:
   imagePullPolicy: Always
 
   replicas: 1
-  db_uri: ""
+  db_uri: ""  # no value auto-generates to test postgresql database
   db_schema: public
   db_anon_role: ska_dlm_admin
   db_pool: 10
@@ -75,13 +76,11 @@ kubectl:
   version: 1.28.6
   imagePullPolicy: Always
 
-# Development and Testing Only
-
 # Test Database
 postgresql:  # see https://github.com/bitnami/charts/tree/main/bitnami/postgresql
   enabled: false
   initialise: false
-  nameOverride: ska-dlm-postgresql
+  nameOverride: postgresql
 
   # Custom user/password/db to create, has to match postgrest's config below
   # and primary.initdb authentication
@@ -108,21 +107,8 @@ postgresql:  # see https://github.com/bitnami/charts/tree/main/bitnami/postgresq
     networkPolicy:
       enabled: false
 
-pgweb:  # see https://github.com/ectobit/charts/tree/main/pgweb
-  enabled: false
-  ingress:
-    enabled: false
-    annotations:
-      nginx.ingress.kubernetes.io/rewrite-target: /$2
-    hosts:
-    - paths:
-      - path: /pgweb(/|$)(.*)
-        pathType: ImplementationSpecific
-
-
-# Test Authentication
 gateway:
-  enabled: false
+  enabled: true
   component: gateway
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-test-gateway
@@ -140,4 +126,15 @@ keycloak:
   version: "0.1.0"
   imagePullPolicy: Always
   replicas: 1
-  use_https: True
+  use_https: true
+
+pgweb:  # see https://github.com/ectobit/charts/tree/main/pgweb
+  enabled: false
+  ingress:
+    enabled: false
+    annotations:
+      nginx.ingress.kubernetes.io/rewrite-target: /$2
+    hosts:
+    - paths:
+      - path: /pgweb(/|$)(.*)
+        pathType: ImplementationSpecific
