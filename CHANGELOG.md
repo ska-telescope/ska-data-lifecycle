@@ -5,6 +5,7 @@
 ### Added
 
 * Added CICD deployment jobs for 3 for `ci-dev`, `integration` and `staging`
+* Added data PVC mounting to helm chart
 
 ## 0.1.0
 
