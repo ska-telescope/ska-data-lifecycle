@@ -18,13 +18,13 @@ stages:
   - post-test
   - lint
   - pages
+  - scan
   - deploy
   - deploy-dp
   - integration
   - integration-dp
   - staging
   - staging-dp
-  - scan
   - publish
 
 # Include CI templates

@@ -4,8 +4,11 @@
 
 ### Added
 
-* Added CICD deployment jobs for 3 for `ci-dev`, `integration` and `staging`
-* Added data PVC mounting to helm chart
+* Added CICD deployment jobs for 3 for targets `ci-dev`, `integration` and `staging`
+
+### Updated
+
+* Updated helm chart pod names to contain instance name
 
 ## 0.1.0
 
