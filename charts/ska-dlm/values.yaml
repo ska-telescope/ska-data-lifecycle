@@ -120,6 +120,9 @@ gateway:
   version: "0.1.0"
   imagePullPolicy: Always
   replicas: 1
+  vault:
+    enabled: false
+    path: ""
 
 keycloak:
   enabled: false
