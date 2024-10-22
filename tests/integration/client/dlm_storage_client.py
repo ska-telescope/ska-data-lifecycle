@@ -94,7 +94,7 @@ def query_location(location_name: str = "", location_id: str = "") -> list:
 
 # pylint: disable=unused-argument
 def create_storage_config(
-    storage_id: str = "", config: str = "", storage_name: str = "", config_type="rclone"
+    config: dict, storage_id: str = "", storage_name: str = "", config_type="rclone"
 ) -> str:
     """
     Create a new record in the storage_config table for a storage with the given id.

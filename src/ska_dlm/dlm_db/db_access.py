@@ -79,7 +79,7 @@ class PostgRESTAccess(contextlib.AbstractContextManager):
         params: dict | list | None = None,
         json: object | None = None,
         **kwargs,
-    ) -> str:
+    ) -> dict:
         url = f"{self.api_url}/{table}"
         try:
             response = self._session.request(method, url, params=params, json=json, **kwargs)
