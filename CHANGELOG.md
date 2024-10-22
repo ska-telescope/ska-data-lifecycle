@@ -5,12 +5,12 @@
 ### Added
 
 * Added CICD deployment jobs for 3 for `ci-dev`, `integration` and `staging`
+* Added `/storage/get_storage_config` RESTful endpoint
 
 ### Changed
 
 * Changed helm chart pod names to contain instance name
 * Changed `migration/copy_data_item` endpoint from `GET` to `POST`
-* Changed `storage/create_storage_config` config argument from REST param to body
 
 ## 0.1.0
 

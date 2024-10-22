@@ -11,7 +11,6 @@ import ska_dlm
 from ska_dlm.dlm_db.db_access import DB
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
 from ska_dlm.fastapi_utils import fastapi_auto_annotate
-from ska_dlm.typer_types import JsonObjectOption
 
 from .. import CONFIG
 from ..data_item import set_state
@@ -160,7 +159,7 @@ def init_storage(  # pylint: disable=R0913
 @rest.post("/storage/create_storage_config")
 def create_storage_config(
     storage_id: str = "",
-    config: JsonObjectOption = None,
+    config: str = "",
     storage_name: str = "",
     config_type: str = "rclone",
 ) -> str:
@@ -170,7 +169,7 @@ def create_storage_config(
     ----------
     storage_id: str, optional
         the storage_id for which to create the entry.
-    config: dict, optional
+    config: str, optional
         the configuration entry. For rclone this is a JSON formatted string
     storage_name: str, optional
         the name of the storage for which the config is provided.
@@ -193,7 +192,7 @@ def create_storage_config(
         storage_id = query_storage(storage_name=storage_name)[0]["storage_id"]
     post_data = {
         "storage_id": storage_id,
-        "config": json.dumps(config),
+        "config": config,
         "config_type": config_type,
     }
     if rclone_config(config):
@@ -263,7 +262,7 @@ def rclone_config(config: str) -> bool:
     request_url = f"{CONFIG.RCLONE.url}/config/create"
     logger.info("Creating new rclone config: %s %s", request_url, config)
     request = requests.post(
-        request_url, data=config, headers={"Content-type": "application/json"}, timeout=10
+        request_url, config, headers={"Content-type": "application/json"}, timeout=10
     )
     logger.info("Response status code: %s", request.status_code)
     return request.status_code == 200
