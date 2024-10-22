@@ -103,7 +103,7 @@ def create_storage_config(
     -----------
     storage_name: the name of the storage for which the config is provided.
     storage_id: the storage_id for which to create the entry.
-    config: the configuration entry. For rclone this is s JSON formatted string
+    config: the configuration entry. For rclone this is a JSON formatted string
     config_type: default is rclone, but could be something else in the future.
 
     Returns:

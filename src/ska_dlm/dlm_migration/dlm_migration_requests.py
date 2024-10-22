@@ -82,7 +82,7 @@ def rclone_copy(src_fs: str, src_remote: str, dst_fs: str, dst_remote: str, item
 
 
 @cli.command()
-@rest.get("/migration/copy_data_item")
+@rest.post("/migration/copy_data_item")
 def copy_data_item(  # pylint: disable=too-many-arguments,too-many-locals
     item_name: str = "",
     oid: str = "",

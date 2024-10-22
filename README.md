@@ -51,7 +51,7 @@ For code developers all tests can be executed without having to rely on the comp
 Python testing is available on the local machine using poetry virtual environments. First clone the repo:
 
 ```bash
-git clone https://gitlab.com/ska-telescope/ska-data-lifecycle.git
+git clone --recurse-submodules https://gitlab.com/ska-telescope/ska-data-lifecycle.git
 ```
 
 Then install the package and enter a poetry shell:
