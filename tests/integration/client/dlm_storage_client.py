@@ -11,20 +11,24 @@ from ska_dlm.exceptions import (
 )
 
 STORAGE_URL = ""
-SESSION = None
+SESSION: requests.Session = None
 
 
 # pylint: disable=no-else-raise
 def _except(response: requests.Response):
-    """Check the response status code and return relevant exception"""
+    """Check for exceptional response status code and raise."""
     if response.status_code == 422:
         text = json.loads(response.text)
-        if text["exec"] == "ValueAlreadyInDB":
-            raise ValueAlreadyInDB(text["message"])
-        elif text["exec"] == "InvalidQueryParameters":
-            raise InvalidQueryParameters(text["message"])
-        elif text["text"] == "UnmetPreconditionForOperation":
-            raise UnmetPreconditionForOperation(text["message"])
+        if "exec" in text:
+            match text["exec"]:
+                case "ValueAlreadyInDB":
+                    raise ValueAlreadyInDB(text["message"])
+                case "InvalidQueryParameters":
+                    raise InvalidQueryParameters(text["message"])
+                case "UnmetPreconditionForOperation":
+                    raise UnmetPreconditionForOperation(text["message"])
+        else:
+            raise RuntimeError(text)
     elif response.status_code in [401, 403]:
         response.raise_for_status()
 
@@ -40,7 +44,8 @@ def init_location(
     """Initialize a new location for a storage by specifying the location_name or location_id."""
     params = {k: v for k, v in locals().items() if v}
     response = SESSION.post(f"{STORAGE_URL}/storage/init_location", params=params, timeout=60)
-    _except(response)
+    # _except(response)
+    response.raise_for_status()
     return response.json()
 
 
@@ -112,7 +117,7 @@ def create_storage_config(
     """
     params = {k: v for k, v in locals().items() if v}
     response = SESSION.post(
-        f"{STORAGE_URL}/storage/create_storage_config", params=params, timeout=60
+        f"{STORAGE_URL}/storage/create_storage_config", params=params, json=config, timeout=60
     )
     _except(response)
     return response.json()

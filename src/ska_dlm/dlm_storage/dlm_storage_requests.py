@@ -262,7 +262,6 @@ def rclone_config(config: dict) -> bool:
     """
     request_url = f"{CONFIG.RCLONE.url}/config/create"
     logger.info("Creating new rclone config: %s %s", request_url, config)
-    assert isinstance(config, dict)
     request = requests.post(
         request_url, json=config, headers={"Content-type": "application/json"}, timeout=10
     )

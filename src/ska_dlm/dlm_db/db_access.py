@@ -42,7 +42,7 @@ _DEFAULT_HEADERS = {"Prefer": "missing=default, return=representation"}
 
 
 class PostgRESTAccess(contextlib.AbstractContextManager):
-    """DB acesss through the PostREST HTTP API."""
+    """SQL database client accessed through the PostREST HTTP API."""
 
     def __init__(self, api_url: str, timeout: int | float = 10, headers: dict | None = None):
         """Create the DB access."""
@@ -50,6 +50,10 @@ class PostgRESTAccess(contextlib.AbstractContextManager):
         self._session = requests.Session()
         self._session.headers = dict(headers if headers else _DEFAULT_HEADERS)
         self._timeout = timeout
+
+    def __enter__(self):
+        """Enter the request session."""
+        return self
 
     def __exit__(self, _exc_type, _exc_value, _traceback) -> None:
         """Close the underlying requests session."""
@@ -84,7 +88,9 @@ class PostgRESTAccess(contextlib.AbstractContextManager):
     ) -> list:
         url = f"{self.api_url}/{table}"
         try:
-            response = self._session.request(method, url, params=params, json=json, **kwargs)
+            response = self._session.request(
+                method, url, params=params, json=json, timeout=self._timeout, **kwargs
+            )
             response.raise_for_status()
         except Exception as ex:
             raise DBQueryError(url=url, method=method, params=params, json=json) from ex
