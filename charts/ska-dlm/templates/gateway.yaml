@@ -56,11 +56,18 @@ spec:
         - /bin/bash
         - -ec
         args:
+          {{- if and (eq $.Values.keycloak.enabled false) (eq $.Values.gateway.vault.enabled true) }}
           - >-
             . /vault/secrets/config &&
             fastapi {{ ternary "dev" "run" .Values.global.development }}
             /app/tests/integration/gateway/dlm_gateway.py
             --host 0.0.0.0 --port 8000
+          {{- else }}
+          - >-
+            fastapi {{ ternary "dev" "run" .Values.global.development }}
+            /app/tests/integration/gateway/dlm_gateway.py
+            --host 0.0.0.0 --port 8000
+          {{- end }}
         ports:
         - containerPort: 8000
           name: http-port

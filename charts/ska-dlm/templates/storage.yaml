@@ -64,7 +64,12 @@ spec:
         - name: dlm-configmap
           mountPath: "/home/ska-dlm/.dlm"
           readOnly: true
+        - name: data-product-storage
+          mountPath: /data
       volumes:
       - name: dlm-configmap
         configMap:
           name: {{ include "ska-dlm.fullname" . }}-configmap
+      - name: data-product-storage
+        persistentVolumeClaim:
+          claimName: "{{ $.Values.global.dataProductVolume.pvc.name }}"

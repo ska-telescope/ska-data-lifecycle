@@ -7,6 +7,10 @@ global:
     domainName: "sdhp.stfc.skao.int"  # required for whitelisting redirects
   storageClass: nfss1
   development: true
+  dataProductVolume:
+    name: test-pv
+    pvc:
+      name: test-pvc
 
 nameOverride: ""
 fullnameOverride: ""
@@ -43,6 +47,7 @@ ingest:
   version: "0.1.0"
   imagePullPolicy: Always
   replicas: 1
+
 
 postgrest:
   component: postgrest
