@@ -85,7 +85,7 @@ def init_data_item(
 @cli.command()
 @rest.post("/ingest/register_data_item")
 def register_data_item(  # noqa: C901
-    # pylint: disable=R0913,R0914
+    # pylint: disable=R0913,R0914,R0917
     item_name: str,
     uri: str = "",
     storage_name: str = "",
@@ -178,30 +178,31 @@ def register_data_item(  # noqa: C901
     set_state(uid, "READY")
 
     # (6) Populate the metadata column in the database
-    metadata_temp = metadata
     if metadata is None:
         try:
             # TODO(yan-xxx) create another RESTful service associated with a storage type
             # and call into the endpoint
             metadata_object = metagen.generate_metadata_from_generator(uri, eb_id)
-            metadata_temp = metadata_object.get_data().to_json()
-            metadata_temp = json.loads(metadata_temp)
+            metadata = metadata_object.get_data().to_json()
+            metadata = json.loads(metadata)
             logger.info("Metadata extracted successfully.")
         except ValueError as err:
             logger.info("ValueError occurred while attempting to extract metadata: %s", err)
 
-    if metadata_temp is not None:
-        # Check that metadata_temp is standard json?
-        set_metadata(uid, metadata_temp)
+    # At this point, (1) metadata was provided, or (2) it was generated, or (3) it is still None
+    # because an error occurred.
+    if metadata is not None:
+        # Check that metadata is standard JSON?
+        set_metadata(uid, metadata)
         logger.info("Saved metadata provided by client.")
     else:
-        metadata_temp = {}
+        metadata = {}
 
-    metadata_temp["uid"] = uid
-    metadata_temp["item_name"] = item_name
+    metadata["uid"] = uid
+    metadata["item_name"] = item_name
 
     # (7)
-    notify_data_dashboard(metadata_temp)
+    notify_data_dashboard(metadata)
 
     return uid
 
