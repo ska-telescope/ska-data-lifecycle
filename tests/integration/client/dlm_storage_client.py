@@ -15,20 +15,25 @@ STORAGE_URL = ""
 SESSION: requests.Session = None
 
 
-def raise_typer_except(response: requests.Response):
-    """Check for exceptional response status code and raise same exceptions
-    as CLI interface."""
-    if response.status_code == 422:
-        text = json.loads(response.text)
-        if "exec" in text:
-            match text["exec"]:
-                case "ValueAlreadyInDB":
-                    raise ValueAlreadyInDB(text["message"])
-                case "InvalidQueryParameters":
-                    raise InvalidQueryParameters(text["message"])
-                case "UnmetPreconditionForOperation":
-                    raise UnmetPreconditionForOperation(text["message"])
-    response.raise_for_status()
+def dlm_raise_for_status(response: requests.Response):
+    """Raises a DLM exception for error response status codes."""
+    try:
+        response.raise_for_status()
+    except requests.HTTPError as e:
+        if e.response.status_code == 422:
+            try:
+                obj = json.loads(response.text)
+            except json.JSONDecodeError:
+                raise e
+            if "exec" in obj:
+                match obj["exec"]:
+                    case "ValueAlreadyInDB":
+                        raise ValueAlreadyInDB(obj["message"]) from e
+                    case "InvalidQueryParameters":
+                        raise InvalidQueryParameters(obj["message"]) from e
+                    case "UnmetPreconditionForOperation":
+                        raise UnmetPreconditionForOperation(obj["message"]) from e
+        raise
 
 
 # pylint: disable=unused-argument
@@ -42,7 +47,7 @@ def init_location(
     """Initialize a new location for a storage by specifying the location_name or location_id."""
     params = {k: v for k, v in locals().items() if v}
     response = SESSION.post(f"{STORAGE_URL}/storage/init_location", params=params, timeout=60)
-    raise_typer_except(response)
+    dlm_raise_for_status(response)
     return response.json()
 
 
@@ -85,7 +90,7 @@ def init_storage(  # pylint: disable=R0913
     """
     params = {k: v for k, v in locals().items() if v}
     response = SESSION.post(f"{STORAGE_URL}/storage/init_storage", params=params, timeout=60)
-    raise_typer_except(response)
+    dlm_raise_for_status(response)
     return response.json()
 
 
@@ -107,7 +112,7 @@ def query_location(location_name: str = "", location_id: str = "") -> list:
     """
     params = {k: v for k, v in locals().items() if v}
     response = SESSION.get(f"{STORAGE_URL}/storage/query_location", params=params, timeout=60)
-    raise_typer_except(response)
+    dlm_raise_for_status(response)
     return response.json()
 
 
@@ -138,7 +143,7 @@ def create_storage_config(
     response = SESSION.post(
         f"{STORAGE_URL}/storage/create_storage_config", params=params, json=config, timeout=60
     )
-    raise_typer_except(response)
+    dlm_raise_for_status(response)
     return response.json()
 
 
@@ -152,7 +157,7 @@ def rclone_config(config: JsonObjectArg) -> bool:
         a dictionary containing the configuration
     """
     response = SESSION.post(f"{STORAGE_URL}/storage/rclone_config", json=config, timeout=60)
-    raise_typer_except(response)
+    dlm_raise_for_status(response)
     return bool(response.text)
 
 
@@ -174,5 +179,5 @@ def query_storage(storage_name: str = "", storage_id: str = "") -> list:
     """
     params = {k: v for k, v in locals().items() if v}
     response = SESSION.get(f"{STORAGE_URL}/storage/query_storage", params=params, timeout=60)
-    raise_typer_except(response)
+    dlm_raise_for_status(response)
     return response.json()
