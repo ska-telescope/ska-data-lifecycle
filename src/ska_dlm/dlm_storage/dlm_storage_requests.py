@@ -225,7 +225,7 @@ def get_storage_config(
     Raises
     ------
     UnmetPreconditionForOperation
-        _description_
+        storage_name does not exist in database
     """
     params = {}
     if not storage_name and not storage_id:
@@ -303,19 +303,17 @@ def check_storage_access(storage_name: str = "", storage_id: str = "") -> bool:
     return rclone_access(rclone_fs)
 
 
-def rclone_access(volume: str = "", remote: str = "", config: str = "") -> bool:
+def rclone_access(volume: str, remote: str = "", config: dict | None = None) -> bool:
     """Check whether a configured backend is accessible.
-
-    NOTE: This assumes a rclone server is running..
 
     Parameters
     ----------
     volume : str
-        Disk volume name, by default ""
-    remote : str
+        Volume name
+    remote : str, optional
         Remote url to the volume, by default ""
-    config : str
-        _description_, by default ""
+    config : dict, optional
+        override rclone config values, by default None
 
     Returns
     -------
@@ -324,7 +322,7 @@ def rclone_access(volume: str = "", remote: str = "", config: str = "") -> bool:
     """
     request_url = f"{CONFIG.RCLONE.url}/operations/stat"
     if config:
-        post_data = {}
+        post_data = config
     else:
         volume = f"{volume}:" if volume[-1] != ":" else volume
         post_data = {
@@ -403,12 +401,12 @@ def init_location(
     Raises
     ------
     InvalidQueryParameters
-        _description_
+        either location_name or location_type is empty
     ValueAlreadyInDB
-        _description_
+        location_name aleady exists in database
     """
     if not (location_name and location_type):
-        raise InvalidQueryParameters("Location_name and location_type cannot be empty")
+        raise InvalidQueryParameters("location_name and location_type cannot be empty")
     if query_location(location_name):
         raise ValueAlreadyInDB(f"A location with this name exists already: {location_name}")
     post_data = {"location_name": location_name, "location_type": location_type}
