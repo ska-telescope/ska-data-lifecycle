@@ -11,6 +11,7 @@ import ska_dlm
 from ska_dlm.dlm_db.db_access import DB
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
 from ska_dlm.fastapi_utils import fastapi_auto_annotate
+from ska_dlm.typer_types import JsonObjectArg
 
 from .. import CONFIG
 from ..data_item import set_state
@@ -158,8 +159,8 @@ def init_storage(  # pylint: disable=R0913
 @cli.command()
 @rest.post("/storage/create_storage_config")
 def create_storage_config(
+    config: JsonObjectArg,
     storage_id: str = "",
-    config: str = "",
     storage_name: str = "",
     config_type: str = "rclone",
 ) -> str:
@@ -167,10 +168,10 @@ def create_storage_config(
 
     Parameters
     ----------
+    config: str
+        the configuration entry. For rclone this is a JSON formatted string
     storage_id: str, optional
         the storage_id for which to create the entry.
-    config: str, optional
-        the configuration entry. For rclone this is a JSON formatted string
     storage_name: str, optional
         the name of the storage for which the config is provided.
     config_type: str, otional
@@ -243,11 +244,12 @@ def get_storage_config(
             "config_type": f"eq.{config_type}",
         }
     result = DB.select(CONFIG.DLM.storage_config_table, params=params)
-    return [json.loads(entry["config"]) for entry in result] if result else []
+    return [entry["config"] for entry in result] if result else []
 
 
+@cli.command()
 @rest.post("/storage/rclone_config")
-def rclone_config(config: str) -> bool:
+def rclone_config(config: JsonObjectArg) -> bool:
     """Create a new rclone backend configuration entry on the rclone server.
 
     Parameters
@@ -262,7 +264,7 @@ def rclone_config(config: str) -> bool:
     request_url = f"{CONFIG.RCLONE.url}/config/create"
     logger.info("Creating new rclone config: %s %s", request_url, config)
     request = requests.post(
-        request_url, config, headers={"Content-type": "application/json"}, timeout=10
+        request_url, json=config, headers={"Content-type": "application/json"}, timeout=10
     )
     logger.info("Response status code: %s", request.status_code)
     return request.status_code == 200
