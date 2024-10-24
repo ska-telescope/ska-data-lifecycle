@@ -1,4 +1,4 @@
-"""Wrap the most important postgREST API calls."""
+"""DLM Storage API module."""
 
 import json
 import logging
@@ -24,7 +24,7 @@ cli = ExceptionHandlingTyper()
 rest = fastapi_auto_annotate(
     FastAPI(
         title="SKA-DLM: Storage Manager REST API",
-        description="The REST calls accepted by the SKA-DLM Storage Manager",
+        description="REST interface of the SKA-DLM Storage Manager",
         version=ska_dlm.__version__,
         license_info={"name": "BSD-3-Clause", "identifier": "BSD-3-Clause"},
     )
@@ -90,13 +90,13 @@ def query_location(location_name: str = "", location_id: str = "") -> list:
 @cli.command()
 @rest.post("/storage/init_storage")
 def init_storage(  # pylint: disable=R0913
-    storage_name: str,
-    storage_type: str,
-    storage_interface: str,
+    storage_name: str,  # pylint: disable=W0613
+    storage_type: str,  # pylint: disable=W0613
+    storage_interface: str,  # pylint: disable=W0613
     location_id: str = "",
     location_name: str = "",
-    storage_capacity: int = -1,
-    storage_phase_level: str = "GAS",
+    storage_capacity: int = -1,  # pylint: disable=W0613
+    storage_phase_level: str = "GAS",  # pylint: disable=W0613
     json_data: str = "{}",
 ) -> str:
     """
@@ -374,18 +374,41 @@ def rclone_delete(volume: str, fpath: str) -> bool:
 @cli.command()
 @rest.post("/storage/init_location")
 def init_location(
-    location_name: str = "",
-    location_type: str = "",
+    location_name: str,
+    location_type: str,
     location_country: str = "",
     location_city: str = "",
     location_facility: str = "",
 ) -> str:
-    """Initialize a new location for a storage by specifying the location_name or location_id.
-    
+    """Initialize a new storage location.
 
+    Parameters
+    ----------
+    location_name : str
+        the orgization or owner's name managing the storage location.
+    location_type : str
+        the location type, e.g. "server"
+    location_country : str, optional
+        the location country name
+    location_city : str, optional
+        the location city name
+    location_facility : str, optional
+        the location facility name
+
+    Returns
+    -------
+    str
+        created location_id
+
+    Raises
+    ------
+    InvalidQueryParameters
+        _description_
+    ValueAlreadyInDB
+        _description_
     """
     if not (location_name and location_type):
-        raise InvalidQueryParameters("Location_name and location_type must be given")
+        raise InvalidQueryParameters("Location_name and location_type cannot be empty")
     if query_location(location_name):
         raise ValueAlreadyInDB(f"A location with this name exists already: {location_name}")
     post_data = {"location_name": location_name, "location_type": location_type}

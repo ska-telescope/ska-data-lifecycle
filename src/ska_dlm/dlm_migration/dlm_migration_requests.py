@@ -1,4 +1,4 @@
-"""Convenience functions wrapping the most important postgREST API calls."""
+"""DLM Migration API module."""
 
 import json
 import logging
@@ -28,7 +28,7 @@ origins = ["http://localhost", "http://localhost:5000", "http://localhost:8004"]
 rest = fastapi_auto_annotate(
     FastAPI(
         title="SKA-DLM: Migration Manager REST API",
-        description="The REST calls accepted by the SKA-DLM Migration Manager",
+        description="REST interface of the SKA-DLM Migration Manager",
         version=ska_dlm.__version__,
         license_info={"name": "BSD-3-Clause", "identifier": "BSD-3-Clause"},
     )

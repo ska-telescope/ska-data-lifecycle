@@ -1,4 +1,4 @@
-"""Convenience functions wrapping the most important postgREST API calls."""
+"""DLM Request API module."""
 
 import logging
 from datetime import datetime, timedelta, timezone
@@ -19,7 +19,7 @@ cli = ExceptionHandlingTyper()
 rest = fastapi_auto_annotate(
     FastAPI(
         title="SKA-DLM: Request Manager REST API",
-        description="The REST calls accepted by the SKA-DLM Request Manager",
+        description="REST interface of the SKA-DLM Request Manager",
         version=ska_dlm.__version__,
         license_info={"name": "BSD-3-Clause", "identifier": "BSD-3-Clause"},
     )
