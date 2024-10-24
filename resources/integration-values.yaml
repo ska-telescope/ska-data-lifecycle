@@ -2,10 +2,11 @@ global:
   storageClass: nfss1
   ingress:
     enabled: true
-  dataProductVolume:
-    name: shared
+  dataProduct:
     pvc:
       name: shared
+    api:
+      url: http://ska-dataproduct-dashboard-api-service.integration-ska-dataproduct-dashboard.svc:8000
 
 gateway:
   enabled: true
