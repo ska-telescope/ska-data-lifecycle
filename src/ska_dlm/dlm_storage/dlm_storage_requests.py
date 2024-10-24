@@ -168,10 +168,10 @@ def create_storage_config(
 
     Parameters
     ----------
+    config: str
+        the configuration entry. For rclone this is a JSON formatted string
     storage_id: str, optional
         the storage_id for which to create the entry.
-    config: str, optional
-        the configuration entry. For rclone this is a JSON formatted string
     storage_name: str, optional
         the name of the storage for which the config is provided.
     config_type: str, otional
@@ -247,8 +247,9 @@ def get_storage_config(
     return [entry["config"] for entry in result] if result else []
 
 
+@cli.command()
 @rest.post("/storage/rclone_config")
-def rclone_config(config: dict) -> bool:
+def rclone_config(config: JsonObjectArg) -> bool:
     """Create a new rclone backend configuration entry on the rclone server.
 
     Parameters
