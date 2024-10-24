@@ -97,15 +97,21 @@ def fastapi_docstring_annotate(
 ) -> typing.Callable[ParamsT, ReturnT]:
     """Decorator that generates FastAPI annotations from the function signature and docstring.
 
+    FastAPI functions require parameter docstrings inside FastAPI parameter annotations instead
+    of the __doc__ member otherwise requiring docstring duplication to share parameter docstrings
+    between sphinx, fastapi and typer.
+
+    The __doc__ member is also stripped to only short and long description.
+
     Parameters
     ----------
     func : typing.Callable[ParamsT, T]
-        _description_
+        A fastapi endpoint function to modify the docstring and annotation.
 
     Returns
     -------
     typing.Callable[ParamsT, T]
-        _description_
+        Resulting fastapi endpoint with modified docstring and annotations.
     """
     # Parse docstring
     docstring: Docstring = parse(func.__doc__)
