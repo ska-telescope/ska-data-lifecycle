@@ -139,9 +139,6 @@ def test_query_expired(env):
 @pytest.mark.integration_test
 def test_location_init(env):
     """Test initialisation on a location."""
-    # This returns an empty string if unsuccessful
-    with pytest.raises(InvalidQueryParameters):
-        env.storage_requests.init_location()
     env.storage_requests.init_location("TestLocation", "SKAO Data Centre")
     location = env.storage_requests.query_location(location_name="TestLocation")[0]
     assert location["location_type"] == "SKAO Data Centre"

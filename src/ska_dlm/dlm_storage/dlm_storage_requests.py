@@ -97,7 +97,7 @@ def init_storage(  # pylint: disable=R0913
     location_name: str = "",
     storage_capacity: int = -1,  # pylint: disable=W0613
     storage_phase_level: str = "GAS",  # pylint: disable=W0613
-    json_data: str = "{}",
+    json_data: str = "",
 ) -> str:
     """
     Intialize a new storage by at least specifying an item_name.
