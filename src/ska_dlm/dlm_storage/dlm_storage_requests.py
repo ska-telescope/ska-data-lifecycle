@@ -64,7 +64,7 @@ def invalidquery_exception_handler(request: Request, exc: InvalidQueryParameters
 @rest.get("/storage/query_location")
 def query_location(location_name: str = "", location_id: str = "") -> list:
     """
-    Query a location by at least specifying an location_name.
+    Query a location by at least specifying a location_name.
 
     Parameters
     ----------

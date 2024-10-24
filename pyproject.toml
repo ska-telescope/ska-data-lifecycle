@@ -43,6 +43,7 @@ overrides = "^7.7.0"
 docstring-parser = "^0.16"
 pyjwt = "2.9.0"
 msal = "1.31.0"
+pytest-mock = "^3.14.0"
 
 [tool.poetry.group.test.dependencies]
 black = "^23.3.0"

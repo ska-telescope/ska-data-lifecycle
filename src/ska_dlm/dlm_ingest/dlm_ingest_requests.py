@@ -178,24 +178,16 @@ def register_data_item(  # noqa: C901
     set_state(uid, "READY")
 
     # (6) Populate the metadata column in the database
-    if metadata is None:
-        try:
-            # TODO(yan-xxx) create another RESTful service associated with a storage type
-            # and call into the endpoint
-            metadata_object = metagen.generate_metadata_from_generator(uri, eb_id)
-            metadata = metadata_object.get_data().to_json()
-            metadata = json.loads(metadata)
-            logger.info("Metadata extracted successfully.")
-        except ValueError as err:
-            logger.info("ValueError occurred while attempting to extract metadata: %s", err)
+    metadata_provided = metadata is not None  # Check if metadata was provided by the client
 
-    # At this point, (1) metadata was provided, or (2) it was generated, or (3) it is still None
-    # because an error occurred.
-    if metadata is not None:
-        # Check that metadata is standard JSON?
-        set_metadata(uid, metadata)
+    if metadata_provided:
         logger.info("Saved metadata provided by client.")
-    else:
+    else:  # Client didn't provide metadata, attempt to scrape it
+        metadata = scrape_metadata(uri, eb_id)
+
+    if metadata is not None:  # Metadata is either provided or successfully scraped
+        set_metadata(uid, metadata)
+    else:  # Metadata scraping was unsuccessful
         metadata = {}
 
     metadata["uid"] = uid
@@ -206,6 +198,18 @@ def register_data_item(  # noqa: C901
 
     return uid
 
+def scrape_metadata(uri, eb_id):
+    try:
+        # TODO(yan-xxx) create another RESTful service associated with a storage type
+        # and call into the endpoint
+        metadata_object = metagen.generate_metadata_from_generator(uri, eb_id)
+        metadata = metadata_object.get_data().to_json()
+        metadata = json.loads(metadata)
+        logger.info("Metadata extracted successfully.")
+        return metadata
+    except ValueError as err:
+        logger.info("ValueError occurred while attempting to extract metadata: %s", err)
+        return None  # Return None if extraction fails
 
 def notify_data_dashboard(metadata: dict | MetaData) -> None:
     """HTTP POST MetaData json object to the Data Product Dashboard."""
