@@ -42,7 +42,7 @@ _DEFAULT_HEADERS = {"Prefer": "missing=default, return=representation"}
 
 
 class PostgRESTAccess(contextlib.AbstractContextManager):
-    """SQL database client accessed through the PostREST HTTP API."""
+    """SQL database client accessed through the PostgREST HTTP API."""
 
     def __init__(self, api_url: str, timeout: int | float = 10, headers: dict | None = None):
         """Create the DB access."""
