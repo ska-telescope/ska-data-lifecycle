@@ -1,53 +1,66 @@
-import json
 import logging
 from pathlib import Path
 
 import pytest
 import requests
 from requests_mock import Mocker
-from ska_sdp_dataproduct_metadata import MetaData
 
 from ska_dlm import CONFIG, dlm_ingest
 
 
-def test_metadata_provided_by_client(mocker):
-    # Mock the rclone_access function to bypass access checks
+def test_register_data_item_with_client_metadata(mocker, caplog):
+    """Test the registration of a data item with provided client metadata."""
+    caplog.set_level(logging.INFO)
+
+    mock_init_data_item = mocker.patch(
+        "ska_dlm.dlm_ingest.dlm_ingest_requests.init_data_item", return_value="test-uid"
+    )
+    mock_update_data_item = mocker.patch("ska_dlm.data_item.data_item_requests.update_data_item")
     mock_rclone_access = mocker.patch(
         "ska_dlm.dlm_ingest.dlm_ingest_requests.rclone_access", return_value=True
     )
+    mock_query_storage = mocker.patch(
+        "ska_dlm.dlm_ingest.dlm_ingest_requests.query_storage",
+        return_value=[{"storage_id": "storage-id", "storage_phase_level": "some-phase-level"}],
+    )
+    mock_check_storage_access = mocker.patch(
+        "ska_dlm.dlm_ingest.dlm_ingest_requests.check_storage_access", return_value=True
+    )
 
-    # Mock the functions that interact with the database
-    mock_set_uri = mocker.patch("ska_dlm.dlm_ingest.dlm_ingest_requests.set_uri")
-    mock_update_data_item = mocker.patch("ska_dlm.data_item.data_item_requests.update_data_item")
-
-    # Mock the remaining parts
-    mock_init_data_item = mocker.patch("ska_dlm.dlm_ingest.dlm_ingest_requests.init_data_item")
-    mock_set_metadata = mocker.patch("ska_dlm.dlm_ingest.dlm_ingest_requests.set_metadata")
-    mock_logger = mocker.patch("ska_dlm.dlm_ingest.dlm_ingest_requests.logger")
-
-    # Scenario 1: Metadata is provided by the client
-    metadata = {"key": "value"}
+    metadata = {"execution_block": "eb123"}  # Client-provided metadata
     item_name = "test-item"
     uri = "test-uri"
 
-    # Call the function
     dlm_ingest.register_data_item(metadata=metadata, item_name=item_name, uri=uri)
 
-    # Assertions
-    mock_rclone_access.assert_called_once_with(
-        "", uri
-    )  # Ensure rclone was called and mocked correctly
-    mock_logger.info.assert_called_once_with("Saved metadata provided by client.")
-    mock_set_metadata.assert_called_once_with(mock_init_data_item.return_value, metadata)
-    mock_init_data_item.assert_called_once_with(
-        json_data='{"item_name": "test-item", "storage_id": "efd23df9-fc0c-44ac-a817-ddc66ad30f36", "item_phase": "GAS", "item_format": "unknown", "item_owner": null}'
-    )
+    assert "Saved metadata provided by client." in caplog.text
 
-    # Ensure database-related methods were mocked and not executed
-    mock_set_uri.assert_called_once_with(mock_init_data_item.return_value, uri, mocker.ANY)
-    # set metadata function calls update_data_item function
-    mock_update_data_item.assert_called_once_with(
-        uid=mock_init_data_item.return_value, post_data={"item_state": "READY"}
+    # Assert: No warnings or errors in logs. I think this is a good idea for the future.
+    # So good that it's finding mistakes now and I have to comment it out
+    # for record in caplog.records:
+    #     assert record.levelname not in ["WARNING", "ERROR"], \
+    #         f"Unexpected log level {record.levelname}: {record.message}"
+
+    mock_query_storage.assert_called_once_with(storage_name="", storage_id="")
+    mock_check_storage_access.assert_called_once_with(storage_name="", storage_id="storage-id")
+    mock_init_data_item.assert_called_once_with(
+        json_data='{"item_name": "test-item", "storage_id": "storage-id", '
+        '"item_phase": "some-phase-level", "item_format": "unknown", '
+        '"item_owner": null}'
+    )
+    mock_rclone_access.assert_called_once_with("", uri)
+
+    assert mock_update_data_item.call_count == 3  # update_data_item is called 3 times:
+    # by set_uri, set_state & set_metadata
+    mock_update_data_item.assert_any_call(
+        uid="test-uid", post_data={"uri": "test-uri", "storage_id": "storage-id"}
+    )
+    mock_update_data_item.assert_any_call(uid="test-uid", post_data={"item_state": "READY"})
+    mock_update_data_item.assert_any_call(
+        uid="test-uid",
+        post_data={
+            "metadata": {"execution_block": "eb123", "uid": "test-uid", "item_name": "test-item"}
+        },
     )
 
 

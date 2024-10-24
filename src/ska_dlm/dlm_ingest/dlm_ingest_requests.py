@@ -85,7 +85,7 @@ def init_data_item(
 @cli.command()
 @rest.post("/ingest/register_data_item")
 def register_data_item(  # noqa: C901
-    # pylint: disable=R0913,R0914,R0917
+    # pylint: disable=R0913
     item_name: str,
     uri: str = "",
     storage_name: str = "",
@@ -124,7 +124,7 @@ def register_data_item(  # noqa: C901
         format of the data item
     eb_id: str | None, optional
         execution block ID provided by the client
-    authorization : str
+    authorization: str
         Validated Bearer token with UserInfo
 
     Returns
@@ -198,7 +198,9 @@ def register_data_item(  # noqa: C901
 
     return uid
 
+
 def scrape_metadata(uri, eb_id):
+    """Attempt to scrape metadata if not provided by client."""
     try:
         # TODO(yan-xxx) create another RESTful service associated with a storage type
         # and call into the endpoint
@@ -210,6 +212,7 @@ def scrape_metadata(uri, eb_id):
     except ValueError as err:
         logger.info("ValueError occurred while attempting to extract metadata: %s", err)
         return None  # Return None if extraction fails
+
 
 def notify_data_dashboard(metadata: dict | MetaData) -> None:
     """HTTP POST MetaData json object to the Data Product Dashboard."""
