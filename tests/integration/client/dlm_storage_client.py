@@ -67,26 +67,27 @@ def init_storage(  # pylint: disable=R0913
 
     Parameters
     ----------
-    storage_name : str, optional
-        _description_
-    location_name : str, optional
-        _description_
-    location_id : str, optional
-        _description_
+    storage_name : str
+        An organisation or owner name for the storage.
     storage_type: str
-        _description_
+        high level type of the storage, e.g. "disk", "s3"
     storage_interface: str
-        _description_
-    storage_capacity: int
-        _description_
-    storage_phase_level: str
-        _description_
-    json_data: str
-        _description_
+        storage interface for rclone access, e.g. "posix", "s3"
+    location_name : str, optional
+        a dlm registered location name
+    location_id : str, optional
+        a dlm registered location id
+    storage_capacity: int, optional
+        reserved storage capacity in bytes
+    storage_phase_level: str, optional
+        one of "GAS", "LIQUID", "SOLID"
+    json_data: str, optional
+        extra rclone values such as secrets required for connection
 
     Returns
     -------
-    Either a storage_ID or an empty string
+    str
+        Either a storage_ID or an empty string
     """
     params = {k: v for k, v in locals().items() if v}
     response = SESSION.post(f"{STORAGE_URL}/storage/init_storage", params=params, timeout=60)

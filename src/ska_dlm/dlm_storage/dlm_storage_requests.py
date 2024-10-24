@@ -90,36 +90,36 @@ def query_location(location_name: str = "", location_id: str = "") -> list:
 @cli.command()
 @rest.post("/storage/init_storage")
 def init_storage(  # pylint: disable=R0913
-    storage_name: str = "",  # pylint: disable=W0613
-    location_name: str = "",
+    storage_name: str,
+    storage_type: str,
+    storage_interface: str,
     location_id: str = "",
-    storage_type: str = "",  # pylint: disable=W0613
-    storage_interface: str = "",  # pylint: disable=W0613
-    storage_capacity: int = -1,  # pylint: disable=W0613
-    storage_phase_level: str = "GAS",  # pylint: disable=W0613
-    json_data: str = "",
+    location_name: str = "",
+    storage_capacity: int = -1,
+    storage_phase_level: str = "GAS",
+    json_data: str = "{}",
 ) -> str:
     """
     Intialize a new storage by at least specifying an item_name.
 
     Parameters
     ----------
-    storage_name : str, optional
-        _description_
-    location_name : str, optional
-        _description_
-    location_id : str, optional
-        _description_
+    storage_name : str
+        An organisation or owner name for the storage.
     storage_type: str
-        _description_
+        high level type of the storage, e.g. "disk", "s3"
     storage_interface: str
-        _description_
-    storage_capacity: int
-        _description_
-    storage_phase_level: str
-        _description_
-    json_data: str
-        _description_
+        storage interface for rclone access, e.g. "posix", "s3"
+    location_name : str, optional
+        a dlm registered location name
+    location_id : str, optional
+        a dlm registered location id
+    storage_capacity: int, optional
+        reserved storage capacity in bytes
+    storage_phase_level: str, optional
+        one of "GAS", "LIQUID", "SOLID"
+    json_data: str, optional
+        extra rclone values such as secrets required for connection
 
     Returns
     -------
@@ -129,9 +129,9 @@ def init_storage(  # pylint: disable=R0913
     provided_args = dict(locals())
     mandatory_keys = [
         "storage_name",
-        "location_id",
         "storage_type",
         "storage_interface",
+        "location_id",
         "storage_capacity",
         "storage_phase_level",
     ]
@@ -174,7 +174,7 @@ def create_storage_config(
         the storage_id for which to create the entry.
     storage_name: str, optional
         the name of the storage for which the config is provided.
-    config_type: str, otional
+    config_type: str, optional
         default is rclone, but could be something else in the future.
 
     Returns
@@ -260,6 +260,7 @@ def rclone_config(config: JsonObjectArg) -> bool:
     Returns
     -------
     bool
+        True if configuration is successful
     """
     request_url = f"{CONFIG.RCLONE.url}/config/create"
     logger.info("Creating new rclone config: %s %s", request_url, config)
@@ -379,7 +380,10 @@ def init_location(
     location_city: str = "",
     location_facility: str = "",
 ) -> str:
-    """Initialize a new location for a storage by specifying the location_name or location_id."""
+    """Initialize a new location for a storage by specifying the location_name or location_id.
+    
+
+    """
     if not (location_name and location_type):
         raise InvalidQueryParameters("Location_name and location_type must be given")
     if query_location(location_name):
