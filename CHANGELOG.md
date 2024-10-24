@@ -6,11 +6,12 @@
 
 * Added CICD deployment jobs for 3 targets: `ci-dev`, `integration` and `staging`
 * Added configurable shared PVC to relavent Helm chart services
-* Added data product api connection strings
+* Added data product api connection strings to Helm chart
 
-### Updated
+### Changed
 
-* Updated helm chart pod names to contain instance name
+* Changed helm chart pod names to contain instance name
+* Changed `migration/copy_data_item` endpoint from `GET` to `POST`
 
 ## 0.1.0
 
