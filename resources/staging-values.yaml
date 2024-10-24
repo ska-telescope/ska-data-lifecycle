@@ -2,9 +2,17 @@ global:
   storageClass: nfss1
   ingress:
     enabled: true
+  dataProduct:
+    pvc:
+      name: shared
+    api:
+      url: http://ska-dataproduct-dashboard-api-service.staging-ska-dataproduct-dashboard.svc:8000
 
 gateway:
   enabled: true
+  vault:
+    enabled: true
+    path: kv/data/users/calgray/sdhp-stfc/ska-dlm/staging
 
 postgresql:
   enabled: false

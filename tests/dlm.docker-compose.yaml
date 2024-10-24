@@ -12,8 +12,6 @@ services:
     entrypoint: uvicorn ska_dlm.dlm_migration.dlm_migration_requests:rest --host 0.0.0.0 --port 8004
     ports:
       - 8004:8004
-    volumes:
-      - shared-tmpfs:/data
     depends_on:
       - dlm_postgrest
       - dlm_rclone
@@ -50,8 +48,6 @@ services:
     entrypoint: uvicorn ska_dlm.dlm_request.dlm_request_requests:rest --host 0.0.0.0 --port 8002
     ports:
       - 8002:8002
-    volumes:
-      - shared-tmpfs:/data
     depends_on:
       - dlm_gateway
       - dlm_postgrest

@@ -198,7 +198,7 @@ deploy-staging-dp:
   tags:
     - ska-k8srunner-dp
   variables:
-    K8S_CHART_PARAMS: --values resources/staging-values.yaml --set global.ingress.domainName="sdhp.stfc.skao.int" --wait --timeout=5m
+    K8S_CHART_PARAMS: --values resources/staging-values.yaml --set global.ingress.domainName="sdhp.stfc.skao.int" --set gateway.vault.enabled=true --wait --timeout=5m
 
 info-staging-dp:
   stage: staging-dp
