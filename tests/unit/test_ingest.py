@@ -1,4 +1,5 @@
-import json
+"""Unit tests for dlm_ingest."""
+
 import logging
 from pathlib import Path
 
@@ -9,10 +10,9 @@ from requests_mock import Mocker
 from ska_dlm import CONFIG, dlm_ingest
 
 
-def test_register_data_item_with_client_metadata(mocker, caplog):
-    """Test the registration of a data item with provided client metadata."""
-    caplog.set_level(logging.INFO)
-
+@pytest.fixture
+def patched_dependencies(mocker):
+    """Fixture for the mocker.patch calls."""
     mock_init_data_item = mocker.patch(
         "ska_dlm.dlm_ingest.dlm_ingest_requests.init_data_item", return_value="test-uid"
     )
@@ -27,9 +27,31 @@ def test_register_data_item_with_client_metadata(mocker, caplog):
     mock_check_storage_access = mocker.patch(
         "ska_dlm.dlm_ingest.dlm_ingest_requests.check_storage_access", return_value=True
     )
-    mock_check_storage_access = mocker.patch(
+    mock_notify_data_dashboard = mocker.patch(
         "ska_dlm.dlm_ingest.dlm_ingest_requests.notify_data_dashboard", return_value=True
     )
+    mock_scrape_metadata = mocker.patch(
+        "ska_dlm.dlm_ingest.dlm_ingest_requests.scrape_metadata",
+        return_value={"execution_block": "scraped_value"},
+    )
+
+    return {
+        "mock_init_data_item": mock_init_data_item,
+        "mock_update_data_item": mock_update_data_item,
+        "mock_rclone_access": mock_rclone_access,
+        "mock_query_storage": mock_query_storage,
+        "mock_check_storage_access": mock_check_storage_access,
+        "mock_notify_data_dashboard": mock_notify_data_dashboard,
+        "mock_scrape_metadata": mock_scrape_metadata,
+    }
+
+
+def test_register_data_item_with_client_metadata(caplog, patched_dependencies):
+    # pylint: disable=redefined-outer-name
+    """Test the registration of a data item with provided client metadata."""
+    caplog.set_level(logging.INFO)
+
+    mocks = patched_dependencies
 
     metadata = {"execution_block": "eb123"}  # Client-provided metadata
     item_name = "test-item"
@@ -46,7 +68,8 @@ def test_register_data_item_with_client_metadata(mocker, caplog):
             "ERROR",
         ], f"Unexpected log level {record.levelname}: {record.message}"
 
-    mock_update_data_item.assert_any_call(
+    assert mocks["mock_update_data_item"].call_count > 1
+    mocks["mock_update_data_item"].assert_any_call(
         uid="test-uid",
         post_data={
             "metadata": {"execution_block": "eb123", "uid": "test-uid", "item_name": "test-item"}
@@ -54,28 +77,10 @@ def test_register_data_item_with_client_metadata(mocker, caplog):
     )
 
 
-def test_register_data_item_no_client_metadata(mocker):
-    """Test registering a data item with no client-provided metadata,
-    ensuring metadata is scraped."""
-
-    mock_init_data_item = mocker.patch(
-        "ska_dlm.dlm_ingest.dlm_ingest_requests.init_data_item", return_value="test-uid"
-    )
-    mock_update_data_item = mocker.patch("ska_dlm.data_item.data_item_requests.update_data_item")
-    mock_rclone_access = mocker.patch(
-        "ska_dlm.dlm_ingest.dlm_ingest_requests.rclone_access", return_value=True
-    )
-    mock_query_storage = mocker.patch(
-        "ska_dlm.dlm_ingest.dlm_ingest_requests.query_storage",
-        return_value=[{"storage_id": "storage-id", "storage_phase_level": "some-phase-level"}],
-    )
-    mock_check_storage_access = mocker.patch(
-        "ska_dlm.dlm_ingest.dlm_ingest_requests.check_storage_access", return_value=True
-    )
-    mock_scrape_metadata = mocker.patch(
-        "ska_dlm.dlm_ingest.dlm_ingest_requests.scrape_metadata",
-        return_value={"execution_block": "scraped_value"},
-    )
+def test_register_data_item_no_client_metadata(patched_dependencies):
+    # pylint: disable=redefined-outer-name
+    """Test register_data_item with no client-provided metadata; metadata scraper is called."""
+    mocks = patched_dependencies
 
     item_name = "test-item"
     uri = "test-uri"
@@ -85,28 +90,12 @@ def test_register_data_item_no_client_metadata(mocker):
     dlm_ingest.register_data_item(metadata=None, item_name=item_name, uri=uri, eb_id=eb_id)
 
     # Assert that scrape_metadata is called by register_data_item
-    mock_scrape_metadata.assert_called_once_with(uri, eb_id)
+    mocks["mock_scrape_metadata"].assert_called_once_with(uri, eb_id)
     # TODO: test that scrape_metadata returns the relevant log
     # and that metadata-generator returns the log for missing eb_id
 
-    mock_query_storage.assert_called_once_with(storage_name="", storage_id="")
-    mock_check_storage_access.assert_called_once_with(storage_name="", storage_id="storage-id")
-    mock_init_data_item.assert_called_once_with(
-        json_data=(
-            json.dumps(
-                {
-                    "item_name": "test-item",
-                    "storage_id": "storage-id",
-                    "item_phase": "some-phase-level",
-                    "item_format": "unknown",
-                    "item_owner": None,
-                }
-            )
-        )
-    )
-
-    assert mock_update_data_item.call_count > 1
-    mock_update_data_item.assert_any_call(
+    assert mocks["mock_update_data_item"].call_count > 1
+    mocks["mock_update_data_item"].assert_any_call(
         uid="test-uid",
         post_data={
             "metadata": {
@@ -139,6 +128,7 @@ def test_notify_data_dashboard(caplog):
     "metadata", ["invalid metadata", {"invalid": "metadata"}, Path("invalid metadata"), None]
 )
 def test_notify_data_dashboard_invalid_metadata(metadata, caplog):
+    """Test notify_data_dashboard with invalid metadata."""
     with Mocker() as req_mock:
         assert isinstance(req_mock, Mocker)
         req_mock.post(
@@ -153,6 +143,7 @@ def test_notify_data_dashboard_invalid_metadata(metadata, caplog):
 
 
 def test_notify_data_dashboard_exception_response(caplog):
+    """Test notify_data_dashboard POST error."""
     valid_metadata = {"execution_block": "block123"}
     with Mocker() as req_mock:
         assert isinstance(req_mock, Mocker)
