@@ -88,14 +88,15 @@ def query_location(location_name: str = "", location_id: str = "") -> list:
 
 @cli.command()
 @rest.post("/storage/init_storage")
-def init_storage(  # pylint: disable=R0913
-    storage_name: str = "",  # pylint: disable=W0613
+def init_storage(
+    # pylint: disable=too-many-arguments,too-many-positional-arguments,unused-argument
+    storage_name: str = "",
     location_name: str = "",
     location_id: str = "",
-    storage_type: str = "",  # pylint: disable=W0613
-    storage_interface: str = "",  # pylint: disable=W0613
-    storage_capacity: int = -1,  # pylint: disable=W0613
-    storage_phase_level: str = "GAS",  # pylint: disable=W0613
+    storage_type: str = "",
+    storage_interface: str = "",
+    storage_capacity: int = -1,
+    storage_phase_level: str = "GAS",
     json_data: str = "",
 ) -> str:
     """
