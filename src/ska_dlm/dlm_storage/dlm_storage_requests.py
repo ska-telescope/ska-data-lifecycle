@@ -11,6 +11,7 @@ import ska_dlm
 from ska_dlm.dlm_db.db_access import DB
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
 from ska_dlm.fastapi_utils import fastapi_auto_annotate
+from ska_dlm.typer_types import JsonObjectArg
 
 from .. import CONFIG
 from ..data_item import set_state
@@ -159,16 +160,19 @@ def init_storage(
 @cli.command()
 @rest.post("/storage/create_storage_config")
 def create_storage_config(
-    storage_id: str = "", config: str = "", storage_name: str = "", config_type: str = "rclone"
+    config: JsonObjectArg,
+    storage_id: str = "",
+    storage_name: str = "",
+    config_type: str = "rclone",
 ) -> str:
     """Create a new record in the storage_config table for a storage with the given id.
 
     Parameters
     ----------
+    config: str
+        the configuration entry. For rclone this is a JSON formatted string
     storage_id: str, optional
         the storage_id for which to create the entry.
-    config: str, optional
-        the configuration entry. For rclone this is s JSON formatted string
     storage_name: str, optional
         the name of the storage for which the config is provided.
     config_type: str, otional
@@ -188,13 +192,18 @@ def create_storage_config(
         raise UnmetPreconditionForOperation("Neither storage_name or ID specified.")
     if storage_name:
         storage_id = query_storage(storage_name=storage_name)[0]["storage_id"]
-    post_data = {"storage_id": storage_id, "config": config, "config_type": config_type}
+    post_data = {
+        "storage_id": storage_id,
+        "config": config,
+        "config_type": config_type,
+    }
     if rclone_config(config):
         return DB.insert(CONFIG.DLM.storage_config_table, json=post_data)[0]["config_id"]
     raise UnmetPreconditionForOperation("Configuring rclone server failed!")
 
 
 @cli.command()
+@rest.get("/storage/get_storage_config")
 def get_storage_config(
     storage_id: str = "", storage_name: str = "", config_type: str = "rclone"
 ) -> list[str]:
@@ -236,11 +245,12 @@ def get_storage_config(
             "config_type": f"eq.{config_type}",
         }
     result = DB.select(CONFIG.DLM.storage_config_table, params=params)
-    return [json.loads(entry["config"]) for entry in result] if result else []
+    return [entry["config"] for entry in result] if result else []
 
 
+@cli.command()
 @rest.post("/storage/rclone_config")
-def rclone_config(config: str) -> bool:
+def rclone_config(config: JsonObjectArg) -> bool:
     """Create a new rclone backend configuration entry on the rclone server.
 
     Parameters
@@ -253,10 +263,9 @@ def rclone_config(config: str) -> bool:
     bool
     """
     request_url = f"{CONFIG.RCLONE.url}/config/create"
-    post_data = config
     logger.info("Creating new rclone config: %s %s", request_url, config)
     request = requests.post(
-        request_url, post_data, headers={"Content-type": "application/json"}, timeout=10
+        request_url, json=config, headers={"Content-type": "application/json"}, timeout=10
     )
     logger.info("Response status code: %s", request.status_code)
     return request.status_code == 200
@@ -283,7 +292,9 @@ def check_storage_access(storage_name: str = "", storage_id: str = "") -> bool:
         return False
     storage_id = storages[0]["storage_id"]
     storage_name = storages[0]["storage_name"]
-    config = get_storage_config(storage_id=storage_id, config_type="rclone")
+    config = get_storage_config(
+        storage_id=storage_id, storage_name=storage_name, config_type="rclone"
+    )
     if not config:
         raise UnmetPreconditionForOperation(
             "No valid configuration for storage found!", storage_name

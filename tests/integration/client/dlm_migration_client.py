@@ -51,7 +51,7 @@ def copy_data_item(
         No data item found for copying.
     """
     params = {k: v for k, v in locals().items() if v}
-    response = SESSION.get(f"{MIGRATION_URL}/migration/copy_data_item", params=params, timeout=60)
+    response = SESSION.post(f"{MIGRATION_URL}/migration/copy_data_item", params=params, timeout=60)
     if response.status_code in [401, 403]:
         response.raise_for_status()
     return response.json()

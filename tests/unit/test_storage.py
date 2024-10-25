@@ -27,7 +27,7 @@ def test_initialize_storage_config():
     else:
         location_id = dlm_storage.init_location("MyHost", "Server")
     assert len(location_id) == 36
-    config = '{"name":"MyDisk2","type":"local", "parameters":{}}'
+    config = {"name": "MyDisk2", "type": "local", "parameters": {}}
     uuid = dlm_storage.init_storage(
         storage_name="MyDisk2",
         location_id=location_id,
@@ -36,7 +36,7 @@ def test_initialize_storage_config():
         storage_capacity=100000000,
     )
     assert len(uuid) == 36
-    config_id = dlm_storage.create_storage_config(uuid, config=config)
+    config_id = dlm_storage.create_storage_config(storage_id=uuid, config=config)
     assert len(config_id) == 36
     # configure rclone
     assert dlm_storage.rclone_config(config) is True

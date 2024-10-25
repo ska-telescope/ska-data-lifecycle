@@ -72,4 +72,4 @@ spec:
           name: {{ include "ska-dlm.fullname" . }}-configmap
       - name: data-product-storage
         persistentVolumeClaim:
-          claimName: "{{ $.Values.global.dataProductVolume.pvc.name }}"
+          claimName: "{{ $.Values.global.dataProduct.pvc.name }}"

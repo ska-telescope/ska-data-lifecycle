@@ -126,6 +126,13 @@ k8s-test:
     echo "Backend API:"
     echo "  https://sdhp.stfc.skao.int/$KUBE_NAMESPACE/api/"
 
+deploy-dev-environment:
+  variables:
+    K8S_CHART_PARAMS: --values resources/ci-dev-values.yaml --set global.ingress.domainName="k8s.stfc.skao.int" --wait --timeout=5m
+
+stop-dev-environment:
+  needs: []
+
 deploy-dev-environment-dp:
   stage: deploy-dp
   extends: deploy-dev-environment
@@ -157,6 +164,14 @@ stop-dev-environment-dp:
   extends: stop-dev-environment
   tags:
     - ska-k8srunner-dp
+  needs: []
+
+deploy-integration:
+  variables:
+    K8S_CHART_PARAMS: --values resources/integration-values.yaml --set global.ingress.domainName="k8s.stfc.skao.int" --wait --timeout=5m
+
+stop-integration:
+  needs: []
 
 deploy-integration-dp:
   stage: integration-dp
@@ -175,6 +190,10 @@ info-integration-dp:
   script:
     - *info_script
 
+redeploy-integration:
+  variables:
+    K8S_CHART_PARAMS: --values resources/integration-values.yaml --set global.ingress.domainName="k8s.stfc.skao.int" --wait --timeout=5m
+
 redeploy-integration-dp:
   stage: integration-dp
   extends: redeploy-integration
@@ -188,8 +207,14 @@ stop-integration-dp:
   extends: stop-integration
   tags:
     - ska-k8srunner-dp
-  needs:
-    - deploy-integration-dp
+  needs: []
+
+deploy-staging:
+  variables:
+    K8S_CHART_PARAMS: --values resources/staging-values.yaml --set global.ingress.domainName="k8s.stfc.skao.int" --wait --timeout=5m
+
+stop-staging:
+  needs: []
 
 deploy-staging-dp:
   stage: staging-dp
@@ -198,7 +223,7 @@ deploy-staging-dp:
   tags:
     - ska-k8srunner-dp
   variables:
-    K8S_CHART_PARAMS: --values resources/staging-values.yaml --set global.ingress.domainName="sdhp.stfc.skao.int" --set gateway.vault.enabled=true --wait --timeout=5m
+    K8S_CHART_PARAMS: --values resources/staging-values.yaml --set global.ingress.domainName="sdhp.stfc.skao.int" --wait --timeout=5m
 
 info-staging-dp:
   stage: staging-dp
@@ -207,6 +232,10 @@ info-staging-dp:
     - ska-k8srunner-dp
   script:
     - *info_script
+
+redeploy-staging:
+  variables:
+    K8S_CHART_PARAMS: --values resources/staging-values.yaml --set global.ingress.domainName="k8s.stfc.skao.int" --wait --timeout=5m
 
 redeploy-staging-dp:
   stage: staging-dp
@@ -221,5 +250,4 @@ stop-staging-dp:
   extends: stop-staging
   tags:
     - ska-k8srunner-dp
-  needs:
-    - deploy-staging-dp
+  needs: []

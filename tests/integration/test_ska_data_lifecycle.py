@@ -61,8 +61,7 @@ def setup(env):
         storage_capacity=100000000,
     )
     config = {"name": "MyDisk", "type": "alias", "parameters": {"remote": "/"}}
-    config = json.dumps(config)
-    env.storage_requests.create_storage_config(uuid, config=config)
+    env.storage_requests.create_storage_config(storage_id=uuid, config=config)
     # configure rclone
     env.storage_requests.rclone_config(config)
     yield
@@ -193,7 +192,6 @@ def __initialize_storage_config(env):
         location_id = env.storage_requests.init_location("MyHost", "Server")
     assert len(location_id) == 36
     config = {"name": "MyDisk2", "type": "alias", "parameters": {"remote": "/"}}
-    config = json.dumps(config)
     uuid = env.storage_requests.init_storage(
         storage_name="MyDisk2",
         location_id=location_id,
@@ -202,7 +200,7 @@ def __initialize_storage_config(env):
         storage_capacity=100000000,
     )
     assert len(uuid) == 36
-    config_id = env.storage_requests.create_storage_config(uuid, config=config)
+    config_id = env.storage_requests.create_storage_config(storage_id=uuid, config=config)
     assert len(config_id) == 36
     # configure rclone
     assert env.storage_requests.rclone_config(config) is True

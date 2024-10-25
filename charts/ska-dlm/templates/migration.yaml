@@ -46,10 +46,12 @@ spec:
         - --port
         - "8004"
         ports:
-        - containerPort: 8004
-          name: http-port
-        - containerPort: 8004
-          name: probe-port
+        - name: http-port
+          containerPort: 8004
+          protocol: TCP
+        - name: probe-port
+          containerPort: 8004
+          protocol: TCP
         readinessProbe:
           tcpSocket:
             port: probe-port
