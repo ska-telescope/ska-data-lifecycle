@@ -1,3 +1,4 @@
+import json
 import logging
 from pathlib import Path
 
@@ -26,6 +27,9 @@ def test_register_data_item_with_client_metadata(mocker, caplog):
     mock_check_storage_access = mocker.patch(
         "ska_dlm.dlm_ingest.dlm_ingest_requests.check_storage_access", return_value=True
     )
+    mock_check_storage_access = mocker.patch(
+        "ska_dlm.dlm_ingest.dlm_ingest_requests.notify_data_dashboard", return_value=True
+    )
 
     metadata = {"execution_block": "eb123"}  # Client-provided metadata
     item_name = "test-item"
@@ -35,31 +39,81 @@ def test_register_data_item_with_client_metadata(mocker, caplog):
 
     assert "Saved metadata provided by client." in caplog.text
 
-    # Assert: No warnings or errors in logs. I think this is a good idea for the future.
-    # So good that it's finding mistakes now and I have to comment it out
-    # for record in caplog.records:
-    #     assert record.levelname not in ["WARNING", "ERROR"], \
-    #         f"Unexpected log level {record.levelname}: {record.message}"
+    # Assert: No warnings or errors in logs
+    for record in caplog.records:
+        assert record.levelname not in [
+            "WARNING",
+            "ERROR",
+        ], f"Unexpected log level {record.levelname}: {record.message}"
 
-    mock_query_storage.assert_called_once_with(storage_name="", storage_id="")
-    mock_check_storage_access.assert_called_once_with(storage_name="", storage_id="storage-id")
-    mock_init_data_item.assert_called_once_with(
-        json_data='{"item_name": "test-item", "storage_id": "storage-id", '
-        '"item_phase": "some-phase-level", "item_format": "unknown", '
-        '"item_owner": null}'
-    )
-    mock_rclone_access.assert_called_once_with("", uri)
-
-    assert mock_update_data_item.call_count == 3  # update_data_item is called 3 times:
-    # by set_uri, set_state & set_metadata
-    mock_update_data_item.assert_any_call(
-        uid="test-uid", post_data={"uri": "test-uri", "storage_id": "storage-id"}
-    )
-    mock_update_data_item.assert_any_call(uid="test-uid", post_data={"item_state": "READY"})
     mock_update_data_item.assert_any_call(
         uid="test-uid",
         post_data={
             "metadata": {"execution_block": "eb123", "uid": "test-uid", "item_name": "test-item"}
+        },
+    )
+
+
+def test_register_data_item_no_client_metadata(mocker):
+    """Test registering a data item with no client-provided metadata,
+    ensuring metadata is scraped."""
+
+    mock_init_data_item = mocker.patch(
+        "ska_dlm.dlm_ingest.dlm_ingest_requests.init_data_item", return_value="test-uid"
+    )
+    mock_update_data_item = mocker.patch("ska_dlm.data_item.data_item_requests.update_data_item")
+    mock_rclone_access = mocker.patch(
+        "ska_dlm.dlm_ingest.dlm_ingest_requests.rclone_access", return_value=True
+    )
+    mock_query_storage = mocker.patch(
+        "ska_dlm.dlm_ingest.dlm_ingest_requests.query_storage",
+        return_value=[{"storage_id": "storage-id", "storage_phase_level": "some-phase-level"}],
+    )
+    mock_check_storage_access = mocker.patch(
+        "ska_dlm.dlm_ingest.dlm_ingest_requests.check_storage_access", return_value=True
+    )
+    mock_scrape_metadata = mocker.patch(
+        "ska_dlm.dlm_ingest.dlm_ingest_requests.scrape_metadata",
+        return_value={"execution_block": "scraped_value"},
+    )
+
+    item_name = "test-item"
+    uri = "test-uri"
+    eb_id = None  # Simulate missing eb_id from the client
+
+    # Call the function with no client metadata and no eb_id
+    dlm_ingest.register_data_item(metadata=None, item_name=item_name, uri=uri, eb_id=eb_id)
+
+    # Assert that scrape_metadata is called by register_data_item
+    mock_scrape_metadata.assert_called_once_with(uri, eb_id)
+    # TODO: test that scrape_metadata returns the relevant log
+    # and that metadata-generator returns the log for missing eb_id
+
+    mock_query_storage.assert_called_once_with(storage_name="", storage_id="")
+    mock_check_storage_access.assert_called_once_with(storage_name="", storage_id="storage-id")
+    mock_init_data_item.assert_called_once_with(
+        json_data=(
+            json.dumps(
+                {
+                    "item_name": "test-item",
+                    "storage_id": "storage-id",
+                    "item_phase": "some-phase-level",
+                    "item_format": "unknown",
+                    "item_owner": None,
+                }
+            )
+        )
+    )
+
+    assert mock_update_data_item.call_count > 1
+    mock_update_data_item.assert_any_call(
+        uid="test-uid",
+        post_data={
+            "metadata": {
+                "execution_block": "scraped_value",
+                "uid": "test-uid",
+                "item_name": "test-item",
+            },
         },
     )
 

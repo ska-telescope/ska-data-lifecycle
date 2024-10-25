@@ -85,7 +85,7 @@ def init_data_item(
 @cli.command()
 @rest.post("/ingest/register_data_item")
 def register_data_item(  # noqa: C901
-    # pylint: disable=R0913
+    # pylint: disable=too-many-arguments,too-many-positional-arguments
     item_name: str,
     uri: str = "",
     storage_name: str = "",
@@ -188,6 +188,7 @@ def register_data_item(  # noqa: C901
     if metadata is not None:  # Metadata is either provided or successfully scraped
         set_metadata(uid, metadata)
     else:  # Metadata scraping was unsuccessful
+        logger.warning("No metadata saved.")
         metadata = {}
 
     metadata["uid"] = uid
@@ -210,7 +211,7 @@ def scrape_metadata(uri, eb_id):
         logger.info("Metadata extracted successfully.")
         return metadata
     except ValueError as err:
-        logger.info("ValueError occurred while attempting to extract metadata: %s", err)
+        logger.warning("ValueError occurred while attempting to extract metadata: %s", err)
         return None  # Return None if extraction fails
 
 
