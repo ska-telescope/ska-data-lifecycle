@@ -9,7 +9,7 @@ global:
   dataProduct:
     pvc:
       name: test-pvc
-      create: true  # create or use existing pvc
+      create: false  # create or use existing pvc
       storageClassName: nfss1  # existing storage class
       storage: 1000Gi  # created claim size
     api:

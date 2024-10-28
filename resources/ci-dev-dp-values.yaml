@@ -2,12 +2,11 @@ global:
   storageClass: nfss1
   ingress:
     enabled: true
-    domainName: k8s.stfc.skao.int
+    domainName: sdhp.stfc.skao.int
   dataProduct:
     pvc:
-      name: test-pvc
-      create: true
-      storage: 1Gi
+      name: shared-ml
+      create: false
 
 gateway:
   enabled: true
