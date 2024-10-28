@@ -1,5 +1,4 @@
 global:
-  storageClass: nfss1
   ingress:
     enabled: true
     domainName: k8s.stfc.skao.int
@@ -7,6 +6,7 @@ global:
     pvc:
       name: test-pvc
       create: true
+      storageClassName: nfss1
       storage: 1Gi
     api:
       url: http://ska-dataproduct-dashboard-api-service.integration-ska-dataproduct-dashboard.svc:8000

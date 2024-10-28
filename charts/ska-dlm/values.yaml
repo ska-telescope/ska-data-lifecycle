@@ -10,7 +10,7 @@ global:
     pvc:
       name: test-pvc
       create: false  # create or use existing pvc
-      storageClassName: nfss1  # existing storage class
+      storageClassName: default  # existing storage class
       storage: 1000Gi  # created claim size
     api:
       url: "http://localhost:8000"

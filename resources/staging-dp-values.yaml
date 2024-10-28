@@ -1,11 +1,10 @@
 global:
-  storageClass: nfss1
   ingress:
     enabled: true
     domainName: sdhp.stfc.skao.int
   dataProduct:
     pvc:
-      name: shared-ml
+      name: shared-mnl
       create: false
     api:
       url: http://ska-dataproduct-dashboard-api-service.staging-ska-dataproduct-dashboard.svc:8000
