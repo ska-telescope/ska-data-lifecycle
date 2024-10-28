@@ -35,6 +35,7 @@ def patched_dependencies(mocker):
         "ska_dlm.dlm_ingest.dlm_ingest_requests.scrape_metadata",
         return_value={"execution_block": "scraped_value"},
     )
+    # handle the chained method calls with side_effect:
     mock_generate_metadata = mocker.patch(
         "ska_sdp_metadata_generator.generate_metadata_from_generator",
         side_effect=lambda uri, eb_id: mocker.Mock(
@@ -136,6 +137,18 @@ def test_scrape_metadata(patched_dependencies, caplog, input_args, expected_resu
             "WARNING",
             "ERROR",
         ], f"Unexpected log level {record.levelname}: {record.message}"
+
+
+def test_scrape_metadata_value_error(patched_dependencies, caplog):
+    """Test that scrape_metadata logs the appropriate message when ValueError occurs."""
+    caplog.set_level(logging.WARNING)
+
+    patched_dependencies["mock_generate_metadata"].side_effect = ValueError("Mocked ValueError")
+    result = dlm_ingest.scrape_metadata("test-uri", "eb123")
+
+    assert "ValueError occurred while attempting to extract metadata" in caplog.text
+    assert result is None
+
 
 def test_notify_data_dashboard(caplog):
     """Test that the write hook will post metadata file info to a URL."""
