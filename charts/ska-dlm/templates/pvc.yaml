@@ -1,0 +1,17 @@
+{{- if $.Values.global.dataProduct.pvc.create }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "ska-dlm.fullname" . }}-migration
+  namespace: {{ .Release.Namespace }}
+labels:
+  {{- include "ska-dlm.labels" . }}
+spec:
+  volumeName: {{- include "ska-dlm.fullname" . }}
+  storageClassName: {{ $.Values.global.storageClass }}
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: {{ $.Values.global.dataProduct.pvc.storage }}
+{{- end }}

@@ -96,7 +96,7 @@ python-test:
 k8s-test:
   variables:
     KUBE_NAMESPACE: ci-$CI_PROJECT_NAME-$CI_PIPELINE_ID
-    HELM_VALUES: resources/initialised-dlm.yaml
+    HELM_VALUES: resources/ci-dev-values.yaml
     # K8S_HOST_URL: ""  # k8s host unknown, not using public ingress
   before_script:
     - poetry self update $CI_POETRY_VERSION

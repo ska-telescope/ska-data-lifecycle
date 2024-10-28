@@ -74,7 +74,7 @@ make k8s-uninstall-chart
 To deploy in a cluster k8s environment, DevOps can:
 
 * Select the Kubernetes environment via `export KUBECONFIG="path to kubeconfig"`
-* Modify the `resources/initialized-dlm.yaml` file to override helm values
+* Modify the `resources/<location>-values.yaml` file to override helm values
 * Install the release using the following commands:
 
 ```bash

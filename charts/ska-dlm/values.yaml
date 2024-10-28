@@ -5,11 +5,13 @@ global:
   ingress:
     enabled: false
     domainName: "sdhp.stfc.skao.int"  # required for whitelisting redirects
-  storageClass: nfss1
   development: true
   dataProduct:
     pvc:
       name: test-pvc
+      create: true  # create or use existing pvc
+      storageClassName: nfss1  # existing storage class
+      storage: 1000Gi  # created claim size
     api:
       url: "http://localhost:8000"
 
