@@ -1,5 +1,6 @@
 """Unit tests for dlm_ingest."""
 
+import json
 import logging
 from pathlib import Path
 
@@ -34,6 +35,12 @@ def patched_dependencies(mocker):
         "ska_dlm.dlm_ingest.dlm_ingest_requests.scrape_metadata",
         return_value={"execution_block": "scraped_value"},
     )
+    mock_generate_metadata = mocker.patch(
+        "ska_sdp_metadata_generator.generate_metadata_from_generator",
+        side_effect=lambda uri, eb_id: mocker.Mock(
+            get_data=lambda: mocker.Mock(to_json=lambda: json.dumps({"key": "value"}))
+        ),
+    )
 
     return {
         "mock_init_data_item": mock_init_data_item,
@@ -43,6 +50,7 @@ def patched_dependencies(mocker):
         "mock_check_storage_access": mock_check_storage_access,
         "mock_notify_data_dashboard": mock_notify_data_dashboard,
         "mock_scrape_metadata": mock_scrape_metadata,
+        "mock_generate_metadata": mock_generate_metadata,
     }
 
 
@@ -91,8 +99,6 @@ def test_register_data_item_no_client_metadata(patched_dependencies):
 
     # Assert that scrape_metadata is called by register_data_item
     mocks["mock_scrape_metadata"].assert_called_once_with(uri, eb_id)
-    # TODO: test that scrape_metadata returns the relevant log
-    # and that metadata-generator returns the log for missing eb_id
 
     assert mocks["mock_update_data_item"].call_count > 1
     mocks["mock_update_data_item"].assert_any_call(
@@ -107,11 +113,35 @@ def test_register_data_item_no_client_metadata(patched_dependencies):
     )
 
 
+@pytest.mark.parametrize(
+    "input_args, expected_result, expected_log",
+    [
+        (["test-uri", "eb123"], {"key": "value"}, "Metadata extracted successfully."),
+        (["test-uri", None], {"key": "value"}, "Metadata extracted successfully."),
+    ],
+)
+def test_scrape_metadata(patched_dependencies, caplog, input_args, expected_result, expected_log):
+    """Test that scrape_metadata returns correct logs and results for different cases."""
+    caplog.set_level(logging.INFO)
+
+    patched_dependencies["mock_generate_metadata"]
+    result = dlm_ingest.scrape_metadata(*input_args)
+
+    assert result == expected_result
+    assert expected_log in caplog.text
+
+    # Assert: No warnings or errors in logs
+    for record in caplog.records:
+        assert record.levelname not in [
+            "WARNING",
+            "ERROR",
+        ], f"Unexpected log level {record.levelname}: {record.message}"
+
 def test_notify_data_dashboard(caplog):
     """Test that the write hook will post metadata file info to a URL."""
     with Mocker() as req_mock:
         assert isinstance(req_mock, Mocker)
-        # mock a response for the URL notify_data_dashboard requests
+        # mock the HTTP response from the URL /ingestnewmetadata
         # based on the normal response from ska-sdp-dataproduct-api
         req_mock.post(
             CONFIG.DATA_PRODUCT_API.url + "/ingestnewmetadata",
