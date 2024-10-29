@@ -7,7 +7,7 @@ global:
       name: test-pvc
       create: true
       storageClassName: nfss1
-      storage: 1Gi
+      storage: 20Gi
     api:
       url: http://ska-dataproduct-dashboard-api-service.staging-ska-dataproduct-dashboard.svc:8000
 

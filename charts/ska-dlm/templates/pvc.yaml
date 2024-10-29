@@ -7,7 +7,7 @@ metadata:
 labels:
   {{- include "ska-dlm.labels" . }}
 spec:
-  volumeName: {{- include "ska-dlm.fullname" . }}
+  volumeName: {{ include "ska-dlm.fullname" . }}
   storageClassName: {{ $.Values.global.dataProduct.pvc.storageClassName }}
   accessModes:
     - ReadWriteMany

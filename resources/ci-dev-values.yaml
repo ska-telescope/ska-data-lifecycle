@@ -7,7 +7,7 @@ global:
       name: test-pvc
       create: true
       storageClassName: nfss1
-      storage: 1Gi
+      storage: 20Gi
 
 gateway:
   enabled: true
