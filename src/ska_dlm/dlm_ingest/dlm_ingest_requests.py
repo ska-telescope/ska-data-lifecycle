@@ -203,6 +203,13 @@ def register_data_item(  # noqa: C901
 def scrape_metadata(uri: str, eb_id: str) -> MetaData | None:
     """Attempt to scrape metadata from an ingested dataproduct URI.
 
+    Parameters
+    ----------
+    uri: str
+        the access path to the payload.
+    eb_id: str | None, optional
+        execution block ID provided by the client
+
     Returns
     -------
     Metadata | None
