@@ -195,7 +195,7 @@ bearer = {"Authorization": f"Bearer {your token}"}
 response = session.post(f"{DLM_URL}/start_session", headers=bearer, timeout=60)
 response.raise_for_status()
 
-# create a details for this location
+# create details for this location
 location_name="ThisLocationName"
 location_type="ThisLocationType"
 
