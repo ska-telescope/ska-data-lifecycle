@@ -1,4 +1,4 @@
-"""Wrap the most important postgREST API calls."""
+"""DLM Storage API module."""
 
 import json
 import logging
@@ -24,7 +24,7 @@ cli = ExceptionHandlingTyper()
 rest = fastapi_auto_annotate(
     FastAPI(
         title="SKA-DLM: Storage Manager REST API",
-        description="The REST calls accepted by the SKA-DLM Storage Manager",
+        description="REST interface of the SKA-DLM Storage Manager",
         version=ska_dlm.__version__,
         license_info={"name": "BSD-3-Clause", "identifier": "BSD-3-Clause"},
     )
@@ -90,11 +90,11 @@ def query_location(location_name: str = "", location_id: str = "") -> list:
 @cli.command()
 @rest.post("/storage/init_storage")
 def init_storage(  # pylint: disable=R0913
-    storage_name: str = "",  # pylint: disable=W0613
-    location_name: str = "",
+    storage_name: str,  # pylint: disable=W0613
+    storage_type: str,  # pylint: disable=W0613
+    storage_interface: str,  # pylint: disable=W0613
     location_id: str = "",
-    storage_type: str = "",  # pylint: disable=W0613
-    storage_interface: str = "",  # pylint: disable=W0613
+    location_name: str = "",
     storage_capacity: int = -1,  # pylint: disable=W0613
     storage_phase_level: str = "GAS",  # pylint: disable=W0613
     json_data: str = "",
@@ -104,22 +104,22 @@ def init_storage(  # pylint: disable=R0913
 
     Parameters
     ----------
-    storage_name : str, optional
-        _description_
-    location_name : str, optional
-        _description_
-    location_id : str, optional
-        _description_
+    storage_name : str
+        An organisation or owner name for the storage.
     storage_type: str
-        _description_
+        high level type of the storage, e.g. "disk", "s3"
     storage_interface: str
-        _description_
-    storage_capacity: int
-        _description_
-    storage_phase_level: str
-        _description_
-    json_data: str
-        _description_
+        storage interface for rclone access, e.g. "posix", "s3"
+    location_name : str, optional
+        a dlm registered location name
+    location_id : str, optional
+        a dlm registered location id
+    storage_capacity: int, optional
+        reserved storage capacity in bytes
+    storage_phase_level: str, optional
+        one of "GAS", "LIQUID", "SOLID"
+    json_data: str, optional
+        extra rclone values such as secrets required for connection
 
     Returns
     -------
@@ -129,9 +129,9 @@ def init_storage(  # pylint: disable=R0913
     provided_args = dict(locals())
     mandatory_keys = [
         "storage_name",
-        "location_id",
         "storage_type",
         "storage_interface",
+        "location_id",
         "storage_capacity",
         "storage_phase_level",
     ]
@@ -174,7 +174,7 @@ def create_storage_config(
         the storage_id for which to create the entry.
     storage_name: str, optional
         the name of the storage for which the config is provided.
-    config_type: str, otional
+    config_type: str, optional
         default is rclone, but could be something else in the future.
 
     Returns
@@ -225,7 +225,7 @@ def get_storage_config(
     Raises
     ------
     UnmetPreconditionForOperation
-        _description_
+        storage_name does not exist in database
     """
     params = {}
     if not storage_name and not storage_id:
@@ -260,6 +260,7 @@ def rclone_config(config: JsonObjectArg) -> bool:
     Returns
     -------
     bool
+        True if configuration is successful
     """
     request_url = f"{CONFIG.RCLONE.url}/config/create"
     logger.info("Creating new rclone config: %s %s", request_url, config)
@@ -302,19 +303,17 @@ def check_storage_access(storage_name: str = "", storage_id: str = "") -> bool:
     return rclone_access(rclone_fs)
 
 
-def rclone_access(volume: str = "", remote: str = "", config: str = "") -> bool:
+def rclone_access(volume: str, remote: str = "", config: dict | None = None) -> bool:
     """Check whether a configured backend is accessible.
-
-    NOTE: This assumes a rclone server is running..
 
     Parameters
     ----------
     volume : str
-        Disk volume name, by default ""
-    remote : str
+        Volume name
+    remote : str, optional
         Remote url to the volume, by default ""
-    config : str
-        _description_, by default ""
+    config : dict, optional
+        override rclone config values, by default None
 
     Returns
     -------
@@ -323,7 +322,7 @@ def rclone_access(volume: str = "", remote: str = "", config: str = "") -> bool:
     """
     request_url = f"{CONFIG.RCLONE.url}/operations/stat"
     if config:
-        post_data = {}
+        post_data = config
     else:
         volume = f"{volume}:" if volume[-1] != ":" else volume
         post_data = {
@@ -373,15 +372,41 @@ def rclone_delete(volume: str, fpath: str) -> bool:
 @cli.command()
 @rest.post("/storage/init_location")
 def init_location(
-    location_name: str = "",
-    location_type: str = "",
+    location_name: str,
+    location_type: str,
     location_country: str = "",
     location_city: str = "",
     location_facility: str = "",
 ) -> str:
-    """Initialize a new location for a storage by specifying the location_name or location_id."""
+    """Initialize a new storage location.
+
+    Parameters
+    ----------
+    location_name : str
+        the orgization or owner's name managing the storage location.
+    location_type : str
+        the location type, e.g. "server"
+    location_country : str, optional
+        the location country name
+    location_city : str, optional
+        the location city name
+    location_facility : str, optional
+        the location facility name
+
+    Returns
+    -------
+    str
+        created location_id
+
+    Raises
+    ------
+    InvalidQueryParameters
+        either location_name or location_type is empty
+    ValueAlreadyInDB
+        location_name aleady exists in database
+    """
     if not (location_name and location_type):
-        raise InvalidQueryParameters("Location_name and location_type must be given")
+        raise InvalidQueryParameters("location_name and location_type cannot be empty")
     if query_location(location_name):
         raise ValueAlreadyInDB(f"A location with this name exists already: {location_name}")
     post_data = {"location_name": location_name, "location_type": location_type}
