@@ -200,8 +200,14 @@ def register_data_item(  # noqa: C901
     return uid
 
 
-def scrape_metadata(uri, eb_id):
-    """Attempt to scrape metadata if not provided by client."""
+def scrape_metadata(uri: str, eb_id: str) -> MetaData | None:
+    """Attempt to scrape metadata from an ingested dataproduct URI.
+
+    Returns
+    -------
+    Metadata | None
+        The scraped metadata. None if generating metadata fails.
+    """
     try:
         # TODO(yan-xxx) create another RESTful service associated with a storage type
         # and call into the endpoint
