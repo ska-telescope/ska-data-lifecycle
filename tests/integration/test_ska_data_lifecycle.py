@@ -12,7 +12,7 @@ import ska_sdp_metadata_generator as metagen
 from ska_dlm import CONFIG, data_item, dlm_migration
 from ska_dlm.dlm_db.db_access import DB
 from ska_dlm.dlm_storage.main import persist_new_data_items
-from ska_dlm.exceptions import InvalidQueryParameters, ValueAlreadyInDB
+from ska_dlm.exceptions import ValueAlreadyInDB
 from tests.integration.client.dlm_gateway_client import get_token, start_session
 
 ROOT = "/data/"
@@ -94,7 +94,6 @@ def test_ingest_data_item(env):
 @pytest.mark.integration_test
 def test_register_data_item_with_metadata():
     """Test the register_data_item function with provided metadata."""
-
     # TODO: not using client?
     # pylint: disable-next=import-outside-toplevel
     from ska_dlm.dlm_ingest import register_data_item
@@ -139,9 +138,6 @@ def test_query_expired(env):
 @pytest.mark.integration_test
 def test_location_init(env):
     """Test initialisation on a location."""
-    # This returns an empty string if unsuccessful
-    with pytest.raises(InvalidQueryParameters):
-        env.storage_requests.init_location()
     env.storage_requests.init_location("TestLocation", "SKAO Data Centre")
     location = env.storage_requests.query_location(location_name="TestLocation")[0]
     assert location["location_type"] == "SKAO Data Centre"

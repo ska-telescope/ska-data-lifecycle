@@ -13,7 +13,10 @@ def test_location_init():
     """Test initialisation on a location."""
     # This returns an empty string if unsuccessful
     with pytest.raises(InvalidQueryParameters):
-        dlm_storage.init_location()
+        dlm_storage.init_location(location_name="name", location_type="")
+    with pytest.raises(InvalidQueryParameters):
+        dlm_storage.init_location(location_name="", location_type="type")
+
     dlm_storage.init_location("TestLocation", "SKAO Data Centre")
     location = dlm_storage.query_location(location_name="TestLocation")[0]
     assert location["location_type"] == "SKAO Data Centre"
