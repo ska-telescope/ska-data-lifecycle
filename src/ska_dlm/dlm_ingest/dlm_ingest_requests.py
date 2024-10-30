@@ -219,8 +219,7 @@ def scrape_metadata(uri: str, eb_id: str) -> MetaData | None:
         # TODO(yan-xxx) create another RESTful service associated with a storage type
         # and call into the endpoint
         metadata_object = metagen.generate_metadata_from_generator(uri, eb_id)
-        metadata = metadata_object.get_data().to_json()
-        metadata = json.loads(metadata)
+        metadata = metadata_object.get_data().to_dict()
         logger.info("Metadata extracted successfully.")
         return metadata
     except ValueError as err:
