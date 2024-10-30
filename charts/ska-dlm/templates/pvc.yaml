@@ -5,7 +5,7 @@ metadata:
   name: test-pvc
   namespace: {{ .Release.Namespace }}
 spec:
-  storageClassName: {{ $.Values.global.dataProduct.pvc.storageClassName }}
+  storageClassName: {{ $.Values.global.storageClass }}
   accessModes:
     - ReadWriteMany
   resources:

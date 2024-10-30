@@ -2,9 +2,10 @@ global:
   ingress:
     enabled: true
     domainName: sdhp.stfc.skao.int
+  storageClass: nfss1
   dataProduct:
     pvc:
-      name: shared-mnl
+      name: shared
       create: false
 
 gateway:

@@ -6,11 +6,11 @@ global:
     enabled: false
     domainName: "sdhp.stfc.skao.int"  # required for whitelisting redirects
   development: true
+  storageClass: ""  # existing storage class
   dataProduct:
     pvc:
       name: test-pvc
       create: false  # create or use existing pvc
-      storageClassName: ""  # existing storage class
       storage: 1000Gi  # created claim size
     api:
       url: "http://localhost:8000"
