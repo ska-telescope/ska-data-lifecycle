@@ -5,5 +5,5 @@ global:
   storageClass: nfss1
   dataProduct:
     pvc:
-      name: shared
+      name: shared-mnl
       create: false

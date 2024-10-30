@@ -125,6 +125,7 @@ k8s-test:
     echo "  https://sdhp.stfc.skao.int/$KUBE_NAMESPACE/dashboard/"
     echo "Backend API:"
     echo "  https://sdhp.stfc.skao.int/$KUBE_NAMESPACE/api/"
+    make k8s-info
 
 deploy-dev-environment:
   variables:
