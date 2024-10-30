@@ -2,12 +2,9 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {{ include "ska-dlm.fullname" . }}-migration
+  name: test-pvc
   namespace: {{ .Release.Namespace }}
-labels:
-  {{- include "ska-dlm.labels" . }}
 spec:
-  volumeName: {{ include "ska-dlm.fullname" . }}
   storageClassName: {{ $.Values.global.dataProduct.pvc.storageClassName }}
   accessModes:
     - ReadWriteMany
