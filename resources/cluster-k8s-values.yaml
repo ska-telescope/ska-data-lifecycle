@@ -8,16 +8,3 @@ global:
       name: test-pvc
       create: true
       storage: 20Gi
-
-gateway:
-  enabled: true
-
-postgresql:
-  enabled: true
-  initialise: true
-
-keycloak:
-  enabled: true
-
-pgweb:
-  enabled: true

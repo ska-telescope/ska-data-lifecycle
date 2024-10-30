@@ -1,0 +1,9 @@
+global:
+  ingress:
+    enabled: true
+    domainName: sdhp.stfc.skao.int
+  storageClass: nfss1
+  dataProduct:
+    pvc:
+      name: shared
+      create: false

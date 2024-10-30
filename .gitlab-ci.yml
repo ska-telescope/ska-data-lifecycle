@@ -128,7 +128,7 @@ k8s-test:
 
 deploy-dev-environment:
   variables:
-    K8S_CHART_PARAMS: --values resources/ci-dev-values.yaml --wait --timeout=5m
+    K8S_CHART_PARAMS: --values resources/config-ci-dev-values.yaml --values resources/cluster-k8s-values.yaml --wait --timeout=5m
 
 stop-dev-environment:
   needs: []
@@ -140,7 +140,7 @@ deploy-dev-environment-dp:
   tags:
     - ska-k8srunner-dp
   variables:
-    K8S_CHART_PARAMS: --values resources/ci-dev-dp-values.yaml --wait --timeout=5m
+    K8S_CHART_PARAMS: --values resources/config-ci-dev-values.yaml --values resources/cluster-sdhp-values.yaml --wait --timeout=5m
 
 test-dev-environment-dp:
   stage: deploy-dp
@@ -168,7 +168,7 @@ stop-dev-environment-dp:
 
 deploy-integration:
   variables:
-    K8S_CHART_PARAMS: --values resources/integration-values.yaml --wait --timeout=5m
+    K8S_CHART_PARAMS: --values resources/config-integration-values.yaml --values resources/cluster-k8s-values.yaml --wait --timeout=5m
 
 stop-integration:
   needs: []
@@ -180,7 +180,7 @@ deploy-integration-dp:
   tags:
     - ska-k8srunner-dp
   variables:
-    K8S_CHART_PARAMS: --values resources/integration-dp-values.yaml --wait --timeout=5m
+    K8S_CHART_PARAMS: --values resources/config-integration-values.yaml --values resources/cluster-sdhp-values.yaml --wait --timeout=5m
 
 info-integration-dp:
   stage: integration-dp
@@ -192,7 +192,7 @@ info-integration-dp:
 
 redeploy-integration:
   variables:
-    K8S_CHART_PARAMS: --values resources/integration-values.yaml --wait --timeout=5m
+    K8S_CHART_PARAMS: --values resources/config-integration-values.yaml --values resources/cluster-k8s-values.yaml --wait --timeout=5m
 
 redeploy-integration-dp:
   stage: integration-dp
@@ -200,7 +200,7 @@ redeploy-integration-dp:
   tags:
     - ska-k8srunner-dp
   variables:
-    K8S_CHART_PARAMS: --values resources/integration-dp-values.yaml --wait --timeout=5m
+    K8S_CHART_PARAMS: --values resources/config-integration-values.yaml --values resources/cluster-sdhp-values.yaml --wait --timeout=5m
 
 stop-integration-dp:
   stage: integration-dp
@@ -211,7 +211,7 @@ stop-integration-dp:
 
 deploy-staging:
   variables:
-    K8S_CHART_PARAMS: --values resources/staging-values.yaml --wait --timeout=5m
+    K8S_CHART_PARAMS: --values resources/config-staging-values.yaml --values resources/cluster-k8s-values.yaml --wait --timeout=5m
 
 stop-staging:
   needs: []
@@ -223,7 +223,7 @@ deploy-staging-dp:
   tags:
     - ska-k8srunner-dp
   variables:
-    K8S_CHART_PARAMS: --values resources/staging-dp-values.yaml --wait --timeout=5m
+    K8S_CHART_PARAMS: --values resources/config-staging-values.yaml --values resources/cluster-sdhp-values.yaml --wait --timeout=5m
 
 info-staging-dp:
   stage: staging-dp
@@ -235,7 +235,7 @@ info-staging-dp:
 
 redeploy-staging:
   variables:
-    K8S_CHART_PARAMS: --values resources/staging-values.yaml --wait --timeout=5m
+    K8S_CHART_PARAMS: --values resources/config-staging-values.yaml --values resources/cluster-k8s-values.yaml --wait --timeout=5m
 
 redeploy-staging-dp:
   stage: staging-dp
@@ -243,7 +243,7 @@ redeploy-staging-dp:
   tags:
     - ska-k8srunner-dp
   variables:
-    K8S_CHART_PARAMS: --values resources/staging-dp-values.yaml --wait --timeout=5m
+    K8S_CHART_PARAMS: --values resources/config-staging-values.yaml --values resources/cluster-sdhp-values.yaml --wait --timeout=5m
 
 stop-staging-dp:
   stage: staging-dp
