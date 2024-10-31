@@ -101,7 +101,7 @@ def init_storage(
     json_data: str = "",
 ) -> str:
     """
-    Intialize a new storage by at least specifying an item_name.
+    Intialize a new storage by at least specifying a storage_name.
 
     Parameters
     ----------
