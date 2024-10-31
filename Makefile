@@ -61,3 +61,43 @@ k8s-recreate-namespace: k8s-delete-namespace k8s-namespace
 k8s-do-test:
 	$(PYTHON_VARS_BEFORE_PYTEST) $(PYTHON_RUNNER) pytest --env k8s $(PYTHON_VARS_AFTER_PYTEST) \
 	 --cov=$(PYTHON_SRC) --cov-report=term-missing --cov-report html:build/reports/code-coverage --cov-report xml:build/reports/code-coverage.xml --junitxml=build/reports/unit-tests.xml $(PYTHON_TEST_FILE)
+
+define DP_PVC
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: shared-mnl
+  namespace: ${KUBE_NAMESPACE}
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: $${SHARED_CAPACITY}
+  storageClassName: ""
+  volumeMode: Filesystem
+  volumeName: dpshared-${KUBE_NAMESPACE}-mnl
+endef
+export DP_PVC
+
+# DP Cluster shared PV hack
+## Delete the existing PVC and PV. Note that this is safe as the PV is shared clusterwide
+## Recreate the PV and PVC before installing the app
+k8s-pre-install-chart:
+	make k8s-namespace ;\
+	kubectl -n ${KUBE_NAMESPACE} delete --now --ignore-not-found pvc/shared-mnl || true ;\
+	kubectl delete --now --ignore-not-found pv/dpshared-${KUBE_NAMESPACE}-mnl || true ;\
+	apt-get update && apt-get install gettext -y
+	if [[ "$(CI_RUNNER_TAGS)" == *"ska-k8srunner-dp"* ]] || [[ "$(CI_RUNNER_TAGS)" == *"ska-k8srunner-dp-gpu-a100"* ]] ; then \
+	export SHARED_CAPACITY=$(shell kubectl get pv/dpshared-dp-shared-mnl -o jsonpath="{.spec.capacity.storage}") ; \
+	echo "$${DP_PVC}" | envsubst | kubectl -n $(KUBE_NAMESPACE) apply -f - ;\
+	kubectl get pv dpshared-dp-shared-mnl -o json | \
+	jq ".metadata = { \"name\": \"dpshared-${KUBE_NAMESPACE}-mnl\" }" | \
+	jq ".spec.csi.volumeHandle = \"dpshared-${KUBE_NAMESPACE}-mnlfs-pv\"" | \
+	jq 'del(.spec.claimRef)' | \
+	jq 'del(.status)' | \
+	kubectl apply -f - ; \
+	elif [[ "$(CI_RUNNER_TAGS)" == *"k8srunner"* ]] || [[ "$(CI_RUNNER_TAGS)" == *"k8srunner-gpu-v100"* ]] ; then \
+		echo "techops not implemented yet!" ;\
+	fi
