@@ -60,7 +60,7 @@ def init_storage(
     storage_interface: str = "",
     storage_capacity: int = -1,
     storage_phase_level: str = "GAS",
-    json_data: str = "",
+    json_data: dict | None = None,
 ) -> str:
     """
     Intialize a new storage by at least specifying a storage_name.
@@ -81,7 +81,7 @@ def init_storage(
         reserved storage capacity in bytes
     storage_phase_level: str, optional
         one of "GAS", "LIQUID", "SOLID"
-    json_data: str, optional
+    json_data: dict, optional
         extra rclone values such as secrets required for connection
 
     Returns
@@ -90,7 +90,7 @@ def init_storage(
         Either a storage_ID or an empty string
     """
     params = {k: v for k, v in locals().items() if v}
-    response = SESSION.post(f"{STORAGE_URL}/storage/init_storage", params=params, timeout=60)
+    response = SESSION.post(f"{STORAGE_URL}/storage/init_storage", params=params, json=json_data, timeout=60)
     dlm_raise_for_status(response)
     return response.json()
 

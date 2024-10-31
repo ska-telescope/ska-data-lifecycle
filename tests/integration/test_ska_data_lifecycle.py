@@ -305,19 +305,14 @@ def test_populate_metadata_col(env):
 
     # Generate metadata
     metadata_object = metagen.generate_metadata_from_generator(META_FILE)
-    metadata_json = metadata_object.get_data().to_json()  # MetaData obj -> benedict -> json str
-    assert isinstance(metadata_json, str)
-    try:
-        json.loads(metadata_json)
-    except json.JSONDecodeError as err:
-        assert False, f"Failed to decode JSON: {err}. Check type."
+    metadata_dict = metadata_object.get_data().dict()
 
     # Register data item
     uid = env.ingest_requests.register_data_item(
         "/my/metadata/test/item",
         RCLONE_TEST_FILE_PATH,
         "MyDisk",
-        metadata=json.loads(metadata_json),
+        metadata=metadata_dict,
     )
 
     metadata_str_from_db = env.request_requests.query_data_item(uid=uid)
