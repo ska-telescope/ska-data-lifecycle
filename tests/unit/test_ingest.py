@@ -11,8 +11,8 @@ from requests_mock import Mocker
 from ska_dlm import CONFIG, dlm_ingest
 
 
-@pytest.fixture
-def patched_dependencies(mocker):
+@pytest.fixture(name="patched_dependencies")
+def fixture_patched_dependencies(mocker):
     """Fixture for the mocker.patch calls."""
     mock_init_data_item = mocker.patch(
         "ska_dlm.dlm_ingest.dlm_ingest_requests.init_data_item", return_value="test-uid"
@@ -56,7 +56,6 @@ def patched_dependencies(mocker):
 
 
 def test_register_data_item_with_client_metadata(caplog, patched_dependencies):
-    # pylint: disable=redefined-outer-name
     """Test the registration of a data item with provided client metadata."""
     caplog.set_level(logging.INFO)
 
@@ -85,7 +84,6 @@ def test_register_data_item_with_client_metadata(caplog, patched_dependencies):
 
 
 def test_register_data_item_no_client_metadata(patched_dependencies):
-    # pylint: disable=redefined-outer-name
     """Test register_data_item with no client-provided metadata; metadata scraper is called."""
 
     item_name = "test-item"
@@ -119,7 +117,6 @@ def test_register_data_item_no_client_metadata(patched_dependencies):
     ],
 )
 def test_scrape_metadata(patched_dependencies, caplog, input_args, expected_result, expected_log):
-    # pylint: disable=redefined-outer-name
     """Test that scrape_metadata returns correct logs and results for different cases."""
     caplog.set_level(logging.INFO)
 
@@ -138,7 +135,6 @@ def test_scrape_metadata(patched_dependencies, caplog, input_args, expected_resu
 
 
 def test_scrape_metadata_value_error(patched_dependencies, caplog):
-    # pylint: disable=redefined-outer-name
     """Test that scrape_metadata logs the appropriate message when ValueError occurs."""
     caplog.set_level(logging.WARNING)
 
