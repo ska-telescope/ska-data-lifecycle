@@ -98,7 +98,7 @@ def test_register_data_item_no_client_metadata(patched_dependencies):
         uid="test-uid",
         post_data={
             "metadata": {
-                "execution_block": "scraped_value",
+                "key": "value",
                 "uid": "test-uid",
                 "item_name": "test-item",
             },
