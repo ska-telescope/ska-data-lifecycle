@@ -85,7 +85,7 @@ def init_data_item(
 @cli.command()
 @rest.post("/ingest/register_data_item")
 def register_data_item(  # noqa: C901
-    # pylint: disable=R0913,R0914
+    # pylint: disable=too-many-arguments,too-many-positional-arguments
     item_name: str,
     uri: str = "",
     storage_name: str = "",
@@ -124,7 +124,7 @@ def register_data_item(  # noqa: C901
         format of the data item
     eb_id: str | None, optional
         execution block ID provided by the client
-    authorization : str
+    authorization: str
         Validated Bearer token with UserInfo
 
     Returns
@@ -178,32 +178,54 @@ def register_data_item(  # noqa: C901
     set_state(uid, "READY")
 
     # (6) Populate the metadata column in the database
-    metadata_temp = metadata
-    if metadata is None:
-        try:
-            # TODO(yan-xxx) create another RESTful service associated with a storage type
-            # and call into the endpoint
-            metadata_object = metagen.generate_metadata_from_generator(uri, eb_id)
-            metadata_temp = metadata_object.get_data().to_json()
-            metadata_temp = json.loads(metadata_temp)
-            logger.info("Metadata extracted successfully.")
-        except ValueError as err:
-            logger.info("ValueError occurred while attempting to extract metadata: %s", err)
+    metadata_provided = metadata is not None  # Check if metadata was provided by the client
 
-    if metadata_temp is not None:
-        # Check that metadata_temp is standard json?
-        set_metadata(uid, metadata_temp)
+    if metadata_provided:
         logger.info("Saved metadata provided by client.")
-    else:
-        metadata_temp = {}
+    else:  # Client didn't provide metadata, attempt to scrape it
+        metadata = scrape_metadata(uri, eb_id)
 
-    metadata_temp["uid"] = uid
-    metadata_temp["item_name"] = item_name
+    if metadata is not None:  # Metadata is either provided or successfully scraped
+        set_metadata(uid, metadata)
+    else:  # Metadata scraping was unsuccessful
+        logger.warning("No metadata saved.")
+        metadata = {}
+
+    metadata["uid"] = uid
+    metadata["item_name"] = item_name
 
     # (7)
-    notify_data_dashboard(metadata_temp)
+    notify_data_dashboard(metadata)
 
     return uid
+
+
+def scrape_metadata(uri: str, eb_id: str) -> MetaData | None:
+    """Attempt to scrape metadata from an ingested dataproduct URI.
+
+    Parameters
+    ----------
+    uri: str
+        the access path to the payload.
+    eb_id: str | None, optional
+        execution block ID provided by the client
+
+    Returns
+    -------
+    Metadata | None
+        The scraped metadata. None if generating metadata fails.
+    """
+    try:
+        # TODO(yan-xxx) create another RESTful service associated with a storage type
+        # and call into the endpoint
+        metadata_object = metagen.generate_metadata_from_generator(uri, eb_id)
+        metadata = metadata_object.get_data().to_json()
+        metadata = json.loads(metadata)
+        logger.info("Metadata extracted successfully.")
+        return metadata
+    except ValueError as err:
+        logger.warning("ValueError occurred while attempting to extract metadata: %s", err)
+        return None  # Return None if extraction fails
 
 
 def notify_data_dashboard(metadata: dict | MetaData) -> None:

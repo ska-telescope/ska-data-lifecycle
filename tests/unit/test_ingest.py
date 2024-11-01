@@ -1,3 +1,5 @@
+"""Unit tests for dlm_ingest."""
+
 import json
 import logging
 from pathlib import Path
@@ -5,16 +7,151 @@ from pathlib import Path
 import pytest
 import requests
 from requests_mock import Mocker
-from ska_sdp_dataproduct_metadata import MetaData
 
 from ska_dlm import CONFIG, dlm_ingest
 
 
+@pytest.fixture(name="patched_dependencies")
+def fixture_patched_dependencies(mocker):
+    """Fixture for the mocker.patch calls."""
+    mock_init_data_item = mocker.patch(
+        "ska_dlm.dlm_ingest.dlm_ingest_requests.init_data_item", return_value="test-uid"
+    )
+    mock_update_data_item = mocker.patch("ska_dlm.data_item.data_item_requests.update_data_item")
+    mock_rclone_access = mocker.patch(
+        "ska_dlm.dlm_ingest.dlm_ingest_requests.rclone_access", return_value=True
+    )
+    mock_query_storage = mocker.patch(
+        "ska_dlm.dlm_ingest.dlm_ingest_requests.query_storage",
+        return_value=[{"storage_id": "storage-id", "storage_phase_level": "some-phase-level"}],
+    )
+    mock_check_storage_access = mocker.patch(
+        "ska_dlm.dlm_ingest.dlm_ingest_requests.check_storage_access", return_value=True
+    )
+    mock_notify_data_dashboard = mocker.patch(
+        "ska_dlm.dlm_ingest.dlm_ingest_requests.notify_data_dashboard", return_value=True
+    )
+    mock_scrape_metadata = mocker.patch(
+        "ska_dlm.dlm_ingest.dlm_ingest_requests.scrape_metadata",
+        return_value={"execution_block": "scraped_value"},
+    )
+    # handle the chained method calls with side_effect:
+    mock_generate_metadata = mocker.patch(
+        "ska_sdp_metadata_generator.generate_metadata_from_generator",
+        side_effect=lambda uri, eb_id: mocker.Mock(
+            get_data=lambda: mocker.Mock(to_json=lambda: json.dumps({"key": "value"}))
+        ),
+    )
+
+    return {
+        "mock_init_data_item": mock_init_data_item,
+        "mock_update_data_item": mock_update_data_item,
+        "mock_rclone_access": mock_rclone_access,
+        "mock_query_storage": mock_query_storage,
+        "mock_check_storage_access": mock_check_storage_access,
+        "mock_notify_data_dashboard": mock_notify_data_dashboard,
+        "mock_scrape_metadata": mock_scrape_metadata,
+        "mock_generate_metadata": mock_generate_metadata,
+    }
+
+
+def test_register_data_item_with_client_metadata(caplog, patched_dependencies):
+    """Test the registration of a data item with provided client metadata."""
+    caplog.set_level(logging.INFO)
+
+    metadata = {"execution_block": "eb123"}  # Client-provided metadata
+    item_name = "test-item"
+    uri = "test-uri"
+
+    dlm_ingest.register_data_item(metadata=metadata, item_name=item_name, uri=uri)
+
+    assert "Saved metadata provided by client." in caplog.text
+
+    # Assert: No warnings or errors in logs
+    for record in caplog.records:
+        assert record.levelname not in [
+            "WARNING",
+            "ERROR",
+        ], f"Unexpected log level {record.levelname}: {record.message}"
+
+    assert patched_dependencies["mock_update_data_item"].call_count > 1
+    patched_dependencies["mock_update_data_item"].assert_any_call(
+        uid="test-uid",
+        post_data={
+            "metadata": {"execution_block": "eb123", "uid": "test-uid", "item_name": "test-item"}
+        },
+    )
+
+
+def test_register_data_item_no_client_metadata(patched_dependencies):
+    """Test register_data_item with no client-provided metadata; metadata scraper is called."""
+
+    item_name = "test-item"
+    uri = "test-uri"
+    eb_id = None  # Simulate missing eb_id from the client
+
+    # Call the function with no client metadata and no eb_id
+    dlm_ingest.register_data_item(metadata=None, item_name=item_name, uri=uri, eb_id=eb_id)
+
+    # Assert that scrape_metadata is called by register_data_item
+    patched_dependencies["mock_scrape_metadata"].assert_called_once_with(uri, eb_id)
+
+    assert patched_dependencies["mock_update_data_item"].call_count > 1
+    patched_dependencies["mock_update_data_item"].assert_any_call(
+        uid="test-uid",
+        post_data={
+            "metadata": {
+                "execution_block": "scraped_value",
+                "uid": "test-uid",
+                "item_name": "test-item",
+            },
+        },
+    )
+
+
+@pytest.mark.parametrize(
+    "input_args, expected_result, expected_log",
+    [
+        (["test-uri", "eb123"], {"key": "value"}, "Metadata extracted successfully."),
+        (["test-uri", None], {"key": "value"}, "Metadata extracted successfully."),
+    ],
+)
+def test_scrape_metadata(patched_dependencies, caplog, input_args, expected_result, expected_log):
+    """Test that scrape_metadata returns correct logs and results for different cases."""
+    caplog.set_level(logging.INFO)
+
+    result = dlm_ingest.scrape_metadata(*input_args)  # Test the functionality of scrape_metadata
+    patched_dependencies["mock_generate_metadata"].assert_called_once()
+    patched_dependencies["mock_scrape_metadata"].assert_not_called()
+    assert result == expected_result
+    assert expected_log in caplog.text
+
+    # Assert: No warnings or errors in logs
+    for record in caplog.records:
+        assert record.levelname not in [
+            "WARNING",
+            "ERROR",
+        ], f"Unexpected log level {record.levelname}: {record.message}"
+
+
+def test_scrape_metadata_value_error(patched_dependencies, caplog):
+    """Test that scrape_metadata logs the appropriate message when ValueError occurs."""
+    caplog.set_level(logging.WARNING)
+
+    patched_dependencies["mock_generate_metadata"].side_effect = ValueError("Mocked ValueError")
+    result = dlm_ingest.scrape_metadata("test-uri", "eb123")
+
+    assert "ValueError occurred while attempting to extract metadata" in caplog.text
+    assert result is None
+    patched_dependencies["mock_scrape_metadata"].assert_not_called()
+
+
+# TODO: all the notify_data_dashboard tests could use updating
 def test_notify_data_dashboard(caplog):
     """Test that the write hook will post metadata file info to a URL."""
     with Mocker() as req_mock:
         assert isinstance(req_mock, Mocker)
-        # mock a response for the URL notify_data_dashboard requests
+        # mock the HTTP response from the URL /ingestnewmetadata
         # based on the normal response from ska-sdp-dataproduct-api
         req_mock.post(
             CONFIG.DATA_PRODUCT_API.url + "/ingestnewmetadata",
@@ -31,6 +168,7 @@ def test_notify_data_dashboard(caplog):
     "metadata", ["invalid metadata", {"invalid": "metadata"}, Path("invalid metadata"), None]
 )
 def test_notify_data_dashboard_invalid_metadata(metadata, caplog):
+    """Test notify_data_dashboard with invalid metadata."""
     with Mocker() as req_mock:
         assert isinstance(req_mock, Mocker)
         req_mock.post(
@@ -45,6 +183,7 @@ def test_notify_data_dashboard_invalid_metadata(metadata, caplog):
 
 
 def test_notify_data_dashboard_exception_response(caplog):
+    """Test notify_data_dashboard POST error."""
     valid_metadata = {"execution_block": "block123"}
     with Mocker() as req_mock:
         assert isinstance(req_mock, Mocker)

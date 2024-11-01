@@ -65,7 +65,7 @@ def invalidquery_exception_handler(request: Request, exc: InvalidQueryParameters
 @rest.get("/storage/query_location")
 def query_location(location_name: str = "", location_id: str = "") -> list:
     """
-    Query a location by at least specifying an location_name.
+    Query a location by at least specifying a location_name.
 
     Parameters
     ----------
@@ -89,18 +89,19 @@ def query_location(location_name: str = "", location_id: str = "") -> list:
 
 @cli.command()
 @rest.post("/storage/init_storage")
-def init_storage(  # pylint: disable=R0913
-    storage_name: str,  # pylint: disable=W0613
-    storage_type: str,  # pylint: disable=W0613
-    storage_interface: str,  # pylint: disable=W0613
+# pylint: disable=too-many-arguments,too-many-positional-arguments,unused-argument
+def init_storage(
+    storage_name: str,
+    storage_type: str,
+    storage_interface: str,
     location_id: str = "",
     location_name: str = "",
-    storage_capacity: int = -1,  # pylint: disable=W0613
-    storage_phase_level: str = "GAS",  # pylint: disable=W0613
+    storage_capacity: int = -1,
+    storage_phase_level: str = "GAS",
     json_data: str = "",
 ) -> str:
     """
-    Intialize a new storage by at least specifying an item_name.
+    Intialize a new storage by at least specifying a storage_name.
 
     Parameters
     ----------
