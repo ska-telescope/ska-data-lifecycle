@@ -3,7 +3,6 @@
 """Tests for `ska_data_lifecycle` package."""
 
 import datetime
-import json
 
 import inflect
 import pytest

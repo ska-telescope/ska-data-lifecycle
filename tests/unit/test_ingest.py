@@ -4,8 +4,8 @@ import logging
 from pathlib import Path
 
 import pytest
-from pytest_mock import MockerFixture
 import requests
+from pytest_mock import MockerFixture
 from requests_mock import Mocker
 
 from ska_dlm import CONFIG, dlm_ingest
@@ -35,8 +35,7 @@ def patched_dependencies(mocker: MockerFixture):
     mock_generate_metadata = mocker.patch(
         "ska_sdp_metadata_generator.generate_metadata_from_generator",
         return_value=mocker.Mock(
-            get_data=lambda: mocker.Mock(dict=lambda: {"key": "value"}),
-            validate=lambda: []
+            get_data=lambda: mocker.Mock(dict=lambda: {"key": "value"}), validate=lambda: []
         ),
     )
 
