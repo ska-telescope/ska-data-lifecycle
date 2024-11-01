@@ -90,7 +90,9 @@ def init_storage(
         Either a storage_ID or an empty string
     """
     params = {k: v for k, v in locals().items() if v}
-    response = SESSION.post(f"{STORAGE_URL}/storage/init_storage", params=params, json=json_data, timeout=60)
+    response = SESSION.post(
+        f"{STORAGE_URL}/storage/init_storage", params=params, json=json_data, timeout=60
+    )
     dlm_raise_for_status(response)
     return response.json()
 

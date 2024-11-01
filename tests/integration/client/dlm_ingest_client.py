@@ -1,6 +1,7 @@
 """dlm_ingest REST client"""
 
 from typing import Any, Dict, List, Union
+
 import requests
 
 INGEST_URL = ""

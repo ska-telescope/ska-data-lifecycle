@@ -11,7 +11,7 @@ import ska_dlm
 from ska_dlm.dlm_db.db_access import DB
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
 from ska_dlm.fastapi_utils import fastapi_auto_annotate
-from ska_dlm.typer_types import JsonObjectOption, JsonObjectArg
+from ska_dlm.typer_types import JsonObjectArg, JsonObjectOption
 
 from .. import CONFIG
 from ..data_item import set_state

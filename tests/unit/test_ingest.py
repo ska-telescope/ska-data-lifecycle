@@ -4,55 +4,52 @@ import logging
 from pathlib import Path
 
 import pytest
-from pytest_mock import MockerFixture
 import requests
+from pytest_mock import MockerFixture
 from requests_mock import Mocker
 
 from ska_dlm import CONFIG, dlm_ingest
 
 
-@pytest.fixture
-def patched_dependencies(mocker: MockerFixture):
-    """Fixture for the mocker.patch calls."""
-    mock_init_data_item = mocker.patch(
+@pytest.fixture(name="mock_init_data_item")
+def fixture_mock_init_data_item(mocker: MockerFixture):
+    return mocker.patch(
         "ska_dlm.dlm_ingest.dlm_ingest_requests.init_data_item", return_value="test-uid"
     )
-    mock_update_data_item = mocker.patch("ska_dlm.data_item.data_item_requests.update_data_item")
-    mock_rclone_access = mocker.patch(
-        "ska_dlm.dlm_ingest.dlm_ingest_requests.rclone_access", return_value=True
-    )
-    mock_query_storage = mocker.patch(
+
+
+@pytest.fixture(name="mock_update_data_item")
+def fixture_mock_update_data_item(mocker: MockerFixture, mock_init_data_item):
+    """Fixture for the mocker.patch calls."""
+    mocker.patch(
         "ska_dlm.dlm_ingest.dlm_ingest_requests.query_storage",
         return_value=[{"storage_id": "storage-id", "storage_phase_level": "some-phase-level"}],
     )
-    mock_check_storage_access = mocker.patch(
-        "ska_dlm.dlm_ingest.dlm_ingest_requests.check_storage_access", return_value=True
-    )
-    mock_notify_data_dashboard = mocker.patch(
+    mocker.patch("ska_dlm.dlm_ingest.dlm_ingest_requests.rclone_access", return_value=True)
+    mocker.patch("ska_dlm.dlm_ingest.dlm_ingest_requests.check_storage_access", return_value=True)
+    return mocker.patch("ska_dlm.data_item.data_item_requests.update_data_item")
+
+
+@pytest.fixture(name="mock_notify_data_dashboard")
+def fixture_mock_notify_data_dashboard(mocker: MockerFixture):
+    return mocker.patch(
         "ska_dlm.dlm_ingest.dlm_ingest_requests.notify_data_dashboard", return_value=True
     )
-    # handle the chained method calls with side_effect:
-    mock_generate_metadata = mocker.patch(
+
+
+@pytest.fixture(name="mock_generate_metadata")
+def fixture_mock_generate_metadata(mocker: MockerFixture):
+    return mocker.patch(
         "ska_sdp_metadata_generator.generate_metadata_from_generator",
         return_value=mocker.Mock(
-            get_data=lambda: mocker.Mock(dict=lambda: {"key": "value"}),
-            validate=lambda: []
+            get_data=lambda: mocker.Mock(dict=lambda: {"key": "value"}), validate=lambda: []
         ),
     )
 
-    return {
-        "mock_init_data_item": mock_init_data_item,
-        "mock_update_data_item": mock_update_data_item,
-        "mock_rclone_access": mock_rclone_access,
-        "mock_query_storage": mock_query_storage,
-        "mock_check_storage_access": mock_check_storage_access,
-        "mock_notify_data_dashboard": mock_notify_data_dashboard,
-        "mock_generate_metadata": mock_generate_metadata,
-    }
 
-
-def test_register_data_item_with_client_metadata(caplog, patched_dependencies):
-    # pylint: disable=redefined-outer-name
+def test_register_data_item_with_client_metadata(
+    caplog, mock_update_data_item, mock_notify_data_dashboard
+):
     """Test the registration of a data item with provided client metadata."""
     caplog.set_level(logging.INFO)
 
@@ -71,8 +68,8 @@ def test_register_data_item_with_client_metadata(caplog, patched_dependencies):
             "ERROR",
         ], f"Unexpected log level {record.levelname}: {record.message}"
 
-    assert patched_dependencies["mock_update_data_item"].call_count > 1
-    patched_dependencies["mock_update_data_item"].assert_any_call(
+    assert mock_update_data_item.call_count > 1
+    mock_update_data_item.assert_any_call(
         uid="test-uid",
         post_data={
             "metadata": {"execution_block": "eb123", "uid": "test-uid", "item_name": "test-item"}
@@ -80,8 +77,9 @@ def test_register_data_item_with_client_metadata(caplog, patched_dependencies):
     )
 
 
-def test_register_data_item_no_client_metadata(patched_dependencies):
-    # pylint: disable=redefined-outer-name
+def test_register_data_item_no_client_metadata(
+    mock_update_data_item, mock_generate_metadata, mock_notify_data_dashboard
+):
     """Test register_data_item with no client-provided metadata; metadata scraper is called."""
     item_name = "test-item"
     uri = "test-uri"
@@ -91,10 +89,10 @@ def test_register_data_item_no_client_metadata(patched_dependencies):
     dlm_ingest.register_data_item(metadata=None, item_name=item_name, uri=uri, eb_id=eb_id)
 
     # Assert that scrape_metadata is called by register_data_item
-    patched_dependencies["mock_generate_metadata"].assert_called_once_with(uri, eb_id)
+    mock_generate_metadata.assert_called_once_with(uri, eb_id)
 
-    assert patched_dependencies["mock_update_data_item"].call_count > 1
-    patched_dependencies["mock_update_data_item"].assert_any_call(
+    assert mock_update_data_item.call_count > 1
+    mock_update_data_item.assert_any_call(
         uid="test-uid",
         post_data={
             "metadata": {
@@ -113,8 +111,9 @@ def test_register_data_item_no_client_metadata(patched_dependencies):
         (["test-uri", None], {"key": "value"}, "Metadata extracted successfully."),
     ],
 )
-def test_scrape_metadata(patched_dependencies, caplog, input_args, expected_result, expected_log):
-    # pylint: disable=redefined-outer-name
+def test_scrape_metadata(
+    mock_generate_metadata, caplog, input_args, expected_result, expected_log
+):
     """Test that scrape_metadata returns correct logs and results for different cases."""
     caplog.set_level(logging.INFO)
 
@@ -123,7 +122,7 @@ def test_scrape_metadata(patched_dependencies, caplog, input_args, expected_resu
 
     assert result_dict == expected_result
     assert expected_log in caplog.text
-    patched_dependencies["mock_generate_metadata"].assert_called_once_with(*input_args)
+    mock_generate_metadata.assert_called_once_with(*input_args)
 
     # Assert: No warnings or errors in logs
     for record in caplog.records:
@@ -133,12 +132,11 @@ def test_scrape_metadata(patched_dependencies, caplog, input_args, expected_resu
         ], f"Unexpected log level {record.levelname}: {record.message}"
 
 
-def test_scrape_metadata_value_error(patched_dependencies, caplog):
-    # pylint: disable=redefined-outer-name
+def test_scrape_metadata_value_error(mock_generate_metadata, caplog):
     """Test that scrape_metadata logs the appropriate message when ValueError occurs."""
     caplog.set_level(logging.WARNING)
 
-    patched_dependencies["mock_generate_metadata"].side_effect = ValueError("Mocked ValueError")
+    mock_generate_metadata.side_effect = ValueError("Mocked ValueError")
     result = dlm_ingest.scrape_metadata("test-uri", "eb123")
 
     assert "ValueError occurred while attempting to extract metadata" in caplog.text
