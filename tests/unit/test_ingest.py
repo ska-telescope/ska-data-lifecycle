@@ -60,8 +60,6 @@ def test_register_data_item_with_client_metadata(caplog, patched_dependencies):
     """Test the registration of a data item with provided client metadata."""
     caplog.set_level(logging.INFO)
 
-    mocks = patched_dependencies
-
     metadata = {"execution_block": "eb123"}  # Client-provided metadata
     item_name = "test-item"
     uri = "test-uri"
@@ -77,8 +75,8 @@ def test_register_data_item_with_client_metadata(caplog, patched_dependencies):
             "ERROR",
         ], f"Unexpected log level {record.levelname}: {record.message}"
 
-    assert mocks["mock_update_data_item"].call_count > 1
-    mocks["mock_update_data_item"].assert_any_call(
+    assert patched_dependencies["mock_update_data_item"].call_count > 1
+    patched_dependencies["mock_update_data_item"].assert_any_call(
         uid="test-uid",
         post_data={
             "metadata": {"execution_block": "eb123", "uid": "test-uid", "item_name": "test-item"}
@@ -89,7 +87,6 @@ def test_register_data_item_with_client_metadata(caplog, patched_dependencies):
 def test_register_data_item_no_client_metadata(patched_dependencies):
     # pylint: disable=redefined-outer-name
     """Test register_data_item with no client-provided metadata; metadata scraper is called."""
-    mocks = patched_dependencies
 
     item_name = "test-item"
     uri = "test-uri"
@@ -99,10 +96,10 @@ def test_register_data_item_no_client_metadata(patched_dependencies):
     dlm_ingest.register_data_item(metadata=None, item_name=item_name, uri=uri, eb_id=eb_id)
 
     # Assert that scrape_metadata is called by register_data_item
-    mocks["mock_scrape_metadata"].assert_called_once_with(uri, eb_id)
+    patched_dependencies["mock_scrape_metadata"].assert_called_once_with(uri, eb_id)
 
-    assert mocks["mock_update_data_item"].call_count > 1
-    mocks["mock_update_data_item"].assert_any_call(
+    assert patched_dependencies["mock_update_data_item"].call_count > 1
+    patched_dependencies["mock_update_data_item"].assert_any_call(
         uid="test-uid",
         post_data={
             "metadata": {
@@ -122,12 +119,13 @@ def test_register_data_item_no_client_metadata(patched_dependencies):
     ],
 )
 def test_scrape_metadata(patched_dependencies, caplog, input_args, expected_result, expected_log):
+    # pylint: disable=redefined-outer-name
     """Test that scrape_metadata returns correct logs and results for different cases."""
     caplog.set_level(logging.INFO)
 
-    patched_dependencies["mock_generate_metadata"]
-    result = dlm_ingest.scrape_metadata(*input_args)
-
+    result = dlm_ingest.scrape_metadata(*input_args)  # Test the functionality of scrape_metadata
+    patched_dependencies["mock_generate_metadata"].assert_called_once()
+    patched_dependencies["mock_scrape_metadata"].assert_not_called()
     assert result == expected_result
     assert expected_log in caplog.text
 
@@ -140,6 +138,7 @@ def test_scrape_metadata(patched_dependencies, caplog, input_args, expected_resu
 
 
 def test_scrape_metadata_value_error(patched_dependencies, caplog):
+    # pylint: disable=redefined-outer-name
     """Test that scrape_metadata logs the appropriate message when ValueError occurs."""
     caplog.set_level(logging.WARNING)
 
@@ -148,8 +147,10 @@ def test_scrape_metadata_value_error(patched_dependencies, caplog):
 
     assert "ValueError occurred while attempting to extract metadata" in caplog.text
     assert result is None
+    patched_dependencies["mock_scrape_metadata"].assert_not_called()
 
 
+# TODO: all the notify_data_dashboard tests could use updating
 def test_notify_data_dashboard(caplog):
     """Test that the write hook will post metadata file info to a URL."""
     with Mocker() as req_mock:
