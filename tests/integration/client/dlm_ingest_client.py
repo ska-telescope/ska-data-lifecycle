@@ -2,8 +2,10 @@
 
 from typing import Any, Dict, List, Union
 
+import requests
+
 INGEST_URL = ""
-SESSION = None
+SESSION: requests.Session = None
 
 JsonType = Union[Dict[str, Any], List[Any], str, int, float, bool, None]
 
@@ -36,7 +38,7 @@ def register_data_item(
     uri: str = "",
     storage_name: str = "",
     storage_id: str = "",
-    metadata: dict = None,
+    metadata: dict | None = None,
     item_format: str | None = "unknown",
     eb_id: str | None = None,
 ) -> str:

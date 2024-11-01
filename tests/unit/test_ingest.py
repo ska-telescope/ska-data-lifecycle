@@ -1,18 +1,18 @@
 """Unit tests for dlm_ingest."""
 
-import json
 import logging
 from pathlib import Path
 
 import pytest
 import requests
+from pytest_mock import MockerFixture
 from requests_mock import Mocker
 
 from ska_dlm import CONFIG, dlm_ingest
 
 
 @pytest.fixture(name="patched_dependencies")
-def fixture_patched_dependencies(mocker):
+def fixture_patched_dependencies(mocker: MockerFixture):
     """Fixture for the mocker.patch calls."""
     mock_init_data_item = mocker.patch(
         "ska_dlm.dlm_ingest.dlm_ingest_requests.init_data_item", return_value="test-uid"
@@ -31,15 +31,11 @@ def fixture_patched_dependencies(mocker):
     mock_notify_data_dashboard = mocker.patch(
         "ska_dlm.dlm_ingest.dlm_ingest_requests.notify_data_dashboard", return_value=True
     )
-    mock_scrape_metadata = mocker.patch(
-        "ska_dlm.dlm_ingest.dlm_ingest_requests.scrape_metadata",
-        return_value={"execution_block": "scraped_value"},
-    )
     # handle the chained method calls with side_effect:
     mock_generate_metadata = mocker.patch(
         "ska_sdp_metadata_generator.generate_metadata_from_generator",
-        side_effect=lambda uri, eb_id: mocker.Mock(
-            get_data=lambda: mocker.Mock(to_json=lambda: json.dumps({"key": "value"}))
+        return_value=mocker.Mock(
+            get_data=lambda: mocker.Mock(dict=lambda: {"key": "value"}), validate=lambda: []
         ),
     )
 
@@ -50,7 +46,6 @@ def fixture_patched_dependencies(mocker):
         "mock_query_storage": mock_query_storage,
         "mock_check_storage_access": mock_check_storage_access,
         "mock_notify_data_dashboard": mock_notify_data_dashboard,
-        "mock_scrape_metadata": mock_scrape_metadata,
         "mock_generate_metadata": mock_generate_metadata,
     }
 
@@ -85,7 +80,6 @@ def test_register_data_item_with_client_metadata(caplog, patched_dependencies):
 
 def test_register_data_item_no_client_metadata(patched_dependencies):
     """Test register_data_item with no client-provided metadata; metadata scraper is called."""
-
     item_name = "test-item"
     uri = "test-uri"
     eb_id = None  # Simulate missing eb_id from the client
@@ -94,14 +88,14 @@ def test_register_data_item_no_client_metadata(patched_dependencies):
     dlm_ingest.register_data_item(metadata=None, item_name=item_name, uri=uri, eb_id=eb_id)
 
     # Assert that scrape_metadata is called by register_data_item
-    patched_dependencies["mock_scrape_metadata"].assert_called_once_with(uri, eb_id)
+    patched_dependencies["mock_generate_metadata"].assert_called_once_with(uri, eb_id)
 
     assert patched_dependencies["mock_update_data_item"].call_count > 1
     patched_dependencies["mock_update_data_item"].assert_any_call(
         uid="test-uid",
         post_data={
             "metadata": {
-                "execution_block": "scraped_value",
+                "key": "value",
                 "uid": "test-uid",
                 "item_name": "test-item",
             },
@@ -121,10 +115,11 @@ def test_scrape_metadata(patched_dependencies, caplog, input_args, expected_resu
     caplog.set_level(logging.INFO)
 
     result = dlm_ingest.scrape_metadata(*input_args)  # Test the functionality of scrape_metadata
+    result_dict = result.get_data().dict() if result is not None else None
     patched_dependencies["mock_generate_metadata"].assert_called_once()
-    patched_dependencies["mock_scrape_metadata"].assert_not_called()
-    assert result == expected_result
+    assert result_dict == expected_result
     assert expected_log in caplog.text
+    patched_dependencies["mock_generate_metadata"].assert_called_once_with(*input_args)
 
     # Assert: No warnings or errors in logs
     for record in caplog.records:
@@ -143,7 +138,6 @@ def test_scrape_metadata_value_error(patched_dependencies, caplog):
 
     assert "ValueError occurred while attempting to extract metadata" in caplog.text
     assert result is None
-    patched_dependencies["mock_scrape_metadata"].assert_not_called()
 
 
 # TODO: all the notify_data_dashboard tests could use updating

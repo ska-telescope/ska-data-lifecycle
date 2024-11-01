@@ -296,7 +296,7 @@ def test_persist_new_data_items(env):
 
 @pytest.mark.integration_test
 def test_populate_metadata_col(env):
-    """Test that metadata correctly gets saved to the metadata column."""
+    """Test that the metadata is correctly saved to the metadata column."""
     # Register data item with metadata
     uid = env.ingest_requests.register_data_item(
         "/my/metadata/test/item",  # item_name

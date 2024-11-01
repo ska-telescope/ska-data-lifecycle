@@ -1,7 +1,9 @@
 """dlm_migration REST client"""
 
+import requests
+
 MIGRATION_URL = ""
-SESSION = None
+SESSION: requests.Session = None
 
 
 def copy_data_item(

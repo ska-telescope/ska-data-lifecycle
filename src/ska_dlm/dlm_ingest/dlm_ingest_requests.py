@@ -1,6 +1,5 @@
 """DLM ingest API module."""
 
-import json
 import logging
 from typing import Annotated
 
@@ -45,7 +44,7 @@ def init_data_item(
     json_data: JsonObjectOption = None,
     authorization: Annotated[str | None, Header()] = None,
 ) -> str:
-    """Intialize a new data_item by at least specifying an item_name.
+    """Initialize a new data_item by at least specifying an item_name.
 
     Parameters
     ----------
@@ -53,7 +52,7 @@ def init_data_item(
         the item_name, can be empty, but then json_data has to be specified.
     phase : str
         the phase this item is set to (usually inherited from the storage)
-    json_data : str
+    json_data : dict | None
         provides the ability to specify all values.
     authorization : str
         Validated Bearer token with UserInfo
@@ -76,7 +75,7 @@ def init_data_item(
     if item_name:
         post_data = {"item_name": item_name, "item_phase": phase, "item_owner": username}
     elif json_data:
-        post_data = json.loads(json_data)
+        post_data = json_data
     else:
         raise InvalidQueryParameters("Either item_name or json_data has to be specified!")
     return DB.insert(CONFIG.DLM.dlm_table, json=post_data)[0]["uid"]
@@ -169,7 +168,7 @@ def register_data_item(  # noqa: C901
         "item_format": item_format,
         "item_owner": username,
     }
-    uid = init_data_item(json_data=json.dumps(init_item))
+    uid = init_data_item(json_data=init_item)
 
     # (4)
     set_uri(uid, uri, storage_id)
@@ -178,12 +177,11 @@ def register_data_item(  # noqa: C901
     set_state(uid, "READY")
 
     # (6) Populate the metadata column in the database
-    metadata_provided = metadata is not None  # Check if metadata was provided by the client
-
-    if metadata_provided:
+    if metadata is not None:
         logger.info("Saved metadata provided by client.")
     else:  # Client didn't provide metadata, attempt to scrape it
-        metadata = scrape_metadata(uri, eb_id)
+        scraped_metadata = scrape_metadata(uri, eb_id)
+        metadata = scraped_metadata.get_data().dict() if scraped_metadata is not None else None
 
     if metadata is not None:  # Metadata is either provided or successfully scraped
         set_metadata(uid, metadata)
@@ -219,10 +217,11 @@ def scrape_metadata(uri: str, eb_id: str) -> MetaData | None:
         # TODO(yan-xxx) create another RESTful service associated with a storage type
         # and call into the endpoint
         metadata_object = metagen.generate_metadata_from_generator(uri, eb_id)
-        metadata = metadata_object.get_data().to_json()
-        metadata = json.loads(metadata)
+        if len(metadata_object.validate()) > 0:
+            logger.info("Metadata extraction failed.")
+            return None
         logger.info("Metadata extracted successfully.")
-        return metadata
+        return metadata_object
     except ValueError as err:
         logger.warning("ValueError occurred while attempting to extract metadata: %s", err)
         return None  # Return None if extraction fails
@@ -243,7 +242,7 @@ def notify_data_dashboard(metadata: dict | MetaData) -> None:
             raise TypeError(
                 f"metadata must contain an 'execution_block', got {type(metadata)} {metadata}"
             )
-        payload = json.dumps(metadata)  # --> python obj to json string
+        payload = metadata
     except (TypeError, ValueError) as err:
         logger.error("Failed to parse metadata: %s. Not notifying dashboard.", err)
 

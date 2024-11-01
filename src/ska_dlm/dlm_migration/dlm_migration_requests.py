@@ -1,6 +1,5 @@
 """DLM Migration API module."""
 
-import json
 import logging
 
 import requests
@@ -171,7 +170,7 @@ def copy_data_item(
         "oid": orig_item["oid"],
         "storage_id": destination_id,
     }
-    uid = init_data_item(json_data=json.dumps(init_item))
+    uid = init_data_item(json_data=init_item)
     # (5)
     # TODO(yan-xxx) abstract the actual function called away to allow for different
     # mechanisms to perform the copy. Also needs to be a non-blocking call
