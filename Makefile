@@ -6,7 +6,7 @@ KUBE_NAMESPACE ?=
 HELM_RELEASE ?= $(K8S_CHART)-default  # unique value
 KUBE_APP = $(HELM_RELEASE)
 HELM_TIMEOUT ?= 5m
-HELM_VALUES ?= resources/ci-dev-values.yaml
+HELM_VALUES ?= resources/config-ci-dev-values.yaml resources/cluster-sdhp-values.yaml
 K8S_CHART_PARAMS ?= $(foreach file,$(HELM_VALUES),--values $(file)) --wait --timeout=$(HELM_TIMEOUT)
 
 include .make/base.mk
