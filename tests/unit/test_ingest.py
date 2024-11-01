@@ -119,7 +119,7 @@ def test_scrape_metadata(
 
     result = dlm_ingest.scrape_metadata(*input_args)
     result_dict = result.get_data().dict() if result is not None else None
-
+    mock_generate_metadata.assert_called_once()
     assert result_dict == expected_result
     assert expected_log in caplog.text
     mock_generate_metadata.assert_called_once_with(*input_args)
@@ -143,6 +143,7 @@ def test_scrape_metadata_value_error(mock_generate_metadata, caplog):
     assert result is None
 
 
+# TODO: all the notify_data_dashboard tests could use updating
 def test_notify_data_dashboard(caplog):
     """Test that the write hook will post metadata file info to a URL."""
     with Mocker() as req_mock:

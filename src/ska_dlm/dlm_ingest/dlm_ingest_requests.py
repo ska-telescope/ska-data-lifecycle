@@ -1,6 +1,5 @@
 """DLM ingest API module."""
 
-import json
 import logging
 from typing import Annotated
 
@@ -178,9 +177,7 @@ def register_data_item(  # noqa: C901
     set_state(uid, "READY")
 
     # (6) Populate the metadata column in the database
-    metadata_provided = metadata is not None  # Check if metadata was provided by the client
-
-    if metadata_provided:
+    if metadata is not None:
         logger.info("Saved metadata provided by client.")
     else:  # Client didn't provide metadata, attempt to scrape it
         scraped_metadata = scrape_metadata(uri, eb_id)
@@ -220,12 +217,11 @@ def scrape_metadata(uri: str, eb_id: str) -> MetaData | None:
         # TODO(yan-xxx) create another RESTful service associated with a storage type
         # and call into the endpoint
         metadata_object = metagen.generate_metadata_from_generator(uri, eb_id)
-        if len(metadata_object.validate()) == 0:
-            logger.info("Metadata extracted successfully.")
-            return metadata_object
-        else:
+        if len(metadata_object.validate()) > 0:
             logger.info("Metadata extraction failed.")
             return None
+        logger.info("Metadata extracted successfully.")
+        return metadata_object
     except ValueError as err:
         logger.warning("ValueError occurred while attempting to extract metadata: %s", err)
         return None  # Return None if extraction fails

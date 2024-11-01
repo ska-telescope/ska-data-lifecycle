@@ -1,6 +1,5 @@
 """DLM Storage API module."""
 
-import json
 import logging
 
 import requests

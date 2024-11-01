@@ -1,6 +1,5 @@
 """DLM Migration API module."""
 
-import json
 import logging
 
 import requests
