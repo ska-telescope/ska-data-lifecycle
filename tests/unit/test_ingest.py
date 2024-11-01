@@ -11,8 +11,8 @@ from requests_mock import Mocker
 from ska_dlm import CONFIG, dlm_ingest
 
 
-@pytest.fixture
-def patched_dependencies(mocker: MockerFixture):
+@pytest.fixture(name="patched_dependencies")
+def fixture_patched_dependencies(mocker: MockerFixture):
     """Fixture for the mocker.patch calls."""
     mock_init_data_item = mocker.patch(
         "ska_dlm.dlm_ingest.dlm_ingest_requests.init_data_item", return_value="test-uid"
@@ -51,7 +51,6 @@ def patched_dependencies(mocker: MockerFixture):
 
 
 def test_register_data_item_with_client_metadata(caplog, patched_dependencies):
-    # pylint: disable=redefined-outer-name
     """Test the registration of a data item with provided client metadata."""
     caplog.set_level(logging.INFO)
 
@@ -80,7 +79,6 @@ def test_register_data_item_with_client_metadata(caplog, patched_dependencies):
 
 
 def test_register_data_item_no_client_metadata(patched_dependencies):
-    # pylint: disable=redefined-outer-name
     """Test register_data_item with no client-provided metadata; metadata scraper is called."""
     item_name = "test-item"
     uri = "test-uri"
@@ -113,13 +111,12 @@ def test_register_data_item_no_client_metadata(patched_dependencies):
     ],
 )
 def test_scrape_metadata(patched_dependencies, caplog, input_args, expected_result, expected_log):
-    # pylint: disable=redefined-outer-name
     """Test that scrape_metadata returns correct logs and results for different cases."""
     caplog.set_level(logging.INFO)
 
-    result = dlm_ingest.scrape_metadata(*input_args)
+    result = dlm_ingest.scrape_metadata(*input_args)  # Test the functionality of scrape_metadata
     result_dict = result.get_data().dict() if result is not None else None
-
+    patched_dependencies["mock_generate_metadata"].assert_called_once()
     assert result_dict == expected_result
     assert expected_log in caplog.text
     patched_dependencies["mock_generate_metadata"].assert_called_once_with(*input_args)
@@ -133,7 +130,6 @@ def test_scrape_metadata(patched_dependencies, caplog, input_args, expected_resu
 
 
 def test_scrape_metadata_value_error(patched_dependencies, caplog):
-    # pylint: disable=redefined-outer-name
     """Test that scrape_metadata logs the appropriate message when ValueError occurs."""
     caplog.set_level(logging.WARNING)
 
@@ -144,6 +140,7 @@ def test_scrape_metadata_value_error(patched_dependencies, caplog):
     assert result is None
 
 
+# TODO: all the notify_data_dashboard tests could use updating
 def test_notify_data_dashboard(caplog):
     """Test that the write hook will post metadata file info to a URL."""
     with Mocker() as req_mock:

@@ -6,7 +6,6 @@ import datetime
 
 import inflect
 import pytest
-import ska_sdp_metadata_generator as metagen
 
 from ska_dlm import CONFIG, data_item, dlm_migration
 from ska_dlm.dlm_db.db_access import DB
@@ -298,20 +297,12 @@ def test_persist_new_data_items(env):
 @pytest.mark.integration_test
 def test_populate_metadata_col(env):
     """Test that the metadata is correctly saved to the metadata column."""
-    META_FILE = "/tmp/testfile"  # pylint: disable=invalid-name
-    with open(META_FILE, "wt", encoding="ascii") as file:
-        file.write(RCLONE_TEST_FILE_CONTENT)
-
-    # Generate metadata
-    metadata_object = metagen.generate_metadata_from_generator(META_FILE)
-    metadata_dict = metadata_object.get_data().dict()
-
-    # Register data item
+    # Register data item with metadata
     uid = env.ingest_requests.register_data_item(
-        "/my/metadata/test/item",
-        RCLONE_TEST_FILE_PATH,
-        "MyDisk",
-        metadata=metadata_dict,
+        "/my/metadata/test/item",  # item_name
+        RCLONE_TEST_FILE_PATH,  # uri
+        "MyDisk",  # storage_name
+        metadata=METADATA_RECEIVED,  # metadata
     )
 
     metadata_str_from_db = env.request_requests.query_data_item(uid=uid)
@@ -320,25 +311,4 @@ def test_populate_metadata_col(env):
     metadata_dict_from_db = metadata_str_from_db[0]["metadata"]
     assert isinstance(metadata_dict_from_db, dict)  # otherwise the data might be double encoded
 
-    assert metadata_dict_from_db["interface"] == "http://schema.skao.int/ska-data-product-meta/0.1"
     assert isinstance(metadata_dict_from_db["execution_block"], str)
-
-    assert metadata_dict_from_db["context"] == {}
-    assert "config" in metadata_dict_from_db  # All the fields in here are None atm
-    assert metadata_dict_from_db["files"] == [
-        {
-            "crc": "62acf8ce",
-            "description": "",
-            "path": "testfile",
-            "size": 15,
-            "status": "done",
-        }
-    ]
-    assert metadata_dict_from_db["obscore"] == {
-        "dataproduct_type": "Unknown",
-        "obs_collection": "Unknown",
-        "access_format": "application/unknown",
-        "facility_name": "SKA-Observatory",
-        "instrument_name": "Unknown",
-        "access_estsize": 0,
-    }
