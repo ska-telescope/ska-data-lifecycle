@@ -2,6 +2,8 @@
 
 import requests
 
+from tests.integration.client.exception_handler import dlm_raise_for_status
+
 MIGRATION_URL = ""
 SESSION: requests.Session = None
 
@@ -54,6 +56,5 @@ def copy_data_item(
     """
     params = {k: v for k, v in locals().items() if v}
     response = SESSION.post(f"{MIGRATION_URL}/migration/copy_data_item", params=params, timeout=60)
-    if response.status_code in [401, 403]:
-        response.raise_for_status()
+    dlm_raise_for_status(response)
     return response.json()
