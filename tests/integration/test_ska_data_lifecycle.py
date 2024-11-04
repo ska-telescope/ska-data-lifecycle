@@ -90,13 +90,9 @@ def test_ingest_data_item(env):
 
 
 @pytest.mark.integration_test
-def test_register_data_item_with_metadata():
+def test_register_data_item_with_metadata(env):
     """Test the register_data_item function with provided metadata."""
-    # TODO: not using client?
-    # pylint: disable-next=import-outside-toplevel
-    from ska_dlm.dlm_ingest import register_data_item
-
-    uid = register_data_item(
+    uid = env.ingest_requests.register_data_item(
         "/my/ingest/test/item2",
         RCLONE_TEST_FILE_PATH,
         "MyDisk",
@@ -104,8 +100,7 @@ def test_register_data_item_with_metadata():
     )
     assert len(uid) == 36
     with pytest.raises(ValueAlreadyInDB, match="Item is already registered"):
-        # TODO: not using client?
-        register_data_item(
+        env.ingest_requests.register_data_item(
             "/my/ingest/test/item2",
             RCLONE_TEST_FILE_PATH,
             "MyDisk",

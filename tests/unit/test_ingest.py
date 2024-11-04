@@ -11,27 +11,34 @@ from requests_mock import Mocker
 from ska_dlm import CONFIG, dlm_ingest
 
 
-@pytest.fixture(name="mock_init_data_item")
-def fixture_mock_init_data_item(mocker: MockerFixture):
-    return mocker.patch(
-        "ska_dlm.dlm_ingest.dlm_ingest_requests.init_data_item", return_value="test-uid"
-    )
-
-
-@pytest.fixture(name="mock_update_data_item")
-def fixture_mock_update_data_item(mocker: MockerFixture, mock_init_data_item):
-    """Fixture for the mocker.patch calls."""
+@pytest.fixture(name="mock_ingest_requests_storage", autouse=True)
+def fixture_mock_ingest_requests_storage(mocker: MockerFixture):
+    """Fixture to mock all storage related calls used in dlm_ingest_requests."""
     mocker.patch(
         "ska_dlm.dlm_ingest.dlm_ingest_requests.query_storage",
         return_value=[{"storage_id": "storage-id", "storage_phase_level": "some-phase-level"}],
     )
     mocker.patch("ska_dlm.dlm_ingest.dlm_ingest_requests.rclone_access", return_value=True)
     mocker.patch("ska_dlm.dlm_ingest.dlm_ingest_requests.check_storage_access", return_value=True)
+
+
+@pytest.fixture(name="mock_init_data_item")
+def fixture_mock_init_data_item(mocker: MockerFixture):
+    """Fixture for mocking init_data_item."""
+    return mocker.patch(
+        "ska_dlm.dlm_ingest.dlm_ingest_requests.init_data_item", return_value="test-uid"
+    )
+
+
+@pytest.fixture(name="mock_update_data_item")
+def fixture_mock_update_data_item(mocker: MockerFixture):
+    """Fixture for mocking update_data_item."""
     return mocker.patch("ska_dlm.data_item.data_item_requests.update_data_item")
 
 
 @pytest.fixture(name="mock_notify_data_dashboard")
 def fixture_mock_notify_data_dashboard(mocker: MockerFixture):
+    """Fixture for mocking notify_data_dashboard."""
     return mocker.patch(
         "ska_dlm.dlm_ingest.dlm_ingest_requests.notify_data_dashboard", return_value=True
     )
@@ -39,6 +46,7 @@ def fixture_mock_notify_data_dashboard(mocker: MockerFixture):
 
 @pytest.fixture(name="mock_generate_metadata")
 def fixture_mock_generate_metadata(mocker: MockerFixture):
+    """Fixture for mocking generate_metadata_from_generator."""
     return mocker.patch(
         "ska_sdp_metadata_generator.generate_metadata_from_generator",
         return_value=mocker.Mock(
@@ -48,7 +56,7 @@ def fixture_mock_generate_metadata(mocker: MockerFixture):
 
 
 def test_register_data_item_with_client_metadata(
-    caplog, mock_update_data_item, mock_notify_data_dashboard
+    caplog, mock_init_data_item, mock_update_data_item, mock_notify_data_dashboard
 ):
     """Test the registration of a data item with provided client metadata."""
     caplog.set_level(logging.INFO)
@@ -68,6 +76,7 @@ def test_register_data_item_with_client_metadata(
             "ERROR",
         ], f"Unexpected log level {record.levelname}: {record.message}"
 
+    assert mock_init_data_item.call_count == 1
     assert mock_update_data_item.call_count > 1
     mock_update_data_item.assert_any_call(
         uid="test-uid",
@@ -75,10 +84,11 @@ def test_register_data_item_with_client_metadata(
             "metadata": {"execution_block": "eb123", "uid": "test-uid", "item_name": "test-item"}
         },
     )
+    assert mock_notify_data_dashboard.call_count == 1
 
 
 def test_register_data_item_no_client_metadata(
-    mock_update_data_item, mock_generate_metadata, mock_notify_data_dashboard
+    mock_generate_metadata, mock_init_data_item, mock_update_data_item, mock_notify_data_dashboard
 ):
     """Test register_data_item with no client-provided metadata; metadata scraper is called."""
     item_name = "test-item"
@@ -91,6 +101,7 @@ def test_register_data_item_no_client_metadata(
     # Assert that scrape_metadata is called by register_data_item
     mock_generate_metadata.assert_called_once_with(uri, eb_id)
 
+    assert mock_init_data_item.call_count == 1
     assert mock_update_data_item.call_count > 1
     mock_update_data_item.assert_any_call(
         uid="test-uid",
@@ -102,6 +113,7 @@ def test_register_data_item_no_client_metadata(
             },
         },
     )
+    assert mock_notify_data_dashboard.call_count == 1
 
 
 @pytest.mark.parametrize(
