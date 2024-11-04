@@ -11,6 +11,7 @@ from ska_dlm import CONFIG, data_item, dlm_migration
 from ska_dlm.dlm_db.db_access import DB
 from ska_dlm.dlm_storage.main import persist_new_data_items
 from ska_dlm.exceptions import ValueAlreadyInDB
+from tests.common_local import DlmTestClientLocal
 from tests.integration.client.dlm_gateway_client import get_token, start_session
 
 ROOT = "/data/"
@@ -112,20 +113,21 @@ def test_register_data_item_with_metadata(env):
 def test_query_expired_empty(env):
     """Test the query expired returning an empty set."""
     result = env.request_requests.query_expired()
-    success = len(result) == 0
-    assert success
+    assert len(result) == 0
 
 
 @pytest.mark.integration_test
 def test_query_expired(env):
     """Test the query expired returning records."""
+    if not isinstance(env, DlmTestClientLocal):
+        pytest.skip("Unprocessable Entity")
+
     __initialize_data_item(env)
     uid = env.request_requests.query_data_item()[0]["uid"]
     offset = datetime.timedelta(days=1)
     data_item.set_state(uid=uid, state="READY")
     result = env.request_requests.query_expired(offset)
-    success = len(result) != 0
-    assert success
+    assert len(result) != 0
 
 
 @pytest.mark.integration_test
