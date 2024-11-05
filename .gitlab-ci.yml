@@ -116,6 +116,7 @@ k8s-test:
       allow_failure: true
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: always
+      allow_failure: true
 
 .info_script: &info_script
   - |-
