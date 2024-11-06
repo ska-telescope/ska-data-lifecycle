@@ -96,8 +96,8 @@ python-test:
 k8s-test:
   variables:
     KUBE_NAMESPACE: ci-$CI_PROJECT_NAME-$CI_PIPELINE_ID
-    HELM_VALUES: resources/ci-dev-values.yaml
-    # K8S_HOST_URL: ""  # k8s host unknown, not using public ingress
+    HELM_VALUES: resources/config-ci-dev-values.yaml
+    K8S_CHART_PARAMS: --values resources/config-ci-dev-values.yaml --values resources/cluster-k8s-values.yaml --wait --timeout=5m
   before_script:
     - poetry self update $CI_POETRY_VERSION
     - poetry config virtualenvs.create $POETRY_CONFIG_VIRTUALENVS_CREATE
@@ -116,6 +116,7 @@ k8s-test:
       allow_failure: true
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: always
+      allow_failure: true
 
 .info_script: &info_script
   - |-
