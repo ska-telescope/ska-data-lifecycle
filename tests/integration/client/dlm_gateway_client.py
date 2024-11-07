@@ -1,16 +1,6 @@
 """dlm_gateway_client REST client"""
 
 import requests
-from requests import Session
-
-
-def start_session(auth: str, gateway_url: str):
-    """Get OAUTH token based on username and password"""
-    session = Session()
-    bearer = {"Authorization": f"Bearer {auth}"}
-    response = session.post(f"{gateway_url}/start_session", headers=bearer, timeout=60)
-    response.raise_for_status()
-    return session
 
 
 def has_scope(token: str, permission: str, gateway_url: str):

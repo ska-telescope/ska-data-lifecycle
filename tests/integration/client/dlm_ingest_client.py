@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Union
 import requests
 
 INGEST_URL = ""
-SESSION: requests.Session = None
+TOKEN: str = None
 
 JsonType = Union[Dict[str, Any], List[Any], str, int, float, bool, None]
 
@@ -26,13 +26,16 @@ def init_data_item(item_name: str = "", phase: str = "GAS", json_data: str = "")
     uid,
     """
     params = {k: v for k, v in locals().items() if v}
-    response = SESSION.post(f"{INGEST_URL}/ingest/init_data_item", params=params, timeout=60)
+    headers = {"Authorization": f"Bearer {TOKEN}"}
+    response = requests.post(
+        f"{INGEST_URL}/ingest/init_data_item", params=params, headers=headers, timeout=60
+    )
     if response.status_code in [401, 403]:
         response.raise_for_status()
     return response.json()
 
 
-# pylint: disable=unused-argument,too-many-arguments,too-many-positional-arguments
+# pylint: disable=unused-argument,too-many-arguments
 def register_data_item(
     item_name: str,
     uri: str = "",
@@ -80,7 +83,10 @@ def register_data_item(
     UnmetPreconditionForOperation
     """
     params = {k: v for k, v in locals().items() if v}
-    response = SESSION.post(f"{INGEST_URL}/ingest/register_data_item", params=params, timeout=60)
+    headers = {"Authorization": f"Bearer {TOKEN}"}
+    response = requests.post(
+        f"{INGEST_URL}/ingest/register_data_item", params=params, headers=headers, timeout=60
+    )
     if response.status_code in [401, 403]:
         response.raise_for_status()
     return response.json()

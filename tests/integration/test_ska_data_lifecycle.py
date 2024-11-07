@@ -11,7 +11,7 @@ from ska_dlm import CONFIG, data_item, dlm_migration
 from ska_dlm.dlm_db.db_access import DB
 from ska_dlm.dlm_storage.main import persist_new_data_items
 from ska_dlm.exceptions import ValueAlreadyInDB
-from tests.integration.client.dlm_gateway_client import get_token, start_session
+from tests.integration.client.dlm_gateway_client import get_token
 
 ROOT = "/data/"
 RCLONE_TEST_FILE_PATH = "/data/testfile"
@@ -35,11 +35,10 @@ def setup_auth(env, request):
     """Initialze Auth per session."""
     # this should only run once per test suite
     if request.config.getoption("--auth"):
-        auth = get_token("admin", "admin", env.get_gateway_url())
-        session = start_session(auth, env.get_gateway_url())
-        env.request_requests.SESSION = session
-        env.ingest_requests.SESSION = session
-        env.storage_requests.SESSION = session
+        token = get_token("admin", "admin", env.get_gateway_url())
+        env.request_requests.TOKEN = token
+        env.ingest_requests.TOKEN = token
+        env.storage_requests.TOKEN = token
 
 
 @pytest.fixture(scope="function", autouse=True)

@@ -12,7 +12,7 @@ from ska_dlm.exceptions import (
 from ska_dlm.typer_types import JsonObjectArg
 
 STORAGE_URL = ""
-SESSION: requests.Session = None
+TOKEN: str = None
 
 
 def dlm_raise_for_status(response: requests.Response):
@@ -46,12 +46,15 @@ def init_location(
 ) -> str:
     """Initialize a new location for a storage by specifying the location_name or location_id."""
     params = {k: v for k, v in locals().items() if v}
-    response = SESSION.post(f"{STORAGE_URL}/storage/init_location", params=params, timeout=60)
+    headers = {"Authorization": f"Bearer {TOKEN}"}
+    response = requests.post(
+        f"{STORAGE_URL}/storage/init_location", params=params, headers=headers, timeout=60
+    )
     dlm_raise_for_status(response)
     return response.json()
 
 
-# pylint: disable=unused-argument,too-many-arguments,too-many-positional-arguments
+# pylint: disable=unused-argument,too-many-arguments
 def init_storage(
     storage_name: str = "",
     location_name: str = "",
@@ -90,8 +93,13 @@ def init_storage(
         Either a storage_ID or an empty string
     """
     params = {k: v for k, v in locals().items() if v}
-    response = SESSION.post(
-        f"{STORAGE_URL}/storage/init_storage", params=params, json=json_data, timeout=60
+    headers = {"Authorization": f"Bearer {TOKEN}"}
+    response = requests.post(
+        f"{STORAGE_URL}/storage/init_storage",
+        params=params,
+        json=json_data,
+        headers=headers,
+        timeout=60,
     )
     dlm_raise_for_status(response)
     return response.json()
@@ -114,7 +122,10 @@ def query_location(location_name: str = "", location_id: str = "") -> list:
     str
     """
     params = {k: v for k, v in locals().items() if v}
-    response = SESSION.get(f"{STORAGE_URL}/storage/query_location", params=params, timeout=60)
+    headers = {"Authorization": f"Bearer {TOKEN}"}
+    response = requests.get(
+        f"{STORAGE_URL}/storage/query_location", params=params, headers=headers, timeout=60
+    )
     dlm_raise_for_status(response)
     return response.json()
 
@@ -143,8 +154,13 @@ def create_storage_config(
         the ID of the configuration entry.
     """
     params = {k: v for k, v in locals().items() if v}
-    response = SESSION.post(
-        f"{STORAGE_URL}/storage/create_storage_config", params=params, json=config, timeout=60
+    headers = {"Authorization": f"Bearer {TOKEN}"}
+    response = requests.post(
+        f"{STORAGE_URL}/storage/create_storage_config",
+        params=params,
+        json=config,
+        headers=headers,
+        timeout=60,
     )
     dlm_raise_for_status(response)
     return response.json()
@@ -159,7 +175,10 @@ def rclone_config(config: JsonObjectArg) -> bool:
     config
         a dictionary containing the configuration
     """
-    response = SESSION.post(f"{STORAGE_URL}/storage/rclone_config", json=config, timeout=60)
+    headers = {"Authorization": f"Bearer {TOKEN}"}
+    response = requests.post(
+        f"{STORAGE_URL}/storage/rclone_config", json=config, headers=headers, timeout=60
+    )
     dlm_raise_for_status(response)
     return bool(response.text)
 
@@ -181,6 +200,9 @@ def query_storage(storage_name: str = "", storage_id: str = "") -> list:
     list
     """
     params = {k: v for k, v in locals().items() if v}
-    response = SESSION.get(f"{STORAGE_URL}/storage/query_storage", params=params, timeout=60)
+    headers = {"Authorization": f"Bearer {TOKEN}"}
+    response = requests.get(
+        f"{STORAGE_URL}/storage/query_storage", params=params, headers=headers, timeout=60
+    )
     dlm_raise_for_status(response)
     return response.json()
