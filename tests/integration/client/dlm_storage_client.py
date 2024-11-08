@@ -54,7 +54,7 @@ def init_location(
     return response.json()
 
 
-# pylint: disable=unused-argument,too-many-arguments
+# pylint: disable=unused-argument,too-many-arguments,too-many-positional-arguments
 def init_storage(
     storage_name: str = "",
     location_name: str = "",

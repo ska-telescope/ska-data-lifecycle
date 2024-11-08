@@ -35,7 +35,7 @@ def init_data_item(item_name: str = "", phase: str = "GAS", json_data: str = "")
     return response.json()
 
 
-# pylint: disable=unused-argument,too-many-arguments
+# pylint: disable=unused-argument,too-many-arguments,too-many-positional-arguments
 def register_data_item(
     item_name: str,
     uri: str = "",
