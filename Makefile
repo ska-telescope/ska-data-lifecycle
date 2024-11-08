@@ -90,7 +90,7 @@ k8s-pre-install-chart:
 	kubectl -n ${KUBE_NAMESPACE} delete --now --ignore-not-found pvc/shared-mnl || true ;\
 	kubectl delete --now --ignore-not-found pv/dpshared-${KUBE_NAMESPACE}-mnl || true ;\
 	apt-get update && apt-get install gettext -y ;\
-	export SHARED_CAPACITY=$(shell kubectl get pv/dpshared-dp-shared-mnl -o jsonpath="{.spec.capacity.storage}") ; \
+	export SHARED_CAPACITY=5Gi ; \
 	echo "$${DP_PVC}" | envsubst | kubectl -n $(KUBE_NAMESPACE) apply -f - ;\
 	kubectl get pv dpshared-dp-shared-mnl -o json | \
 	jq ".metadata = { \"name\": \"dpshared-${KUBE_NAMESPACE}-mnl\" }" | \
