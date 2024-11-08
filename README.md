@@ -154,7 +154,9 @@ Typical usage of the DLM:
 3. Determine the location of the files you wish to add
 4. Register that location with the DLM system. Note the location must be accessible (via rclone) from the DLM
 5. Ingest the files into DLM one-by-one
-6. Access/query the items via the ska-dataproduct-dashboard
+6. Instruct DLM to migrate the newly ingested item to a secondary storage
+7. Query the location of all copies of the item
+8. Access the items via the ska-dataproduct-dashboard
 
 ### Step 1: Obtain an API token
 
@@ -164,7 +166,7 @@ To obtain an API token:
 * Login with your SKAO credentials
 * If successful, a token will be returned. Copy the token.
 
-### Steps 2-6: Data Lifecycle Management
+### Steps 2-7: Data Lifecycle Management
 
 Once a token is ready, interactions with DLM can be done in two ways:
 
@@ -189,20 +191,21 @@ DLM_URL = "https://sdhp.stfc.skao.int/dp-yanda/dlm"
 # Prepare token to be placed in the header of any REST call
 bearer = {"Authorization": f"Bearer {your token}"}
 
-# create a name for this storage location
+# create details for this location
 location_name="ThisLocationName"
+location_type="ThisLocationType"
 
-# check if this storage location is already known to DLM
+# check if this location is already known to DLM
 #location = dlm_storage.query_location(location_name=location_name)
 params = {"location_name": location_name}
 location = session.get(f"{DLM_URL}/storage/query_location", params=params, headers=bearer, timeout=60)
 print(location.json())
 
 # otherwise, register this location:
-#location = dlm_storage.init_location(location_name, "SKAO Data Centre")
+#location = dlm_storage.init_location(location_name, location_type)
 params = {
   "location_name": location_name,
-  "location_facility": "SKAO Data Centre",
+  "location_type": location_type,
 }
 
 location = session.post(f"{DLM_URL}/storage/init_location", params=params, headers=bearer, timeout=60)
@@ -210,6 +213,11 @@ print(location.json())
 
 # get the location id
 location_id = location.json()[0]["location_id"]
+
+# check if this storage is already known to DLM
+params = {"storage_name": CONFIG.storage.name}
+storage = session.get(f"{CONFIG.dlm.storage_url}/storage/query_storage", params=params, timeout=60)
+print(storage.json())
 
 # initialise a storage, if it doesn’t already exist:
 #uuid = dlm_storage.init_storage(
@@ -220,20 +228,28 @@ location_id = location.json()[0]["location_id"]
 #    storage_capacity=100000000,
 #)
 params = {
-  storage_name: "MyDisk",
-  location_id: location_id,
-  storage_type: "disk",
-  storage_interface: "posix",
-  storage_capacity: 100000000,
+  "storage_name": "MyDisk",
+  "location_id": location_id,
+  "storage_type": "disk",
+  "storage_interface": "posix",
+  "storage_capacity": 100000000,
 }
 storage = session.post(f"{DLM_URL}/storage/init_storage", params=params, headers=bearer, timeout=60)
 print(storage.json())
+
+# get the storage_id
+storage_id = storage.json()[0]["storage_id"]
+
+# check if a storage config is already known to DLM
+params = {"storage_id": storage_id}
+config = session.get(f"{CONFIG.dlm.storage_url}/storage/get_storage_config", params=params, timeout=60)
+print(config.json())
 
 # supply a rclone config for this storage, if it doesn’t already exist
 #config = '{"name":"MyDisk","type":"local", "parameters":{}}'
 #config_id = dlm_storage.create_storage_config(uuid, config=config)
 params = {
-  config: {
+  "config": {
     "name": "MyDisk",
     "type":"local",
     "parameters":{},
@@ -241,7 +257,6 @@ params = {
 }
 config = session.post(f"{DLM_URL}/storage/create_storage_config", params=params, headers=bearer, timeout=60)
 print(config.json())
-
 
 # then begin adding data items
 #uid = dlm_ingest.register_data_item(
@@ -251,21 +266,37 @@ print(config.json())
 #    metadata=None
 #)
 params = {
-  item_name: "/my/ingest/item",
-  uri: "/some/path/to/the/file",
-  storage_name: "MyDisk",
-  storage_id: "",
-  metadata: None,
-  item_format: None,
-  eb_id: None,
+  "item_name": "/my/ingest/item",
+  "uri": "/some/path/to/the/file",
+  "storage_name": "MyDisk",
+  "storage_id": "",
+  "metadata": None,
+  "item_format": None,
+  "eb_id": None,
 }
 response = session.post(f"{DLM_URL}/ingest/register_data_item", params=params, headers=bearer, timeout=60)
+print(response.json())
+
+# trigger a migration from storage to storage
+params = {
+  "item_name": "/my/ingest/item",
+  "destination_id": destination_id,
+  "path": ""
+}
+response = session.post(f"{DLM_URL}/migration/copy_data_item", params=params, timeout=60)
+print(response.json())
+
+# list items and their locations
+params = {
+  "item_name": "/my/ingest/item",
+}
+response = session.get(f"{DLM_URL}/request/query_data_item", params=params, timeout=60)
 print(response.json())
 
 ```
 
 
-## Known DLM deployments
+### Step 8: Access via Data Product Dashboard
 
 At time of writing, here are the known medium-term deployments of the DLM system:
 

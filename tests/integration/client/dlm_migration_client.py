@@ -2,6 +2,8 @@
 
 import requests
 
+from tests.integration.client.exception_handler import dlm_raise_for_status
+
 MIGRATION_URL = ""
 TOKEN: str = None
 
@@ -57,6 +59,5 @@ def copy_data_item(
     response = requests.post(
         f"{MIGRATION_URL}/migration/copy_data_item", params=params, headers=headers, timeout=60
     )
-    if response.status_code in [401, 403]:
-        response.raise_for_status()
+    dlm_raise_for_status(response)
     return response.json()
