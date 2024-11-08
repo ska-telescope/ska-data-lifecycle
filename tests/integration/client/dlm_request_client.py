@@ -2,6 +2,8 @@
 
 from datetime import timedelta
 
+from tests.integration.client.exception_handler import dlm_raise_for_status
+
 REQUEST_URL = ""
 SESSION = None
 
@@ -26,8 +28,7 @@ def query_data_item(
     """
     params = {k: v for k, v in locals().items() if v}
     response = SESSION.get(f"{REQUEST_URL}/request/query_data_item", params=params, timeout=60)
-    if response.status_code in [401, 403]:
-        response.raise_for_status()
+    dlm_raise_for_status(response)
     return response.json()
 
 
@@ -42,8 +43,7 @@ def query_expired(offset: timedelta | None = None):
     """
     params = {k: v for k, v in locals().items() if v}
     response = SESSION.get(f"{REQUEST_URL}/request/query_expired", params=params, timeout=60)
-    if response.status_code in [401, 403]:
-        response.raise_for_status()
+    dlm_raise_for_status(response)
     return response.json()
 
 
@@ -61,8 +61,7 @@ def query_deleted(uid: str = "") -> list:
     """
     params = {k: v for k, v in locals().items() if v}
     response = SESSION.get(f"{REQUEST_URL}/request/query_deleted", params=params, timeout=60)
-    if response.status_code in [401, 403]:
-        response.raise_for_status()
+    dlm_raise_for_status(response)
     return response.json()
 
 
@@ -81,8 +80,7 @@ def query_new(check_date: str, uid: str = "") -> list:
     """
     params = {k: v for k, v in locals().items() if v}
     response = SESSION.get(f"{REQUEST_URL}/request/query_new", params=params, timeout=60)
-    if response.status_code in [401, 403]:
-        response.raise_for_status()
+    dlm_raise_for_status(response)
     return response.json()
 
 
@@ -98,8 +96,7 @@ def query_exists(item_name: str = "", oid: str = "", uid: str = "", ready: bool 
     """
     params = {k: v for k, v in locals().items() if v}
     response = SESSION.get(f"{REQUEST_URL}/request/query_exists", params=params, timeout=60)
-    if response.status_code in [401, 403]:
-        response.raise_for_status()
+    dlm_raise_for_status(response)
     return response.json()
 
 
@@ -121,8 +118,7 @@ def query_exists_and_ready(item_name: str = "", oid: str = "", uid: str = "") ->
     response = SESSION.get(
         f"{REQUEST_URL}/request/query_exist_and_ready", params=params, timeout=60
     )
-    if response.status_code in [401, 403]:
-        response.raise_for_status()
+    dlm_raise_for_status(response)
     return response.json()
 
 
@@ -141,6 +137,5 @@ def query_item_storage(item_name: str = "", oid: str = "", uid: str = "") -> str
     """
     params = {k: v for k, v in locals().items() if v}
     response = SESSION.get(f"{REQUEST_URL}/request/query_item_storage", params=params, timeout=60)
-    if response.status_code in [401, 403]:
-        response.raise_for_status()
+    dlm_raise_for_status(response)
     return response.json()

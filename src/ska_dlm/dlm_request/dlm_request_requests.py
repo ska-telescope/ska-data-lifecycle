@@ -3,7 +3,9 @@
 import logging
 from datetime import datetime, timedelta, timezone
 
-from fastapi import FastAPI
+import ska_ser_logging
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 
 import ska_dlm
 from ska_dlm.dlm_db.db_access import DB
@@ -14,6 +16,8 @@ from .. import CONFIG
 from ..exceptions import InvalidQueryParameters
 
 logger = logging.getLogger(__name__)
+ska_ser_logging.configure_logging(level=logging.INFO)
+
 
 cli = ExceptionHandlingTyper()
 rest = fastapi_auto_annotate(
@@ -24,6 +28,16 @@ rest = fastapi_auto_annotate(
         license_info={"name": "BSD-3-Clause", "identifier": "BSD-3-Clause"},
     )
 )
+
+
+# pylint: disable=unused-argument
+@rest.exception_handler(InvalidQueryParameters)
+def invalidquery_exception_handler(request: Request, exc: InvalidQueryParameters):
+    """Catch InvalidQueryParameters and send a JSONResponse."""
+    return JSONResponse(
+        status_code=422,
+        content={"exec": "InvalidQueryParameters", "message": f"{str(exc)}"},
+    )
 
 
 @cli.command()

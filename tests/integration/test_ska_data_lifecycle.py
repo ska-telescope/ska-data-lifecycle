@@ -11,6 +11,7 @@ from ska_dlm import CONFIG, data_item, dlm_migration
 from ska_dlm.dlm_db.db_access import DB
 from ska_dlm.dlm_storage.main import persist_new_data_items
 from ska_dlm.exceptions import ValueAlreadyInDB
+from tests.common_local import DlmTestClientLocal
 from tests.integration.client.dlm_gateway_client import get_token, start_session
 
 ROOT = "/data/"
@@ -90,13 +91,9 @@ def test_ingest_data_item(env):
 
 
 @pytest.mark.integration_test
-def test_register_data_item_with_metadata():
+def test_register_data_item_with_metadata(env):
     """Test the register_data_item function with provided metadata."""
-    # TODO: not using client?
-    # pylint: disable-next=import-outside-toplevel
-    from ska_dlm.dlm_ingest import register_data_item
-
-    uid = register_data_item(
+    uid = env.ingest_requests.register_data_item(
         "/my/ingest/test/item2",
         RCLONE_TEST_FILE_PATH,
         "MyDisk",
@@ -104,8 +101,7 @@ def test_register_data_item_with_metadata():
     )
     assert len(uid) == 36
     with pytest.raises(ValueAlreadyInDB, match="Item is already registered"):
-        # TODO: not using client?
-        register_data_item(
+        env.ingest_requests.register_data_item(
             "/my/ingest/test/item2",
             RCLONE_TEST_FILE_PATH,
             "MyDisk",
@@ -117,20 +113,21 @@ def test_register_data_item_with_metadata():
 def test_query_expired_empty(env):
     """Test the query expired returning an empty set."""
     result = env.request_requests.query_expired()
-    success = len(result) == 0
-    assert success
+    assert len(result) == 0
 
 
 @pytest.mark.integration_test
 def test_query_expired(env):
     """Test the query expired returning records."""
+    if not isinstance(env, DlmTestClientLocal):
+        pytest.skip("Unprocessable Entity")
+
     __initialize_data_item(env)
     uid = env.request_requests.query_data_item()[0]["uid"]
     offset = datetime.timedelta(days=1)
     data_item.set_state(uid=uid, state="READY")
     result = env.request_requests.query_expired(offset)
-    success = len(result) != 0
-    assert success
+    assert len(result) != 0
 
 
 @pytest.mark.integration_test

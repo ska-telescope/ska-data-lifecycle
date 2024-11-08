@@ -5,7 +5,8 @@ from typing import Annotated
 
 import requests
 import ska_sdp_metadata_generator as metagen
-from fastapi import FastAPI, Header
+from fastapi import FastAPI, Header, Request
+from fastapi.responses import JSONResponse
 from ska_sdp_dataproduct_metadata import MetaData
 
 import ska_dlm
@@ -32,6 +33,38 @@ rest = fastapi_auto_annotate(
         license_info={"name": "BSD-3-Clause", "identifier": "BSD-3-Clause"},
     )
 )
+
+
+# pylint: disable=unused-argument
+@rest.exception_handler(ValueAlreadyInDB)
+def valuealreadyindb_exception_handler(request: Request, exc: ValueAlreadyInDB):
+    """Catch ValueAlreadyInDB and send a JSONResponse."""
+    return JSONResponse(
+        status_code=422,
+        content={"exec": "ValueAlreadyInDB", "message": f"{str(exc)}"},
+    )
+
+
+# pylint: disable=unused-argument
+@rest.exception_handler(UnmetPreconditionForOperation)
+def unmetprecondition_exception_handler(request: Request, exc: UnmetPreconditionForOperation):
+    """Catch UnmetPreconditionForOperation and send a JSONResponse."""
+    return JSONResponse(
+        status_code=422,
+        content={"exec": "UnmetPreconditionForOperation", "message": f"{str(exc)}"},
+    )
+
+
+# pylint: disable=unused-argument
+@rest.exception_handler(InvalidQueryParameters)
+def invalidquery_exception_handler(request: Request, exc: InvalidQueryParameters):
+    """Catch InvalidQueryParameters and send a JSONResponse."""
+    return JSONResponse(
+        status_code=422,
+        content={"exec": "InvalidQueryParameters", "message": f"{str(exc)}"},
+    )
+
+
 cli = ExceptionHandlingTyper()
 cli.exception_handler(ValueAlreadyInDB)(dump_short_stacktrace)
 

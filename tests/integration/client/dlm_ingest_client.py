@@ -4,6 +4,8 @@ from typing import Any, Dict, List, Union
 
 import requests
 
+from tests.integration.client.exception_handler import dlm_raise_for_status
+
 INGEST_URL = ""
 SESSION: requests.Session = None
 
@@ -27,8 +29,7 @@ def init_data_item(item_name: str = "", phase: str = "GAS", json_data: str = "")
     """
     params = {k: v for k, v in locals().items() if v}
     response = SESSION.post(f"{INGEST_URL}/ingest/init_data_item", params=params, timeout=60)
-    if response.status_code in [401, 403]:
-        response.raise_for_status()
+    dlm_raise_for_status(response)
     return response.json()
 
 
@@ -81,6 +82,5 @@ def register_data_item(
     """
     params = {k: v for k, v in locals().items() if v}
     response = SESSION.post(f"{INGEST_URL}/ingest/register_data_item", params=params, timeout=60)
-    if response.status_code in [401, 403]:
-        response.raise_for_status()
+    dlm_raise_for_status(response)
     return response.json()
