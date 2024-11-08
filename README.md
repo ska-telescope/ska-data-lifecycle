@@ -186,12 +186,8 @@ Interaction with the DLM is also possible via the REST API. The source code belo
 # other known locations are shown below
 DLM_URL = "https://sdhp.stfc.skao.int/dp-yanda/dlm"
 
-# exchange the token for a session cookie
-from requests import Session
-session = Session()
+# Prepare token to be placed in the header of any REST call
 bearer = {"Authorization": f"Bearer {your token}"}
-response = session.post(f"{DLM_URL}/start_session", headers=bearer, timeout=60)
-response.raise_for_status()
 
 # create a name for this storage location
 location_name="ThisLocationName"
@@ -199,7 +195,7 @@ location_name="ThisLocationName"
 # check if this storage location is already known to DLM
 #location = dlm_storage.query_location(location_name=location_name)
 params = {"location_name": location_name}
-location = session.get(f"{DLM_URL}/storage/query_location", params=params, timeout=60)
+location = session.get(f"{DLM_URL}/storage/query_location", params=params, headers=bearer, timeout=60)
 print(location.json())
 
 # otherwise, register this location:
@@ -209,7 +205,7 @@ params = {
   "location_facility": "SKAO Data Centre",
 }
 
-location = session.post(f"{DLM_URL}/storage/init_location", params=params, timeout=60)
+location = session.post(f"{DLM_URL}/storage/init_location", params=params, headers=bearer, timeout=60)
 print(location.json())
 
 # get the location id
@@ -230,7 +226,7 @@ params = {
   storage_interface: "posix",
   storage_capacity: 100000000,
 }
-storage = session.post(f"{DLM_URL}/storage/init_storage", params=params, timeout=60)
+storage = session.post(f"{DLM_URL}/storage/init_storage", params=params, headers=bearer, timeout=60)
 print(storage.json())
 
 # supply a rclone config for this storage, if it doesn’t already exist
@@ -243,7 +239,7 @@ params = {
     "parameters":{},
   }
 }
-config = session.post(f"{DLM_URL}/storage/create_storage_config", params=params, timeout=60)
+config = session.post(f"{DLM_URL}/storage/create_storage_config", params=params, headers=bearer, timeout=60)
 print(config.json())
 
 
@@ -263,7 +259,7 @@ params = {
   item_format: None,
   eb_id: None,
 }
-response = session.post(f"{DLM_URL}/ingest/register_data_item", params=params, timeout=60)
+response = session.post(f"{DLM_URL}/ingest/register_data_item", params=params, headers=bearer, timeout=60)
 print(response.json())
 
 ```
