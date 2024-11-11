@@ -1,5 +1,7 @@
 """dlm_request REST client"""
 
+import requests
+
 from datetime import timedelta
 
 from tests.integration.client.exception_handler import dlm_raise_for_status
