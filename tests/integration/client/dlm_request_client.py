@@ -2,10 +2,12 @@
 
 from datetime import timedelta
 
+import requests
+
 from tests.integration.client.exception_handler import dlm_raise_for_status
 
 REQUEST_URL = ""
-SESSION = None
+TOKEN = None
 
 
 # pylint: disable=unused-argument
@@ -27,7 +29,10 @@ def query_data_item(
     list
     """
     params = {k: v for k, v in locals().items() if v}
-    response = SESSION.get(f"{REQUEST_URL}/request/query_data_item", params=params, timeout=60)
+    headers = {"Authorization": f"Bearer {TOKEN}"}
+    response = requests.get(
+        f"{REQUEST_URL}/request/query_data_item", params=params, headers=headers, timeout=60
+    )
     dlm_raise_for_status(response)
     return response.json()
 
@@ -42,7 +47,10 @@ def query_expired(offset: timedelta | None = None):
     offset: optional offset for the query
     """
     params = {k: v for k, v in locals().items() if v}
-    response = SESSION.get(f"{REQUEST_URL}/request/query_expired", params=params, timeout=60)
+    headers = {"Authorization": f"Bearer {TOKEN}"}
+    response = requests.get(
+        f"{REQUEST_URL}/request/query_expired", params=params, headers=headers, timeout=60
+    )
     dlm_raise_for_status(response)
     return response.json()
 
@@ -60,7 +68,10 @@ def query_deleted(uid: str = "") -> list:
     list of dictionaries with UIDs of deleted items.
     """
     params = {k: v for k, v in locals().items() if v}
-    response = SESSION.get(f"{REQUEST_URL}/request/query_deleted", params=params, timeout=60)
+    headers = {"Authorization": f"Bearer {TOKEN}"}
+    response = requests.get(
+        f"{REQUEST_URL}/request/query_deleted", params=params, headers=headers, timeout=60
+    )
     dlm_raise_for_status(response)
     return response.json()
 
@@ -79,7 +90,10 @@ def query_new(check_date: str, uid: str = "") -> list:
     list of dictionaries with UID, UID_creation and storage_id of new items.
     """
     params = {k: v for k, v in locals().items() if v}
-    response = SESSION.get(f"{REQUEST_URL}/request/query_new", params=params, timeout=60)
+    headers = {"Authorization": f"Bearer {TOKEN}"}
+    response = requests.get(
+        f"{REQUEST_URL}/request/query_new", params=params, headers=headers, timeout=60
+    )
     dlm_raise_for_status(response)
     return response.json()
 
@@ -95,7 +109,10 @@ def query_exists(item_name: str = "", oid: str = "", uid: str = "", ready: bool 
     uid: optional, this returns only one storage_id
     """
     params = {k: v for k, v in locals().items() if v}
-    response = SESSION.get(f"{REQUEST_URL}/request/query_exists", params=params, timeout=60)
+    headers = {"Authorization": f"Bearer {TOKEN}"}
+    response = requests.get(
+        f"{REQUEST_URL}/request/query_exists", params=params, headers=headers, timeout=60
+    )
     dlm_raise_for_status(response)
     return response.json()
 
@@ -115,8 +132,9 @@ def query_exists_and_ready(item_name: str = "", oid: str = "", uid: str = "") ->
     boolean
     """
     params = {k: v for k, v in locals().items() if v}
-    response = SESSION.get(
-        f"{REQUEST_URL}/request/query_exist_and_ready", params=params, timeout=60
+    headers = {"Authorization": f"Bearer {TOKEN}"}
+    response = requests.get(
+        f"{REQUEST_URL}/request/query_exist_and_ready", params=params, headers=headers, timeout=60
     )
     dlm_raise_for_status(response)
     return response.json()
@@ -136,6 +154,9 @@ def query_item_storage(item_name: str = "", oid: str = "", uid: str = "") -> str
     uid: optional, this returns only one storage_id
     """
     params = {k: v for k, v in locals().items() if v}
-    response = SESSION.get(f"{REQUEST_URL}/request/query_item_storage", params=params, timeout=60)
+    headers = {"Authorization": f"Bearer {TOKEN}"}
+    response = requests.get(
+        f"{REQUEST_URL}/request/query_item_storage", params=params, headers=headers, timeout=60
+    )
     dlm_raise_for_status(response)
     return response.json()

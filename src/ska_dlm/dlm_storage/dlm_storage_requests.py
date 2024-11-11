@@ -88,7 +88,7 @@ def query_location(location_name: str = "", location_id: str = "") -> list:
 
 @cli.command()
 @rest.post("/storage/init_storage")
-# pylint: disable=too-many-arguments,too-many-positional-arguments,unused-argument
+# pylint: disable=too-many-arguments,unused-argument,too-many-positional-arguments
 def init_storage(
     storage_name: str,
     storage_type: str,

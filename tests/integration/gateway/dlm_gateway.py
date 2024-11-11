@@ -11,7 +11,7 @@ import jwt
 import msal
 import requests
 from cryptography.hazmat.primitives import serialization
-from fastapi import FastAPI, HTTPException, Request, status
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from keycloak import KeycloakOpenID, KeycloakUMA
 from keycloak.exceptions import KeycloakAuthenticationError
@@ -93,38 +93,7 @@ class Provider:
 
         raise HTTPException(404, "Not implemented")
 
-    async def start_session(self, auth: str, request: Request):
-        """Start a session with the client.
-           It will create and return a cookie containing the auth structure.
-
-        Parameters
-        ----------
-        auth: str
-            Auth structure
-
-        request: Request
-            HTTP client
-
-        Returns
-        -------
-            Cookie contained in response
-        """
-
-        raise HTTPException(404, "Not implemented")
-
-    async def end_session(self, request: Request):
-        """End a client session and clear cookies
-
-        Parameters
-        ----------
-        request: Request
-            HTTP client session
-
-        """
-
-        raise HTTPException(404, "Not implemented")
-
-    async def validate_token(self, request: Request):
+    async def validate_token(self, token: str):
         """Validate client session token/cookie"""
         raise HTTPException(404, "Not implemented")
 
@@ -178,17 +147,6 @@ class Keycloak(Provider):
 
         return access_token["access_token"]
 
-    async def start_session(self, auth: str, request: Request):
-        try:
-            await self._check_token(auth)
-            request.session["auth"] = auth
-        # pylint: disable=raise-missing-from
-        except jwt.exceptions.PyJWTError as e:
-            raise HTTPException(401, str(e))
-
-    async def end_session(self, request: Request):
-        request.session["auth"] = None
-
     async def _check_token(self, token: str):
         """Check if client can access endpoint based on token and permissions"""
         try:
@@ -198,12 +156,8 @@ class Keycloak(Provider):
         except Exception as e:
             raise HTTPException(401, "Token error") from e
 
-    async def validate_token(self, request: Request):
-        auth = request.session.get("auth")
-        if not auth:
-            raise HTTPException(403, "Session token not found")
-        await self._check_token(auth)
-        return auth
+    async def validate_token(self, token: str):
+        await self._check_token(token)
 
 
 class Entra(Provider):
@@ -214,6 +168,9 @@ class Entra(Provider):
         self.client_id = os.environ["CLIENT_ID"]
         self.client_cred = os.environ["CLIENT_CRED"]
         self.redirect_url = os.environ["REDIRECT_URL"]
+        scope = os.environ.get("SCOPES", "")
+        self.scope = scope.strip().split(",")
+
         m_cache = msal.TokenCache()
         self.entra = msal.ConfidentialClientApplication(
             client_id=self.client_id,
@@ -232,7 +189,7 @@ class Entra(Provider):
         auth = await loop.run_in_executor(
             None,
             self.entra.initiate_auth_code_flow,
-            [],
+            self.scope,
             self.redirect_url,
         )
         request.session["flow"] = auth
@@ -249,21 +206,11 @@ class Entra(Provider):
             access_token = await loop.run_in_executor(
                 None, self.entra.acquire_token_by_auth_code_flow, flow, dict(request.query_params)
             )
-            return access_token["id_token"]
+
+            return access_token["access_token"]
         # pylint: disable=raise-missing-from
         except Exception as e:
             raise HTTPException(status_code=403, detail=str(e))
-
-    async def start_session(self, auth: str, request: Request):
-        try:
-            await self._check_token(auth)
-            request.session["auth"] = auth
-        # pylint: disable=raise-missing-from
-        except jwt.exceptions.PyJWTError as e:
-            raise HTTPException(401, str(e))
-
-    async def end_session(self, request: Request):
-        request.session["auth"] = None
 
     async def _check_token(self, token: str):
         token_headers = jwt.get_unverified_header(token)
@@ -291,13 +238,8 @@ class Entra(Provider):
         )
         return decoded_token
 
-    async def validate_token(self, request: Request):
-        auth = request.session.get("auth")
-        if not auth:
-            raise HTTPException(403, "Session auth not found")
-
-        await self._check_token(auth)
-        return auth
+    async def validate_token(self, token: str):
+        await self._check_token(token)
 
 
 # Turn on Authentication = 1, Turn off = 0
@@ -342,30 +284,6 @@ async def token_by_auth_flow(request: Request):
 async def auth_callback(request: Request):
     """Auth callback from Provider"""
     return await PROVIDER.auth_callback(request)
-
-
-@app.post("/start_session", status_code=status.HTTP_200_OK)
-async def session(request: Request):
-    """Start client session with cookies"""
-
-    auth = request.headers.get("authorization", None)
-    if not auth:
-        raise HTTPException(401, "No authorization header")
-    try:
-        bearer_token = auth.split(" ")[1]
-    # pylint: disable=raise-missing-from
-    except Exception:
-        raise HTTPException(401, "Invalid getting auth")
-
-    await PROVIDER.start_session(bearer_token, request)
-    return {"Result": "OK"}
-
-
-@app.post("/end_session", status_code=status.HTTP_200_OK)
-async def end_session(request: Request):
-    """End client session"""
-    await PROVIDER.end_session(request)
-    return {"Result": "OK"}
 
 
 @app.get("/heartbeat")
@@ -417,10 +335,19 @@ async def _reverse_proxy(request: Request):
 
     auth = None
     if AUTH is True:
-        auth = await PROVIDER.validate_token(request)
+        auth = request.headers.get("authorization", None)
+        if not auth:
+            raise HTTPException(401, "No authorization header")
+        try:
+            bearer_token = auth.split(" ")[1]
+        # pylint: disable=raise-missing-from
+        except Exception:
+            raise HTTPException(401, "Invalid getting auth")
+
+        await PROVIDER.validate_token(bearer_token)
 
     try:
-        rp_resp = await _send_endpoint(url, auth, request)
+        rp_resp = await _send_endpoint(url, bearer_token, request)
 
         return StreamingResponse(
             rp_resp.aiter_raw(),

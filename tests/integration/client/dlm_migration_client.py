@@ -5,11 +5,11 @@ import requests
 from tests.integration.client.exception_handler import dlm_raise_for_status
 
 MIGRATION_URL = ""
-SESSION: requests.Session = None
+TOKEN: str = None
 
 
 def copy_data_item(
-    # pylint: disable=too-many-arguments,too-many-positional-arguments,unused-argument
+    # pylint: disable=too-many-arguments,unused-argument,too-many-positional-arguments
     item_name: str = "",
     oid: str = "",
     uid: str = "",
@@ -55,6 +55,9 @@ def copy_data_item(
         No data item found for copying.
     """
     params = {k: v for k, v in locals().items() if v}
-    response = SESSION.post(f"{MIGRATION_URL}/migration/copy_data_item", params=params, timeout=60)
+    headers = {"Authorization": f"Bearer {TOKEN}"}
+    response = requests.post(
+        f"{MIGRATION_URL}/migration/copy_data_item", params=params, headers=headers, timeout=60
+    )
     dlm_raise_for_status(response)
     return response.json()

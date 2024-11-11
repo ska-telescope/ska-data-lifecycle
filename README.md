@@ -150,13 +150,12 @@ For more information see [helm chart README.md](./charts/ska-dlm/README.md)
 Typical usage of the DLM:
 
 1. Obtain an API token, authorizing use of the DLM by a specific user
-2. Contact the gateway to exchange the API token for a session cookie
-3. Determine the location of the files you wish to add
-4. Register that location with the DLM system. Note the location must be accessible (via rclone) from the DLM
-5. Ingest the files into DLM one-by-one
-6. Instruct DLM to migrate the newly ingested item to a secondary storage
-7. Query the location of all copies of the item
-8. Access the items via the ska-dataproduct-dashboard
+2. Determine the location of the files you wish to add
+3. Register that location with the DLM system. Note the location must be accessible (via rclone) from the DLM
+4. Ingest the files into DLM one-by-one
+5. Instruct DLM to migrate the newly ingested item to a secondary storage
+6. Query the location of all copies of the item
+7. Access the items via the ska-dataproduct-dashboard
 
 ### Step 1: Obtain an API token
 
@@ -166,7 +165,7 @@ To obtain an API token:
 * Login with your SKAO credentials
 * If successful, a token will be returned. Copy the token.
 
-### Steps 2-7: Data Lifecycle Management
+### Steps 2-6: Data Lifecycle Management
 
 Once a token is ready, interactions with DLM can be done in two ways:
 
@@ -188,12 +187,8 @@ Interaction with the DLM is also possible via the REST API. The source code belo
 # other known locations are shown below
 DLM_URL = "https://sdhp.stfc.skao.int/dp-yanda/dlm"
 
-# exchange the token for a session cookie
-from requests import Session
-session = Session()
+# Prepare token to be placed in the header of any REST call
 bearer = {"Authorization": f"Bearer {your token}"}
-response = session.post(f"{DLM_URL}/start_session", headers=bearer, timeout=60)
-response.raise_for_status()
 
 # create details for this location
 location_name="ThisLocationName"
@@ -202,7 +197,7 @@ location_type="ThisLocationType"
 # check if this location is already known to DLM
 #location = dlm_storage.query_location(location_name=location_name)
 params = {"location_name": location_name}
-location = session.get(f"{DLM_URL}/storage/query_location", params=params, timeout=60)
+location = session.get(f"{DLM_URL}/storage/query_location", params=params, headers=bearer, timeout=60)
 print(location.json())
 
 # otherwise, register this location:
@@ -212,7 +207,7 @@ params = {
   "location_type": location_type,
 }
 
-location = session.post(f"{DLM_URL}/storage/init_location", params=params, timeout=60)
+location = session.post(f"{DLM_URL}/storage/init_location", params=params, headers=bearer, timeout=60)
 print(location.json())
 
 # get the location id
@@ -238,7 +233,7 @@ params = {
   "storage_interface": "posix",
   "storage_capacity": 100000000,
 }
-storage = session.post(f"{DLM_URL}/storage/init_storage", params=params, timeout=60)
+storage = session.post(f"{DLM_URL}/storage/init_storage", params=params, headers=bearer, timeout=60)
 print(storage.json())
 
 # get the storage_id
@@ -259,7 +254,7 @@ params = {
     "parameters":{},
   }
 }
-config = session.post(f"{DLM_URL}/storage/create_storage_config", params=params, timeout=60)
+config = session.post(f"{DLM_URL}/storage/create_storage_config", params=params, headers=bearer, timeout=60)
 print(config.json())
 
 # then begin adding data items
@@ -278,7 +273,7 @@ params = {
   "item_format": None,
   "eb_id": None,
 }
-response = session.post(f"{DLM_URL}/ingest/register_data_item", params=params, timeout=60)
+response = session.post(f"{DLM_URL}/ingest/register_data_item", params=params, headers=bearer, timeout=60)
 print(response.json())
 
 # trigger a migration from storage to storage
