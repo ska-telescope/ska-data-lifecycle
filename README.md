@@ -150,13 +150,12 @@ For more information see [helm chart README.md](./charts/ska-dlm/README.md)
 Typical usage of the DLM:
 
 1. Obtain an API token, authorizing use of the DLM by a specific user
-2. Contact the gateway to exchange the API token for a session cookie
-3. Determine the location of the files you wish to add
-4. Register that location with the DLM system. Note the location must be accessible (via rclone) from the DLM
-5. Ingest the files into DLM one-by-one
-6. Instruct DLM to migrate the newly ingested item to a secondary storage
-7. Query the location of all copies of the item
-8. Access the items via the ska-dataproduct-dashboard
+2. Determine the location of the files you wish to add
+3. Register that location with the DLM system. Note the location must be accessible (via rclone) from the DLM
+4. Ingest the files into DLM one-by-one
+5. Instruct DLM to migrate the newly ingested item to a secondary storage
+6. Query the location of all copies of the item
+7. Access the items via the ska-dataproduct-dashboard
 
 ### Step 1: Obtain an API token
 
@@ -166,7 +165,7 @@ To obtain an API token:
 * Login with your SKAO credentials
 * If successful, a token will be returned. Copy the token.
 
-### Steps 2-7: Data Lifecycle Management
+### Steps 2-6: Data Lifecycle Management
 
 Once a token is ready, interactions with DLM can be done in two ways:
 
