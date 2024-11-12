@@ -26,6 +26,9 @@ rest = fastapi_auto_annotate(
         description="REST interface of the SKA-DLM Storage Manager",
         version=ska_dlm.__version__,
         license_info={"name": "BSD-3-Clause", "identifier": "BSD-3-Clause"},
+        openapi_url="/storage/openapi.json",
+        docs_url="/storage/docs",
+        redoc_url="/storage/redoc",
     )
 )
 

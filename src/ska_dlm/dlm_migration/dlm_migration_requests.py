@@ -30,6 +30,9 @@ rest = fastapi_auto_annotate(
         description="REST interface of the SKA-DLM Migration Manager",
         version=ska_dlm.__version__,
         license_info={"name": "BSD-3-Clause", "identifier": "BSD-3-Clause"},
+        openapi_url="/migration/openapi.json",
+        docs_url="/migration/docs",
+        redoc_url="/migration/redoc",
     )
 )
 rest.add_middleware(

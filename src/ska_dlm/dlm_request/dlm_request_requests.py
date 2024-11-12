@@ -26,6 +26,9 @@ rest = fastapi_auto_annotate(
         description="REST interface of the SKA-DLM Request Manager",
         version=ska_dlm.__version__,
         license_info={"name": "BSD-3-Clause", "identifier": "BSD-3-Clause"},
+        openapi_url="/request/openapi.json",
+        docs_url="/request/docs",
+        redoc_url="/request/redoc",
     )
 )
 
