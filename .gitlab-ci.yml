@@ -178,6 +178,7 @@ stop-integration:
 deploy-integration-dp:
   stage: integration-dp
   extends: deploy-integration
+  needs: []
   when: manual
   tags:
     - ska-k8srunner-dp
