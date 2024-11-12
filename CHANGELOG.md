@@ -14,7 +14,7 @@
 
 * Changed helm chart pod names to contain instance name
 * Changed `migration/copy_data_item` endpoint from `GET` to `POST`
-* * Changed `storage/init_storage` options from `json_data` params to request body.
+* Changed `storage/init_storage` options from `json_data` params to request body.
 * Changed from gateway session authentication to bearer tokens
 
 ## 0.1.0
