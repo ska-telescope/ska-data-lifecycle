@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.2.0
+
 ### Added
 
 * Added CICD deployment jobs for 3 targets: `ci-dev`, `integration` and `staging`
@@ -12,6 +14,8 @@
 
 * Changed helm chart pod names to contain instance name
 * Changed `migration/copy_data_item` endpoint from `GET` to `POST`
+* Changed `storage/init_storage` options from `json_data` params to request body.
+* Changed from gateway session authentication to bearer tokens
 
 ## 0.1.0
 
