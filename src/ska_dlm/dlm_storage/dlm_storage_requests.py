@@ -93,14 +93,15 @@ def init_storage(
     storage_name: str,
     storage_type: str,
     storage_interface: str,
-    location_id: str = "",
-    location_name: str = "",
+    location_id: str | None = None,
+    location_name: str | None = None,
     storage_capacity: int = -1,
     storage_phase_level: str = "GAS",
-    json_data: JsonObjectOption = None,
+    rclone_config: JsonObjectOption = None,
 ) -> str:
-    """
-    Intialize a new storage by at least specifying a storage_name.
+    """Intialize a new storage.
+
+    location_name or location_id is required.
 
     Parameters
     ----------
@@ -118,7 +119,7 @@ def init_storage(
         reserved storage capacity in bytes
     storage_phase_level: str, optional
         one of "GAS", "LIQUID", "SOLID"
-    json_data: str, optional
+    rclone_config: dict, optional
         extra rclone values such as secrets required for connection
 
     Returns
@@ -135,9 +136,10 @@ def init_storage(
         "storage_capacity",
         "storage_phase_level",
     ]
+    # TODO remove keys none values
     post_data = {}
-    if json_data:
-        json_dict = json_data
+    if rclone_config:
+        json_dict = rclone_config
         for k in mandatory_keys:
             if k not in json_dict:
                 logger.error("Parameter %s is required in json_data!", k)
@@ -196,7 +198,7 @@ def create_storage_config(
         "config": config,
         "config_type": config_type,
     }
-    if rclone_config(config):
+    if create_rclone_config(config):
         return DB.insert(CONFIG.DLM.storage_config_table, json=post_data)[0]["config_id"]
     raise UnmetPreconditionForOperation("Configuring rclone server failed!")
 
@@ -249,7 +251,7 @@ def get_storage_config(
 
 @cli.command()
 @rest.post("/storage/rclone_config")
-def rclone_config(config: JsonObjectArg) -> bool:
+def create_rclone_config(config: JsonObjectArg) -> bool:
     """Create a new rclone backend configuration entry on the rclone server.
 
     Parameters

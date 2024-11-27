@@ -42,4 +42,4 @@ def test_initialize_storage_config():
     config_id = dlm_storage.create_storage_config(storage_id=uuid, config=config)
     assert len(config_id) == 36
     # configure rclone
-    assert dlm_storage.rclone_config(config) is True
+    assert dlm_storage.create_rclone_config(config) is True
