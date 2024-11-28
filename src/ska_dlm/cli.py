@@ -37,7 +37,7 @@ app.add_typer(migration_app, name="migration", help="Manage data movement and mi
 
 
 app.exception_handler(HTTPError)(dump_short_stacktrace)
-app.exception_handler(DBQueryError)(dump_short_stacktrace) #TODO YAN-XXXX: Read message from body
+app.exception_handler(DBQueryError)(dump_short_stacktrace)  # TODO YAN-XXXX: Read message from body
 app.exception_handler(UnmetPreconditionForOperation)(dump_short_stacktrace)
 
 
