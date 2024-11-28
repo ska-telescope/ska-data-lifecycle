@@ -72,12 +72,14 @@ cli.exception_handler(ValueAlreadyInDB)(dump_short_stacktrace)
 @cli.command()
 @rest.post("/ingest/init_data_item")
 def init_data_item(
-    item_name: str = "",
+    item_name: str | None = None,
     phase: str = "GAS",
     json_data: JsonObjectOption = None,
     authorization: Annotated[str | None, Header()] = None,
 ) -> str:
-    """Initialize a new data_item by at least specifying an item_name.
+    """Initialize a new data_item.
+
+    item_name or json_data is required.
 
     Parameters
     ----------
@@ -86,13 +88,14 @@ def init_data_item(
     phase : str
         the phase this item is set to (usually inherited from the storage)
     json_data : dict | None
-        provides the ability to specify all values.
+        data item table values.
     authorization : str
         Validated Bearer token with UserInfo
 
     Returns
     -------
     str
+        created data_item UID
 
     Raises
     ------

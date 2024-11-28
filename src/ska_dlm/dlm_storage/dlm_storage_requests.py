@@ -107,19 +107,19 @@ def init_storage(
     ----------
     storage_name : str
         An organisation or owner name for the storage.
-    storage_type: str
+    storage_type : str
         high level type of the storage, e.g. "disk", "s3"
-    storage_interface: str
+    storage_interface : str
         storage interface for rclone access, e.g. "posix", "s3"
     location_name : str, optional
         a dlm registered location name
     location_id : str, optional
         a dlm registered location id
-    storage_capacity: int, optional
+    storage_capacity : int, optional
         reserved storage capacity in bytes
-    storage_phase_level: str, optional
+    storage_phase_level : str, optional
         one of "GAS", "LIQUID", "SOLID"
-    rclone_config: dict, optional
+    rclone_config : dict, optional
         extra rclone values such as secrets required for connection
 
     Returns

@@ -28,7 +28,7 @@ from .dlm_migration.dlm_migration_requests import cli as migration_app
 from .dlm_request.dlm_request_requests import cli as request_app
 from .dlm_storage.dlm_storage_requests import cli as storage_app
 
-app = ExceptionHandlingTyper(pretty_exceptions_show_locals=False)
+app = ExceptionHandlingTyper(pretty_exceptions_show_locals=False, result_callback=print)
 app.add_typer(ingest_app, name="ingest", help="Ingest data items")
 app.add_typer(item_app, name="data-item", help="Manage data_item information")
 app.add_typer(request_app, name="request", help="Request queries")
