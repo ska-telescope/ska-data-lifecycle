@@ -139,7 +139,7 @@ def create_storage_config(
     return response.json()
 
 
-def rclone_config(config: JsonObjectArg) -> bool:
+def create_rclone_config(config: JsonObjectArg) -> bool:
     """
     Create a new rclone backend configuration entry on the rclone server.
 
