@@ -8,10 +8,14 @@ global:
   development: true
   storageClass: ""  # existing storage class
   dataProduct:
+    pv:
+      name: default-pv
+      create: false  # create or use existing pv
+      storageSize: 2Gi
     pvc:
-      name: test-pvc
+      name: default-pvc
       create: false  # create or use existing pvc
-      storage: 1000Gi  # created claim size
+      storageSize: 2Gi  # created claim size
     api:
       url: "http://localhost:8000"
 

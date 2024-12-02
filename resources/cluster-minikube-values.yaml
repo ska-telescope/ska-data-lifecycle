@@ -1,10 +1,11 @@
 global:
-  ingress:
-    enabled: true
-    domainName: k8s.stfc.skao.int
   storageClass: standard
   dataProduct:
+    pv:
+      name: test-pv
+      create: true
+      storage: 5Gi
     pvc:
       name: test-pvc
       create: true
-      storage: 20Gi
+      storage: 5Gi
