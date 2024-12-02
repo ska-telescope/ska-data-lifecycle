@@ -93,7 +93,7 @@ def create_fastapi_function_info(
 
 
 def fastapi_docstring_annotate(
-    func: typing.Callable[ParamsT, ReturnT]
+    func: typing.Callable[ParamsT, ReturnT],
 ) -> typing.Callable[ParamsT, ReturnT]:
     """Decorator that generates FastAPI annotations from the function signature and docstring.
 
@@ -154,7 +154,7 @@ def fastapi_docstring_annotate(
     return output_func
 
 
-def decode_bearer(bearer: str) -> dict:
+def decode_bearer(bearer: str | None) -> dict | None:
     """Extract token from Bearer string and decode."""
     if bearer:
         bearer_token = bearer.split(" ")[1]

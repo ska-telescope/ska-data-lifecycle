@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class DBQueryError(DataLifecycleError):
     """An error while performing a database query."""
 
-    def __init__(self, url: str, method: str, params: dict | tuple | None, json: object | None):
+    def __init__(self, url: str, method: str, params: dict | list | None, json: dict | None):
         """Create a DBQueryError.
 
         Parameters
@@ -33,9 +33,22 @@ class DBQueryError(DataLifecycleError):
         self.params = params
         self.json = json
 
+    def __repr__(self):
+        """Python representation."""
+        return (
+            f"DBQueryError("
+            f"url={self.url!r}, "
+            f"method={self.method!r}, "
+            f"params={self.params!r}, "
+            f"json={self.json!r})"
+        )
+
     def __str__(self):
-        """Convert to string."""
-        return f"DBQueryError(url='{self.url}', method='{self.method}', params={self.params})"
+        """Pretty string representation."""
+        # print postgrest response json
+        if self.json and "message" in self.json and "message" in self.json:
+            return f"DBQueryError: {self.json['message']}\n\tdetails: {self.json['details']}"
+        return repr(self)
 
 
 _DEFAULT_HEADERS = {"Prefer": "missing=default, return=representation"}
@@ -83,7 +96,7 @@ class PostgRESTAccess(contextlib.AbstractContextManager):
         table: str,
         method: str,
         params: dict | list | None = None,
-        json: object | None = None,
+        json: dict | None = None,
         **kwargs,
     ) -> list:
         url = f"{self.api_url}/{table}"
@@ -92,8 +105,15 @@ class PostgRESTAccess(contextlib.AbstractContextManager):
                 method, url, params=params, json=json, timeout=self._timeout, **kwargs
             )
             response.raise_for_status()
-        except Exception as ex:
-            raise DBQueryError(url=url, method=method, params=params, json=json) from ex
+        except requests.RequestException as ex:
+            if ex.response is None:
+                raise
+            match ex.response.status_code:
+                case 400:
+                    json = ex.response.json()
+                    raise DBQueryError(url=url, method=method, params=params, json=json) from ex
+                case _:
+                    raise
         return response.json()
 
 

@@ -21,7 +21,7 @@ def _iterate_exception_causes(ex: Exception):
 
 def dump_short_stacktrace(ex: Exception):
     """Register custom stacktrace print for DBQueryError."""
-    full_msg = ", caused by: ".join(f"{ex}" for ex in _iterate_exception_causes(ex))
+    full_msg = "\ncaused by: ".join(f"{ex}" for ex in _iterate_exception_causes(ex))
     rich_print(f"[bold red]ERROR![/bold red]: {full_msg}")
     return 1
 
