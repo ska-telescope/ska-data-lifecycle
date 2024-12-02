@@ -1,7 +1,4 @@
 global:
-  ingress:
-    enabled: true
-    domainName: k8s.stfc.skao.int
   storageClass: standard
   dataProduct:
     pvc:
