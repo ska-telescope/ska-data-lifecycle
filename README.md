@@ -32,7 +32,7 @@ That also enables all the REST interfaces and they can be explored on their indi
 - http://localhost:8001/docs for the Ingest Manager REST API
 - http://localhost:8002/docs for the Request Manager REST API
 - http://localhost:8003/docs for the Storage Manager service REST API
-- http://localhost:8003/docs for the Migration Manager REST API
+- http://localhost:8004/docs for the Migration Manager REST API
 
  To stop that environment again use the command:
 

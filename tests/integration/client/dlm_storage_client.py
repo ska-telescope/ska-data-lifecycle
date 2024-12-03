@@ -39,7 +39,9 @@ def init_storage(
     json_data: dict | None = None,
 ) -> str:
     """
-    Intialize a new storage by at least specifying a storage_name.
+    Initialize a new storage.
+
+    location_name or location_id is required.
 
     Parameters
     ----------
@@ -81,7 +83,9 @@ def init_storage(
 # pylint: disable=unused-argument
 def query_location(location_name: str = "", location_id: str = "") -> list:
     """
-    Query a location by at least specifying an location_name.
+    Query a location.
+
+    location_name or location_id is required.
 
     Parameters
     ----------
@@ -139,7 +143,7 @@ def create_storage_config(
     return response.json()
 
 
-def rclone_config(config: JsonObjectArg) -> bool:
+def create_rclone_config(config: JsonObjectArg) -> bool:
     """
     Create a new rclone backend configuration entry on the rclone server.
 
@@ -159,17 +163,19 @@ def rclone_config(config: JsonObjectArg) -> bool:
 # pylint: disable=unused-argument
 def query_storage(storage_name: str = "", storage_id: str = "") -> list:
     """
-    Query a storage by at least specifying a storage_name.
+    Query a storage.
+
+    storage_name or storage_id is required.
 
     Parameters
     ----------
-    storage_name
+    storage_name: str, optional
         could be empty, in which case the first 1000 items are returned
-    storage_id
+    storage_id: str, optional
         Return locations referred to by the location_id provided.
 
-    Returns:
-    --------
+    Returns
+    -------
     list
     """
     params = {k: v for k, v in locals().items() if v}

@@ -45,7 +45,9 @@ def invalidquery_exception_handler(request: Request, exc: InvalidQueryParameters
 def query_data_item(
     item_name: str = "", oid: str = "", uid: str = "", params: str | None = None
 ) -> list:
-    """Query a new data_item by at least specifying an item_name.
+    """Query a data_item.
+
+    At least one of item_name, oid, uid, or params is required.
 
     Parameters
     ----------

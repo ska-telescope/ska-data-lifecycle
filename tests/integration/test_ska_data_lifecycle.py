@@ -61,7 +61,7 @@ def setup(env):
     config = {"name": "MyDisk", "type": "alias", "parameters": {"remote": "/"}}
     env.storage_requests.create_storage_config(storage_id=uuid, config=config)
     # configure rclone
-    env.storage_requests.rclone_config(config)
+    env.storage_requests.create_rclone_config(config)
     yield
     _clear_database()
     env.clear_rclone_data(ROOT)
@@ -193,7 +193,7 @@ def __initialize_storage_config(env):
     config_id = env.storage_requests.create_storage_config(storage_id=uuid, config=config)
     assert len(config_id) == 36
     # configure rclone
-    assert env.storage_requests.rclone_config(config) is True
+    assert env.storage_requests.create_rclone_config(config) is True
 
 
 @pytest.mark.integration_test

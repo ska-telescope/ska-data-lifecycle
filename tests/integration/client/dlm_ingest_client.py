@@ -13,19 +13,28 @@ JsonType = Union[Dict[str, Any], List[Any], str, int, float, bool, None]
 
 
 # pylint: disable=unused-argument
-def init_data_item(item_name: str = "", phase: str = "GAS", json_data: str = "") -> str:
-    """
-    Intialize a new data_item by at least specifying an item_name.
+def init_data_item(item_name: str | None = None, phase: str = "GAS", json_data: str = "") -> str:
+    """Initialize a new data_item.
 
-    Parameters:
-    -----------
-    item_name, the item_name, can be empty, but then json_data has to be specified.
-    phase, the phase this item is set to (usually inherited from the storage)
-    json_data, provides the ability to specify all values.
+    item_name or json_data is required.
 
-    Returns:
-    --------
-    uid,
+    Parameters
+    ----------
+    item_name : str
+        the item_name, can be empty, but then json_data has to be specified.
+    phase : str
+        the phase this item is set to (usually inherited from the storage)
+    json_data : dict | None
+        data item table values.
+
+    Returns
+    -------
+    str
+        created data_item UID
+
+    Raises
+    ------
+    InvalidQueryParameters
     """
     params = {k: v for k, v in locals().items() if v}
     headers = {"Authorization": f"Bearer {TOKEN}"}
@@ -63,7 +72,7 @@ def register_data_item(
     ----------
     item_name: str
         could be empty, in which case the first 1000 items are returned
-    uri: str
+    uri : str
         the access path to the payload.
     storage_name: str
         the name of the configured storage volume (name or ID required)
@@ -77,7 +86,7 @@ def register_data_item(
     Returns
     -------
     str
-        data_item UID
+        created data_item UID
 
     Raises
     ------

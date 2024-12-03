@@ -1,5 +1,9 @@
 --
--- ska_dlm_adminQL DDL for SKA Data Life Cycle management DB setup
+-- ska_dlm_adminQL DDL for SKA Data Lifecycle Management DB setup
+--
+
+--
+-- Table location
 --
 
 CREATE TABLE location (
@@ -15,7 +19,9 @@ CREATE TABLE location (
 );
 ALTER TABLE location OWNER TO ska_dlm_admin;
 
-
+--
+-- Table storage
+--
 
 CREATE TABLE storage (
     storage_id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -62,6 +68,10 @@ CREATE TABLE storage_config (
 );
 ALTER TABLE storage_config OWNER TO ska_dlm_admin;
 
+
+--
+-- Table data_item
+--
 
 CREATE TABLE data_item (
     UID uuid DEFAULT gen_random_uuid() PRIMARY KEY,

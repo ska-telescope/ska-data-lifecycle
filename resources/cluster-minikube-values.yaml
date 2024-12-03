@@ -1,0 +1,7 @@
+global:
+  storageClass: standard
+  dataProduct:
+    pvc:
+      name: test-pvc
+      create: true
+      storage: 20Gi
