@@ -64,7 +64,9 @@ def invalidquery_exception_handler(request: Request, exc: InvalidQueryParameters
 @rest.get("/storage/query_location")
 def query_location(location_name: str = "", location_id: str = "") -> list:
     """
-    Query a location by at least specifying a location_name.
+    Query a location.
+
+    location_name or location_id is required.
 
     Parameters
     ----------
@@ -83,6 +85,8 @@ def query_location(location_name: str = "", location_id: str = "") -> list:
             params["location_name"] = f"eq.{location_name}"
         elif location_id:
             params["location_id"] = f"eq.{location_id}"
+        else:
+            raise InvalidQueryParameters("Either location_name or location_id is required")
     return DB.select(CONFIG.DLM.location_table, params=params)
 
 
@@ -99,7 +103,8 @@ def init_storage(
     storage_phase_level: str = "GAS",
     rclone_config: JsonObjectOption = None,
 ) -> str:
-    """Intialize a new storage.
+    """
+    Initialize a new storage.
 
     location_name or location_id is required.
 
@@ -425,7 +430,9 @@ def init_location(
 @rest.get("/storage/query_storage")
 def query_storage(storage_name: str = "", storage_id: str = "") -> list:
     """
-    Query a storage by at least specifying a storage_name.
+    Query a storage.
+
+    storage_name or storage_id is required.
 
     Parameters
     ----------
@@ -443,6 +450,8 @@ def query_storage(storage_name: str = "", storage_id: str = "") -> list:
         params["storage_name"] = f"eq.{storage_name}"
     elif storage_id:
         params["storage_id"] = f"eq.{storage_id}"
+    else:
+        raise InvalidQueryParameters("Either storage_name or storage_id is required")
     return DB.select(CONFIG.DLM.storage_table, params=params)
 
 
