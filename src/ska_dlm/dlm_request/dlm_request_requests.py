@@ -47,7 +47,7 @@ def query_data_item(
 ) -> list:
     """Query a data_item.
 
-    params or item_name/oid/uid is required.
+    At least one of item_name, oid, uid, or params is required.
 
     Parameters
     ----------
