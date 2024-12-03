@@ -24,8 +24,8 @@ def mock_command(  # pylint: disable=unused-argument, too-many-arguments
     arg1: str,
     arg2: Annotated[
         str,
-        typer.Argument(help="custom arg2 description"),
-        fastapi.Query(description="custom arg2 description"),
+        typer.Argument(help="typer arg2 description"),
+        fastapi.Query(description="fastapi arg2 description"),
     ],
     arg3: Annotated[str, "some other annotation"],
     arg4: Annotated[str, typer.Argument()] = "default",
@@ -33,10 +33,15 @@ def mock_command(  # pylint: disable=unused-argument, too-many-arguments
     opt2: str | None = None,
     opt3: Annotated[
         str,
-        typer.Option(help="custom opt3 description"),
-        fastapi.Query(description="custom opt3 description"),
+        typer.Option(help="typer opt3 description"),
+        fastapi.Query(description="fastapi opt3 description"),
     ] = "abcd",
     opt4: Annotated[Any | None, typer.Option()] = None,
+    header1: Annotated[str | None, fastapi.Header()] = None,
+    cookie1: Annotated[str | None, fastapi.Cookie()] = None,
+    file1: Annotated[str | None, fastapi.File()] = None,
+    dep1: Annotated[str | None, fastapi.Depends()] = None,
+    sec1: Annotated[str | None, fastapi.Security()] = None,
 ):
     """
     Short description.
@@ -54,14 +59,18 @@ def mock_command(  # pylint: disable=unused-argument, too-many-arguments
         arg3 description
     arg4 : str
         arg4 description
-    opt1 : dict | list
+    opt1 : str
         opt1 description
-    opt2 : dict | list
+    opt2 : str | None
         opt2 description
-    opt3 : dict | list
+    opt3 : str
         opt3 description
-    opt4 : dict | list
+    opt4 : Any | None
         opt4 description
+    cookie1 : str | None
+        cookie1 description
+    file1 : str | None
+        file1 description
     """
 
 
@@ -73,15 +82,20 @@ def test_fastapi_docstring_generator():
     assert docstring.long_description == "Long description across\nmultiple lines."
 
     ann = typed.__annotations__
-    assert_fastapi_annotation(ann["arg1"], fastapi.params.Query, "arg1 description")
-    assert_fastapi_annotation(ann["arg2"], fastapi.params.Query, "custom arg2 description")
-    assert_fastapi_annotation(ann["arg3"], fastapi.params.Query, "arg3 description")
-    assert_fastapi_annotation(ann["arg4"], fastapi.params.Query, "arg4 description")
+    assert_fastapi_annotation_doc(ann["arg1"], fastapi.params.Query, "arg1 description")
+    assert_fastapi_annotation_doc(ann["arg2"], fastapi.params.Query, "fastapi arg2 description")
+    assert_fastapi_annotation_doc(ann["arg3"], fastapi.params.Query, "arg3 description")
+    assert_fastapi_annotation_doc(ann["arg4"], fastapi.params.Query, "arg4 description")
 
-    assert_fastapi_annotation(ann["opt1"], fastapi.params.Query, "opt1 description")
-    assert_fastapi_annotation(ann["opt2"], fastapi.params.Query, "opt2 description")
-    assert_fastapi_annotation(ann["opt3"], fastapi.params.Query, "custom opt3 description")
-    assert_fastapi_annotation(ann["opt4"], fastapi.params.Body, "opt4 description")
+    assert_fastapi_annotation_doc(ann["opt1"], fastapi.params.Query, "opt1 description")
+    assert_fastapi_annotation_doc(ann["opt2"], fastapi.params.Query, "opt2 description")
+    assert_fastapi_annotation_doc(ann["opt3"], fastapi.params.Query, "fastapi opt3 description")
+    assert_fastapi_annotation(ann["opt4"], types.NoneType)
+
+    assert_fastapi_annotation_doc(ann["cookie1"], fastapi.params.Cookie, "cookie1 description")
+    assert_fastapi_annotation_doc(ann["file1"], fastapi.params.File, "file1 description")
+    assert_fastapi_annotation(ann["dep1"], fastapi.params.Depends)
+    assert_fastapi_annotation(ann["sec1"], fastapi.params.Security)
 
 
 def test_typer_docstring_generator():
@@ -93,13 +107,13 @@ def test_typer_docstring_generator():
 
     ann = typed.__annotations__
     assert_typer_annotation(ann["arg1"], ArgumentInfo, "arg1 description")
-    assert_typer_annotation(ann["arg2"], ArgumentInfo, "custom arg2 description")
+    assert_typer_annotation(ann["arg2"], ArgumentInfo, "typer arg2 description")
     assert_typer_annotation(ann["arg3"], ArgumentInfo, "arg3 description")
     assert_typer_annotation(ann["arg4"], ArgumentInfo, "arg4 description")
 
     assert_typer_annotation(ann["opt1"], OptionInfo, "opt1 description")
     assert_typer_annotation(ann["opt2"], OptionInfo, "opt2 description")
-    assert_typer_annotation(ann["opt3"], OptionInfo, "custom opt3 description")
+    assert_typer_annotation(ann["opt3"], OptionInfo, "typer opt3 description")
     assert_typer_annotation(ann["opt4"], OptionInfo, "opt4 description")
 
 
@@ -118,7 +132,17 @@ def assert_typer_annotation(annotation: Any, info_type: type, helpdoc: str):
     assert info.default == ...
 
 
-def assert_fastapi_annotation(annotation: Any, info_type: type, helpdoc: str):
+def assert_fastapi_annotation(annotation: Any, info_type: type):
+    found = 0
+    info = None
+    for meta in annotation.__metadata__:
+        if isinstance(meta, info_type):
+            info = meta
+            found += 1
+    assert found == 1, f"expected a single {info_type} in {annotation.__metadata__}"
+
+
+def assert_fastapi_annotation_doc(annotation: Any, info_type: type, helpdoc: str):
     """Assert annotations contains specificed fastapi info."""
     found = 0
     info = None
