@@ -99,7 +99,6 @@ k8s-test:
     HELM_VALUES: resources/config-ci-dev-values.yaml
     K8S_CHART_PARAMS: --values resources/config-ci-dev-values.yaml --values resources/cluster-k8s-values.yaml --wait --timeout=5m
   before_script:
-    - poetry self update $CI_POETRY_VERSION
     - poetry config virtualenvs.create $POETRY_CONFIG_VIRTUALENVS_CREATE
     - poetry install --with=test
   script:

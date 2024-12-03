@@ -85,11 +85,11 @@ def init_data_item(
     ----------
     item_name : str
         the item_name, can be empty, but then json_data has to be specified.
-    phase : str
+    phase : str, optional
         the phase this item is set to (usually inherited from the storage)
-    json_data : dict | None
+    json_data : dict | None, optional
         data item table values.
-    authorization : str
+    authorization : str, optional
         Validated Bearer token with UserInfo
 
     Returns
@@ -113,7 +113,7 @@ def init_data_item(
     elif json_data:
         post_data = json_data
     else:
-        raise InvalidQueryParameters("Either item_name or json_data has to be specified!")
+        raise InvalidQueryParameters("Either item_name or json_data is required")
     return DB.insert(CONFIG.DLM.dlm_table, json=post_data)[0]["uid"]
 
 

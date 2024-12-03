@@ -6,7 +6,7 @@ import types
 import typing
 from datetime import timedelta
 from types import NoneType, UnionType
-from typing import ParamSpec, TypeVar, get_args
+from typing import Any, ParamSpec, TypeVar, get_args
 
 import fastapi
 import fastapi.params
@@ -45,57 +45,70 @@ def fastapi_auto_annotate(app: fastapi.FastAPI):
     return app
 
 
-def create_fastapi_info(
-    param_type: type,
-    **param_kwargs,
-) -> FieldInfo:
-    """Create a FastAPI field from kwargs."""
+def create_fastapi_parameter_info(param_type: type, *param_args, **param_kwargs) -> Any:
+    """Create a FastAPI field info."""
     match param_type:
         case fastapi.params.Query:
-            return fastapi.Query(**param_kwargs)
+            result = fastapi.Query(*param_args, **param_kwargs)
         case fastapi.params.Body:
-            return fastapi.Body(**param_kwargs)
+            result = fastapi.Body(*param_args, **param_kwargs)
+        case fastapi.params.Cookie:
+            result = fastapi.Cookie(*param_args, **param_kwargs)
+        case fastapi.params.Header:
+            result = fastapi.Header(*param_args, **param_kwargs)
+        case fastapi.params.File:
+            result = fastapi.File(*param_args, **param_kwargs)
+        case fastapi.params.Depends:
+            result = fastapi.Depends(*param_args, **param_kwargs)
+        case fastapi.params.Security:
+            result = fastapi.Security(*param_args, **param_kwargs)
+        case fastapi.params._Unset:  # pylint: disable=protected-access
+            result = None
         case _:
-            raise NotImplementedError()
+            raise NotImplementedError(param_type)
+    return result
 
 
 def create_fastapi_function_info(
     func: typing.Callable[ParamsT, ReturnT], doc: Docstring
-) -> dict[str, FieldInfo]:
+) -> dict[str, Any]:
     """Create dictionary of default FastAPI annotations for a given function."""
     # Collect information about the parameters of the function
     kinds: dict[str, type] = {}
-    parameters: dict[str, dict] = {}
+    parameters: dict[str, tuple[list, dict]] = {}
 
     # Parse signature first so all parameter names are populated
     signature = inspect.signature(func)
     for arg_name, param in signature.parameters.items():
-        parameters[arg_name] = {}
-        kinds[arg_name] = (
-            fastapi.params.Query
-            if set(get_underlying_type(param.annotation)).issubset(
-                {str, timedelta, float, int, NoneType}
-            )
-            else fastapi.params.Body
-        )
+        parameters[arg_name] = ([], {})
+        if set(get_underlying_type(param.annotation)).issubset(
+            {bool, str, timedelta, float, int, NoneType}
+        ):
+            kinds[arg_name] = fastapi.params.Query
+        elif set(get_underlying_type(param.annotation)).issubset({dict, list, NoneType}):
+            kinds[arg_name] = fastapi.params.Body
+        else:
+            kinds[arg_name] = fastapi.params._Unset  # pylint: disable=protected-access
 
     # extract as help messages from docstring (if present)
     for par in doc.params:
-        if par.arg_name in parameters:
-            parameters[par.arg_name]["description"] = par.description
+        if par.arg_name in parameters and not isinstance(
+            kinds[par.arg_name], fastapi.params.Depends
+        ):
+            parameters[par.arg_name][1]["description"] = par.description
 
     # Transform the parameters into info instances
-    infos: dict[str, FieldInfo] = {
-        arg_name: create_fastapi_info(kinds[arg_name], **param_kwargs)
-        for arg_name, param_kwargs in parameters.items()
+    infos: dict[str, Any] = {
+        arg_name: create_fastapi_parameter_info(kinds[arg_name], *params[0], **params[1])
+        for arg_name, params in parameters.items()
     }
     return infos
 
 
 def fastapi_docstring_annotate(
-    func: typing.Callable[ParamsT, ReturnT]
+    func: typing.Callable[ParamsT, ReturnT],
 ) -> typing.Callable[ParamsT, ReturnT]:
-    """Decorator that generates FastAPI annotations from the function signature and docstring.
+    """Decorate FastAPI function with doc annotations from the signature and docstring.
 
     FastAPI functions require parameter docstrings inside FastAPI parameter annotations instead
     of the __doc__ member otherwise requiring docstring duplication to share parameter docstrings
@@ -105,24 +118,24 @@ def fastapi_docstring_annotate(
 
     Parameters
     ----------
-    func : typing.Callable[ParamsT, T]
+    func : typing.Callable[ParamsT, ReturnT]
         A fastapi endpoint function to modify the docstring and annotation.
 
     Returns
     -------
-    typing.Callable[ParamsT, T]
+    typing.Callable[ParamsT, ReturnT]
         Resulting fastapi endpoint with modified docstring and annotations.
     """
     # Parse docstring
-    docstring: Docstring = parse(func.__doc__)
+    docstring: Docstring = parse(func.__doc__ or "")
 
     # Convert function signature and docs into annotations
-    docstring_infos = create_fastapi_function_info(func, docstring)
+    generated_infos = create_fastapi_function_info(func, docstring)
 
     # Recreate function preserving any explicit annotations
     output_func = copy.copy(func)
     output_annotations: dict = {}
-    for arg_name, info in docstring_infos.items():
+    for arg_name, arg_info in generated_infos.items():
         updated_annotation: type | typing.Annotated = copy.deepcopy(func.__annotations__[arg_name])
         if hasattr(updated_annotation, "__metadata__"):
             updated = False
@@ -130,15 +143,15 @@ def fastapi_docstring_annotate(
                 if isinstance(meta, FieldInfo):
                     # override missing help with docstring
                     if meta.description is None:
-                        meta.description = copy.deepcopy(info.description)
+                        meta.description = copy.deepcopy(arg_info.description)
 
                     updated = True
             if not updated:
                 # annotations found but none for fastapi
-                updated_annotation.__metadata__ += (info,)
+                updated_annotation.__metadata__ += (arg_info,)
         else:
             # create annotation
-            updated_annotation = typing.Annotated[updated_annotation, info]
+            updated_annotation = typing.Annotated[updated_annotation, arg_info]
         output_annotations[arg_name] = updated_annotation
 
     if "return" in output_annotations:
@@ -154,7 +167,7 @@ def fastapi_docstring_annotate(
     return output_func
 
 
-def decode_bearer(bearer: str) -> dict:
+def decode_bearer(bearer: str | None) -> dict | None:
     """Extract token from Bearer string and decode."""
     if bearer:
         bearer_token = bearer.split(" ")[1]
