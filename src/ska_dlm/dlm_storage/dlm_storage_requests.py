@@ -66,8 +66,6 @@ def query_location(location_name: str = "", location_id: str = "") -> list:
     """
     Query a location.
 
-    location_name or location_id is required.
-
     Parameters
     ----------
     location_name: str, optional
@@ -85,8 +83,6 @@ def query_location(location_name: str = "", location_id: str = "") -> list:
             params["location_name"] = f"eq.{location_name}"
         elif location_id:
             params["location_id"] = f"eq.{location_id}"
-        else:
-            raise InvalidQueryParameters("Either location_name or location_id is required")
     return DB.select(CONFIG.DLM.location_table, params=params)
 
 
@@ -432,8 +428,6 @@ def query_storage(storage_name: str = "", storage_id: str = "") -> list:
     """
     Query a storage.
 
-    storage_name or storage_id is required.
-
     Parameters
     ----------
     storage_name: str, optional
@@ -450,8 +444,6 @@ def query_storage(storage_name: str = "", storage_id: str = "") -> list:
         params["storage_name"] = f"eq.{storage_name}"
     elif storage_id:
         params["storage_id"] = f"eq.{storage_id}"
-    else:
-        raise InvalidQueryParameters("Either storage_name or storage_id is required")
     return DB.select(CONFIG.DLM.storage_table, params=params)
 
 
