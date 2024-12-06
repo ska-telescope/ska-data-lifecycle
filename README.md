@@ -183,6 +183,8 @@ For more complete information, refer to the ska-dlm-client [repository](https://
 Interaction with the DLM is also possible via the REST API. The source code below is a typical example. The comments preceding each REST call are the python method alternatives.
 
 ```python
+from requests import Session
+
 # this URL is for DLM deployment in the Yanda namespace on the DP integration cluster
 # other known locations are shown below
 DLM_URL = "https://sdhp.stfc.skao.int/dp-yanda/dlm"
@@ -197,6 +199,7 @@ location_type="ThisLocationType"
 # check if this location is already known to DLM
 #location = dlm_storage.query_location(location_name=location_name)
 params = {"location_name": location_name}
+session = Session()
 location = session.get(f"{DLM_URL}/storage/query_location", params=params, headers=bearer, timeout=60)
 print(location.json())
 
