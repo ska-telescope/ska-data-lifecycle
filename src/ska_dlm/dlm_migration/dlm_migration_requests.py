@@ -1,20 +1,22 @@
 """DLM Migration API module."""
 
 import logging
+from typing import Annotated
 
 import requests
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 import ska_dlm
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
 from ska_dlm.exceptions import InvalidQueryParameters, ValueAlreadyInDB
-from ska_dlm.fastapi_utils import fastapi_auto_annotate
+from ska_dlm.fastapi_utils import decode_bearer, fastapi_auto_annotate
 from ska_dlm.typer_utils import dump_short_stacktrace
 
 from .. import CONFIG
 from ..data_item import set_state, set_uri
+from ..dlm_db.db_access import DB
 from ..dlm_ingest import init_data_item
 from ..dlm_request import query_data_item
 from ..dlm_storage import check_item_on_storage, get_storage_config, query_storage
@@ -81,6 +83,40 @@ def rclone_copy(src_fs: str, src_remote: str, dst_fs: str, dst_remote: str, item
 
 
 @cli.command()
+@rest.get("/migration/query_migrations")
+def query_migrations() -> list:
+    """
+    Query for all migrations.
+
+    Returns
+    -------
+    list
+    """
+    params = {"limit": 1000}
+
+    return DB.select(CONFIG.DLM.migration_table, params=params)
+
+
+def _create_migration_record(oid, source_storage_id, destination_storage_id, authorization):
+    # decode the username from the authorization
+    username = None
+    user_info = decode_bearer(authorization)
+    if user_info:
+        username = user_info.get("preferred_username", None)
+        if username is None:
+            raise ValueError("Username not found in profile")
+
+    # add migration to DB
+    json_data = {
+        "oid": oid,
+        "source_storage_id": source_storage_id,
+        "destination_storage_id": destination_storage_id,
+        "user": username,
+    }
+    DB.insert(CONFIG.DLM.migration_table, json=json_data)
+
+
+@cli.command()
 @rest.post("/migration/copy_data_item")
 def copy_data_item(
     # pylint: disable=too-many-arguments,too-many-locals,too-many-positional-arguments
@@ -90,6 +126,7 @@ def copy_data_item(
     destination_name: str = "",
     destination_id: str = "",
     path: str = "",
+    authorization: Annotated[str | None, Header()] = None,
 ) -> str:
     """Copy a data_item from source to destination.
 
@@ -115,6 +152,8 @@ def copy_data_item(
         the destination storage, by default ""
     path : str
         the destination path, by default ""
+    authorization : str, optional
+        Validated Bearer token with UserInfo
 
     Returns
     -------
@@ -182,6 +221,11 @@ def copy_data_item(
 
     if status_code != 200:
         return IOError("rclone copy failed")
+
+    # add row to migration table
+    _create_migration_record(
+        orig_item["oid"], storage["storage_id"], destination_id, authorization
+    )
 
     # (6)
     set_uri(uid, dest["path"], destination_id)
