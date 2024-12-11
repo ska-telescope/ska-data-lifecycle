@@ -146,6 +146,7 @@ For more information see [helm chart README.md](./charts/ska-dlm/README.md)
 
 
 ## Example Usage
+<!-- TODO: Move the following section to a 'tutorial' section, preferably in RTD. -->
 
 Typical usage of the DLM:
 
