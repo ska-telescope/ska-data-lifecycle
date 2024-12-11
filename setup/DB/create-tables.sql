@@ -168,11 +168,11 @@ CREATE TABLE migration (
     OID uuid NOT NULL,
     source_storage_id uuid NOT NULL,
     destination_storage_id uuid NOT NULL,
-    request_user varchar DEFAULT 'SKA',
-    request_group varchar DEFAULT 'SKA',
+    "user" varchar DEFAULT 'SKA',
+    "group" varchar DEFAULT 'SKA',
     task_status jsonb DEFAULT NULL,
     complete boolean DEFAULT false,
-    creation_date timestamp without time zone DEFAULT now(),
+    "date" timestamp without time zone DEFAULT now(),
     completion_date timestamp without time zone DEFAULT NULL,
     CONSTRAINT fk_source_storage
       FOREIGN KEY(source_storage_id)
