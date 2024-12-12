@@ -222,7 +222,7 @@ params = {
   "storage_name": "MyDisk",
   "location_id": location_id,
 }
-storage = session.get(f"{DLM_URL}/storage/query_storage", params=params, timeout=60)
+storage = session.get(f"{DLM_URL}/storage/query_storage", params=params, headers=bearer, timeout=60)
 print(storage.json())
 
 # initialise a storage, if it doesn’t already exist:
@@ -248,7 +248,7 @@ storage_id = storage.json()[0]["storage_id"]
 
 # check if a storage config is already known to DLM
 params = {"storage_id": storage_id}
-config = session.get(f"{CONFIG.dlm.storage_url}/storage/get_storage_config", params=params, timeout=60)
+config = session.get(f"{DLM_URL}/storage/get_storage_config", params=params, headers=bearer, timeout=60)
 print(config.json())
 
 # supply a rclone config for this storage, if it doesn’t already exist
@@ -289,14 +289,14 @@ params = {
   "destination_id": destination_id,
   "path": ""
 }
-response = session.post(f"{DLM_URL}/migration/copy_data_item", params=params, timeout=60)
+response = session.post(f"{DLM_URL}/migration/copy_data_item", params=params, headers=bearer, timeout=60)
 print(response.json())
 
 # list items and their locations
 params = {
   "item_name": "/my/ingest/item",
 }
-response = session.get(f"{DLM_URL}/request/query_data_item", params=params, timeout=60)
+response = session.get(f"{DLM_URL}/request/query_data_item", params=params, headers=bearer, timeout=60)
 print(response.json())
 
 ```
