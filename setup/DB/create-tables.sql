@@ -77,7 +77,7 @@ CREATE TABLE data_item (
     UID uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     OID uuid DEFAULT NULL,
     item_version integer DEFAULT 1,
-    item_name varchar DEFAULT NULL, -- TODO: make item_name unique?
+    item_name varchar DEFAULT NULL,
     item_tags json DEFAULT NULL,
     storage_id uuid DEFAULT NULL,
     URI varchar DEFAULT 'inline://item_value',
