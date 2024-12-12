@@ -1,0 +1,18 @@
+{{- if .Values.global.dataProduct.pv.create }}
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ .Values.global.dataProduct.pv.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  storageClassName: standard
+  accessModes:
+    - ReadWriteOnce
+  capacity:
+    storage: {{ .Values.global.dataProduct.pv.storageSize }}
+  claimRef:
+    name: {{ .Values.global.dataProduct.pvc.name }}
+    namespace: {{ .Release.Namespace }}
+  hostPath:
+    path: "/tmp"
+{{- end }}

@@ -8,7 +8,7 @@
 
 CREATE TABLE location (
     location_id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-    location_name varchar NOT NULL,
+    location_name varchar NOT NULL UNIQUE,
     location_type varchar NOT NULL,
     location_country varchar DEFAULT NULL,
     location_city varchar DEFAULT NULL,
@@ -26,7 +26,7 @@ ALTER TABLE location OWNER TO ska_dlm_admin;
 CREATE TABLE storage (
     storage_id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     location_id uuid NOT NULL,
-    storage_name varchar NOT NULL,
+    storage_name varchar NOT NULL UNIQUE,
     storage_type varchar NOT NULL,
     storage_interface varchar NOT NULL,
     storage_phase_level varchar DEFAULT 'GAS',

@@ -146,6 +146,7 @@ For more information see [helm chart README.md](./charts/ska-dlm/README.md)
 
 
 ## Example Usage
+<!-- TODO: Move the following section to a 'tutorial' section, preferably in RTD. -->
 
 Typical usage of the DLM:
 
@@ -183,6 +184,8 @@ For more complete information, refer to the ska-dlm-client [repository](https://
 Interaction with the DLM is also possible via the REST API. The source code below is a typical example. The comments preceding each REST call are the python method alternatives.
 
 ```python
+from requests import Session
+
 # this URL is for DLM deployment in the Yanda namespace on the DP integration cluster
 # other known locations are shown below
 DLM_URL = "https://sdhp.stfc.skao.int/dp-yanda/dlm"
@@ -197,6 +200,7 @@ location_type="ThisLocationType"
 # check if this location is already known to DLM
 #location = dlm_storage.query_location(location_name=location_name)
 params = {"location_name": location_name}
+session = Session()
 location = session.get(f"{DLM_URL}/storage/query_location", params=params, headers=bearer, timeout=60)
 print(location.json())
 
@@ -214,8 +218,11 @@ print(location.json())
 location_id = location.json()[0]["location_id"]
 
 # check if this storage is already known to DLM
-params = {"storage_name": CONFIG.storage.name}
-storage = session.get(f"{CONFIG.dlm.storage_url}/storage/query_storage", params=params, timeout=60)
+params = {
+  "storage_name": "MyDisk",
+  "location_id": location_id,
+}
+storage = session.get(f"{DLM_URL}/storage/query_storage", params=params, timeout=60)
 print(storage.json())
 
 # initialise a storage, if it doesn’t already exist:

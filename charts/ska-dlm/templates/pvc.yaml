@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: test-pvc
+  name: {{ .Values.global.dataProduct.pvc.name }}
   namespace: {{ .Release.Namespace }}
 spec:
   storageClassName: {{ $.Values.global.storageClass }}
@@ -10,5 +10,5 @@ spec:
     - ReadWriteMany
   resources:
     requests:
-      storage: {{ $.Values.global.dataProduct.pvc.storage }}
+      storage: {{ $.Values.global.dataProduct.pvc.storageSize }}
 {{- end }}
