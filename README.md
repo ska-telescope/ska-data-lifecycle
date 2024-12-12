@@ -218,8 +218,11 @@ print(location.json())
 location_id = location.json()[0]["location_id"]
 
 # check if this storage is already known to DLM
-params = {"storage_name": CONFIG.storage.name}
-storage = session.get(f"{CONFIG.dlm.storage_url}/storage/query_storage", params=params, timeout=60)
+params = {
+  "storage_name": "MyDisk",
+  "location_id": location_id,
+}
+storage = session.get(f"{DLM_URL}/storage/query_storage", params=params, timeout=60)
 print(storage.json())
 
 # initialise a storage, if it doesn’t already exist:
