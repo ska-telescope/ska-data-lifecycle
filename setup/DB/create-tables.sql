@@ -165,13 +165,15 @@ ALTER TABLE phase_change OWNER TO ska_dlm_admin;
 
 CREATE TABLE migration (
     migration_id bigint GENERATED always as IDENTITY PRIMARY KEY,
+    server_id varchar NOT NULL,
     job_id bigint NOT NULL,
     OID uuid NOT NULL,
     source_storage_id uuid NOT NULL,
     destination_storage_id uuid NOT NULL,
     "user" varchar DEFAULT 'SKA',
     "group" varchar DEFAULT 'SKA',
-    task_status jsonb DEFAULT NULL,
+    job_status jsonb DEFAULT NULL,
+    job_stats jsonb DEFAULT NULL,
     complete boolean DEFAULT false,
     "date" timestamp without time zone DEFAULT now(),
     completion_date timestamp without time zone DEFAULT NULL,

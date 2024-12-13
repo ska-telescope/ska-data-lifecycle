@@ -11,6 +11,8 @@ DLM:
   storage_manager:
     storage_warning_percentage: 80.0
     polling_interval: 10 # seconds
+  migration_manager:
+    polling_interval: 10 # seconds
 
 REST:
   base_url: "http://dlm_postgrest:3000"
