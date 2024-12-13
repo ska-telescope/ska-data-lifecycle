@@ -7,7 +7,7 @@ Welcome to ska-data-lifecycle's documentation!
 
    overview/index
    api/index
-
+   example/index.md
 
 Installation
 ============

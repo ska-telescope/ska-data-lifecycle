@@ -75,7 +75,7 @@ extensions = [
     "sphinx.ext.ifconfig",
     "sphinx.ext.viewcode",
     "sphinx.ext.githubpages",
-    # "m2r2",  # needs sphinx 8 support
+    "myst_parser",
     "sphinxcontrib.openapi",
 ]
 
