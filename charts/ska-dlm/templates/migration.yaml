@@ -49,17 +49,14 @@ spec:
         - name: http-port
           containerPort: 8004
           protocol: TCP
-        - name: probe-port
-          containerPort: 8004
-          protocol: TCP
         readinessProbe:
           tcpSocket:
-            port: probe-port
+            port: http-port
           periodSeconds: 5
           initialDelaySeconds: 5
         livenessProbe:
           tcpSocket:
-            port: probe-port
+            port: http-port
           periodSeconds: 5
           initialDelaySeconds: 5
         volumeMounts:
