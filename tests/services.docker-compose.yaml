@@ -45,6 +45,7 @@ services:
       - :5572
       - --rc-no-auth
       - --rc-web-gui
+      - --rc-job-expire-duration=43200s
     volumes:
       - shared-tmpfs:/data
     networks:

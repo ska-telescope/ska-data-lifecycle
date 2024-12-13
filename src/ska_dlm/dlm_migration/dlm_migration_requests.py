@@ -59,6 +59,7 @@ def ioerror_exception_handler(request: Request, exc: IOError):
 def rclone_copy(src_fs: str, src_remote: str, dst_fs: str, dst_remote: str, item_type: str):
     """Copy a file from one place to another."""
     # if the item is a measurement set then use the copy directory command
+
     if item_type == "ms":
         request_url = f"{CONFIG.RCLONE.url}/sync/copy"
         post_data = {
@@ -75,11 +76,13 @@ def rclone_copy(src_fs: str, src_remote: str, dst_fs: str, dst_remote: str, item
             "srcRemote": src_remote,
             "dstFs": dst_fs,
             "dstRemote": dst_remote,
+            "_async": "true",
         }
+
     logger.info("rclone copy request: %s, %s", request_url, post_data)
     request = requests.post(request_url, post_data, timeout=1800)
     logger.info("Response status code: %s", request.status_code)
-    return request.status_code
+    return request.status_code, request.json()
 
 
 @cli.command()
@@ -97,7 +100,9 @@ def query_migrations() -> list:
     return DB.select(CONFIG.DLM.migration_table, params=params)
 
 
-def _create_migration_record(oid, source_storage_id, destination_storage_id, authorization):
+def _create_migration_record(
+    job_id, oid, source_storage_id, destination_storage_id, authorization
+):
     # decode the username from the authorization
     username = None
     user_info = decode_bearer(authorization)
@@ -108,12 +113,13 @@ def _create_migration_record(oid, source_storage_id, destination_storage_id, aut
 
     # add migration to DB
     json_data = {
+        "job_id": job_id,
         "oid": oid,
         "source_storage_id": source_storage_id,
         "destination_storage_id": destination_storage_id,
         "user": username,
     }
-    DB.insert(CONFIG.DLM.migration_table, json=json_data)
+    return DB.insert(CONFIG.DLM.migration_table, json=json_data)
 
 
 @cli.command()
@@ -158,7 +164,8 @@ def copy_data_item(
     Returns
     -------
     str
-        The uid of the new item copy.
+        uid: The uid of the new item copy.
+        migration_id: Migration ID used to check current migration status of copy.
 
     Raises
     ------
@@ -215,7 +222,8 @@ def copy_data_item(
     # mechanisms to perform the copy. Also needs to be a non-blocking call
     # scheduling a job for dlm_migration service.
     logger.info("source: %s", source)
-    status_code = rclone_copy(
+
+    status_code, content = rclone_copy(
         source["backend"], source["path"], dest["backend"], dest["path"], orig_item["item_format"]
     )
 
@@ -223,12 +231,11 @@ def copy_data_item(
         return IOError("rclone copy failed")
 
     # add row to migration table
-    _create_migration_record(
-        orig_item["oid"], storage["storage_id"], destination_id, authorization
+    record = _create_migration_record(
+        content["jobid"], orig_item["oid"], storage["storage_id"], destination_id, authorization
     )
-
     # (6)
     set_uri(uid, dest["path"], destination_id)
     # all done! Set data_item state to READY
     set_state(uid, "READY")
-    return uid
+    return {"uid": uid, "migration_id": record[0]["migration_id"]}

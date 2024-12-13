@@ -7,7 +7,7 @@ import datetime
 import inflect
 import pytest
 
-from ska_dlm import CONFIG, data_item, dlm_migration
+from ska_dlm import CONFIG, data_item
 from ska_dlm.dlm_db.db_access import DB
 from ska_dlm.dlm_storage.main import persist_new_data_items
 from ska_dlm.exceptions import ValueAlreadyInDB
@@ -25,6 +25,7 @@ METADATA_RECEIVED = {
 
 
 def _clear_database():
+    DB.delete(CONFIG.DLM.migration_table)
     DB.delete(CONFIG.DLM.dlm_table)
     DB.delete(CONFIG.DLM.storage_config_table)
     DB.delete(CONFIG.DLM.storage_table)
@@ -40,6 +41,7 @@ def setup_auth(env, request):
         env.request_requests.TOKEN = token
         env.ingest_requests.TOKEN = token
         env.storage_requests.TOKEN = token
+        env.migration_requests.TOKEN = token
 
 
 @pytest.fixture(scope="function", autouse=True)
@@ -206,7 +208,7 @@ def test_copy(env):
     )
     assert len(uid) == 36
     dest = "/data/testfile_copy"
-    dlm_migration.copy_data_item(uid=uid, destination_id=dest_id, path=dest)
+    env.migration_requests.copy_data_item(uid=uid, destination_id=dest_id, path=dest)
     assert RCLONE_TEST_FILE_CONTENT == env.get_rclone_local_file_content(dest)
 
 

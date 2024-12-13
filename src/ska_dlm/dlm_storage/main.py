@@ -63,7 +63,7 @@ def persist_new_data_items(last_check_time: str) -> dict:
             new_storage["storage_name"],
         )
         data_item.set_phase(uid=new_data_item["uid"], phase="LIQUID")
-        data_item.set_phase(uid=copy_uid, phase="LIQUID")
+        data_item.set_phase(uid=copy_uid["uid"], phase="LIQUID")
         stat[new_data_item["item_name"]] = True
     return stat
 
