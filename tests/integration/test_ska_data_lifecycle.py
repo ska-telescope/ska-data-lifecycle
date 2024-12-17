@@ -18,6 +18,7 @@ ROOT = "/data/"
 RCLONE_TEST_FILE_PATH = "/data/testfile"
 """A file that is available locally in the rclone container"""
 RCLONE_TEST_FILE_CONTENT = "license content"
+RCLONE_TEST_FILE_SIZE = 15  # bytes
 TODAY_DATE = datetime.datetime.now().strftime("%Y%m%d")
 METADATA_RECEIVED = {
     "execution_block": "eb-meta-20240723-00000",
@@ -211,10 +212,16 @@ def test_copy(env):
     env.migration_requests.copy_data_item(uid=uid, destination_id=dest_id, path=dest)
     assert RCLONE_TEST_FILE_CONTENT == env.get_rclone_local_file_content(dest)
 
+    # trigger manual update of migrations status
+    env.migration_requests.update_migrations_status()
+
     # check that a query for all migrations returns the details of this single migration
     result = env.migration_requests.query_migrations()
     assert len(result) == 1
     assert result[0]["destination_storage_id"] == dest_id
+    assert result[0]["complete"] == True
+    assert result[0]["job_status"]["finished"] == True
+    assert result[0]["job_stats"]["bytes"] == RCLONE_TEST_FILE_SIZE
 
 
 @pytest.mark.integration_test
