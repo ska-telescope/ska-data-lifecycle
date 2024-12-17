@@ -211,6 +211,11 @@ def test_copy(env):
     env.migration_requests.copy_data_item(uid=uid, destination_id=dest_id, path=dest)
     assert RCLONE_TEST_FILE_CONTENT == env.get_rclone_local_file_content(dest)
 
+    # check that a query for all migrations returns the details of this single migration
+    result = env.migration_requests.query_migrations()
+    assert len(result) == 1
+    assert result[0]["destination_storage_id"] == dest_id
+
 
 @pytest.mark.integration_test
 def test_update_item_tags(env):
