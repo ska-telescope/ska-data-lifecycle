@@ -56,8 +56,6 @@ async def _query_core_stats(group_id: str):
 
 async def _poll_status():
     """Periodically wake up and query rclone for the status of all outstanding migrations."""
-    # TODO: wake every X seconds (CONFIG.DLM.migration_manager.polling_interval)
-
     loop = asyncio.get_event_loop()
 
     while True:
@@ -105,7 +103,7 @@ async def _poll_status():
         except Exception as e:  # pylint: disable=broad-except
             logging.exception(e)
 
-        await asyncio.sleep(10)
+        await asyncio.sleep(CONFIG.DLM.migration_manager.polling_interval)
 
 
 @asynccontextmanager
