@@ -310,3 +310,10 @@ def test_populate_metadata_col(env):
     assert isinstance(metadata_dict_from_db, dict)  # otherwise the data might be double encoded
 
     assert isinstance(metadata_dict_from_db["execution_block"], str)
+
+
+@pytest.mark.integration_test
+def test_query_migration(env):
+    """Test that query migration returns an empty set."""
+    result = env.migration_requests.query_migrations()
+    assert len(result) == 0

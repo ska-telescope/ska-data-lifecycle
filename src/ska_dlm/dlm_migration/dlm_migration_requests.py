@@ -176,15 +176,30 @@ def rclone_copy(src_fs: str, src_remote: str, dst_fs: str, dst_remote: str, item
 
 @cli.command()
 @rest.get("/migration/query_migrations")
-def query_migrations() -> list:
+def query_migrations(
+    authorization: Annotated[str | None, Header()] = None,
+) -> list:
     """
-    Query for all migrations.
+    Query for all migrations by a given user.
+
+    Parameters
+    ----------
+    authorization : str, optional
+        Validated Bearer token with UserInfo
 
     Returns
     -------
     list
     """
-    params = {"limit": 1000}
+    # decode the username from the authorization
+    username = None
+    user_info = decode_bearer(authorization)
+    if user_info:
+        username = user_info.get("preferred_username", None)
+        if username is None:
+            raise ValueError("Username not found in profile")
+
+    params = {"limit": 1000, "user": f"eq.{username}"}
 
     return DB.select(CONFIG.DLM.migration_table, params=params)
 

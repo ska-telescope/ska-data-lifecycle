@@ -62,3 +62,20 @@ def copy_data_item(
     )
     dlm_raise_for_status(response)
     return response.json()
+
+
+def query_migrations() -> list:
+    """Query for all migrations by a given user.
+
+    Returns
+    -------
+    list
+        migrations
+    """
+    params = {k: v for k, v in locals().items() if v}
+    headers = {"Authorization": f"Bearer {TOKEN}"}
+    response = requests.get(
+        f"{MIGRATION_URL}/migration/query_migrations", params=params, headers=headers, timeout=60
+    )
+    dlm_raise_for_status(response)
+    return response.json()
