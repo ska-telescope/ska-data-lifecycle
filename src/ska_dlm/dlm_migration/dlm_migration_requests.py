@@ -1,7 +1,9 @@
 """DLM Migration API module."""
 
+import asyncio
 import logging
 from contextlib import asynccontextmanager
+from functools import partial
 from typing import Annotated
 
 import requests
@@ -28,51 +30,90 @@ logger = logging.getLogger(__name__)
 origins = ["http://localhost", "http://localhost:5000", "http://localhost:8004"]
 
 
-def _query_job_status(job_id: str):
+async def _query_job_status(job_id: str):
     request_url = f"{CONFIG.RCLONE.url}/job/status"
     post_data = {"jobid": job_id}
 
+    loop = asyncio.get_event_loop()
     logger.info("rclone request: %s, %s", request_url, post_data)
-    request = requests.post(request_url, post_data, timeout=1800)
+    request = await loop.run_in_executor(
+        None, partial(requests.post, request_url, post_data, timeout=1800)
+    )
     return request.json()
 
 
-def _query_core_stats(job_id: str):
+async def _query_core_stats(group_id: str):
     request_url = f"{CONFIG.RCLONE.url}/core/stats"
-    post_data = {"jobid": job_id}
+    post_data = {"group": group_id}
 
+    loop = asyncio.get_event_loop()
     logger.info("rclone request: %s, %s", request_url, post_data)
-    request = requests.post(request_url, post_data, timeout=1800)
+    request = await loop.run_in_executor(
+        None, partial(requests.post, request_url, post_data, timeout=1800)
+    )
     return request.json()
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
+async def _poll_status():
     """Periodically wake up and query rclone for the status of all outstanding migrations."""
     # TODO: wake every X seconds (CONFIG.DLM.migration_manager.polling_interval)
 
-    # get list of all outstanding migrations from DB
-    migrations = DB.select(CONFIG.DLM.migration_table, params={"limit": 1000, "completed": False})
-    logger.info("number of outstanding migrations: %s", len(migrations))
+    loop = asyncio.get_event_loop()
 
-    for migration in migrations:
-        # get details for this migration
-        migration_id = migration["migration_id"]
-        job_id = migration["job_id"]
-        logger.info("migration %s: %s", migration_id, job_id)
+    while True:
+        try:
+            # get list of all outstanding migrations from DB
+            migrations = await loop.run_in_executor(
+                None,
+                partial(
+                    DB.select,
+                    CONFIG.DLM.migration_table,
+                    params={"limit": 1000, "complete": "eq.false"},
+                ),
+            )
 
-        # query rclone for job/status
-        status_json = _query_job_status(job_id)
+            logger.info("number of outstanding migrations: %s", len(migrations))
 
-        # query rclone for core/stats
-        stats_json = _query_core_stats(job_id)
+            for migration in migrations:
+                # get details for this migration
+                migration_id = migration["migration_id"]
+                job_id = migration["job_id"]
+                logger.info("migration %s: %s", migration_id, job_id)
 
-        # update migration database
-        DB.update(
-            CONFIG.DLM.migration_table,
-            params={"job_id": job_id},
-            json={"job_status": status_json, "job_stats": stats_json},
-        )
+                stats_json = ""
+                complete = False
+                # query rclone for job/status
+                status_json = await _query_job_status(job_id)
+                if not status_json["error"]:
+                    # query rclone for core/stats
+                    stats_json = await _query_core_stats(status_json["group"])
+                    complete = status_json["success"]
+                else:
+                    # if job is in error we dont want to query it again so mark it complete
+                    complete = True
+
+                # update migration database
+                DB.update(
+                    CONFIG.DLM.migration_table,
+                    params={"migration_id": f"eq.{migration['migration_id']}"},
+                    json={
+                        "job_status": status_json,
+                        "job_stats": stats_json,
+                        "complete": complete,
+                    },
+                )
+        except Exception as e:  # pylint: disable=broad-except
+            logging.exception(e)
+
+        await asyncio.sleep(10)
+
+
+@asynccontextmanager
+async def app_lifespan(_):
+    """Lifepsan hook for startup and shutdown."""
+    asyncio.create_task(_poll_status())
+    yield
+    logger.info("shutting down")
 
 
 rest = fastapi_auto_annotate(
@@ -81,7 +122,7 @@ rest = fastapi_auto_annotate(
         description="REST interface of the SKA-DLM Migration Manager",
         version=ska_dlm.__version__,
         license_info={"name": "BSD-3-Clause", "identifier": "BSD-3-Clause"},
-        lifespan=lifespan,
+        lifespan=app_lifespan,
     )
 )
 rest.add_middleware(
@@ -151,7 +192,7 @@ def query_migrations() -> list:
 
 
 def _create_migration_record(
-    server_id, job_id, oid, source_storage_id, destination_storage_id, authorization
+    job_id, oid, source_storage_id, destination_storage_id, authorization
 ):
     # decode the username from the authorization
     username = None
@@ -163,7 +204,6 @@ def _create_migration_record(
 
     # add migration to DB
     json_data = {
-        "server_id": server_id,
         "job_id": job_id,
         "oid": oid,
         "source_storage_id": source_storage_id,
@@ -284,7 +324,6 @@ def copy_data_item(
     # add row to migration table
     # NOTE: temporarily use server_id='rclone0' until we actually have multiple rclone servers
     record = _create_migration_record(
-        "rclone0",
         content["jobid"],
         orig_item["oid"],
         storage["storage_id"],

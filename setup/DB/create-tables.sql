@@ -165,7 +165,6 @@ ALTER TABLE phase_change OWNER TO ska_dlm_admin;
 
 CREATE TABLE migration (
     migration_id bigint GENERATED always as IDENTITY PRIMARY KEY,
-    server_id varchar NOT NULL,
     job_id bigint NOT NULL,
     OID uuid NOT NULL,
     source_storage_id uuid NOT NULL,
