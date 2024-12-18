@@ -65,7 +65,7 @@ async def _poll_status():
             partial(
                 DB.select,
                 CONFIG.DLM.migration_table,
-                params={"limit": 1000, "complete": "eq.false"},
+                params={"complete": "eq.false"},
             ),
         )
 
