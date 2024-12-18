@@ -106,7 +106,7 @@ async def _poll_status():
 async def _poll_status_loop():
     """Periodically wake up and poll migration status."""
     while True:
-        _poll_status()
+        await _poll_status()
         await asyncio.sleep(CONFIG.DLM.migration_manager.polling_interval)
 
 
