@@ -129,19 +129,11 @@ def rclone_copy(src_fs: str, src_remote: str, dst_fs: str, dst_remote: str, item
     return request.status_code, request.json()
 
 
-@rest.get("/migration/update_migration_statuses")
-async def update_migration_statuses(
-    authorization: Annotated[str | None, Header()] = None,
-):
+async def update_migration_statuses():
     """
     Update the migration job status in the database for all pending rclone jobs.
 
     This is performed by querying the rclone service instances.
-
-    Parameters
-    ----------
-    authorization : str, optional
-        Validated Bearer token with UserInfo
     """
     loop = asyncio.get_event_loop()
 

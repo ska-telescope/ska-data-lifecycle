@@ -79,23 +79,3 @@ def query_migrations() -> list:
     )
     dlm_raise_for_status(response)
     return response.json()
-
-
-def update_migration_statuses() -> str:
-    """Trigger a manual update for the status of all incomplete migrations.
-
-    Returns
-    -------
-    str
-        ?
-    """
-    params = {k: v for k, v in locals().items() if v}
-    headers = {"Authorization": f"Bearer {TOKEN}"}
-    response = requests.get(
-        f"{MIGRATION_URL}/migration/update_migration_statuses",
-        params=params,
-        headers=headers,
-        timeout=60,
-    )
-    dlm_raise_for_status(response)
-    return response.json()

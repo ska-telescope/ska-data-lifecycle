@@ -2,6 +2,7 @@
 
 """Tests for `ska_data_lifecycle` package."""
 
+import asyncio
 import datetime
 
 import inflect
@@ -9,6 +10,7 @@ import pytest
 
 from ska_dlm import CONFIG, data_item
 from ska_dlm.dlm_db.db_access import DB
+from ska_dlm.dlm_migration.dlm_migration_requests import update_migration_statuses
 from ska_dlm.dlm_storage.main import persist_new_data_items
 from ska_dlm.exceptions import ValueAlreadyInDB
 from tests.common_local import DlmTestClientLocal
@@ -213,7 +215,7 @@ def test_copy(env):
     assert RCLONE_TEST_FILE_CONTENT == env.get_rclone_local_file_content(dest)
 
     # trigger manual update of migrations status
-    env.migration_requests.update_migration_statuses()
+    asyncio.run(update_migration_statuses())
 
     # check that a query for all migrations returns the details of this single migration
     result = env.migration_requests.query_migrations()
