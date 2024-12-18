@@ -219,8 +219,8 @@ def test_copy(env):
     result = env.migration_requests.query_migrations()
     assert len(result) == 1
     assert result[0]["destination_storage_id"] == dest_id
-    assert result[0]["complete"] == True
-    assert result[0]["job_status"]["finished"] == True
+    assert result[0]["complete"] is True
+    assert result[0]["job_status"]["finished"] is True
     assert result[0]["job_stats"]["bytes"] == RCLONE_TEST_FILE_SIZE
 
 
