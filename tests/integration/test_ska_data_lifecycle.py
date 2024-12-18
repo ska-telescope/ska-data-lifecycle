@@ -213,7 +213,7 @@ def test_copy(env):
     assert RCLONE_TEST_FILE_CONTENT == env.get_rclone_local_file_content(dest)
 
     # trigger manual update of migrations status
-    env.migration_requests.update_migrations_status()
+    env.migration_requests.update_migration_statuses()
 
     # check that a query for all migrations returns the details of this single migration
     result = env.migration_requests.query_migrations()

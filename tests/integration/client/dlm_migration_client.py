@@ -81,7 +81,7 @@ def query_migrations() -> list:
     return response.json()
 
 
-def update_migrations_status() -> str:
+def update_migration_statuses() -> str:
     """Trigger a manual update for the status of all incomplete migrations.
 
     Returns
@@ -92,7 +92,7 @@ def update_migrations_status() -> str:
     params = {k: v for k, v in locals().items() if v}
     headers = {"Authorization": f"Bearer {TOKEN}"}
     response = requests.get(
-        f"{MIGRATION_URL}/migration/update_migrations_status",
+        f"{MIGRATION_URL}/migration/update_migration_statuses",
         params=params,
         headers=headers,
         timeout=60,
