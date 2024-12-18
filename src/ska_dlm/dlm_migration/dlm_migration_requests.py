@@ -103,17 +103,17 @@ async def _poll_status():
         logging.exception(e)
 
 
-async def _poll_status_loop():
+async def _poll_status_loop(interval: int):
     """Periodically wake up and poll migration status."""
     while True:
         await _poll_status()
-        await asyncio.sleep(CONFIG.DLM.migration_manager.polling_interval)
+        await asyncio.sleep(interval)
 
 
 @asynccontextmanager
 async def app_lifespan(_):
     """Lifepsan hook for startup and shutdown."""
-    asyncio.create_task(_poll_status_loop())
+    asyncio.create_task(_poll_status_loop(interval=CONFIG.DLM.migration_manager.polling_interval))
     yield
     logger.info("shutting down")
 
