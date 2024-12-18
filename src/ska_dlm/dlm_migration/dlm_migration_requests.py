@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 origins = ["http://localhost", "http://localhost:5000", "http://localhost:8004"]
 
 
-async def _query_job_status(job_id: str):
+async def _query_job_status(job_id: int):
     request_url = f"{CONFIG.RCLONE.url}/job/status"
     post_data = {"jobid": job_id}
 
