@@ -157,3 +157,32 @@ CREATE TABLE phase_change (
     request_creation timestamp without time zone DEFAULT now()
 );
 ALTER TABLE phase_change OWNER TO ska_dlm_admin;
+
+
+--
+-- Table migration
+--
+
+CREATE TABLE migration (
+    migration_id bigint GENERATED always as IDENTITY PRIMARY KEY,
+    job_id bigint NOT NULL,
+    OID uuid NOT NULL,
+    source_storage_id uuid NOT NULL,
+    destination_storage_id uuid NOT NULL,
+    "user" varchar DEFAULT 'SKA',
+    "group" varchar DEFAULT 'SKA',
+    job_status jsonb DEFAULT NULL,
+    job_stats jsonb DEFAULT NULL,
+    complete boolean DEFAULT false,
+    "date" timestamp without time zone DEFAULT now(),
+    completion_date timestamp without time zone DEFAULT NULL,
+    CONSTRAINT fk_source_storage
+      FOREIGN KEY(source_storage_id)
+      REFERENCES storage(storage_id)
+      ON DELETE SET NULL,
+    CONSTRAINT fk_destination_storage
+      FOREIGN KEY(destination_storage_id)
+      REFERENCES storage(storage_id)
+      ON DELETE SET NULL
+);
+ALTER TABLE migration OWNER TO ska_dlm_admin;

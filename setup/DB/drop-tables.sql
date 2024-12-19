@@ -1,3 +1,4 @@
+DROP TABLE IF EXISTS migration;
 DROP TABLE IF EXISTS phase_change;
 DROP TRIGGER IF EXISTS sync_oid_uid ON data_item;
 DROP FUNCTION IF EXISTS sync_oid_uid;

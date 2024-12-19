@@ -7,8 +7,11 @@ DLM:
   storage_table: "storage"
   storage_config_table: "storage_config"
   location_table: "location"
+  migration_table: "migration"
   storage_manager:
     storage_warning_percentage: 80.0
+    polling_interval: 10 # seconds
+  migration_manager:
     polling_interval: 10 # seconds
 
 REST:

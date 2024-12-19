@@ -2,13 +2,15 @@
 
 """Tests for `ska_data_lifecycle` package."""
 
+import asyncio
 import datetime
 
 import inflect
 import pytest
 
-from ska_dlm import CONFIG, data_item, dlm_migration
+from ska_dlm import CONFIG, data_item
 from ska_dlm.dlm_db.db_access import DB
+from ska_dlm.dlm_migration.dlm_migration_requests import update_migration_statuses
 from ska_dlm.dlm_storage.main import persist_new_data_items
 from ska_dlm.exceptions import ValueAlreadyInDB
 from tests.common_local import DlmTestClientLocal
@@ -18,6 +20,7 @@ ROOT = "/data/"
 RCLONE_TEST_FILE_PATH = "/data/testfile"
 """A file that is available locally in the rclone container"""
 RCLONE_TEST_FILE_CONTENT = "license content"
+RCLONE_TEST_FILE_SIZE = 15  # bytes
 TODAY_DATE = datetime.datetime.now().strftime("%Y%m%d")
 METADATA_RECEIVED = {
     "execution_block": "eb-meta-20240723-00000",
@@ -25,6 +28,7 @@ METADATA_RECEIVED = {
 
 
 def _clear_database():
+    DB.delete(CONFIG.DLM.migration_table)
     DB.delete(CONFIG.DLM.dlm_table)
     DB.delete(CONFIG.DLM.storage_config_table)
     DB.delete(CONFIG.DLM.storage_table)
@@ -40,6 +44,7 @@ def setup_auth(env, request):
         env.request_requests.TOKEN = token
         env.ingest_requests.TOKEN = token
         env.storage_requests.TOKEN = token
+        env.migration_requests.TOKEN = token
 
 
 @pytest.fixture(scope="function", autouse=True)
@@ -199,6 +204,10 @@ def __initialize_storage_config(env):
 @pytest.mark.integration_test
 def test_copy(env):
     """Copy a test file from one storage to another."""
+    # NOTE: this test will not work without requests being made via a gateway
+    if isinstance(env, DlmTestClientLocal):
+        pytest.skip("Unprocessable Entity")
+
     __initialize_storage_config(env)
     dest_id = env.storage_requests.query_storage("MyDisk2")[0]["storage_id"]
     uid = env.ingest_requests.register_data_item(
@@ -206,8 +215,19 @@ def test_copy(env):
     )
     assert len(uid) == 36
     dest = "/data/testfile_copy"
-    dlm_migration.copy_data_item(uid=uid, destination_id=dest_id, path=dest)
+    env.migration_requests.copy_data_item(uid=uid, destination_id=dest_id, path=dest)
     assert RCLONE_TEST_FILE_CONTENT == env.get_rclone_local_file_content(dest)
+
+    # trigger manual update of migrations status
+    asyncio.run(update_migration_statuses())
+
+    # check that a query for all migrations returns the details of this single migration
+    result = env.migration_requests.query_migrations()
+    assert len(result) == 1
+    assert result[0]["destination_storage_id"] == dest_id
+    assert result[0]["complete"] is True
+    assert result[0]["job_status"]["finished"] is True
+    assert result[0]["job_stats"]["bytes"] == RCLONE_TEST_FILE_SIZE
 
 
 @pytest.mark.integration_test
@@ -308,3 +328,10 @@ def test_populate_metadata_col(env):
     assert isinstance(metadata_dict_from_db, dict)  # otherwise the data might be double encoded
 
     assert isinstance(metadata_dict_from_db["execution_block"], str)
+
+
+@pytest.mark.integration_test
+def test_query_migration(env):
+    """Test that query migration returns an empty set."""
+    result = env.migration_requests.query_migrations()
+    assert len(result) == 0

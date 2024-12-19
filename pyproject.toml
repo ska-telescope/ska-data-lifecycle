@@ -117,6 +117,7 @@ ignore = [
     "DOC201", "DAR201", # Missing "Returns" in Docstring
     "DOC301", "DAR301", # Missing "Yields" in Docstring
     "DOC401", "DAR401", # Missing "Exception" in Docstring
+    "DAR402", # Excess exception(s) in Raises section
     "DOC501", "DAR501", # Missing "Raises" in Docstring
 ]
 
