@@ -54,9 +54,9 @@ async def _query_core_stats(group_id: str):
     return request.json()
 
 
-async def _poll_status_loop(interval: int):
+async def _poll_status_loop(interval: int, running: asyncio.Event):
     """Periodically wake up and poll migration status."""
-    while True:
+    while running.is_set() is False:
         await update_migration_statuses()
         await asyncio.sleep(interval)
 
@@ -64,8 +64,13 @@ async def _poll_status_loop(interval: int):
 @asynccontextmanager
 async def app_lifespan(_):
     """Lifepsan hook for startup and shutdown."""
-    asyncio.create_task(_poll_status_loop(interval=CONFIG.DLM.migration_manager.polling_interval))
+    running = asyncio.Event()
+    task = asyncio.create_task(
+        _poll_status_loop(interval=CONFIG.DLM.migration_manager.polling_interval, running=running)
+    )
     yield
+    running.set()
+    await task
     logger.info("shutting down")
 
 
@@ -178,8 +183,10 @@ async def update_migration_statuses():
                     "complete": complete,
                 },
             )
-    except Exception as e:  # pylint: disable=broad-except
-        logging.exception(e)
+    except IOError:
+        logger.exception("Failed to poll migration job statuses")
+    except Exception:  # pylint: disable=broad-except
+        logging.exception("Unexpected error")
 
 
 @cli.command()
