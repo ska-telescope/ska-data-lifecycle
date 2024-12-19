@@ -65,7 +65,9 @@ async def _poll_status_loop(interval: int, running: bool):
 async def app_lifespan(_):
     """Lifepsan hook for startup and shutdown."""
     running = True
-    task = asyncio.create_task(_poll_status_loop(interval=CONFIG.DLM.migration_manager.polling_interval, running=running))
+    task = asyncio.create_task(
+        _poll_status_loop(interval=CONFIG.DLM.migration_manager.polling_interval, running=running)
+    )
     yield
     running = False
     await task
@@ -181,8 +183,10 @@ async def update_migration_statuses():
                     "complete": complete,
                 },
             )
-    except Exception as e:  # pylint: disable=broad-except
-        logging.exception(e)
+    except IOError:
+        logger.exception("Failed to poll migration job statuses")
+    except Exception:  # pylint: disable=broad-except
+        logging.exception("Unexpected error")
 
 
 @cli.command()
