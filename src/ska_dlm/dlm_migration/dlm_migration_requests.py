@@ -152,6 +152,11 @@ async def update_migration_statuses():
     Update the migration job status in the database for all pending rclone jobs.
 
     This is performed by querying the rclone service instances.
+
+    Raises
+    ------
+    IOError
+        Error contacting database or rclone services.
     """
     loop = asyncio.get_event_loop()
 
