@@ -204,6 +204,10 @@ def __initialize_storage_config(env):
 @pytest.mark.integration_test
 def test_copy(env):
     """Copy a test file from one storage to another."""
+    # NOTE: this test will not work without requests being made via a gateway
+    if not isinstance(env, DlmTestClientLocal):
+        pytest.skip("Unprocessable Entity")
+
     __initialize_storage_config(env)
     dest_id = env.storage_requests.query_storage("MyDisk2")[0]["storage_id"]
     uid = env.ingest_requests.register_data_item(
