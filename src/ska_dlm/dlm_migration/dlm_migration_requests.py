@@ -54,9 +54,9 @@ async def _query_core_stats(group_id: str):
     return request.json()
 
 
-async def _poll_status_loop(interval: int, running: bool):
+async def _poll_status_loop(interval: int, running: asyncio.Event):
     """Periodically wake up and poll migration status."""
-    while running:
+    while running.is_set() is False:
         await update_migration_statuses()
         await asyncio.sleep(interval)
 
@@ -64,12 +64,12 @@ async def _poll_status_loop(interval: int, running: bool):
 @asynccontextmanager
 async def app_lifespan(_):
     """Lifepsan hook for startup and shutdown."""
-    running = True
+    running = asyncio.Event()
     task = asyncio.create_task(
         _poll_status_loop(interval=CONFIG.DLM.migration_manager.polling_interval, running=running)
     )
     yield
-    running = False
+    running.set()
     await task
     logger.info("shutting down")
 
