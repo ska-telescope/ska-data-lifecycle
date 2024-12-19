@@ -54,24 +54,37 @@ async def _query_core_stats(group_id: str):
     return request.json()
 
 
-async def _poll_status_loop(interval: int, running: asyncio.Event):
+async def _poll_status_loop(interval: int):
     """Periodically wake up and poll migration status."""
-    while running.is_set() is False:
-        await update_migration_statuses()
+    while True:
+        try:
+            await update_migration_statuses()
+        except asyncio.CancelledError:
+            break
+        except IOError:
+            logger.exception("Failed to poll migration job statuses")
+        except Exception:  # pylint: disable=broad-except
+            logger.exception("Unexpected error polling migration job statuses")
         await asyncio.sleep(interval)
 
 
 @asynccontextmanager
 async def app_lifespan(_):
-    """Lifepsan hook for startup and shutdown."""
-    running = asyncio.Event()
+    """Lifespan hook for startup and shutdown."""
     task = asyncio.create_task(
-        _poll_status_loop(interval=CONFIG.DLM.migration_manager.polling_interval, running=running)
+        _poll_status_loop(
+            interval=CONFIG.DLM.migration_manager.polling_interval,
+        )
     )
     yield
-    running.set()
-    await task
     logger.info("shutting down")
+    task.cancel()
+    try:
+        await task
+    except asyncio.CancelledError:
+        pass
+    except Exception:  # pylint: disable=broad-except
+        logger.exception("Unexpected error shutting down")
 
 
 rest = fastapi_auto_annotate(
@@ -139,54 +152,54 @@ async def update_migration_statuses():
     Update the migration job status in the database for all pending rclone jobs.
 
     This is performed by querying the rclone service instances.
+
+    Raises
+    ------
+    IOError
+        Error contacting database or rclone services.
     """
     loop = asyncio.get_event_loop()
 
-    try:
-        # get list of all outstanding migrations from DB
-        migrations = await loop.run_in_executor(
-            None,
-            partial(
-                DB.select,
-                CONFIG.DLM.migration_table,
-                params={"complete": "eq.false"},
-            ),
+    # get list of all outstanding migrations from DB
+    migrations = await loop.run_in_executor(
+        None,
+        partial(
+            DB.select,
+            CONFIG.DLM.migration_table,
+            params={"complete": "eq.false"},
+        ),
+    )
+
+    logger.info("number of outstanding migrations: %s", len(migrations))
+
+    for migration in migrations:
+        # get details for this migration
+        migration_id = migration["migration_id"]
+        job_id = migration["job_id"]
+        logger.info("migration %s: %s", migration_id, job_id)
+
+        stats_json = ""
+        complete = False
+        # query rclone for job/status
+        status_json = await _query_job_status(job_id)
+        if not status_json["error"]:
+            # query rclone for core/stats
+            stats_json = await _query_core_stats(status_json["group"])
+            complete = status_json["success"]
+        else:
+            # if job is in error we dont want to query it again so mark it complete
+            complete = True
+
+        # update migration database
+        DB.update(
+            CONFIG.DLM.migration_table,
+            params={"migration_id": f"eq.{migration['migration_id']}"},
+            json={
+                "job_status": status_json,
+                "job_stats": stats_json,
+                "complete": complete,
+            },
         )
-
-        logger.info("number of outstanding migrations: %s", len(migrations))
-
-        for migration in migrations:
-            # get details for this migration
-            migration_id = migration["migration_id"]
-            job_id = migration["job_id"]
-            logger.info("migration %s: %s", migration_id, job_id)
-
-            stats_json = ""
-            complete = False
-            # query rclone for job/status
-            status_json = await _query_job_status(job_id)
-            if not status_json["error"]:
-                # query rclone for core/stats
-                stats_json = await _query_core_stats(status_json["group"])
-                complete = status_json["success"]
-            else:
-                # if job is in error we dont want to query it again so mark it complete
-                complete = True
-
-            # update migration database
-            DB.update(
-                CONFIG.DLM.migration_table,
-                params={"migration_id": f"eq.{migration['migration_id']}"},
-                json={
-                    "job_status": status_json,
-                    "job_stats": stats_json,
-                    "complete": complete,
-                },
-            )
-    except IOError:
-        logger.exception("Failed to poll migration job statuses")
-    except Exception:  # pylint: disable=broad-except
-        logging.exception("Unexpected error")
 
 
 @cli.command()
