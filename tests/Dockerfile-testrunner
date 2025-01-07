@@ -1,6 +1,6 @@
 FROM python:3.10
 
-RUN apt-get update && apt-get install -y python3-casacore rclone iputils-ping
+RUN apt-get update && apt-get install -y rclone iputils-ping
 RUN pip install pytest requests_mock kubernetes docker
 
 ARG POETRY_VERSION=1.8.2

@@ -37,12 +37,12 @@ inflect = "^7.0.0"
 ipython = "^8.20.0"
 typer = "^0.12.5"
 rich = "^13.0"
-ska-sdp-metadata-generator = "^0.0.5"
 fastapi = "^0.111.0"
 overrides = "^7.7.0"
 docstring-parser = "^0.16"
 pyjwt = "2.9.0"
 msal = "1.31.0"
+ska-sdp-dataproduct-metadata = "^0.7.0"
 
 [tool.poetry.group.test.dependencies]
 black = "^23.3.0"
@@ -62,6 +62,7 @@ ipykernel = "^6.29.2"
 kubernetes = "^29.0.0"
 docker = "^7.1.0"
 python-keycloak = "^4.2.0"
+requests-mock = "^1.12.1"
 
 [tool.poetry.group.docs.dependencies]
 sphinx = "^8.0.0"
