@@ -4,7 +4,6 @@ import logging
 from typing import Annotated
 
 import requests
-import ska_sdp_metadata_generator as metagen
 from fastapi import FastAPI, Header, Request
 from fastapi.responses import JSONResponse
 from ska_sdp_dataproduct_metadata import MetaData
@@ -140,7 +139,7 @@ def register_data_item(  # noqa: C901
     (3) check whether item is already registered on that storage
     (4) initialize the new item with the same OID on the new storage
     (5) set state to READY
-    (6) generate metadata
+    (6) save metadata
     (7) notify the data dashboard
 
     Parameters
@@ -214,14 +213,8 @@ def register_data_item(  # noqa: C901
 
     # (6) Populate the metadata column in the database
     if metadata is not None:
-        logger.info("Saved metadata provided by client.")
-    else:  # Client didn't provide metadata, attempt to scrape it
-        scraped_metadata = scrape_metadata(uri, eb_id)
-        metadata = scraped_metadata.get_data().dict() if scraped_metadata is not None else None
-
-    if metadata is not None:  # Metadata is either provided or successfully scraped
         set_metadata(uid, metadata)
-    else:  # Metadata scraping was unsuccessful
+    else:
         logger.warning("No metadata saved.")
         metadata = {}
 
@@ -232,35 +225,6 @@ def register_data_item(  # noqa: C901
     notify_data_dashboard(metadata)
 
     return uid
-
-
-def scrape_metadata(uri: str, eb_id: str) -> MetaData | None:
-    """Attempt to scrape metadata from an ingested dataproduct URI.
-
-    Parameters
-    ----------
-    uri: str
-        the access path to the payload.
-    eb_id: str | None, optional
-        execution block ID provided by the client
-
-    Returns
-    -------
-    Metadata | None
-        The scraped metadata. None if generating metadata fails.
-    """
-    try:
-        # TODO(yan-xxx) create another RESTful service associated with a storage type
-        # and call into the endpoint
-        metadata_object = metagen.generate_metadata_from_generator(uri, eb_id)
-        if len(metadata_object.validate()) > 0:
-            logger.info("Metadata extraction failed.")
-            return None
-        logger.info("Metadata extracted successfully.")
-        return metadata_object
-    except ValueError as err:
-        logger.warning("ValueError occurred while attempting to extract metadata: %s", err)
-        return None  # Return None if extraction fails
 
 
 def notify_data_dashboard(metadata: dict | MetaData) -> None:
