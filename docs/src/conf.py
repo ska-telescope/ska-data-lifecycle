@@ -150,7 +150,7 @@ html_context = {
     "display_gitlab": True,  # Integrate GitLab
     "theme_logo_only": True,
     "gitlab_user": "",  # Username
-    "gitlab_repo": "https://gitlab.com/ska-telescope/ska-data-lifecycle",  # Repo name
+    "gitlab_repo": "ska-telescope/ska-data-lifecycle",  # Repo name
     "gitlab_version": "main",  # Version
     "conf_py_path": "/src/",  # Path in the checkout to the docs root
 }
