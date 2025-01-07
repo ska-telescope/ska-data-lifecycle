@@ -65,7 +65,7 @@ python-keycloak = "^4.2.0"
 
 [tool.poetry.group.docs.dependencies]
 sphinx = "^7.3.7"
-ska-ser-sphinx-theme = "0.2.0"
+ska-ser-sphinx-theme = ">=0.2.0"
 sphinx-autodoc-typehints = "^1.23.0"
 myst-parser = "^4.0.0"
 sphinxcontrib-openapi = ">=0.8.4"

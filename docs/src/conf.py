@@ -152,7 +152,7 @@ html_context = {
     "gitlab_user": "",  # Username
     "gitlab_repo": "ska-telescope/ska-data-lifecycle",  # Repo name
     "gitlab_version": "main",  # Version
-    "conf_py_path": "/src/",  # Path in the checkout to the docs root
+    "conf_py_path": "/docs/src/",  # Path in the checkout to the docs root
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
