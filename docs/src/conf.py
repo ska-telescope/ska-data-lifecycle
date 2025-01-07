@@ -147,11 +147,11 @@ html_theme_options = {
 }
 
 html_context = {
-    "display_github": True,  # Integrate GitHub
+    "display_gitlab": True,  # Integrate GitLab
     "theme_logo_only": True,
-    "github_user": "",  # Username
-    "github_repo": "",  # Repo name
-    "github_version": "main",  # Version
+    "gitlab_user": "",  # Username
+    "gitlab_repo": "https://gitlab.com/ska-telescope/ska-data-lifecycle",  # Repo name
+    "gitlab_version": "main",  # Version
     "conf_py_path": "/src/",  # Path in the checkout to the docs root
 }
 
