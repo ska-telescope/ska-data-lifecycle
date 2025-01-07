@@ -42,7 +42,7 @@ def setup(app):
 
 # -- Project information -----------------------------------------------------
 project = "SKA Data Lifecycle Management System"
-copyright = "2023, SKA Observatory"
+copyright = "2025, SKA Observatory"
 author = "SKA Observatory"
 
 
@@ -76,6 +76,7 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx.ext.githubpages",
     "myst_parser",
+    "sphinx_rtd_theme",
     "sphinxcontrib.openapi",
 ]
 
@@ -136,7 +137,7 @@ extract_openapi(
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "sphinx_rtd_theme"
+html_theme = "ska_ser_sphinx_theme"
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -150,7 +151,7 @@ html_context = {
     "theme_logo_only": True,
     "github_user": "",  # Username
     "github_repo": "",  # Repo name
-    "github_version": "master",  # Version
+    "github_version": "main",  # Version
     "conf_py_path": "/src/",  # Path in the checkout to the docs root
 }
 

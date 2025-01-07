@@ -1,5 +1,5 @@
-Welcome to ska-data-lifecycle's documentation!
-==============================================
+SKA Data Lifecycle
+==================
 
 .. toctree::
    :maxdepth: 1
