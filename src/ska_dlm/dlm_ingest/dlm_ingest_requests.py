@@ -124,7 +124,7 @@ def register_data_item(  # noqa: C901
     uri: str = "",
     storage_name: str = "",
     storage_id: str = "",
-    metadata: JsonObjectOption = None,
+    metadata: JsonObjectOption = None,  # something is wrong here.
     item_format: str | None = "unknown",
     eb_id: str | None = None,
     authorization: Annotated[str | None, Header()] = None,
@@ -212,11 +212,9 @@ def register_data_item(  # noqa: C901
     set_state(uid, "READY")
 
     # (6) Populate the metadata column in the database
-    if metadata is not None:
-        set_metadata(uid, metadata)
-    else:
+    set_metadata(uid, metadata)
+    if metadata is None:
         logger.warning("No metadata saved.")
-        metadata = {}
 
     metadata["uid"] = uid
     metadata["item_name"] = item_name
