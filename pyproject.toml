@@ -65,12 +65,11 @@ python-keycloak = "^4.2.0"
 requests-mock = "^1.12.1"
 
 [tool.poetry.group.docs.dependencies]
-sphinx = "^8.0.0"
-ska-ser-sphinx-theme = "^0.2.0"
+sphinx = "^7.3.7"
+ska-ser-sphinx-theme = ">=0.2.0"
 sphinx-autodoc-typehints = "^1.23.0"
 myst-parser = "^4.0.0"
 sphinxcontrib-openapi = ">=0.8.4"
-sphinx-rtd-theme = "^3.0.2"
 
 [tool.pytest.ini_options]
 addopts = [

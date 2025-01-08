@@ -212,12 +212,13 @@ def register_data_item(  # noqa: C901
     set_state(uid, "READY")
 
     # (6) Populate the metadata column in the database
-    set_metadata(uid, metadata)
+    if metadata is not None:
+        set_metadata(uid, metadata)
+        metadata["uid"] = uid # why did we add this line again?
+        metadata["item_name"] = item_name # why did we add this line again?
+
     if metadata is None:
         logger.warning("No metadata saved.")
-
-    metadata["uid"] = uid
-    metadata["item_name"] = item_name
 
     # (7)
     notify_data_dashboard(metadata)
