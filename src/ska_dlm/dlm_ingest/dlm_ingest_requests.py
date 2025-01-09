@@ -212,12 +212,13 @@ def register_data_item(  # noqa: C901
     set_state(uid, "READY")
 
     # (6) Populate the metadata column in the database
-    if metadata is not None:
-        set_metadata(uid, metadata)
-        metadata["uid"] = uid
-        metadata["item_name"] = item_name
-    else:
-        logger.warning("No metadata saved.")
+    if metadata is None:
+        logger.warning("No metadata provided. Initializing metadata with uid and item_name.")
+        metadata = {}
+
+    metadata["uid"] = uid
+    metadata["item_name"] = item_name
+    set_metadata(uid, metadata)
 
     # (7)
     notify_data_dashboard(metadata)  # TODO: the DPD call is currently broken

@@ -322,6 +322,8 @@ def test_populate_metadata_col(env):
     )
 
     metadata_str_from_db = env.request_requests.query_data_item(uid=uid)
+    METADATA_RECEIVED["uid"] = uid
+    METADATA_RECEIVED["item_name"] = "/my/metadata/test/item"
     assert metadata_str_from_db[0]["metadata"] == METADATA_RECEIVED
 
     metadata_dict_from_db = metadata_str_from_db[0]["metadata"]

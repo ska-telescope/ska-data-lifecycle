@@ -66,7 +66,7 @@ def register_data_item(
     (3) check whether item is already registered on that storage
     (4) initialize the new item with the same OID on the new storage
     (5) set state to READY
-    (6) generate metadata
+    (6) save metadata
     (7) notify the data dashboard
 
     Parameters
@@ -98,7 +98,7 @@ def register_data_item(
     response = requests.post(
         f"{INGEST_URL}/ingest/register_data_item",
         params=params,
-        body=metadata,
+        json=metadata,
         headers=headers,
         timeout=60,
     )
