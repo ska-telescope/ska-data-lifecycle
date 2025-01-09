@@ -84,16 +84,16 @@ Alternatively, the following relevant docker compose commands can be mixed and m
 
 ```sh
 # Rebuild any changed Dockerfile dependencies
-docker compose -f tests/testrunner.docker-compose.yaml build
+docker compose -f tests/testrunner.docker-compose.yaml -p dlm-test-services build
 
 # Run the test runner
-docker compose --file tests/testrunner.docker-compose.yaml run dlm_testrunner
+docker compose -f tests/testrunner.docker-compose.yaml -p dlm-test-services run dlm_testrunner
 
 # Or run tests locally
 pytest --env local
 
 # Teardown any remaining services
-docker compose --file tests/testrunner.docker-compose.yaml down
+docker compose -f tests/testrunner.docker-compose.yaml -p dlm-test-services down
 ```
 
 #### FastAPI and Authentication
@@ -108,10 +108,10 @@ To run manually:
 
 ```sh
 # Rebuild any changed Dockerfile dependencies
-docker compose -f tests/services.docker-compose.yaml build
+docker compose -f tests/services.docker-compose.yaml -p dlm-test-services build
 
 # Run services
-docker compose -f tests/services.docker-compose.yaml up
+docker compose -f tests/services.docker-compose.yaml -p dlm-test-services up
 
 # Or run tests locally
 pytest --env local --auth 1

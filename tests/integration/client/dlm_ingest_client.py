@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Union
 
 import requests
 
+from ska_dlm.typer_types import JsonObjectOption
 from tests.integration.client.exception_handler import dlm_raise_for_status
 
 INGEST_URL = ""
@@ -51,7 +52,7 @@ def register_data_item(
     uri: str = "",
     storage_name: str = "",
     storage_id: str = "",
-    metadata: dict | None = None,
+    metadata: JsonObjectOption = None,
     item_format: str | None = "unknown",
     eb_id: str | None = None,
 ) -> str:
@@ -95,7 +96,11 @@ def register_data_item(
     params = {k: v for k, v in locals().items() if v}
     headers = {"Authorization": f"Bearer {TOKEN}"}
     response = requests.post(
-        f"{INGEST_URL}/ingest/register_data_item", params=params, headers=headers, timeout=60
+        f"{INGEST_URL}/ingest/register_data_item",
+        params=params,
+        body=metadata,
+        headers=headers,
+        timeout=60,
     )
     dlm_raise_for_status(response)
     return response.json()
