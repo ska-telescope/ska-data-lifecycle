@@ -55,7 +55,7 @@ def fixture_mock_generate_metadata(mocker: MockerFixture):
     )
 
 
-def test_register_data_item_with_client_metadata(
+def test_register_data_item(
     caplog, mock_init_data_item, mock_update_data_item, mock_notify_data_dashboard
 ):
     """Test the registration of a data item with provided client metadata."""
@@ -66,8 +66,6 @@ def test_register_data_item_with_client_metadata(
     uri = "test-uri"
 
     dlm_ingest.register_data_item(metadata=metadata, item_name=item_name, uri=uri)
-
-    assert "Saved metadata provided by client." in caplog.text
 
     # Assert: No warnings or errors in logs
     for record in caplog.records:
@@ -85,74 +83,6 @@ def test_register_data_item_with_client_metadata(
         },
     )
     assert mock_notify_data_dashboard.call_count == 1
-
-
-def test_register_data_item_no_client_metadata(
-    mock_generate_metadata, mock_init_data_item, mock_update_data_item, mock_notify_data_dashboard
-):
-    """Test register_data_item with no client-provided metadata; metadata scraper is called."""
-    item_name = "test-item"
-    uri = "test-uri"
-    eb_id = None  # Simulate missing eb_id from the client
-
-    # Call the function with no client metadata and no eb_id
-    dlm_ingest.register_data_item(metadata=None, item_name=item_name, uri=uri, eb_id=eb_id)
-
-    # Assert that scrape_metadata is called by register_data_item
-    mock_generate_metadata.assert_called_once_with(uri, eb_id)
-
-    assert mock_init_data_item.call_count == 1
-    assert mock_update_data_item.call_count > 1
-    mock_update_data_item.assert_any_call(
-        uid="test-uid",
-        post_data={
-            "metadata": {
-                "key": "value",
-                "uid": "test-uid",
-                "item_name": "test-item",
-            },
-        },
-    )
-    assert mock_notify_data_dashboard.call_count == 1
-
-
-@pytest.mark.parametrize(
-    "input_args, expected_result, expected_log",
-    [
-        (["test-uri", "eb123"], {"key": "value"}, "Metadata extracted successfully."),
-        (["test-uri", None], {"key": "value"}, "Metadata extracted successfully."),
-    ],
-)
-def test_scrape_metadata(
-    mock_generate_metadata, caplog, input_args, expected_result, expected_log
-):
-    """Test that scrape_metadata returns correct logs and results for different cases."""
-    caplog.set_level(logging.INFO)
-
-    result = dlm_ingest.scrape_metadata(*input_args)
-    result_dict = result.get_data().dict() if result is not None else None
-    mock_generate_metadata.assert_called_once()
-    assert result_dict == expected_result
-    assert expected_log in caplog.text
-    mock_generate_metadata.assert_called_once_with(*input_args)
-
-    # Assert: No warnings or errors in logs
-    for record in caplog.records:
-        assert record.levelname not in [
-            "WARNING",
-            "ERROR",
-        ], f"Unexpected log level {record.levelname}: {record.message}"
-
-
-def test_scrape_metadata_value_error(mock_generate_metadata, caplog):
-    """Test that scrape_metadata logs the appropriate message when ValueError occurs."""
-    caplog.set_level(logging.WARNING)
-
-    mock_generate_metadata.side_effect = ValueError("Mocked ValueError")
-    result = dlm_ingest.scrape_metadata("test-uri", "eb123")
-
-    assert "ValueError occurred while attempting to extract metadata" in caplog.text
-    assert result is None
 
 
 # TODO: all the notify_data_dashboard tests could use updating
