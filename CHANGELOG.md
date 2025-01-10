@@ -10,6 +10,10 @@
 
 * Updated the `requests.post` call in the client `register_data_item` function to send metadata as JSON in the request body.
 
+### Changed
+
+* Updated documentation theme.
+
 ## 0.2.0
 
 ### Added
