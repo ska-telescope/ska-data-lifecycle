@@ -4,11 +4,16 @@
 
 ## 0.2.0
 
+### Removed
+
+* Removed dependency on `casacore` and `ska-sdp-metadata-generator` module.
+
 ### Added
 
 * Added CICD deployment jobs for 3 targets: `ci-dev`, `integration` and `staging`
 * Added configurable shared PVC options for Helm chart services
 * Added data product api connection strings to Helm chart
+* Added the `json=metadata` parameter to the `requests.post` call in the client `register_data_item` function.
 
 ### Changed
 
