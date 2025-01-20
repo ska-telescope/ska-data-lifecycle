@@ -15,7 +15,7 @@ Typical usage of the DLM:
 
 To obtain an API token:
 
-* Open an browser and go to the `/token_by_auth_flow` endpoint on the DLM server URL. For example: https://sdhp.stfc.skao.int/dp-yanda/dlm/token_by_auth_flow.
+* Open a browser and go to the `/token_by_auth_flow` endpoint on the DLM server URL. For example: https://sdhp.stfc.skao.int/dp-yanda/dlm/token_by_auth_flow.
 * Login with your SKAO credentials
 * If successful, a token will be returned. Copy the token.
 
@@ -155,7 +155,7 @@ print(response.json())
 ```
 
 
-## Step 8: Access via Data Product Dashboard
+## Step 7: Access via Data Product Dashboard
 
 At time of writing, here are the known medium-term deployments of the DLM system:
 
