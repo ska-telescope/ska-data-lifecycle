@@ -167,7 +167,7 @@ def create_storage_config(
     storage_name: str = "",
     config_type: str = "rclone",
 ) -> str:
-    """Create a new record in the storage_config table for a storage with the given id.
+    """Create a new record in the storage_config table for a given storage_id.
 
     Parameters
     ----------
@@ -188,10 +188,10 @@ def create_storage_config(
     Raises
     ------
     UnmetPreconditionForOperation
-        Neither storage_name or ID specified.
+        Neither storage_id nor storage_name is specified.
     """
     if not storage_name and not storage_id:
-        raise UnmetPreconditionForOperation("Neither storage_name or ID specified.")
+        raise UnmetPreconditionForOperation("Neither storage_id nor storage_name is specified.")
     if storage_name:
         storage_id = query_storage(storage_name=storage_name)[0]["storage_id"]
     post_data = {
@@ -426,18 +426,19 @@ def init_location(
 @rest.get("/storage/query_storage")
 def query_storage(storage_name: str = "", storage_id: str = "") -> list:
     """
-    Query a storage.
+    Query storage locations.
 
     Parameters
     ----------
     storage_name: str, optional
-        could be empty, in which case the first 1000 items are returned
+        Name of the storage to query. If not provided, the first 1000 locations are returned.
     storage_id: str, optional
-        Return locations referred to by the location_id provided.
+        ID of the storage to query. Ignored if storage_name is provided.
 
     Returns
     -------
     list
+        A list of storage locations matching the query criteria.
     """
     params = {"limit": 1000}
     if storage_name:

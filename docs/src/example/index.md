@@ -34,7 +34,7 @@ For more complete information, refer to the ska-dlm-client [repository](https://
 
 ## ska-dlm REST API
 
-Interaction with the DLM is also possible via the REST API. The source code below is a typical example. The comments preceding each REST call are the python method alternatives.
+Interaction with the DLM is also possible via the REST API. The source code below is a typical example. The second code block shows the python method alternatives.
 
 ```python
 from requests import Session
@@ -51,19 +51,15 @@ location_name="ThisLocationName"
 location_type="ThisLocationType"
 
 # check if this location is already known to DLM
-#location = dlm_storage.query_location(location_name=location_name)
-params = {"location_name": location_name}
 session = Session()
-location = session.get(f"{DLM_URL}/storage/query_location", params=params, headers=bearer, timeout=60)
+location = session.get(f"{DLM_URL}/storage/query_location", params={"location_name": location_name}, headers=bearer, timeout=60)
 print(location.json())
 
 # otherwise, register this location:
-#location = dlm_storage.init_location(location_name, location_type)
 params = {
   "location_name": location_name,
   "location_type": location_type,
 }
-
 location = session.post(f"{DLM_URL}/storage/init_location", params=params, headers=bearer, timeout=60)
 print(location.json())
 
@@ -71,29 +67,22 @@ print(location.json())
 location_id = location.json()[0]["location_id"]
 
 # check if this storage is already known to DLM
-params = {
+params_loc = {
   "storage_name": "MyDisk",
   "location_id": location_id,
 }
-storage = session.get(f"{DLM_URL}/storage/query_storage", params=params, timeout=60)
+storage = session.get(f"{DLM_URL}/storage/query_storage", params=params_loc, timeout=60)
 print(storage.json())
 
 # initialise a storage, if it doesn’t already exist:
-#uuid = dlm_storage.init_storage(
-#    storage_name="MyDisk",
-#    location_id=location_id,
-#    storage_type="disk",
-#    storage_interface="posix",
-#    storage_capacity=100000000,
-#)
-params = {
+params_loc= {
   "storage_name": "MyDisk",
   "location_id": location_id,
   "storage_type": "disk",
   "storage_interface": "posix",
   "storage_capacity": 100000000,
 }
-storage = session.post(f"{DLM_URL}/storage/init_storage", params=params, headers=bearer, timeout=60)
+storage = session.post(f"{DLM_URL}/storage/init_storage", params=params_loc, headers=bearer, timeout=60)
 print(storage.json())
 
 # get the storage_id
@@ -105,8 +94,6 @@ config = session.get(f"{CONFIG.dlm.storage_url}/storage/get_storage_config", par
 print(config.json())
 
 # supply a rclone config for this storage, if it doesn’t already exist
-#config = '{"name":"MyDisk","type":"local", "parameters":{}}'
-#config_id = dlm_storage.create_storage_config(uuid, config=config)
 params = {
   "config": {
     "name": "MyDisk",
@@ -117,14 +104,8 @@ params = {
 config = session.post(f"{DLM_URL}/storage/create_storage_config", params=params, headers=bearer, timeout=60)
 print(config.json())
 
-# then begin adding data items
-#uid = dlm_ingest.register_data_item(
-#    "/my/ingest/item",
-#    path,
-#    "MyDisk",
-#    metadata=None
-#)
-params = {
+# register a data item
+params_item = {
   "item_name": "/my/ingest/item",
   "uri": "/some/path/to/the/file",
   "storage_name": "MyDisk",
@@ -133,7 +114,7 @@ params = {
   "item_format": None,
   "eb_id": None,
 }
-response = session.post(f"{DLM_URL}/ingest/register_data_item", params=params, headers=bearer, timeout=60)
+response = session.post(f"{DLM_URL}/ingest/register_data_item", params=params_item, headers=bearer, timeout=60)
 print(response.json())
 
 # trigger a migration from storage to storage
@@ -152,6 +133,40 @@ params = {
 response = session.get(f"{DLM_URL}/request/query_data_item", params=params, timeout=60)
 print(response.json())
 
+```
+
+Interaction with the DLM via python methods:
+
+```python
+from ska_dlm import dlm_storage, dlm_ingest
+
+location_name="ThisLocationName"
+location_type="ThisLocationType"
+
+#check if the location already exisists:
+dlm_storage.query_location(location_name=location_name)
+#initialise location (if it doesn't exist):
+location_id = dlm_storage.init_location(location_name, location_type)
+
+#check if the storage already exists:
+dlm_storage.query_storage(storage_name="MyDisk")
+#initialise storage (if it doesn't exist):
+storage_id = dlm_storage.init_storage(
+   storage_name="MyDisk",
+   location_id=location_id,
+   storage_type="disk",
+   storage_interface="posix",
+   storage_capacity=100000000,
+)
+
+#supply an rclone config for this storage:
+config = {"name":"MyDisk","type":"local", "parameters":{}}
+config_id = dlm_storage.create_storage_config(storage_id=storage_id, config=config)
+
+#register a data item
+uid = dlm_ingest.register_data_item(
+    "/my/ingest/item", "", "MyDisk", metadata={"execution_block": "eb-m001-20191031-12345"}
+)
 ```
 
 
