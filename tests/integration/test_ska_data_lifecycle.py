@@ -58,6 +58,7 @@ def setup(env):
     location_id = env.storage_requests.init_location("MyOwnStorage", "Server")
     uuid = env.storage_requests.init_storage(
         storage_name="MyDisk",
+        root_directory="/data/",
         location_id=location_id,
         storage_type="disk",
         storage_interface="posix",
@@ -189,6 +190,7 @@ def __initialize_storage_config(env):
     config = {"name": "MyDisk2", "type": "alias", "parameters": {"remote": "/"}}
     uuid = env.storage_requests.init_storage(
         storage_name="MyDisk2",
+        root_directory="/data/",
         location_id=location_id,
         storage_type="disk",
         storage_interface="posix",

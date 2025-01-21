@@ -41,6 +41,7 @@ CREATE TABLE storage (
     storage_retired BOOLEAN DEFAULT False,
     storage_retire_date TIMESTAMP without time zone DEFAULT NULL,
     storage_date timestamp without time zone DEFAULT now(),
+    root_directory varchar DEFAULT NULL,
     CONSTRAINT fk_location
       FOREIGN KEY(location_id)
       REFERENCES location(location_id)

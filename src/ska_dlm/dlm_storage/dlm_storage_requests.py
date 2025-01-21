@@ -93,6 +93,7 @@ def init_storage(
     storage_name: str,
     storage_type: str,
     storage_interface: str,
+    root_directory: str | None = None,
     location_id: str | None = None,
     location_name: str | None = None,
     storage_capacity: int = -1,
@@ -112,6 +113,8 @@ def init_storage(
         high level type of the storage, e.g. "disk", "s3"
     storage_interface : str
         storage interface for rclone access, e.g. "posix", "s3"
+    root_directory : str
+        root directory of storage
     location_name : str, optional
         a dlm registered location name
     location_id : str, optional
