@@ -270,11 +270,10 @@ def copy_data_item(
 
     Steps
     (1) get the current storage_id(s) of the item
-    (2) convert one(first) storage_id to a configured rclone backend
-    (3) check whether item already exists on destination
-    (4) initialize the new item with the same OID on the new storage
-    (5) use the rclone copy command to copy it to the new location
-    (6) make sure the copy was successful
+    (2) convert one (first) storage_id to a configured rclone backend
+    (3) initialize the new item with the same OID on the new storage
+    (4) use the rclone copy command to copy it to the new location
+    (5) make sure the copy was successful
 
     Parameters
     ----------
@@ -349,7 +348,7 @@ def copy_data_item(
         "storage_id": destination_id,
     }
     uid = init_data_item(json_data=init_item)
-    # (5)
+    # (4)
     # TODO(yan-xxx) abstract the actual function called away to allow for different
     # mechanisms to perform the copy. Also needs to be a non-blocking call
     # scheduling a job for dlm_migration service.
@@ -371,7 +370,7 @@ def copy_data_item(
         destination_id,
         authorization,
     )
-    # (6)
+    # (5)
     set_uri(uid, dest["path"], destination_id)
     # all done! Set data_item state to READY
     set_state(uid, "READY")
