@@ -223,7 +223,9 @@ def register_data_item(  # noqa: C901
     set_metadata(uid, metadata)
 
     # (7)
-    notify_data_dashboard(metadata)  # TODO: the DPD call is currently broken
+    # commenting out step 7 for now because we're likely no longer doing this step
+    # the DPD call to /ingestnewmetadata endpoint is currently broken
+    # notify_data_dashboard(metadata)
 
     return uid
 
