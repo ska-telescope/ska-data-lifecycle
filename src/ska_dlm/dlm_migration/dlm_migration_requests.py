@@ -306,7 +306,7 @@ def copy_data_item(
         No data item found for copying.
     """
     if not item_name and not oid and not uid:
-        raise InvalidQueryParameters("Either an item_name or an OID or an UID has to be provided!")
+        raise InvalidQueryParameters("Either item_name or OID or UID has to be provided!")
     orig_item = query_data_item(item_name, oid, uid)
     if orig_item:
         orig_item = orig_item[0]

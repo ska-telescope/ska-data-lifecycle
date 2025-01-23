@@ -48,82 +48,85 @@ DLM_URL = "https://sdhp.stfc.skao.int/dp-yanda/dlm"
 bearer = {"Authorization": f"Bearer {your token}"}
 
 # create details for this location
-location_name="ThisLocationName"
-location_type="ThisLocationType"
+location_name = "ThisLocationName"
+location_type = "ThisLocationType"
 
 # check if the location 'ThisLocationName' is already known to DLM
 session = Session()
-location = session.get(f"{DLM_URL}/storage/query_location", params={"location_name": location_name}, headers=bearer, timeout=60)
+location = session.get(
+    f"{DLM_URL}/storage/query_location", params={"location_name": location_name}, headers=bearer, timeout=60
+)
 print(location.json())
-# initialise this location (if it doesn't already exist)
+location_id = location.json()[0]["location_id"]  # if location exists
+# if it doesn't already exist, initialise this location
 params = {
-  "location_name": location_name,
-  "location_type": location_type,
+    "location_name": location_name,
+    "location_type": location_type,
 }
 location = session.post(f"{DLM_URL}/storage/init_location", params=params, headers=bearer, timeout=60)
 print(location.json())
-# get the location id
-location_id = location.json()[0]["location_id"]
+location_id = location.json() # get the location id
 
 # check if the storage 'MyDisk' is already known to DLM
 params_loc = {
-  "storage_name": "MyDisk",
-  "location_id": location_id,
+    "storage_name": "MyDisk",
+    "location_id": location_id,
 }
 storage = session.get(f"{DLM_URL}/storage/query_storage", params=params_loc, headers=bearer, timeout=60)
 print(storage.json())
-# initialise this storage (if it doesn’t already exist)
-params_loc= {
-  "storage_name": "MyDisk",
-  "location_id": location_id,
-  "storage_type": "disk",
-  "storage_interface": "posix",
-  "storage_capacity": 100000000,
+storage_id = storage.json()[0]["storage_id"]  # if the storage exists
+
+# if it doesn't already exist, initialise this storage:
+params_loc = {
+    "storage_name": "MyDisk",
+    "location_id": location_id,
+    "storage_type": "disk",
+    "storage_interface": "posix",
+    "storage_capacity": 100000000,
 }
 storage = session.post(f"{DLM_URL}/storage/init_storage", params=params_loc, headers=bearer, timeout=60)
 print(storage.json())
-# get the storage_id
-storage_id = storage.json()[0]["storage_id"]
+storage_id = storage.json() # get the storage_id
 
 # check if a storage config for this storage is already known to DLM
-config = session.get(f"{DLM_URL}/storage/get_storage_config", params={"storage_id": storage_id}, headers=bearer, timeout=60)
+config = session.get(
+    f"{DLM_URL}/storage/get_storage_config", params={"storage_id": storage_id}, headers=bearer, timeout=60
+)
 print(config.json())
 # supply an rclone config for this storage (if it doesn’t already exist)
-params_config = {
-  "config": {
+params_config = {"storage_id": storage_id}
+config_config = {
     "name": "MyDisk",
-    "type":"local",
-    "parameters":{},
-  }
+    "type": "local",
+    "parameters": {},
 }
-config = session.post(f"{DLM_URL}/storage/create_storage_config", params=params_config, headers=bearer, timeout=60)
+config = session.post(
+    f"{DLM_URL}/storage/create_storage_config", params=params_config, json=config_config, headers=bearer, timeout=60
+)
 print(config.json())
 
 # register a data item
-params_item = {
-  "item_name": "/my/ingest/item",
-  "uri": "",
-  "storage_name": "MyDisk",
-  "storage_id": "f3532560-2338-48a7-bba3-f389ad4a3285",
-  # "metadata": None,
-  # "item_format": None,
-  # "eb_id": None,
+params = {
+    "item_name": "test_item",
+    "uri": '"',
+    "storage_name": "MyDisk1",
+    "storage_id": "6b4ee83d-8a10-4d55-b483-c088df66d5dd",
 }
-response = session.post(f"{DLM_URL}/ingest/register_data_item", params=params_item, headers=bearer, timeout=60)
+json_body = {"execution_block": "eb-m001-20191031-12345"}
+response = session.post(
+    f"{DLM_URL}/ingest/register_data_item", params=params, json=json_body, headers=bearer, timeout=60
+)
 print(response.json())
 
 # trigger a migration from storage to storage
-params = {
-  "item_name": "/my/ingest/item",
-  "destination_id": destination_id,
-  "path": ""
-}
+# initialise a destination storage (if it doesn't already exist), using the method above
+params = {"item_name": "test_item", "destination_name": <dest_storage>, "path": <dest_path>}
 response = session.post(f"{DLM_URL}/migration/copy_data_item", params=params, headers=bearer, timeout=60)
 print(response.json())
 
 # list items and their locations
 params = {
-  "item_name": "/my/ingest/item",
+    "item_name": "test_item",
 }
 response = session.get(f"{DLM_URL}/request/query_data_item", params=params, headers=bearer, timeout=60)
 print(response.json())
