@@ -52,8 +52,9 @@ def register_data_item(
     uri: str = "",
     storage_name: str = "",
     storage_id: str = "",
+    item_type: str | None = "unknown",
+    parents: str | None = None,
     metadata: JsonObjectOption = None,
-    item_format: str | None = "unknown",
     eb_id: str | None = None,
 ) -> str:
     """Ingest a data_item (register function is an alias).

@@ -118,14 +118,23 @@ def ioerror_exception_handler(request: Request, exc: IOError):
     )
 
 
-def rclone_copy(src_fs: str, src_remote: str, dst_fs: str, dst_remote: str, item_type: str):
+def rclone_copy(
+    src_fs: str,
+    src_remote: str,
+    src_root_dir: str,
+    dst_fs: str,
+    dst_remote: str,
+    item_type: str
+    # pylint: disable=too-many-arguments,too-many-positional-arguments
+):
     """Copy a file from one place to another."""
     # if the item is a measurement set then use the copy directory command
 
-    if item_type == "ms":
+    path = f"{src_root_dir}/{src_remote}".replace("//", "/")
+    if item_type == "container":
         request_url = f"{CONFIG.RCLONE.url}/sync/copy"
         post_data = {
-            "srcFs": f"{src_fs}{src_remote}",
+            "srcFs": f"{src_fs}{path}",
             "dstFs": f"{dst_fs}{dst_remote}",
             "no-check-dest": "true",
             "s3-no-check-bucket": "true",
@@ -135,7 +144,7 @@ def rclone_copy(src_fs: str, src_remote: str, dst_fs: str, dst_remote: str, item
         request_url = f"{CONFIG.RCLONE.url}/operations/copyfile"
         post_data = {
             "srcFs": src_fs,
-            "srcRemote": src_remote,
+            "srcRemote": f"{path}",
             "dstFs": dst_fs,
             "dstRemote": dst_remote,
             "_async": "true",
@@ -232,6 +241,23 @@ def query_migrations(
     return DB.select(CONFIG.DLM.migration_table, params=params)
 
 
+def _get_migration_record(migration_id: int) -> list:
+    """
+    Query for a specific migration.
+
+    Parameters
+    ----------
+    migration_id : int
+        Migration id of migration
+
+    Returns
+    -------
+    list
+    """
+    params = {"migration_id": f"eq.{migration_id}"}
+    return DB.select(CONFIG.DLM.migration_table, params=params)
+
+
 def _create_migration_record(
     job_id, oid, source_storage_id, destination_storage_id, authorization
 ):
@@ -256,8 +282,8 @@ def _create_migration_record(
 
 @cli.command()
 @rest.post("/migration/copy_data_item")
-def copy_data_item(
-    # pylint: disable=too-many-arguments,too-many-locals,too-many-positional-arguments
+def copy_data_item(  # noqa: C901
+    # pylint: disable=too-many-arguments,too-many-locals,too-many-positional-arguments,
     item_name: str = "",
     oid: str = "",
     uid: str = "",
@@ -347,6 +373,7 @@ def copy_data_item(
         "item_name": item_name,
         "oid": orig_item["oid"],
         "storage_id": destination_id,
+        "item_type": orig_item["item_type"],
     }
     uid = init_data_item(json_data=init_item)
     # (5)
@@ -355,8 +382,19 @@ def copy_data_item(
     # scheduling a job for dlm_migration service.
     logger.info("source: %s", source)
 
+    source_storage = query_storage(storage_id=storage["storage_id"])
+    if not source_storage:
+        raise UnmetPreconditionForOperation(
+            f"Unable to get source storage: {storage['storage_id']}."
+        )
+
     status_code, content = rclone_copy(
-        source["backend"], source["path"], dest["backend"], dest["path"], orig_item["item_format"]
+        source["backend"],
+        source["path"],
+        source_storage[0]["root_directory"],
+        dest["backend"],
+        dest["path"],
+        orig_item["item_type"],
     )
 
     if status_code != 200:
@@ -372,7 +410,8 @@ def copy_data_item(
         authorization,
     )
     # (6)
-    set_uri(uid, dest["path"], destination_id)
+    set_uri(uid, orig_item["uri"], destination_id)
     # all done! Set data_item state to READY
     set_state(uid, "READY")
+
     return {"uid": uid, "migration_id": record[0]["migration_id"]}

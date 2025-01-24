@@ -1,8 +1,9 @@
 """Common utilities for interacting with native system"""
 
-import glob
+
 import logging
 import os
+from pathlib import Path
 
 from overrides import override
 
@@ -48,6 +49,7 @@ class DlmTestClientDocker(DlmTestClient):
 
     @override
     def write_rclone_file_content(self, rclone_path: str, content: str):
+        self.create_rclone_directory(os.path.dirname(rclone_path))
         # Assume shared file system or docker shared volume
         with open(rclone_path, "wt", encoding="ascii") as file:
             file.write(content)
@@ -59,9 +61,16 @@ class DlmTestClientDocker(DlmTestClient):
 
     @override
     def clear_rclone_data(self, path: str):
-        files = glob.glob(f"{path}/*")
-        for file in files:
-            os.remove(file)
+        directory = Path(path)
+        for item in directory.iterdir():
+            if item.is_dir():
+                self.clear_rclone_data(item)
+            else:
+                item.unlink()
+
+    def create_rclone_directory(self, path: str):
+        """Create rclone directory."""
+        os.makedirs(path, exist_ok=True)
 
     @override
     def get_gateway_url(self) -> str:

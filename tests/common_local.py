@@ -47,6 +47,8 @@ class DlmTestClientLocal(DlmTestClient):
         with tarfile.open(f"{src}.tar", "w") as tar:
             tar.add(src, arcname=os.path.basename(src))
 
+        container.exec_run(f"mkdir -p {os.path.dirname(dst)}")
+
         with open(f"{src}.tar", "rb") as data:
             container.put_archive(os.path.dirname(dst), data.read())
 
@@ -54,6 +56,8 @@ class DlmTestClientLocal(DlmTestClient):
         """Copy file from container"""
         name, src = src.split(":")
         container = self.client.containers.get(name)
+        os.makedirs(os.path.dirname(dest), exist_ok=True)
+
         with open(dest, "wb") as file:
             bits, _ = container.get_archive(src)
             for chunk in bits:
@@ -83,6 +87,11 @@ class DlmTestClientLocal(DlmTestClient):
     def clear_rclone_data(self, path: str):
         container = self.client.containers.get(RCLONE_DEPLOYMENT)
         container.exec_run(["/bin/sh", "-c", f"rm -rf {path}/*"])
+
+    def create_rclone_directory(self, path: str):
+        """Create rclone directory."""
+        container = self.client.containers.get(RCLONE_DEPLOYMENT)
+        container.exec_run(f"mkdir -p {path}")
 
     @override
     def get_gateway_url(self) -> str:

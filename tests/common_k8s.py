@@ -69,7 +69,11 @@ class DlmTestClientK8s(DlmTestClient):
             self.core_api.connect_get_namespaced_pod_exec,
             pod_name,
             NAMESPACE,
-            command=["/bin/sh", "-c", f"echo -n '{content}' > {rclone_path}"],
+            command=[
+                "/bin/sh",
+                "-c",
+                f"echo -n '{content}' | install -D /dev/stdin {rclone_path}",
+            ],
             stdout=True,
         )
 
@@ -95,6 +99,18 @@ class DlmTestClientK8s(DlmTestClient):
             pod_name,
             NAMESPACE,
             command=["/bin/sh", "-c", f"rm -rf {path}/*"],
+            stdout=True,
+        )
+        return output
+
+    def create_rclone_directory(self, path: str):
+        """Create rclone directory."""
+        pod_name = self._get_pod_name(RCLONE_DEPLOYMENT)
+        output = stream.stream(
+            self.core_api.connect_get_namespaced_pod_exec,
+            pod_name,
+            NAMESPACE,
+            command=["/bin/sh", "-c", f"mkdir -p {path}"],
             stdout=True,
         )
         return output

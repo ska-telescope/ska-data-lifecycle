@@ -24,6 +24,10 @@ class DlmTestClient:
         """Delete all rclone local data."""
 
     @abstractmethod
+    def create_rclone_directory(self, path: str):
+        """Create rclone directory."""
+
+    @abstractmethod
     def get_gateway_url(self) -> str:
         """Get the gateway url."""
 
