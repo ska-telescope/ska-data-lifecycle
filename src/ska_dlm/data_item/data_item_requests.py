@@ -56,7 +56,7 @@ def update_data_item(
         params["oid"] = f"eq.{oid}"
     elif uid:
         params["uid"] = f"eq.{uid}"
-    return DB.update(CONFIG.DLM.dlm_table, params=params, json=post_data)[0]["uid"]
+    return DB.update(CONFIG.DLM.dlm_table, params=params, json=post_data)[0]
 
 
 @cli.command()

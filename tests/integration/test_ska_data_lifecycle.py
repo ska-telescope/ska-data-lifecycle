@@ -10,14 +10,18 @@ import pytest
 
 from ska_dlm import CONFIG, data_item
 from ska_dlm.dlm_db.db_access import DB
-from ska_dlm.dlm_migration.dlm_migration_requests import update_migration_statuses
+from ska_dlm.dlm_migration.dlm_migration_requests import (
+    _get_migration_record,
+    update_migration_statuses,
+)
 from ska_dlm.dlm_storage.main import persist_new_data_items
 from ska_dlm.exceptions import ValueAlreadyInDB
 from tests.common_local import DlmTestClientLocal
 from tests.integration.client.dlm_gateway_client import get_token
 
 ROOT = "/data/"
-RCLONE_TEST_FILE_PATH = "/data/testfile"
+RCLONE_TEST_FILE_PATH = "/data/MyDisk/testfile"
+TEST_URI = "testfile"
 """A file that is available locally in the rclone container"""
 RCLONE_TEST_FILE_CONTENT = "license content"
 RCLONE_TEST_FILE_SIZE = 15  # bytes
@@ -58,6 +62,7 @@ def setup(env):
     location_id = env.storage_requests.init_location("MyOwnStorage", "Server")
     uuid = env.storage_requests.init_storage(
         storage_name="MyDisk",
+        root_directory="/data/MyDisk/",
         location_id=location_id,
         storage_type="disk",
         storage_interface="posix",
@@ -89,7 +94,7 @@ def __initialize_data_item(env):
 def test_ingest_data_item(env):
     """Test the ingest_data_item function."""
     uid = env.ingest_requests.register_data_item(
-        "/my/ingest/test/item", RCLONE_TEST_FILE_PATH, "MyDisk", metadata=None
+        "/my/ingest/test/item", TEST_URI, "MyDisk", metadata=None
     )
     assert len(uid) == 36
 
@@ -99,7 +104,7 @@ def test_register_data_item_with_metadata(env):
     """Test the register_data_item function with provided metadata."""
     uid = env.ingest_requests.register_data_item(
         "/my/ingest/test/item2",
-        RCLONE_TEST_FILE_PATH,
+        TEST_URI,
         "MyDisk",
         metadata=METADATA_RECEIVED,
     )
@@ -107,7 +112,7 @@ def test_register_data_item_with_metadata(env):
     with pytest.raises(ValueAlreadyInDB, match="Item is already registered"):
         env.ingest_requests.register_data_item(
             "/my/ingest/test/item2",
-            RCLONE_TEST_FILE_PATH,
+            TEST_URI,
             "MyDisk",
             metadata=METADATA_RECEIVED,
         )
@@ -147,8 +152,8 @@ def test_set_uri_state_phase(env):
     """Update a data_item record with the pointer to a file."""
     uid = env.ingest_requests.init_data_item(item_name="this/is/the/first/test/item")
     storage_id = env.storage_requests.query_storage(storage_name="MyDisk")[0]["storage_id"]
-    data_item.set_uri(uid, RCLONE_TEST_FILE_PATH, storage_id)
-    assert env.request_requests.query_data_item(uid=uid)[0]["uri"] == RCLONE_TEST_FILE_PATH
+    data_item.set_uri(uid, TEST_URI, storage_id)
+    assert env.request_requests.query_data_item(uid=uid)[0]["uri"] == TEST_URI
     data_item.set_state(uid, "READY")
     data_item.set_phase(uid, "PLASMA")
     items = env.request_requests.query_data_item(uid=uid)
@@ -161,7 +166,7 @@ def test_set_uri_state_phase(env):
 @pytest.mark.integration_test
 def test_delete_item_payload(env):
     """Delete the payload of a data_item."""
-    fpath = RCLONE_TEST_FILE_PATH
+    fpath = TEST_URI
     storage_id = env.storage_requests.query_storage(storage_name="MyDisk")[0]["storage_id"]
     uid = env.ingest_requests.register_data_item(fpath, fpath, "MyDisk")
     data_item.set_state(uid, "READY")
@@ -180,6 +185,7 @@ def test_delete_item_payload(env):
 
 def __initialize_storage_config(env):
     """Add a new location, storage and configuration to the rclone server."""
+    env.create_rclone_directory("/data/MyDisk2/")
     location = env.storage_requests.query_location("MyHost")
     if location:
         location_id = location[0]["location_id"]
@@ -189,6 +195,7 @@ def __initialize_storage_config(env):
     config = {"name": "MyDisk2", "type": "alias", "parameters": {"remote": "/"}}
     uuid = env.storage_requests.init_storage(
         storage_name="MyDisk2",
+        root_directory="/data/MyDisk2/",
         location_id=location_id,
         storage_type="disk",
         storage_interface="posix",
@@ -205,24 +212,24 @@ def __initialize_storage_config(env):
 def test_copy(env):
     """Copy a test file from one storage to another."""
     # NOTE: this test will not work without requests being made via a gateway
-    if isinstance(env, DlmTestClientLocal):
-        pytest.skip("Unprocessable Entity")
+
+    # if isinstance(env, DlmTestClientLocal):
+    #    pytest.skip("Unprocessable Entity")
 
     __initialize_storage_config(env)
     dest_id = env.storage_requests.query_storage("MyDisk2")[0]["storage_id"]
-    uid = env.ingest_requests.register_data_item(
-        "/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, "MyDisk"
-    )
+    uid = env.ingest_requests.register_data_item("/my/ingest/test/item2", TEST_URI, "MyDisk")
     assert len(uid) == 36
-    dest = "/data/testfile_copy"
-    env.migration_requests.copy_data_item(uid=uid, destination_id=dest_id, path=dest)
+    dest = "/data/MyDisk2/testfile_copy"
+    results = env.migration_requests.copy_data_item(uid=uid, destination_id=dest_id, path=dest)
     assert RCLONE_TEST_FILE_CONTENT == env.get_rclone_local_file_content(dest)
 
     # trigger manual update of migrations status
     asyncio.run(update_migration_statuses())
 
     # check that a query for all migrations returns the details of this single migration
-    result = env.migration_requests.query_migrations()
+    result = _get_migration_record(results["migration_id"])
+
     assert len(result) == 1
     assert result[0]["destination_storage_id"] == dest_id
     assert result[0]["complete"] is True
@@ -230,12 +237,80 @@ def test_copy(env):
     assert result[0]["job_stats"]["bytes"] == RCLONE_TEST_FILE_SIZE
 
 
+def test_copy_container(env):
+    """Copy a container from one storage to another."""
+    # NOTE: this test will not work without requests being made via a gateway
+
+    # if isinstance(env, DlmTestClientLocal):
+    #    pytest.skip("Unprocessable Entity")
+
+    __initialize_storage_config(env)
+
+    file1_data = "Some data"
+    file2_data = "More data"
+
+    env.create_rclone_directory("/data/MyDisk/container/dir1")
+    env.write_rclone_file_content("/data/MyDisk/container/file1", file1_data)
+    env.write_rclone_file_content("/data/MyDisk/container/dir1/file2", file2_data)
+
+    dest_id = env.storage_requests.query_storage("MyDisk2")[0]["storage_id"]
+
+    uid_root = env.ingest_requests.register_data_item(
+        item_name="container",
+        uri="container/",
+        storage_name="MyDisk",
+        item_type="container",
+        parents=None,
+    )
+    assert len(uid_root) == 36
+
+    dir1_uid = env.ingest_requests.register_data_item(
+        item_name="container/dir1",
+        uri="container/dir1",
+        storage_name="MyDisk",
+        item_type="container",
+        parents=uid_root,
+    )
+    assert len(dir1_uid) == 36
+
+    file1_uid = env.ingest_requests.register_data_item(
+        item_name="container/file1",
+        uri="container/file1",
+        storage_name="MyDisk",
+        item_type="file",
+        parents=uid_root,
+    )
+    assert len(file1_uid) == 36
+
+    file2_uid = env.ingest_requests.register_data_item(
+        item_name="container/dir1/file2",
+        uri="container/dir1/file2",
+        storage_name="MyDisk",
+        item_type="file",
+        parents=dir1_uid,
+    )
+    assert len(file2_uid) == 36
+
+    dest = "/data/MyDisk2/container"
+    result = env.migration_requests.copy_data_item(uid=uid_root, destination_id=dest_id, path=dest)
+
+    # trigger manual update of migrations status
+    asyncio.run(update_migration_statuses())
+
+    # check that a query for all migrations returns the details of this single migration
+    result = _get_migration_record(result["migration_id"])
+
+    assert len(result) == 1
+    assert result[0]["destination_storage_id"] == dest_id
+    assert result[0]["complete"] is True
+    assert result[0]["job_status"]["finished"] is True
+    assert result[0]["job_stats"]["bytes"] == len(file1_data) + len(file2_data)
+
+
 @pytest.mark.integration_test
 def test_update_item_tags(env):
     """Update the item_tags field of a data_item."""
-    _ = env.ingest_requests.register_data_item(
-        "/my/ingest/test/item2", RCLONE_TEST_FILE_PATH, "MyDisk"
-    )
+    _ = env.ingest_requests.register_data_item("/my/ingest/test/item2", TEST_URI, "MyDisk")
     res = data_item.update_item_tags(
         "/my/ingest/test/item2", item_tags={"a": "SKA", "b": "DLM", "c": "dummy"}
     )
@@ -251,7 +326,7 @@ def test_update_item_tags(env):
 @pytest.mark.integration_test
 def test_expired_by_storage_daemon(env):
     """Test an expired data item is deleted by the storage manager."""
-    fname = RCLONE_TEST_FILE_PATH
+    fname = TEST_URI
     # test no expired items were found
     result = env.request_requests.query_expired()
     assert len(result) == 0
@@ -285,9 +360,7 @@ def test_expired_by_storage_daemon(env):
 def test_query_new(env):
     """Test for newly created data_items."""
     check_time = "2024-01-01"
-    _ = env.ingest_requests.register_data_item(
-        "/my/ingest/test/item", RCLONE_TEST_FILE_PATH, "MyDisk"
-    )
+    _ = env.ingest_requests.register_data_item("/my/ingest/test/item", TEST_URI, "MyDisk")
     result = env.request_requests.query_new(check_time)
     assert len(result) == 1
 
@@ -296,9 +369,7 @@ def test_query_new(env):
 def test_persist_new_data_items(env):
     """Test making new data items persistent."""
     check_time = "2024-01-01"
-    _ = env.ingest_requests.register_data_item(
-        "/my/ingest/test/item", RCLONE_TEST_FILE_PATH, "MyDisk"
-    )
+    _ = env.ingest_requests.register_data_item("/my/ingest/test/item", TEST_URI, "MyDisk")
     result = persist_new_data_items(check_time)
     # negative test, since there is only a single volume registered
     assert result == {"/my/ingest/test/item": False}
@@ -316,7 +387,7 @@ def test_populate_metadata_col(env):
     # Register data item with metadata
     uid = env.ingest_requests.register_data_item(
         "/my/metadata/test/item",  # item_name
-        RCLONE_TEST_FILE_PATH,  # uri
+        TEST_URI,  # uri
         "MyDisk",  # storage_name
         metadata=METADATA_RECEIVED,  # metadata
     )

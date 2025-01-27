@@ -119,13 +119,14 @@ def init_data_item(
 @cli.command()
 @rest.post("/ingest/register_data_item")
 def register_data_item(  # noqa: C901
-    # pylint: disable=too-many-arguments,too-many-positional-arguments
+    # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals
     item_name: str,
     uri: str = "",
     storage_name: str = "",
     storage_id: str = "",
+    item_type: str | None = "unknown",
+    parents: str | None = None,
     metadata: JsonObjectOption = None,
-    item_format: str | None = "unknown",
     eb_id: str | None = None,
     authorization: Annotated[str | None, Header()] = None,
 ) -> str:
@@ -156,8 +157,10 @@ def register_data_item(  # noqa: C901
         the ID of the configured storage.
     metadata: dict, optional
         metadata provided by the client
-    item_format: str, optional
-        format of the data item
+    item_type: str, optional
+        type of the data item (unknown, container, file)
+    parents: str, optional
+        uuid of parent item
     eb_id: str | None, optional
         execution block ID provided by the client
     authorization: str
@@ -191,8 +194,9 @@ def register_data_item(  # noqa: C901
             f"Requested storage volume is not accessible by DLM! {storage_name}"
         )
     # (2)
-    if not rclone_access(storage_name, uri):  # TODO: don't call into rclone directly
-        raise UnmetPreconditionForOperation(f"File {uri} does not exist on {storage_name}")
+    file_path = f"{storages[0]['root_directory']}/{uri}".replace("//", "/")
+    if not rclone_access(storage_name, file_path):  # TODO: don't call into rclone directly
+        raise UnmetPreconditionForOperation(f"File {file_path} does not exist on {storage_name}")
     if query_exists(item_name):
         ex_storage_id = query_data_item(item_name)[0]["storage_id"]
         if storage_id == ex_storage_id:
@@ -202,8 +206,9 @@ def register_data_item(  # noqa: C901
         "item_name": item_name,
         "storage_id": storage_id,
         "item_phase": storages[0]["storage_phase_level"],
-        "item_format": item_format,
+        "item_type": item_type,
         "item_owner": username,
+        "parents": parents,
     }
     uid = init_data_item(json_data=init_item)
 

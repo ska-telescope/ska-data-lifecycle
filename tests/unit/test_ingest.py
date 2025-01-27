@@ -16,7 +16,13 @@ def fixture_mock_ingest_requests_storage(mocker: MockerFixture):
     """Fixture to mock all storage related calls used in dlm_ingest_requests."""
     mocker.patch(
         "ska_dlm.dlm_ingest.dlm_ingest_requests.query_storage",
-        return_value=[{"storage_id": "storage-id", "storage_phase_level": "some-phase-level"}],
+        return_value=[
+            {
+                "storage_id": "storage-id",
+                "storage_phase_level": "some-phase-level",
+                "root_directory": "/root/",
+            }
+        ],
     )
     mocker.patch("ska_dlm.dlm_ingest.dlm_ingest_requests.rclone_access", return_value=True)
     mocker.patch("ska_dlm.dlm_ingest.dlm_ingest_requests.check_storage_access", return_value=True)

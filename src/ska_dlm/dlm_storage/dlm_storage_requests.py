@@ -93,6 +93,7 @@ def init_storage(
     storage_name: str,
     storage_type: str,
     storage_interface: str,
+    root_directory: str,
     location_id: str | None = None,
     location_name: str | None = None,
     storage_capacity: int = -1,
@@ -112,6 +113,8 @@ def init_storage(
         high level type of the storage, e.g. "disk", "s3"
     storage_interface : str
         storage interface for rclone access, e.g. "posix", "s3"
+    root_directory : str
+        root directory of storage
     location_name : str, optional
         a dlm registered location name
     location_id : str, optional
@@ -136,6 +139,7 @@ def init_storage(
         "location_id",
         "storage_capacity",
         "storage_phase_level",
+        "root_directory",
     ]
     # TODO remove keys none values
     post_data = {}
@@ -513,12 +517,16 @@ def delete_data_item_payload(uid: str) -> bool:
     storage_name = config["name"]
     if not rclone_access(storage_name):
         return False
-    if not rclone_delete(storage_name, storage["uri"]):
+    source_storage = query_storage(storage_id=storage["storage_id"])
+    if not source_storage:
+        raise UnmetPreconditionForOperation(
+            f"Unable to get source storage: {storage['storage_id']}."
+        )
+    delete_path = f"{source_storage[0]['root_directory']}/{storage['uri']}".replace("//", "/")
+    if not rclone_delete(storage_name, delete_path):
         logger.warning("rclone unable to delete data item payload: %s", uid)
         return False
-    if set_state(uid, "DELETED") is not None:
-        logger.warning("Unable to set_state for: %s", uid)
-        return False
+    set_state(uid, "DELETED")
     logger.info("Deleted %s from %s", uid, storage_name)
     return True
 
