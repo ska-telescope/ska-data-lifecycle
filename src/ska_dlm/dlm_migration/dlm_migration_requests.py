@@ -25,6 +25,14 @@ from ..dlm_request import query_data_item
 from ..dlm_storage import check_item_on_storage, get_storage_config, query_storage
 from ..exceptions import UnmetPreconditionForOperation
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,  # Set the lowest level to log (e.g., DEBUG, INFO, WARNING, ERROR)
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.StreamHandler()  # Logs to the terminal (stdout)
+    ]
+)
 logger = logging.getLogger(__name__)
 
 origins = ["http://localhost", "http://localhost:5000", "http://localhost:8004"]
@@ -357,21 +365,43 @@ def copy_data_item(
     status_code, content = rclone_copy(
         source["backend"], source["path"], dest["backend"], dest["path"], orig_item["item_format"]
     )
+    logger.error("rclone_copy failed with status_code: %s, content: %s", status_code, content)
+
 
     if status_code != 200:
         return IOError("rclone copy failed")
 
     # add row to migration table
     # NOTE: temporarily use server_id='rclone0' until we actually have multiple rclone servers
-    record = _create_migration_record(
-        content["jobid"],
-        orig_item["oid"],
-        storage["storage_id"],
-        destination_id,
-        authorization,
-    )
+    try:
+        record = _create_migration_record(
+            content["jobid"],
+            orig_item["oid"],
+            storage["storage_id"],
+            destination_id,
+            authorization,
+        )
+    except Exception as e:
+        logger.error("Failed to create migration record: %s", str(e))
+        raise e
+    if not record or not isinstance(record, list) or len(record) == 0:
+        raise ValueError("Migration record is invalid or empty.")
     # (5)
-    set_uri(uid, dest["path"], destination_id)
-    # all done! Set data_item state to READY
-    set_state(uid, "READY")
+    # set_uri(uid, dest["path"], destination_id)
+    # # all done! Set data_item state to READY
+    # set_state(uid, "READY")
+    try:
+        set_uri(uid, dest["path"], destination_id)
+        set_state(uid, "READY")
+    except Exception as e:
+        logger.error("Failed to set URI or state for data item: %s", str(e))
+        raise e
+
+    logger.info("Step 1: Querying data item with item_name: %s, oid: %s, uid: %s", item_name, oid, uid)
+    logger.info("Step 2: Checking item storage: %s", storages)
+    logger.info("Step 3: Source config: %s, Destination config: %s", s_config, d_config)
+    logger.info("Step 4: Initializing new data item with UID: %s", uid)
+    logger.info("Step 5: rclone_copy status: %s, content: %s", status_code, content)
+    logger.info("Step 6: Setting URI and state for UID: %s", uid)
+
     return {"uid": uid, "migration_id": record[0]["migration_id"]}

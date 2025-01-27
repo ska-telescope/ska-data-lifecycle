@@ -35,7 +35,6 @@ For more complete information, refer to the ska-dlm-client [repository](https://
 ## ska-dlm REST API
 
 Interaction with the DLM is also possible via the REST API. The source code below is a typical example.
-Don't forget to spin-up the DLM services first (e.g., by running `make python-pre-test` from within your DLM directory).
 
 ```python
 from requests import Session
@@ -109,8 +108,8 @@ print(config.json())
 params = {
     "item_name": "test_item",
     "uri": '"',
-    "storage_name": "MyDisk1",
-    "storage_id": "6b4ee83d-8a10-4d55-b483-c088df66d5dd",
+    "storage_name": "MyDisk",
+    "storage_id": storage_id,
 }
 json_body = {"execution_block": "eb-m001-20191031-12345"}
 response = session.post(
@@ -136,6 +135,7 @@ print(response.json())
 ## ska-dlm python methods
 
 Similar to the example above, the source code below is a typical example using python methods.
+Don't forget to spin-up the DLM services first (e.g., by running `make python-pre-test` from within your DLM directory).
 
 ```python
 from ska_dlm import dlm_storage, dlm_ingest
