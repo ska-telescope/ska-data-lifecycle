@@ -220,9 +220,9 @@ def test_copy(env):
     dest_id = env.storage_requests.query_storage("MyDisk2")[0]["storage_id"]
     uid = env.ingest_requests.register_data_item("/my/ingest/test/item2", TEST_URI, "MyDisk")
     assert len(uid) == 36
-    dest = "/data/MyDisk2/testfile_copy"
+    dest = "testfile_copy"
     results = env.migration_requests.copy_data_item(uid=uid, destination_id=dest_id, path=dest)
-    assert RCLONE_TEST_FILE_CONTENT == env.get_rclone_local_file_content(dest)
+    assert RCLONE_TEST_FILE_CONTENT == env.get_rclone_local_file_content(RCLONE_TEST_FILE_PATH)
 
     # trigger manual update of migrations status
     asyncio.run(update_migration_statuses())
@@ -291,7 +291,7 @@ def test_copy_container(env):
     )
     assert len(file2_uid) == 36
 
-    dest = "/data/MyDisk2/container"
+    dest = "container"
     result = env.migration_requests.copy_data_item(uid=uid_root, destination_id=dest_id, path=dest)
 
     # trigger manual update of migrations status

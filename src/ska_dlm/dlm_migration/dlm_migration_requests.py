@@ -124,18 +124,20 @@ def rclone_copy(
     src_root_dir: str,
     dst_fs: str,
     dst_remote: str,
+    dest_root_dir: str,
     item_type: str
     # pylint: disable=too-many-arguments,too-many-positional-arguments
 ):
     """Copy a file from one place to another."""
     # if the item is a measurement set then use the copy directory command
 
-    path = f"{src_root_dir}/{src_remote}".replace("//", "/")
+    src_abs_path = f"{src_root_dir}/{src_remote}".replace("//", "/")
+    dest_abs_path = f"{dest_root_dir}/{dst_remote}".replace("//", "/")
     if item_type == "container":
         request_url = f"{CONFIG.RCLONE.url}/sync/copy"
         post_data = {
-            "srcFs": f"{src_fs}{path}",
-            "dstFs": f"{dst_fs}{dst_remote}",
+            "srcFs": f"{src_fs}{src_abs_path}",
+            "dstFs": f"{dst_fs}{dest_abs_path}",
             "no-check-dest": "true",
             "s3-no-check-bucket": "true",
             "_async": "true",
@@ -144,9 +146,9 @@ def rclone_copy(
         request_url = f"{CONFIG.RCLONE.url}/operations/copyfile"
         post_data = {
             "srcFs": src_fs,
-            "srcRemote": f"{path}",
+            "srcRemote": src_abs_path,
             "dstFs": dst_fs,
-            "dstRemote": dst_remote,
+            "dstRemote": dest_abs_path,
             "_async": "true",
         }
 
@@ -283,7 +285,7 @@ def _create_migration_record(
 @cli.command()
 @rest.post("/migration/copy_data_item")
 def copy_data_item(  # noqa: C901
-    # pylint: disable=too-many-arguments,too-many-locals,too-many-positional-arguments,
+    # pylint: disable=too-many-arguments,too-many-locals,too-many-positional-arguments,too-many-branches
     item_name: str = "",
     oid: str = "",
     uid: str = "",
@@ -296,11 +298,11 @@ def copy_data_item(  # noqa: C901
 
     Steps
     (1) get the current storage_id(s) of the item
-    (2) convert one(first) storage_id to a configured rclone backend
-    (3) check whether item already exists on destination
-    (4) initialize the new item with the same OID on the new storage
-    (5) use the rclone copy command to copy it to the new location
-    (6) make sure the copy was successful
+    (2) convert one (first) storage_id to a configured rclone backend
+    (3) initialize the new item with the same OID on the new storage
+    (4) use the rclone copy command to copy it to the new location
+    (5) make sure the copy was successful
+
 
     Parameters
     ----------
@@ -315,7 +317,7 @@ def copy_data_item(  # noqa: C901
     destination_id : str
         the destination storage, by default ""
     path : str
-        the destination path, by default ""
+        the destination path relative to storage root, by default ""
     authorization : str, optional
         Validated Bearer token with UserInfo
 
@@ -356,31 +358,24 @@ def copy_data_item(  # noqa: C901
     source = {"backend": f"{s_config['name']}:", "path": storage["uri"]}
     if not path:
         path = storage["uri"]
+
+    destination = None
     if destination_name:
         destination = query_storage(storage_name=destination_name)
-        if not destination:
-            raise UnmetPreconditionForOperation(
-                f"Unable to get ID of destination storage: {destination_name}."
-            )
-        destination_id = destination[0]["storage_id"]
+    elif destination_id:
+        destination = query_storage(storage_id=destination_id)
+
+    if not destination:
+        raise UnmetPreconditionForOperation(
+            f"Unable to get ID of destination storage: {destination_name}."
+        )
+    destination_id = destination[0]["storage_id"]
+
     d_config = get_storage_config(storage_id=destination_id)
     if not d_config:
         raise UnmetPreconditionForOperation("Unable to get configuration for destination storage!")
     d_config = d_config[0]
     dest = {"backend": f"{d_config['name']}:", "path": path}
-    # (3)
-    init_item = {
-        "item_name": item_name,
-        "oid": orig_item["oid"],
-        "storage_id": destination_id,
-        "item_type": orig_item["item_type"],
-    }
-    uid = init_data_item(json_data=init_item)
-    # (5)
-    # TODO(yan-xxx) abstract the actual function called away to allow for different
-    # mechanisms to perform the copy. Also needs to be a non-blocking call
-    # scheduling a job for dlm_migration service.
-    logger.info("source: %s", source)
 
     source_storage = query_storage(storage_id=storage["storage_id"])
     if not source_storage:
@@ -388,12 +383,27 @@ def copy_data_item(  # noqa: C901
             f"Unable to get source storage: {storage['storage_id']}."
         )
 
+    # (3)
+    init_item = {
+        "item_name": item_name,
+        "oid": orig_item["oid"],
+        "storage_id": destination_id,
+        "item_type": orig_item["item_type"],
+    }
+    new_item_uid = init_data_item(json_data=init_item)
+    # (4)
+    # TODO(yan-xxx) abstract the actual function called away to allow for different
+    # mechanisms to perform the copy. Also needs to be a non-blocking call
+    # scheduling a job for dlm_migration service.
+    logger.info("source: %s", source)
+
     status_code, content = rclone_copy(
         source["backend"],
         source["path"],
         source_storage[0]["root_directory"],
         dest["backend"],
         dest["path"],
+        destination[0]["root_directory"],
         orig_item["item_type"],
     )
 
@@ -409,9 +419,9 @@ def copy_data_item(  # noqa: C901
         destination_id,
         authorization,
     )
-    # (6)
-    set_uri(uid, orig_item["uri"], destination_id)
+    # (5)
+    set_uri(new_item_uid, orig_item["uri"], destination_id)
     # all done! Set data_item state to READY
-    set_state(uid, "READY")
+    set_state(new_item_uid, "READY")
 
-    return {"uid": uid, "migration_id": record[0]["migration_id"]}
+    return {"uid": new_item_uid, "migration_id": record[0]["migration_id"]}
