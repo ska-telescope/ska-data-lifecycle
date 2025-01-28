@@ -192,7 +192,7 @@ def register_data_item(  # noqa: C901
         if username is None:
             raise ValueError("Username not found in profile")
 
-    if not item_type in set(item.value for item in ItemType):
+    if item_type not in set(item.value for item in ItemType):
         raise ValueError(f"Invalid item type {item_type}")
 
     # (1)
