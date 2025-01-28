@@ -124,7 +124,7 @@ def register_data_item(  # noqa: C901
     uri: str = "",
     storage_name: str = "",
     storage_id: str = "",
-    item_type: str | None = "unknown",
+    item_type: str = "unknown",
     parents: str | None = None,
     metadata: JsonObjectOption = None,
     eb_id: str | None = None,
