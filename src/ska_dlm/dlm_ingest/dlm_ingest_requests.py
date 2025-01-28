@@ -1,6 +1,7 @@
 """DLM ingest API module."""
 
 import logging
+from enum import Enum
 from typing import Annotated
 
 import requests
@@ -32,6 +33,17 @@ rest = fastapi_auto_annotate(
         license_info={"name": "BSD-3-Clause", "identifier": "BSD-3-Clause"},
     )
 )
+
+
+class ItemType(str, Enum):
+    """Data Item on the filesystem."""
+
+    UNKOWN = "unkown"
+    """A single file."""
+    FILE = "file"
+    """A single file."""
+    CONTAINER = "container"
+    """A directory superset with parents."""
 
 
 # pylint: disable=unused-argument
@@ -121,10 +133,10 @@ def init_data_item(
 def register_data_item(  # noqa: C901
     # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals
     item_name: str,
-    uri: str = "",
+    uri: str,
+    item_type: ItemType = ItemType.FILE,
     storage_name: str = "",
     storage_id: str = "",
-    item_type: str = "unknown",
     parents: str | None = None,
     metadata: JsonObjectOption = None,
     eb_id: str | None = None,
@@ -148,15 +160,15 @@ def register_data_item(  # noqa: C901
     item_name: str
         could be empty, in which case the first 1000 items are returned
     uri: str
-        the access path to the payload.
+        the relative access path to the payload.
+    item_type: str
+        type of the data item (container, file)
     storage_name: str
         the name of the configured storage volume (name or ID required)
     storage_id: str, optional
         the ID of the configured storage.
     metadata: dict, optional
         metadata provided by the client
-    item_type: str, optional
-        type of the data item (unknown, container, file)
     parents: str, optional
         uuid of parent item
     eb_id: str | None, optional
@@ -179,6 +191,9 @@ def register_data_item(  # noqa: C901
         username = user_info.get("preferred_username", None)
         if username is None:
             raise ValueError("Username not found in profile")
+
+    if not item_type in set(item.value for item in ItemType):
+        raise ValueError(f"Invalid item type {item_type}")
 
     # (1)
     storages = query_storage(storage_name=storage_name, storage_id=storage_id)

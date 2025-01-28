@@ -21,6 +21,7 @@ from .. import CONFIG
 from ..data_item import set_state, set_uri
 from ..dlm_db.db_access import DB
 from ..dlm_ingest import init_data_item
+from ..dlm_ingest.dlm_ingest_requests import ItemType
 from ..dlm_request import query_data_item
 from ..dlm_storage import check_item_on_storage, get_storage_config, query_storage
 from ..exceptions import UnmetPreconditionForOperation
@@ -133,7 +134,7 @@ def rclone_copy(
 
     src_abs_path = f"{src_root_dir}/{src_remote}".replace("//", "/")
     dest_abs_path = f"{dest_root_dir}/{dst_remote}".replace("//", "/")
-    if item_type == "container":
+    if item_type == ItemType.CONTAINER:
         request_url = f"{CONFIG.RCLONE.url}/sync/copy"
         post_data = {
             "srcFs": f"{src_fs}{src_abs_path}",
@@ -420,7 +421,7 @@ def copy_data_item(  # noqa: C901
         authorization,
     )
     # (5)
-    set_uri(new_item_uid, orig_item["uri"], destination_id)
+    set_uri(new_item_uid, path, destination_id)
     # all done! Set data_item state to READY
     set_state(new_item_uid, "READY")
 

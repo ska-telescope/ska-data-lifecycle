@@ -1,5 +1,6 @@
 """dlm_ingest REST client"""
 
+from enum import Enum
 from typing import Any, Dict, List, Union
 
 import requests
@@ -11,6 +12,17 @@ INGEST_URL = ""
 TOKEN: str = None
 
 JsonType = Union[Dict[str, Any], List[Any], str, int, float, bool, None]
+
+
+class ItemType(str, Enum):
+    """Data Item on the filesystem."""
+
+    UNKOWN = "unkown"
+    """A single file."""
+    FILE = "file"
+    """A single file."""
+    CONTAINER = "container"
+    """A directory superset with parents."""
 
 
 # pylint: disable=unused-argument
@@ -49,10 +61,10 @@ def init_data_item(item_name: str | None = None, phase: str = "GAS", json_data: 
 # pylint: disable=unused-argument,too-many-arguments,too-many-positional-arguments
 def register_data_item(
     item_name: str,
-    uri: str = "",
+    uri: str,
+    item_type: ItemType = ItemType.FILE,
     storage_name: str = "",
     storage_id: str = "",
-    item_type: str | None = "unknown",
     parents: str | None = None,
     metadata: JsonObjectOption = None,
     eb_id: str | None = None,

@@ -83,7 +83,7 @@ CREATE TABLE data_item (
     storage_id uuid DEFAULT NULL,
     URI varchar DEFAULT 'inline://item_value',
     item_value text DEFAULT '',
-    item_type varchar DEFAULT 'unknown',
+    item_type varchar DEFAULT 'file',
     item_format varchar DEFAULT 'unknown',
     item_encoding varchar DEFAULT 'unknown',
     item_mime_type varchar DEFAULT 'application/octet-stream',
