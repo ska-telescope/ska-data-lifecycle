@@ -22,6 +22,9 @@ from tests.integration.client.dlm_gateway_client import get_token
 ROOT = "/data/"
 RCLONE_TEST_FILE_PATH = "/data/MyDisk/testfile"
 TEST_URI = "testfile"
+ROOT_DIRECTORY1 = "/data/MyDisk/"
+ROOT_DIRECTORY2 = "/data/MyDisk2/"
+
 """A file that is available locally in the rclone container"""
 RCLONE_TEST_FILE_CONTENT = "license content"
 RCLONE_TEST_FILE_SIZE = 15  # bytes
@@ -62,7 +65,7 @@ def setup(env):
     location_id = env.storage_requests.init_location("MyOwnStorage", "Server")
     uuid = env.storage_requests.init_storage(
         storage_name="MyDisk",
-        root_directory="/data/MyDisk/",
+        root_directory=ROOT_DIRECTORY1,
         location_id=location_id,
         storage_type="disk",
         storage_interface="posix",
@@ -185,7 +188,7 @@ def test_delete_item_payload(env):
 
 def __initialize_storage_config(env):
     """Add a new location, storage and configuration to the rclone server."""
-    env.create_rclone_directory("/data/MyDisk2/")
+    env.create_rclone_directory(ROOT_DIRECTORY2)
     location = env.storage_requests.query_location("MyHost")
     if location:
         location_id = location[0]["location_id"]
@@ -195,7 +198,7 @@ def __initialize_storage_config(env):
     config = {"name": "MyDisk2", "type": "alias", "parameters": {"remote": "/"}}
     uuid = env.storage_requests.init_storage(
         storage_name="MyDisk2",
-        root_directory="/data/MyDisk2/",
+        root_directory=ROOT_DIRECTORY2,
         location_id=location_id,
         storage_type="disk",
         storage_interface="posix",
@@ -249,9 +252,9 @@ def test_copy_container(env):
     file1_data = "Some data"
     file2_data = "More data"
 
-    env.create_rclone_directory("/data/MyDisk/container/dir1")
-    env.write_rclone_file_content("/data/MyDisk/container/file1", file1_data)
-    env.write_rclone_file_content("/data/MyDisk/container/dir1/file2", file2_data)
+    env.create_rclone_directory(f"{ROOT_DIRECTORY1}/container/dir1")
+    env.write_rclone_file_content(f"{ROOT_DIRECTORY1}/container/file1", file1_data)
+    env.write_rclone_file_content(f"{ROOT_DIRECTORY1}/container/dir1/file2", file2_data)
 
     dest_id = env.storage_requests.query_storage("MyDisk2")[0]["storage_id"]
 
