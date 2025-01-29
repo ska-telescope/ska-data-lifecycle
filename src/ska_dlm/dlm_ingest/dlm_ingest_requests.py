@@ -1,6 +1,7 @@
 """DLM ingest API module."""
 
 import logging
+from enum import Enum
 from typing import Annotated
 
 import requests
@@ -32,6 +33,17 @@ rest = fastapi_auto_annotate(
         license_info={"name": "BSD-3-Clause", "identifier": "BSD-3-Clause"},
     )
 )
+
+
+class ItemType(str, Enum):
+    """Data Item on the filesystem."""
+
+    UNKOWN = "unkown"
+    """A single file."""
+    FILE = "file"
+    """A single file."""
+    CONTAINER = "container"
+    """A directory superset with parents."""
 
 
 # pylint: disable=unused-argument
@@ -119,13 +131,14 @@ def init_data_item(
 @cli.command()
 @rest.post("/ingest/register_data_item")
 def register_data_item(  # noqa: C901
-    # pylint: disable=too-many-arguments,too-many-positional-arguments
+    # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals
     item_name: str,
-    uri: str = "",
+    uri: str,
+    item_type: ItemType = ItemType.FILE,
     storage_name: str = "",
     storage_id: str = "",
+    parents: str | None = None,
     metadata: JsonObjectOption = None,
-    item_format: str | None = "unknown",
     eb_id: str | None = None,
     authorization: Annotated[str | None, Header()] = None,
 ) -> str:
@@ -147,15 +160,17 @@ def register_data_item(  # noqa: C901
     item_name: str
         could be empty, in which case the first 1000 items are returned
     uri: str
-        the access path to the payload.
+        the relative access path to the payload.
+    item_type: str
+        type of the data item (container, file)
     storage_name: str
         the name of the configured storage volume (name or ID required)
     storage_id: str, optional
         the ID of the configured storage.
     metadata: dict, optional
         metadata provided by the client
-    item_format: str, optional
-        format of the data item
+    parents: str, optional
+        uuid of parent item
     eb_id: str | None, optional
         execution block ID provided by the client
     authorization: str
@@ -177,6 +192,9 @@ def register_data_item(  # noqa: C901
         if username is None:
             raise ValueError("Username not found in profile")
 
+    if item_type not in set(item.value for item in ItemType):
+        raise ValueError(f"Invalid item type {item_type}")
+
     # (1)
     storages = query_storage(storage_name=storage_name, storage_id=storage_id)
     if not storages:
@@ -189,8 +207,9 @@ def register_data_item(  # noqa: C901
             f"Requested storage volume is not accessible by DLM! {storage_name}"
         )
     # (2)
-    if not rclone_access(storage_name, uri):  # TODO: don't call into rclone directly
-        raise UnmetPreconditionForOperation(f"File {uri} does not exist on {storage_name}")
+    file_path = f"{storages[0]['root_directory']}/{uri}".replace("//", "/")
+    if not rclone_access(storage_name, file_path):  # TODO: don't call into rclone directly
+        raise UnmetPreconditionForOperation(f"File {file_path} does not exist on {storage_name}")
     if query_exists(item_name):
         ex_storage_id = query_data_item(item_name)[0]["storage_id"]
         if storage_id == ex_storage_id:
@@ -200,8 +219,9 @@ def register_data_item(  # noqa: C901
         "item_name": item_name,
         "storage_id": storage_id,
         "item_phase": storages[0]["storage_phase_level"],
-        "item_format": item_format,
+        "item_type": item_type,
         "item_owner": username,
+        "parents": parents,
     }
     uid = init_data_item(json_data=init_item)
 

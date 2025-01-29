@@ -34,6 +34,7 @@ def test_initialize_storage_config():
     uuid = dlm_storage.init_storage(
         storage_name="MyDisk2",
         location_id=location_id,
+        root_directory="/data/MyDisk2/",
         storage_type="disk",
         storage_interface="posix",
         storage_capacity=100000000,

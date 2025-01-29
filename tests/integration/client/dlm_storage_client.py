@@ -31,9 +31,10 @@ def init_location(
 def init_storage(
     storage_name: str = "",
     location_name: str = "",
+    storage_interface: str = "",
+    root_directory: str = "",
     location_id: str = "",
     storage_type: str = "",
-    storage_interface: str = "",
     storage_capacity: int = -1,
     storage_phase_level: str = "GAS",
     json_data: dict | None = None,
@@ -55,6 +56,8 @@ def init_storage(
         a dlm registered location name
     location_id : str, optional
         a dlm registered location id
+    root_directory : str
+        root directory of storage
     storage_capacity: int, optional
         reserved storage capacity in bytes
     storage_phase_level: str, optional
