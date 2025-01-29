@@ -59,6 +59,7 @@ ALTER TABLE storage OWNER TO ska_dlm_admin;
 CREATE TABLE storage_config (
     config_id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     storage_id uuid NOT NULL,
+    storage_name varchar NOT NULL,
     config_type varchar DEFAULT 'rclone',
     config json NOT NULL,
     config_date timestamp without time zone DEFAULT now(),
