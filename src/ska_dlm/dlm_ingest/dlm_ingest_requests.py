@@ -150,10 +150,11 @@ def register_data_item(  # noqa: C901
     (1) check whether requested storage is known and accessible
     (2) check whether item is accessible/exists on that storage
     (3) check whether item is already registered on that storage
-    (4) initialize the new item with the same OID on the new storage
-    (5) set state to READY
-    (6) save metadata
-    (7) notify the data dashboard
+    (4) initialize the item on the storage
+    (5) set the access path to the payload
+    (6) set state to READY
+    (7) save metadata in the data_item table
+    (8) notify the data dashboard
 
     Parameters
     ----------
@@ -212,11 +213,12 @@ def register_data_item(  # noqa: C901
     file_path = f"{storages[0]['root_directory']}/{uri}".replace("//", "/")
     if not rclone_access(storage_name, file_path):  # TODO: don't call into rclone directly
         raise UnmetPreconditionForOperation(f"File {file_path} does not exist on {storage_name}")
+    # (3)
     if query_exists(item_name):
         ex_storage_id = query_data_item(item_name)[0]["storage_id"]
         if storage_id == ex_storage_id:
             raise ValueAlreadyInDB(f"Item is already registered on storage! {item_name=}")
-    # (3)
+    # (4)
     init_item = {
         "item_name": item_name,
         "storage_id": storage_id,
@@ -227,13 +229,13 @@ def register_data_item(  # noqa: C901
     }
     uid = init_data_item(json_data=init_item)
 
-    # (4)
+    # (5)
     set_uri(uid, uri, storage_id)
 
-    # (5) Set data_item state to READY
+    # (6) Set data_item state to READY
     set_state(uid, "READY")
 
-    # (6) Populate the metadata column in the database
+    # (7) Populate the metadata column in the database
     if metadata is None:
         logger.warning("No metadata provided. Initializing metadata with uid and item_name.")
         metadata = {}
@@ -242,7 +244,7 @@ def register_data_item(  # noqa: C901
     metadata["item_name"] = item_name
     set_metadata(uid, metadata)
 
-    # (7)
+    # (8)
     # commenting out step 7 for now because we're likely no longer doing this step
     # the DPD call to /ingestnewmetadata endpoint is currently broken
     # notify_data_dashboard(metadata)

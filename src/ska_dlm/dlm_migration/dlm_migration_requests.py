@@ -18,7 +18,7 @@ from ska_dlm.fastapi_utils import decode_bearer, fastapi_auto_annotate
 from ska_dlm.typer_utils import dump_short_stacktrace
 
 from .. import CONFIG
-from ..data_item import set_state, set_uri, set_metadata
+from ..data_item import set_metadata, set_state, set_uri
 from ..dlm_db.db_access import DB
 from ..dlm_ingest import init_data_item
 from ..dlm_ingest.dlm_ingest_requests import ItemType

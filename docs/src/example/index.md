@@ -1,5 +1,16 @@
 
-# Example Usage
+# DLM Usage
+
+1. ska-dlm-client - a standalone DLM client that can be configured to automatically ingest data items
+2. ska-dlm REST API - a (more) manual way to configure storage locations and ingest data items
+
+## ska-dlm-client
+
+The ska-dlm-client is the recommended way of using the DLM. Once configured, the ska-dlm-client will trigger on creation of a new file, or on reception of a kafka message, automatically ingesting the specified item into the DLM.
+
+For more complete information, refer to the ska-dlm-client [repository](https://gitlab.com/ska-telescope/ska-dlm-client/) and [readthedocs](https://ska-telescope-ska-dlm-client.readthedocs.io/en/latest/).
+
+## Usage on the DP cluster: tutorial
 
 Typical usage of the DLM:
 
@@ -9,9 +20,9 @@ Typical usage of the DLM:
 4. Ingest the files into DLM one-by-one
 5. Instruct DLM to migrate the newly ingested item to a secondary storage
 6. Query the location of all copies of the item
-7. Access the items via the ska-dataproduct-dashboard
+7. Access the items via the [Data Product Dashboard](https://developer.skao.int/projects/ska-dataproduct-dashboard/en/latest/?badge=latest)
 
-## Step 1: Obtain an API token
+### Step 1: Obtain an API token
 
 To obtain an API token:
 
@@ -19,22 +30,9 @@ To obtain an API token:
 * Login with your SKAO credentials
 * If successful, a token will be returned. Copy the token.
 
-## Steps 2-6: Data Lifecycle Management
+### Steps 2-6: ska-dlm REST API
 
-Once a token is ready, interactions with DLM can be done in two ways:
-
-1. ska-dlm-client - a standalone DLM client that can be configured to automatically ingest data items
-2. manually, using either the ska-dlm REST API, python methods or CLI interface.
-
-## ska-dlm-client
-
-The ska-dlm-client is the recommended way of using the DLM. Once configured, the ska-dlm-client will trigger on creation of a new file, or on reception of a kafka message, automatically ingesting the specified item into the DLM.
-
-For more complete information, refer to the ska-dlm-client [repository](https://gitlab.com/ska-telescope/ska-dlm-client/) and [readthedocs](https://ska-telescope-ska-dlm-client.readthedocs.io/en/latest/).
-
-## ska-dlm REST API
-
-Interaction with the DLM is also possible via the REST API. The source code below is a typical example.
+The source code below demonstrates how to register a data item on the Acacia storage.
 
 ```python
 from requests import Session
@@ -44,7 +42,8 @@ from requests import Session
 DLM_URL = "https://sdhp.stfc.skao.int/dp-yanda/dlm"
 
 # Prepare token to be placed in the header of any REST call
-bearer = {"Authorization": f"Bearer {your token}"}
+token = <your token>
+bearer = {"Authorization": f"Bearer {token}"}
 
 # create details for this location
 location_name = "ThisLocationName"
@@ -131,14 +130,26 @@ response = session.get(f"{DLM_URL}/request/query_data_item", params=params, head
 print(response.json())
 
 ```
+### Step 7: Access via Data Product Dashboard
+
+At time of writing, here are the known medium-term deployments of the DLM system:
+
+| Location                         | Data Lifecycle Management URL           | Data Product Dashboard URL                                                  |
+| -------------------------------- | --------------------------------------- | --------------------------------------------------------------------------- |
+| DP Integration (yanda namespace) | https://sdhp.stfc.skao.int/dp-yanda/dlm | https://sdhp.stfc.skao.int/integration-ska-dataproduct-dashboard/dashboard/ |
+
+
+# Local development and testing
+
+Interact with the DLM by the way of local Docker deployment, using python methods or the CLI interface.
+From within your DLM directory, start the DLM services first, e.g., by running:
+`docker compose -f tests/services.docker-compose.yaml -p dlm-test-services build`
+`docker compose -f tests/services.docker-compose.yaml -p dlm-test-services up -d`
 
 ## ska-dlm python methods
 
-Similar to the example above, the source code below is a typical example using python methods.
-Don't forget to spin-up the DLM services first (e.g., by running `make python-pre-test` from within your DLM directory).
-
 ```python
-from ska_dlm import dlm_storage, dlm_ingest
+from ska_dlm import dlm_storage, dlm_ingest, dlm_migration, dlm_request
 
 location_name="ThisLocationName"
 location_type="ThisLocationType"
@@ -175,6 +186,26 @@ uid = dlm_ingest.register_data_item(
     item_type="file",
     metadata={"execution_block": "eb-m001-20191031-12345"}
 )
+
+# migrate an item from one storage to another
+# register a second storage:
+storage_id = dlm_storage.init_storage(
+   storage_name="MyDisk2",
+   root_directory="/data/MyDisk2",
+   location_id=location_id,
+   storage_type="disk",
+   storage_interface="posix",
+   storage_capacity=100000000,
+)
+# supply an rclone config
+config = {"name":"MyDisk2","type":"alias", "parameters":{"remote": "/"}}
+config_id = dlm_storage.create_storage_config(storage_id=storage_id, config=config)
+# copy "test_item" from MyDisk to MyDisk2
+dlm_migration.copy_data_item("test_item", destination_name="MyDisk2", path="")
+
+# query for all copies of the item
+dlm_request.query_data_item("test_item")
+
 ```
 
 ## ska-dlm CLI interface
@@ -205,12 +236,3 @@ ska-dlm ingest register-data-item test_item_name --storage-name MyDisk --metadat
 # if you can't find the command you need, follow the help prompts
 ska-dlm --help
 ```
-
-
-## Step 7: Access via Data Product Dashboard
-
-At time of writing, here are the known medium-term deployments of the DLM system:
-
-| Location                         | Data Lifecycle Management URL           | Data Product Dashboard URL                                                  |
-| -------------------------------- | --------------------------------------- | --------------------------------------------------------------------------- |
-| DP Integration (yanda namespace) | https://sdhp.stfc.skao.int/dp-yanda/dlm | https://sdhp.stfc.skao.int/integration-ska-dataproduct-dashboard/dashboard/ |
