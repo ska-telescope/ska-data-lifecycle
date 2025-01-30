@@ -27,6 +27,7 @@ CREATE TABLE storage (
     storage_id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     location_id uuid NOT NULL,
     storage_name varchar NOT NULL UNIQUE,
+    root_directory varchar DEFAULT NULL,
     storage_type varchar NOT NULL,
     storage_interface varchar NOT NULL,
     storage_phase_level varchar DEFAULT 'GAS',
@@ -41,7 +42,6 @@ CREATE TABLE storage (
     storage_retired BOOLEAN DEFAULT False,
     storage_retire_date TIMESTAMP without time zone DEFAULT NULL,
     storage_date timestamp without time zone DEFAULT now(),
-    root_directory varchar DEFAULT NULL,
     CONSTRAINT fk_location
       FOREIGN KEY(location_id)
       REFERENCES location(location_id)
@@ -84,7 +84,7 @@ CREATE TABLE data_item (
     storage_id uuid DEFAULT NULL,
     URI varchar DEFAULT 'inline://item_value',
     item_value text DEFAULT '',
-    item_type varchar DEFAULT 'unknown',
+    item_type varchar DEFAULT 'file',
     item_format varchar DEFAULT 'unknown',
     item_encoding varchar DEFAULT 'unknown',
     item_mime_type varchar DEFAULT 'application/octet-stream',

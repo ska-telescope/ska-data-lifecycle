@@ -112,7 +112,7 @@ def init_storage(
     storage_interface : str
         storage interface for rclone access, e.g. "posix", "s3"
     root_directory : str
-        root directory of storage
+        data directory as an absolute path on the remote storage endpoint
     location_name : str, optional
         a dlm registered location name
     location_id : str, optional
