@@ -50,17 +50,6 @@ def fixture_mock_notify_data_dashboard(mocker: MockerFixture):
     )
 
 
-@pytest.fixture(name="mock_generate_metadata")
-def fixture_mock_generate_metadata(mocker: MockerFixture):
-    """Fixture for mocking generate_metadata_from_generator."""
-    return mocker.patch(
-        "ska_sdp_metadata_generator.generate_metadata_from_generator",
-        return_value=mocker.Mock(
-            get_data=lambda: mocker.Mock(dict=lambda: {"key": "value"}), validate=lambda: []
-        ),
-    )
-
-
 def test_register_data_item(
     caplog, mock_init_data_item, mock_update_data_item, mock_notify_data_dashboard
 ):

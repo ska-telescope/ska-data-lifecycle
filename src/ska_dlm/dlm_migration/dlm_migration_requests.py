@@ -30,9 +30,7 @@ from ..exceptions import UnmetPreconditionForOperation
 logging.basicConfig(
     level=logging.INFO,  # Set the lowest level to log (e.g., DEBUG, INFO, WARNING, ERROR)
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.StreamHandler()  # Logs to the terminal (stdout)
-    ]
+    handlers=[logging.StreamHandler()],  # Logs to the terminal (stdout)
 )
 logger = logging.getLogger(__name__)
 
@@ -416,7 +414,6 @@ def copy_data_item(  # noqa: C901
         orig_item["item_type"],
     )
     logger.error("rclone_copy failed with status_code: %s, content: %s", status_code, content)
-
 
     if status_code != 200:
         return IOError("rclone copy failed")
