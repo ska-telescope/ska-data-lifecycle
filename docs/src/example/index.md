@@ -153,19 +153,27 @@ dlm_storage.query_storage(storage_name="MyDisk")
 # initialise the storage (if it doesn't already exist)
 storage_id = dlm_storage.init_storage(
    storage_name="MyDisk",
+   root_directory="/data/MyDisk",
    location_id=location_id,
    storage_type="disk",
    storage_interface="posix",
    storage_capacity=100000000,
 )
 
-# supply an rclone config for this storage (if it doesn't already exist)
-config = {"name":"MyDisk","type":"local", "parameters":{}}
+# check if an rclone config for 'MyDisk' already exists
+dlm_storage.get_storage_config(storage_name="MyDisk")
+# supply an rclone config (if it doesn't already exist)
+# config = {"name":"MyDisk","type":"local", "parameters":{}}
+config = {"name":"MyDisk","type":"alias", "parameters":{"remote": "/"}}
 config_id = dlm_storage.create_storage_config(storage_id=storage_id, config=config)
 
 # register a data item
 uid = dlm_ingest.register_data_item(
-    "/my/ingest/item", "", "MyDisk", metadata={"execution_block": "eb-m001-20191031-12345"}
+    "test_item",
+    uri="",
+    storage_name="MyDisk",
+    item_type="file",
+    metadata={"execution_block": "eb-m001-20191031-12345"}
 )
 ```
 
