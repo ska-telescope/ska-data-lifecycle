@@ -41,7 +41,7 @@ def invalidquery_exception_handler(request: Request, exc: InvalidQueryParameters
 
 
 @cli.command()
-@rest.get("/request/query_data_item")
+@rest.get("/request/query_data_item", response_model=list)
 def query_data_item(
     item_name: str = "", oid: str = "", uid: str = "", params: str | None = None
 ) -> list:
@@ -83,8 +83,8 @@ def query_data_item(
     return DB.select(CONFIG.DLM.dlm_table, params=params)
 
 
-@rest.get("/request/query_expired")
-def query_expired(offset: timedelta | None = None):
+@rest.get("/request/query_expired", response_model=list)
+def query_expired(offset: timedelta | None = None) -> list:
     """Query for all expired data_items using the uid_expiration timestamp.
 
     Parameters
@@ -107,7 +107,7 @@ def query_expired(offset: timedelta | None = None):
 
 
 @cli.command()
-@rest.get("/request/query_deleted")
+@rest.get("/request/query_deleted", response_model=list)
 def query_deleted(uid: str = "") -> list:
     """Query for all deleted data_items using the deleted state.
 
@@ -128,7 +128,7 @@ def query_deleted(uid: str = "") -> list:
 
 
 @cli.command()
-@rest.get("/request/query_new")
+@rest.get("/request/query_new", response_model=list)
 def query_new(check_date: str, uid: str = "") -> list:
     """Query for all data_items newer than the date provided.
 
@@ -156,7 +156,7 @@ def query_new(check_date: str, uid: str = "") -> list:
 
 
 @cli.command()
-@rest.get("/request/query_exists")
+@rest.get("/request/query_exists", response_model=bool)
 def query_exists(item_name: str = "", oid: str = "", uid: str = "", ready: bool = False) -> bool:
     """Query to check for existence of a data_item.
 
@@ -192,7 +192,7 @@ def query_exists(item_name: str = "", oid: str = "", uid: str = "", ready: bool 
 
 
 @cli.command()
-@rest.get("/request/query_exist_and_ready")
+@rest.get("/request/query_exist_and_ready", response_model=bool)
 def query_exists_and_ready(item_name: str = "", oid: str = "", uid: str = "") -> bool:
     """Check whether a data_item exists and is in ready state.
 
@@ -214,7 +214,7 @@ def query_exists_and_ready(item_name: str = "", oid: str = "", uid: str = "") ->
 
 
 @cli.command()
-@rest.get("/request/query_item_storage")
+@rest.get("/request/query_item_storage", response_model=list)
 def query_item_storage(item_name: str = "", oid: str = "", uid: str = "") -> list:
     """
     Query for the storage_ids of all backends holding a copy of a data_item.

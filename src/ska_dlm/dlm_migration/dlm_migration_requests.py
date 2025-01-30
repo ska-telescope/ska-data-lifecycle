@@ -215,7 +215,7 @@ async def update_migration_statuses():
 
 
 @cli.command()
-@rest.get("/migration/query_migrations")
+@rest.get("/migration/query_migrations", response_model=list)
 def query_migrations(
     authorization: Annotated[str | None, Header()] = None,
 ) -> list:

@@ -81,7 +81,7 @@ cli.exception_handler(ValueAlreadyInDB)(dump_short_stacktrace)
 
 
 @cli.command()
-@rest.post("/ingest/init_data_item")
+@rest.post("/ingest/init_data_item", response_model=str)
 def init_data_item(
     item_name: str | None = None,
     phase: str = "GAS",
@@ -129,7 +129,7 @@ def init_data_item(
 
 
 @cli.command()
-@rest.post("/ingest/register_data_item")
+@rest.post("/ingest/register_data_item", response_model=str)
 def register_data_item(  # noqa: C901
     # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals
     item_name: str,
@@ -192,7 +192,7 @@ def register_data_item(  # noqa: C901
         if username is None:
             raise ValueError("Username not found in profile")
 
-    if item_type not in set(item.value for item in ItemType):
+    if item_type not in set([item.value for item in ItemType]):
         raise ValueError(f"Invalid item type {item_type}")
 
     # (1)
