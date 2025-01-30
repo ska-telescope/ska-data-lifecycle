@@ -38,7 +38,7 @@ rest = fastapi_auto_annotate(
 class ItemType(str, Enum):
     """Data Item on the filesystem."""
 
-    UNKOWN = "unkown"
+    UNKNOWN = "unknown"
     """A single file."""
     FILE = "file"
     """A single file."""

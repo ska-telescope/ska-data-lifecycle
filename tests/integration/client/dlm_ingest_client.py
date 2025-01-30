@@ -17,7 +17,7 @@ JsonType = Union[Dict[str, Any], List[Any], str, int, float, bool, None]
 class ItemType(str, Enum):
     """Data Item on the filesystem."""
 
-    UNKOWN = "unkown"
+    UNKNOWN = "unknown"
     """A single file."""
     FILE = "file"
     """A single file."""
