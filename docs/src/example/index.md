@@ -1,8 +1,8 @@
 
 # DLM Usage
 
-1. ska-dlm-client - a standalone DLM client that can be configured to automatically ingest data items
-2. ska-dlm REST API - a (more) manual way to configure storage locations and ingest data items
+1. ska-dlm-client — a standalone DLM client that can be configured to automatically ingest data items
+2. ska-dlm REST API — a (more) manual way to configure storage locations and ingest data items
 
 ## ska-dlm-client
 
@@ -45,11 +45,11 @@ DLM_URL = "https://sdhp.stfc.skao.int/dp-yanda/dlm"
 token = <your token>
 bearer = {"Authorization": f"Bearer {token}"}
 
-# create details for this location
-location_name = "ThisLocationName"
-location_type = "ThisLocationType"
+# create location details
+location_name = "Pawsey"
+location_type = "HPC centre"
 
-# check if the location 'ThisLocationName' is already known to DLM
+# check if this location is already known to DLM
 session = Session()
 location = session.get(
     f"{DLM_URL}/storage/query_location", params={"location_name": location_name}, headers=bearer, timeout=60
@@ -57,34 +57,35 @@ location = session.get(
 print(location.json())
 location_id = location.json()[0]["location_id"]  # if location exists
 # if it doesn't already exist, initialise this location
-params = {
+loc_params = {
     "location_name": location_name,
     "location_type": location_type,
 }
-location = session.post(f"{DLM_URL}/storage/init_location", params=params, headers=bearer, timeout=60)
+location = session.post(f"{DLM_URL}/storage/init_location", params=loc_params, headers=bearer, timeout=60)
 print(location.json())
-location_id = location.json() # get the location id
+location_id = location.json()  # get the location id
 
-# check if the storage 'MyDisk' is already known to DLM
-params_loc = {
-    "storage_name": "MyDisk",
+# check if the 'Acacia' storage is already known to DLM
+storage_params = {
+    "storage_name": "Acacia",
     "location_id": location_id,
 }
-storage = session.get(f"{DLM_URL}/storage/query_storage", params=params_loc, headers=bearer, timeout=60)
+storage = session.get(f"{DLM_URL}/storage/query_storage", params=storage_params, headers=bearer, timeout=60)
 print(storage.json())
 storage_id = storage.json()[0]["storage_id"]  # if the storage exists
-
-# if it doesn't already exist, initialise this storage:
-params_loc = {
-    "storage_name": "MyDisk",
+# if it doesn't already exist, initialise this storage
+storage_params = {
+    "storage_name": "Acacia",
     "location_id": location_id,
-    "storage_type": "disk",
-    "storage_interface": "posix",
+    "storage_type": "object store",
+    "storage_interface": "s3",
     "storage_capacity": 100000000,
 }
-storage = session.post(f"{DLM_URL}/storage/init_storage", params=params_loc, headers=bearer, timeout=60)
+storage = session.post(
+    f"{DLM_URL}/storage/init_storage", params=storage_params, headers=bearer, timeout=60
+)
 print(storage.json())
-storage_id = storage.json() # get the storage_id
+storage_id = storage.json()  # get the storage_id
 
 # check if a storage config for this storage is already known to DLM
 config = session.get(
@@ -92,44 +93,52 @@ config = session.get(
 )
 print(config.json())
 # supply an rclone config for this storage (if it doesn’t already exist)
-params_config = {"storage_id": storage_id}
-config_config = {
-    "name": "MyDisk",
-    "type": "local",
-    "parameters": {},
+acacia_config = {
+    "name": "Acacia",
+    "type": "s3",
+    "parameters": {
+        "access_key_id": "<your-access-key-id>",
+        "endpoint": "https://projects.pawsey.org.au",
+        "provider": "Ceph",
+        "secret_access_key": "<your-secret-access-key>",
+    },
 }
 config = session.post(
-    f"{DLM_URL}/storage/create_storage_config", params=params_config, json=config_config, headers=bearer, timeout=60
+    f"{DLM_URL}/storage/create_storage_config", params={"storage_id": storage_id},
+    json=acacia_config,
+    headers=bearer,
+    timeout=60,
 )
 print(config.json())
 
-# register a data item
-params = {
+# register a data item that exists on Acacia
+item_params = {
     "item_name": "test_item",
-    "uri": '"',
-    "storage_name": "MyDisk",
+    "uri": "rascil/1197634128-cal_avg32.ms.tar.xj",
+    "storage_name": "Acacia",
     "storage_id": storage_id,
 }
-json_body = {"execution_block": "eb-m001-20191031-12345"}
-response = session.post(
-    f"{DLM_URL}/ingest/register_data_item", params=params, json=json_body, headers=bearer, timeout=60
+json_body = {"execution_block": "eb-m001-20191031-12345"}  # metadata
+acacia_response = session.post(
+    f"{DLM_URL}/ingest/register_data_item", params=item_params, json=json_body, headers=bearer, timeout=60
+)
+print(acacia_response.json())
+
+# trigger a migration to a second storage
+# initialise a destination storage (if it doesn't already exist), using the method above
+migration_params = {"item_name": "test_item", "destination_name": <dest_storage>, "path": <dest_path>}
+migration_response = session.post(
+    f"{DLM_URL}/migration/copy_data_item", params=migration_params, headers=bearer, timeout=60
+)
+print(migration_response.json())
+
+# query for all copies of the item
+response = session.get(
+    f"{DLM_URL}/request/query_data_item", params={"item_name": "test_item",}, headers=bearer, timeout=60,
 )
 print(response.json())
-
-# trigger a migration from storage to storage
-# initialise a destination storage (if it doesn't already exist), using the method above
-params = {"item_name": "test_item", "destination_name": <dest_storage>, "path": <dest_path>}
-response = session.post(f"{DLM_URL}/migration/copy_data_item", params=params, headers=bearer, timeout=60)
-print(response.json())
-
-# list items and their locations
-params = {
-    "item_name": "test_item",
-}
-response = session.get(f"{DLM_URL}/request/query_data_item", params=params, headers=bearer, timeout=60)
-print(response.json())
-
 ```
+
 ### Step 7: Access via Data Product Dashboard
 
 At time of writing, here are the known medium-term deployments of the DLM system:
@@ -143,7 +152,7 @@ At time of writing, here are the known medium-term deployments of the DLM system
 
 Interact with the DLM by the way of local Docker deployment, using python methods or the CLI interface.
 From within your DLM directory, start the DLM services first, e.g., by running:
-`docker compose -f tests/services.docker-compose.yaml -p dlm-test-services build`
+`docker compose -f tests/services.docker-compose.yaml -p dlm-test-services build`\
 `docker compose -f tests/services.docker-compose.yaml -p dlm-test-services up -d`
 
 ## ska-dlm python methods
@@ -174,7 +183,6 @@ storage_id = dlm_storage.init_storage(
 # check if an rclone config for 'MyDisk' already exists
 dlm_storage.get_storage_config(storage_name="MyDisk")
 # supply an rclone config (if it doesn't already exist)
-# config = {"name":"MyDisk","type":"local", "parameters":{}}
 config = {"name":"MyDisk","type":"alias", "parameters":{"remote": "/"}}
 config_id = dlm_storage.create_storage_config(storage_id=storage_id, config=config)
 
@@ -188,7 +196,7 @@ uid = dlm_ingest.register_data_item(
 )
 
 # migrate an item from one storage to another
-# register a second storage:
+# register a second storage
 storage_id = dlm_storage.init_storage(
    storage_name="MyDisk2",
    root_directory="/data/MyDisk2",
@@ -200,6 +208,7 @@ storage_id = dlm_storage.init_storage(
 # supply an rclone config
 config = {"name":"MyDisk2","type":"alias", "parameters":{"remote": "/"}}
 config_id = dlm_storage.create_storage_config(storage_id=storage_id, config=config)
+
 # copy "test_item" from MyDisk to MyDisk2
 dlm_migration.copy_data_item("test_item", destination_name="MyDisk2", path="")
 
