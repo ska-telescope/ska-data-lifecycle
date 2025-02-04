@@ -1,5 +1,5 @@
 
-# DLM Usage
+# Usage
 
 1. ska-dlm-client — a standalone DLM client that can be configured to automatically ingest data items
 2. ska-dlm REST API — a (more) manual way to configure storage locations and ingest data items

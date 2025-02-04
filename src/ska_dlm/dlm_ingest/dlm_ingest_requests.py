@@ -159,9 +159,7 @@ def register_data_item(  # noqa: C901
     Parameters
     ----------
     item_name: str
-        could be empty, in which case the first 1000 items are returned
-        # NS: I don't think the above statement is true. If you leave out item_name you get:
-        # missing 1 required positional argument: 'item_name'
+        Data item name to register. Does not need to be unique.
     uri: str
         the relative access path to the payload.
     item_type: str

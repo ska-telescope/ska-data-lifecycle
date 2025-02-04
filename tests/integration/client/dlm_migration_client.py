@@ -48,7 +48,7 @@ def copy_data_item(
 
     Returns
     -------
-    str
+    dict
         uid: The uid of the new item copy.
         migration_id: Migration ID used to check current migration status of copy.
 
