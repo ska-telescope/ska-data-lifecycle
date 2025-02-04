@@ -9,6 +9,7 @@ From within your DLM directory, start the DLM services first, e.g., by running:
 
 The following sections describe how to perform a data item registration and migration example from within a DLM server without the RESTful interface. This can be performed either on a developer machine after installing the `ska-data-lifecycle` package, or via a remote session to a DLM server instance.
 
+(local-deployment-cli)=
 ### Command Line Interface
 
 ```bash
@@ -36,6 +37,7 @@ ska-dlm ingest register-data-item test_item_name --storage-name MyDisk --metadat
 ska-dlm --help
 ```
 
+(local-deployment-python-script)=
 ### Python Script
 
 ```python
