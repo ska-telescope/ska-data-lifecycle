@@ -159,7 +159,7 @@ def register_data_item(  # noqa: C901
     Parameters
     ----------
     item_name: str
-        Data item name to register. Does not need to be unique.
+        item name to register with. Does not need to be unique.
     uri: str
         the relative access path to the payload.
     item_type: str
@@ -193,7 +193,7 @@ def register_data_item(  # noqa: C901
         if username is None:
             raise ValueError("Username not found in profile")
 
-    if item_type not in set(item.value for item in ItemType):
+    if item_type not in set(ItemType):
         raise ValueError(f"Invalid item type {item_type}")
 
     # (1)
