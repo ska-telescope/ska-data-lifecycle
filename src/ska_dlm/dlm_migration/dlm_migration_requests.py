@@ -300,7 +300,7 @@ def copy_data_item(  # noqa: C901
     destination_id: str = "",
     path: str = "",
     authorization: Annotated[str | None, Header()] = None,
-) -> str:
+) -> dict[str, str]:
     """Copy a data_item from source to destination.
 
     Steps
@@ -332,7 +332,7 @@ def copy_data_item(  # noqa: C901
 
     Returns
     -------
-    str
+    dict
         uid: The uid of the new item copy.
         migration_id: Migration ID used to check current migration status of copy.
 

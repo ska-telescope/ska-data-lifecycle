@@ -196,11 +196,8 @@ def create_storage_config(
         raise UnmetPreconditionForOperation("Neither storage_id nor storage_name is specified.")
     if storage_name:
         storage_id = query_storage(storage_name=storage_name)[0]["storage_id"]
-    elif storage_id:
-        storage_name = query_storage(storage_id=storage_id)[0]["storage_name"]
     post_data = {
         "storage_id": storage_id,
-        "storage_name": storage_name,
         "config": config,
         "config_type": config_type,
     }
