@@ -61,8 +61,8 @@ def invalidquery_exception_handler(request: Request, exc: InvalidQueryParameters
 
 
 @cli.command()
-@rest.get("/storage/query_location")
-def query_location(location_name: str = "", location_id: str = "") -> list:
+@rest.get("/storage/query_location", response_model=list[dict])
+def query_location(location_name: str = "", location_id: str = "") -> list[dict]:
     """
     Query a location.
 
@@ -75,7 +75,7 @@ def query_location(location_name: str = "", location_id: str = "") -> list:
 
     Returns
     -------
-    list
+    list[dict]
     """
     params = {"limit": 1000}
     if location_name or location_id:
@@ -87,7 +87,7 @@ def query_location(location_name: str = "", location_id: str = "") -> list:
 
 
 @cli.command()
-@rest.post("/storage/init_storage")
+@rest.post("/storage/init_storage", response_model=str)
 # pylint: disable=too-many-arguments,unused-argument,too-many-positional-arguments
 def init_storage(
     storage_name: str,
@@ -164,7 +164,7 @@ def init_storage(
 
 
 @cli.command()
-@rest.post("/storage/create_storage_config")
+@rest.post("/storage/create_storage_config", response_model=str)
 def create_storage_config(
     config: JsonObjectArg,
     storage_id: str = "",
@@ -209,7 +209,7 @@ def create_storage_config(
 
 
 @cli.command()
-@rest.get("/storage/get_storage_config")
+@rest.get("/storage/get_storage_config", response_model=list[str])
 def get_storage_config(
     storage_id: str = "", storage_name: str = "", config_type: str = "rclone"
 ) -> list[str]:
@@ -227,7 +227,7 @@ def get_storage_config(
     Returns
     -------
     list[str]
-        list of json configs
+        list of configs as json
 
     Raises
     ------
@@ -255,7 +255,7 @@ def get_storage_config(
 
 
 @cli.command()
-@rest.post("/storage/rclone_config")
+@rest.post("/storage/rclone_config", response_model=bool)
 def create_rclone_config(config: JsonObjectArg) -> bool:
     """Create a new rclone backend configuration entry on the rclone server.
 
@@ -377,7 +377,7 @@ def rclone_delete(volume: str, fpath: str) -> bool:
 
 
 @cli.command()
-@rest.post("/storage/init_location")
+@rest.post("/storage/init_location", response_model=str)
 def init_location(
     location_name: str,
     location_type: str,
@@ -427,8 +427,8 @@ def init_location(
 
 
 @cli.command()
-@rest.get("/storage/query_storage")
-def query_storage(storage_name: str = "", storage_id: str = "") -> list:
+@rest.get("/storage/query_storage", response_model=list[dict])
+def query_storage(storage_name: str = "", storage_id: str = "") -> list[dict]:
     """
     Query a storage.
 
@@ -441,7 +441,7 @@ def query_storage(storage_name: str = "", storage_id: str = "") -> list:
 
     Returns
     -------
-    list
+    list[dict]
     """
     params = {"limit": 1000}
     if storage_name:
