@@ -1,4 +1,5 @@
 """DB Access tests."""
+
 import pytest
 
 from ska_dlm import CONFIG

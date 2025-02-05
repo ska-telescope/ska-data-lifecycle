@@ -1,4 +1,5 @@
 """Error handler typer module."""
+
 import sys
 from typing import Any, Callable, Optional, Type
 

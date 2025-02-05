@@ -26,22 +26,19 @@ def get_underlying_type(annotation: type | UnionType | _AnnotatedAlias) -> tuple
     return get_args(annotation) if isinstance(annotation, UnionType) else (annotation,)
 
 
-def fastapi_auto_annotate(app: fastapi.FastAPI):
+def fastapi_auto_annotate(app: fastapi.FastAPI) -> fastapi.FastAPI:
     """Automatically applies `fastapi_docstring_annotate` to all FastAPI app routes."""
 
-    def api_route(
-        self,  # pylint: disable=unused-argument
-        path: str,
-        *_,
-        **kwargs,
-    ):
+    def api_route(self: fastapi.APIRouter, path: str, *_, **kwargs):
         def decorator(func):
-            app.router.add_api_route(path, fastapi_docstring_annotate(func), **kwargs)
+            if kwargs["operation_id"] is None:
+                kwargs["operation_id"] = func.__qualname__
+            self.add_api_route(path, fastapi_docstring_annotate(func), **kwargs)
             return func
 
         return decorator
 
-    app.router.api_route = types.MethodType(api_route, app)
+    app.router.api_route = types.MethodType(api_route, app.router)
     return app
 
 

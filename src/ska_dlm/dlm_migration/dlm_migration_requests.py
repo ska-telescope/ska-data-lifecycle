@@ -132,7 +132,7 @@ def rclone_copy(
     dst_fs: str,
     dst_remote: str,
     dest_root_dir: str,
-    item_type: str
+    item_type: str,
     # pylint: disable=too-many-arguments,too-many-positional-arguments
 ):
     """Copy a file from one place to another."""
@@ -221,10 +221,10 @@ async def update_migration_statuses():
 
 
 @cli.command()
-@rest.get("/migration/query_migrations")
+@rest.get("/migration/query_migrations", response_model=list[dict])
 def query_migrations(
     authorization: Annotated[str | None, Header()] = None,
-) -> list:
+) -> list[dict]:
     """
     Query for all migrations by a given user.
 
@@ -235,7 +235,7 @@ def query_migrations(
 
     Returns
     -------
-    list
+    list[dict]
     """
     # decode the username from the authorization
     username = None
@@ -250,7 +250,7 @@ def query_migrations(
     return DB.select(CONFIG.DLM.migration_table, params=params)
 
 
-def _get_migration_record(migration_id: int) -> list:
+def _get_migration_record(migration_id: int) -> list[dict]:
     """
     Query for a specific migration.
 
@@ -261,7 +261,7 @@ def _get_migration_record(migration_id: int) -> list:
 
     Returns
     -------
-    list
+    list[dict]
     """
     params = {"migration_id": f"eq.{migration_id}"}
     return DB.select(CONFIG.DLM.migration_table, params=params)
@@ -290,7 +290,7 @@ def _create_migration_record(
 
 
 @cli.command()
-@rest.post("/migration/copy_data_item")
+@rest.post("/migration/copy_data_item", response_model=dict)
 def copy_data_item(  # noqa: C901
     # pylint: disable=too-many-arguments,too-many-locals,too-many-positional-arguments,too-many-branches
     item_name: str = "",
@@ -300,7 +300,7 @@ def copy_data_item(  # noqa: C901
     destination_id: str = "",
     path: str = "",
     authorization: Annotated[str | None, Header()] = None,
-) -> dict[str, str]:
+) -> dict:
     """Copy a data_item from source to destination.
 
     Steps

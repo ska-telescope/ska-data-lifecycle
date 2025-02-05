@@ -41,11 +41,11 @@ def invalidquery_exception_handler(request: Request, exc: InvalidQueryParameters
 
 
 @cli.command()
-@rest.get("/request/query_data_item")
+@rest.get("/request/query_data_item", response_model=list[dict])
 # TODO: add option to query for a data_item in a specific storage
 def query_data_item(
     item_name: str = "", oid: str = "", uid: str = "", params: str | None = None
-) -> list:
+) -> list[dict]:
     """Query a data_item.
 
     At least one of item_name, oid, uid, or params is required.
@@ -68,7 +68,7 @@ def query_data_item(
 
     Returns
     -------
-    list
+    list[dict]
         data item ids.
     """
     if bool(params) == (item_name or oid or uid):
@@ -84,8 +84,8 @@ def query_data_item(
     return DB.select(CONFIG.DLM.dlm_table, params=params)
 
 
-@rest.get("/request/query_expired")
-def query_expired(offset: timedelta | None = None):
+@rest.get("/request/query_expired", response_model=list[dict])
+def query_expired(offset: timedelta | None = None) -> list[dict]:
     """Query for all expired data_items using the uid_expiration timestamp.
 
     Parameters
@@ -108,8 +108,8 @@ def query_expired(offset: timedelta | None = None):
 
 
 @cli.command()
-@rest.get("/request/query_deleted")
-def query_deleted(uid: str = "") -> list:
+@rest.get("/request/query_deleted", response_model=list[dict])
+def query_deleted(uid: str = "") -> list[dict]:
     """Query for all deleted data_items using the deleted state.
 
     Parameters
@@ -119,7 +119,7 @@ def query_deleted(uid: str = "") -> list:
 
     Returns
     -------
-    list
+    list[dict]
         list of dictionaries with UIDs of deleted items.
     """
     params = {"item_state": "eq.DELETED", "select": "uid"}
@@ -129,8 +129,8 @@ def query_deleted(uid: str = "") -> list:
 
 
 @cli.command()
-@rest.get("/request/query_new")
-def query_new(check_date: str, uid: str = "") -> list:
+@rest.get("/request/query_new", response_model=list[dict])
+def query_new(check_date: str, uid: str = "") -> list[dict]:
     """Query for all data_items newer than the date provided.
 
     Parameters
@@ -142,7 +142,7 @@ def query_new(check_date: str, uid: str = "") -> list:
 
     Returns
     -------
-    list
+    list[dict]
         list of dictionaries with UID, UID_creation and storage_id of new items.
     """
     params = {
@@ -157,7 +157,7 @@ def query_new(check_date: str, uid: str = "") -> list:
 
 
 @cli.command()
-@rest.get("/request/query_exists")
+@rest.get("/request/query_exists", response_model=bool)
 def query_exists(item_name: str = "", oid: str = "", uid: str = "", ready: bool = False) -> bool:
     """Query to check for existence of a data_item.
 
@@ -193,7 +193,7 @@ def query_exists(item_name: str = "", oid: str = "", uid: str = "", ready: bool 
 
 
 @cli.command()
-@rest.get("/request/query_exist_and_ready")
+@rest.get("/request/query_exist_and_ready", response_model=bool)
 def query_exists_and_ready(item_name: str = "", oid: str = "", uid: str = "") -> bool:
     """Check whether a data_item exists and is in ready state.
 
@@ -215,8 +215,8 @@ def query_exists_and_ready(item_name: str = "", oid: str = "", uid: str = "") ->
 
 
 @cli.command()
-@rest.get("/request/query_item_storage")
-def query_item_storage(item_name: str = "", oid: str = "", uid: str = "") -> list:
+@rest.get("/request/query_item_storage", response_model=list[dict])
+def query_item_storage(item_name: str = "", oid: str = "", uid: str = "") -> list[dict]:
     """
     Query for the storage_ids of all backends holding a copy of a data_item.
 
@@ -233,7 +233,7 @@ def query_item_storage(item_name: str = "", oid: str = "", uid: str = "") -> lis
 
     Returns
     -------
-    list
+    list[dict]
         list of storage_ids
     """
     if not query_exists_and_ready(item_name, oid, uid):

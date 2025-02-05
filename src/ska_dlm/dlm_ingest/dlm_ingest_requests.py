@@ -38,7 +38,7 @@ rest = fastapi_auto_annotate(
 class ItemType(str, Enum):
     """Data Item on the filesystem."""
 
-    UNKOWN = "unkown"
+    UNKNOWN = "unknown"
     """A single file."""
     FILE = "file"
     """A single file."""
@@ -81,7 +81,7 @@ cli.exception_handler(ValueAlreadyInDB)(dump_short_stacktrace)
 
 
 @cli.command()
-@rest.post("/ingest/init_data_item")
+@rest.post("/ingest/init_data_item", response_model=str)
 def init_data_item(
     item_name: str | None = None,
     phase: str = "GAS",
@@ -129,7 +129,7 @@ def init_data_item(
 
 
 @cli.command()
-@rest.post("/ingest/register_data_item")
+@rest.post("/ingest/register_data_item", response_model=str)
 def register_data_item(  # noqa: C901
     # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals
     item_name: str,
