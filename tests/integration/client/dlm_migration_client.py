@@ -64,12 +64,12 @@ def copy_data_item(
     return response.json()
 
 
-def query_migrations() -> list:
+def query_migrations() -> list[dict]:
     """Query for all migrations by a given user.
 
     Returns
     -------
-    list
+    list[dict]
         migrations
     """
     params = {k: v for k, v in locals().items() if v}

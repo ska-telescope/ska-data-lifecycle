@@ -164,7 +164,7 @@ def create_rclone_config(config: JsonObjectArg) -> bool:
 
 
 # pylint: disable=unused-argument
-def query_storage(storage_name: str = "", storage_id: str = "") -> list:
+def query_storage(storage_name: str = "", storage_id: str = "") -> list[dict]:
     """
     Query a storage.
 
@@ -179,7 +179,7 @@ def query_storage(storage_name: str = "", storage_id: str = "") -> list:
 
     Returns
     -------
-    list
+    list[dict]
     """
     params = {k: v for k, v in locals().items() if v}
     headers = {"Authorization": f"Bearer {TOKEN}"}

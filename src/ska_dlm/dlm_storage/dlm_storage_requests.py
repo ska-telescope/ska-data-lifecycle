@@ -61,8 +61,8 @@ def invalidquery_exception_handler(request: Request, exc: InvalidQueryParameters
 
 
 @cli.command()
-@rest.get("/storage/query_location", response_model=list)
-def query_location(location_name: str = "", location_id: str = "") -> list:
+@rest.get("/storage/query_location", response_model=list[dict])
+def query_location(location_name: str = "", location_id: str = "") -> list[dict]:
     """
     Query a location.
 
@@ -75,7 +75,7 @@ def query_location(location_name: str = "", location_id: str = "") -> list:
 
     Returns
     -------
-    list
+    list[dict]
     """
     params = {"limit": 1000}
     if location_name or location_id:
@@ -227,7 +227,7 @@ def get_storage_config(
     Returns
     -------
     list[str]
-        list of json configs
+        list of configs as json
 
     Raises
     ------
@@ -427,8 +427,8 @@ def init_location(
 
 
 @cli.command()
-@rest.get("/storage/query_storage", response_model=list)
-def query_storage(storage_name: str = "", storage_id: str = "") -> list:
+@rest.get("/storage/query_storage", response_model=list[dict])
+def query_storage(storage_name: str = "", storage_id: str = "") -> list[dict]:
     """
     Query a storage.
 
@@ -441,7 +441,7 @@ def query_storage(storage_name: str = "", storage_id: str = "") -> list:
 
     Returns
     -------
-    list
+    list[dict]
     """
     params = {"limit": 1000}
     if storage_name:

@@ -78,12 +78,12 @@ class PostgRESTAccess(contextlib.AbstractContextManager):
 
     def update(
         self, table: str, *, json: object | None, params: dict | list | None = None
-    ) -> bool | list:
+    ) -> bool | list[dict]:
         """Perform an update query, returning the JSON-encoded result as an object."""
         result = self._query(table, "PATCH", params=params, json=json)
         return True if result is None else result
 
-    def select(self, table: str, *, params: dict | list | None = None) -> list:
+    def select(self, table: str, *, params: dict | list | None = None) -> list[dict]:
         """Perform a selection query, returning the JSON-encoded result as an object."""
         return self._query(table, "GET", params=params)
 
@@ -98,7 +98,7 @@ class PostgRESTAccess(contextlib.AbstractContextManager):
         params: dict | list | None = None,
         json: dict | None = None,
         **kwargs,
-    ) -> list:
+    ) -> list[dict]:
         url = f"{self.api_url}/{table}"
         try:
             response = self._session.request(

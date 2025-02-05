@@ -13,7 +13,7 @@ TOKEN = None
 # pylint: disable=unused-argument
 def query_data_item(
     item_name: str = "", oid: str = "", uid: str = "", params: str | None = None
-) -> list:
+) -> list[dict]:
     """
     Query a data_item.
 
@@ -28,7 +28,7 @@ def query_data_item(
 
     Returns:
     --------
-    list
+    list[dict]
     """
     params = {k: v for k, v in locals().items() if v}
     headers = {"Authorization": f"Bearer {TOKEN}"}
