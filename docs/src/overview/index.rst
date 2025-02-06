@@ -73,10 +73,25 @@ The storage manager exposes a number of storage related functions and is also ru
 
 The DLM Migration Manager Module
 --------------------------------
-This manager is also a FastAPI based daemon. Currently we have chosen to use rclone running in server mode to provide this functionality. However, the DLM system allows to plugin other migration services as well. It is also possible to use multiple ones to cover specific requirements for certain storage backends. rclone is extremely versatile and will hopefully cover our needs for the most part, at least in the early stages. Whether it is performant enough to copy/move many PB of data across the globe has to be verified. In addition to the rclone functionality the DLM module exposes two functions:
+This manager is also a FastAPI based daemon. Currently we have chosen to use rclone running in server mode to provide this functionality. However, the DLM system allows to plugin other migration services as well. It is also possible to use multiple ones to cover specific requirements for certain storage backends. rclone is extremely versatile and will hopefully cover our needs for the most part, at least in the early stages. Whether it is performant enough to copy/move many PB of data across the globe has to be verified. The DLM module exposes two higher level functions:
 
   - copy_data_item, the high level function to copy a data_item from one storage volume to another. This function integrates all the required lower level function calls and checks.
   - rclone_copy, the lowest level copy function, directly calling the rclone server. In future versions this function will not be exposed directly anymore.
+
+Since currently only rclone is in use, the robustness of the migration manager relies on what rclone provides. This particularly applies to retries and failures of transfers, which is controlled by three rclone flags:
+
+  - retries (default 3)
+  - low-level-retries (default 10)
+  - retries-sleep (default 0s, no wait between retries)
+
+The migration manager does not set them explicitely, which means they are left to the defaults. Accordingly rclone does report various errors depending on what went wrong:
+
+  - all fine: return code 0
+  - low-level-retry error which mifght be recoverable with more retries: return code 5
+  - fatal  error: return code 9
+
+Note that rclone by default also checks whether files or directories are already at the destination and does not transfer them again.
+  
 
 The DLM Request Manager Module
 ------------------------------
