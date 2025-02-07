@@ -23,6 +23,8 @@ To obtain an API token:
 ### Steps 2-6: ska-dlm REST API
 
 The source code below demonstrates how to register a data item on the Acacia storage.
+_Note that at the time of writing (07 Feb 2025), the restful endpoint tutorial only works by either:
+(1) running this with VPN access or (2) running this from a terminal session inside the cluster using http://ska-dlm-gateway.dp-yanda.svc.cluster.local_
 
 ```python
 from requests import Session
