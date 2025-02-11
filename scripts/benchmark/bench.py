@@ -36,7 +36,7 @@ def setup_storage(storage: dict):
         location = dlm_storage_client.query_location(location_name=storage["location"])
         if not location:
             dlm_storage_client.init_location(
-                location_name=storage["location"], location_type=storage["location"]
+                location_name=storage["location"], location_type=storage["type"]
             )
 
         store = dlm_storage_client.init_storage(
