@@ -1,7 +1,7 @@
 # Benchmark Utility
 
 ## Summary
-Utility that allows a user to define multiple migrations between DLM endpoints and dumps the statistics in JSON format.
+Utility that allows a user to define multiple migrations between DLM endpoints and dumps the migrationn RClone statistics in JSON format.
 
 ## Configuration YAML File
 ```yaml

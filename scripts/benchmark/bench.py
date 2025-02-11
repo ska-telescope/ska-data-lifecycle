@@ -83,7 +83,7 @@ def get_record(migration_id: int) -> list:
     return dlm_migration_client.get_migration_record(migration_id)[0]
 
 
-def wait_for_migration(migration_tuple: tuple) -> tuple:
+def wait_for_migration(migration_tuple: tuple) -> dict:
     """Wait for migration to finish."""
     name, m_id = migration_tuple
     while True:
@@ -97,14 +97,14 @@ def wait_for_migration(migration_tuple: tuple) -> tuple:
     return {name: record}
 
 
-def run_bench(args):
-    """Run benchmark."""
-    logger.info(f"Opening configuration file: {args.config}")
+def run_bench(config_file:str, output_path: str):
+    """Run data item migration performance benchmark."""
+    logger.info(f"Opening configuration file: {config_file}")
 
-    if not args.config:
+    if not config_file:
         raise ValueError("Config file not defined.")
 
-    bench = open_yaml(args.config)
+    bench = open_yaml(config_file)
 
     setup_clients(bench["dlm"]["url"], bench["dlm"]["token"])
 
@@ -132,9 +132,9 @@ def run_bench(args):
 
     logger.info("Migrations finished")
 
-    if args.output:
-        with open(args.output, "w", encoding="utf-8") as f:
+    if output_path:
+        with open(output_path, "w", encoding="utf-8") as f:
             json.dump(results, f, ensure_ascii=False, indent=4)
-        logger.info(f"Output file generated: {args.output}")
+        logger.info(f"Output file generated: {output_path}")
     else:
         print(json.dumps(results, indent=4))

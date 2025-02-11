@@ -17,7 +17,7 @@ def main():
 
     args = parser.parse_args()
 
-    run_bench(args)
+    run_bench(args.config, args.output)
 
 
 if __name__ == "__main__":
