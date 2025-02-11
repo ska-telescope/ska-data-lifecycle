@@ -188,3 +188,36 @@ def query_storage(storage_name: str = "", storage_id: str = "") -> list[dict]:
     )
     dlm_raise_for_status(response)
     return response.json()
+
+
+def get_storage_config(
+    storage_id: str = "", storage_name: str = "", config_type: str = "rclone"
+) -> list[str]:
+    """Get the storage configuration entry for a particular storage backend.
+
+    Parameters
+    ----------
+    storage_id : str, optional
+        the storage id, by default ""
+    storage_name : str, optional
+        the name of the storage volume, by default ""
+    config_type : str, optional
+        query only the specified type, by default "rclone"
+
+    Returns
+    -------
+    list[str]
+        list of json configs
+
+    Raises
+    ------
+    UnmetPreconditionForOperation
+        storage_name does not exist in database
+    """
+    params = {k: v for k, v in locals().items() if v}
+    headers = {"Authorization": f"Bearer {TOKEN}"}
+    response = requests.get(
+        f"{STORAGE_URL}/storage/get_storage_config", params=params, headers=headers, timeout=60
+    )
+    dlm_raise_for_status(response)
+    return response.json()

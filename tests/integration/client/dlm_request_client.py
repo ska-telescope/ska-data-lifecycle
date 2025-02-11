@@ -12,7 +12,11 @@ TOKEN = None
 
 # pylint: disable=unused-argument
 def query_data_item(
-    item_name: str = "", oid: str = "", uid: str = "", params: str | None = None
+    item_name: str = "",
+    oid: str = "",
+    uid: str = "",
+    storage_id: str = "",
+    params: str | None = None,
 ) -> list[dict]:
     """
     Query a data_item.
