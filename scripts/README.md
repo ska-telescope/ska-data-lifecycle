@@ -1,10 +1,10 @@
 # Benchmark Utility
 
-## Description
+## Summary
 Utility that allows a user to define multiple migrations between DLM endpoints and dumps the statistics in JSON format.
 
 ## Configuration YAML File
-
+```yaml
 - Benchmarks: 
     - migration(#): can define 1 or many
         - enabled: include migration test (true/false)
@@ -29,7 +29,7 @@ Utility that allows a user to define multiple migrations between DLM endpoints a
 
 
 ### Example
-```
+```yaml
 benchmarks:
 
   migrate1:
@@ -93,16 +93,16 @@ storage:
                   "endpoint": "https://projects.pawsey.org.au"}
 ```
 
-## Running
+## Usage
 
 1) Create config file with necessary entries eg. config.yaml 
 2) Ensure that the file or directory, specified by the migration uri, is already on the source storage endpoint.
-3) Manually obtain access token from the DLM auth provider and place it in the config file.
+3) Manually obtain access token from the DLM auth provider (i.e. https://sdhp.stfc.skao.int/dp-yanda/dlm/token_by_auth_flow) and place it in the config file.
 4) Run
 
 
 ```
 cd ska-data-lifecycle/
 
-python -m scripts.benchmark --config onfig.yaml --output bench.json
+python -m scripts.benchmark --config config.yaml --output bench.json
 ```
