@@ -62,7 +62,7 @@ def query_data_item(
     uid : str
         Return data_item referred to by the UID provided.
     storage_id : str
-        Return data_item referred to storage_id.
+        Return data_item referred to by a given storage_id.
     params : str | None
         specify the query parameters
 
