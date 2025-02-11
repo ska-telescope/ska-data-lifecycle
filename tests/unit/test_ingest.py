@@ -1,6 +1,7 @@
 """Unit tests for dlm_ingest."""
 
 import logging
+import uuid
 from pathlib import Path
 
 import pytest
@@ -18,7 +19,7 @@ def fixture_mock_ingest_requests_storage(mocker: MockerFixture):
         "ska_dlm.dlm_ingest.dlm_ingest_requests.query_storage",
         return_value=[
             {
-                "storage_id": "storage-id",
+                "storage_id": uuid.uuid4(),
                 "storage_phase_level": "some-phase-level",
                 "root_directory": "/root/",
             }

@@ -44,7 +44,11 @@ def invalidquery_exception_handler(request: Request, exc: InvalidQueryParameters
 @rest.get("/request/query_data_item", response_model=list[dict])
 # TODO: add option to query for a data_item in a specific storage
 def query_data_item(
-    item_name: str = "", oid: str = "", uid: str = "", params: str | None = None
+    item_name: str = "",
+    oid: str = "",
+    uid: str = "",
+    storage_id: str = "",
+    params: str | None = None,
 ) -> list[dict]:
     """Query a data_item.
 
@@ -58,6 +62,8 @@ def query_data_item(
         Return data_items referred to by the OID provided.
     uid : str
         Return data_item referred to by the UID provided.
+    storage_id : str
+        Return data_item referred to by a given storage_id.
     params : str | None
         specify the query parameters
 
@@ -81,6 +87,10 @@ def query_data_item(
         params["oid"] = f"eq.{oid}"
     elif uid:
         params["uid"] = f"eq.{uid}"
+
+    if storage_id:
+        params["storage_id"] = f"eq.{storage_id}"
+
     return DB.select(CONFIG.DLM.dlm_table, params=params)
 
 

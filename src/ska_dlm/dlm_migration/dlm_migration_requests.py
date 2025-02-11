@@ -250,6 +250,24 @@ def query_migrations(
     return DB.select(CONFIG.DLM.migration_table, params=params)
 
 
+@cli.command()
+@rest.get("/migration/get_migration")
+def get_migration_record(migration_id: int) -> list[dict]:
+    """
+    Query for a specific migration.
+
+    Parameters
+    ----------
+    migration_id : int
+        Migration id of migration
+
+    Returns
+    -------
+    list
+    """
+    return _get_migration_record(migration_id)
+
+
 def _get_migration_record(migration_id: int) -> list[dict]:
     """
     Query for a specific migration.
@@ -425,7 +443,7 @@ def copy_data_item(  # noqa: C901
     record = _create_migration_record(
         content["jobid"],
         orig_item["oid"],
-        storage["storage_id"],
+        source_storage[0]["storage_id"],
         destination_id,
         authorization,
     )
