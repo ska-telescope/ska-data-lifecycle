@@ -122,7 +122,7 @@ class Keycloak(Provider):
 
     async def token_by_username_password(self, username: str, password: str):
         auth = await self.kc.a_token(username, password)
-        return auth["access_token"]
+        return auth
 
     async def has_scope(self, token: str, permission: str):
         return await self.kc.a_has_uma_access(token, permission)

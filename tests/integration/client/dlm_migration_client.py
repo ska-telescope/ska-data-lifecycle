@@ -79,3 +79,27 @@ def query_migrations() -> list[dict]:
     )
     dlm_raise_for_status(response)
     return response.json()
+
+
+def get_migration_record(migration_id: int) -> list:
+    # pylint: disable=unused-argument
+    """
+    Query for a specific migration.
+
+    Parameters
+    ----------
+    migration_id : int
+        Migration id of migration
+
+    Returns
+    -------
+    list
+    """
+
+    params = {k: v for k, v in locals().items() if v}
+    headers = {"Authorization": f"Bearer {TOKEN}"}
+    response = requests.get(
+        f"{MIGRATION_URL}/migration/get_migration", params=params, headers=headers, timeout=60
+    )
+    dlm_raise_for_status(response)
+    return response.json()

@@ -19,7 +19,7 @@ from ska_dlm.typer_utils import dump_short_stacktrace
 from .. import CONFIG
 from ..data_item import set_metadata, set_state, set_uri
 from ..dlm_db.db_access import DB
-from ..dlm_request import query_data_item, query_exists
+from ..dlm_request import query_data_item
 from ..dlm_storage import check_storage_access, query_storage
 from ..exceptions import InvalidQueryParameters, UnmetPreconditionForOperation, ValueAlreadyInDB
 
@@ -210,10 +210,11 @@ def register_data_item(  # noqa: C901
     file_path = f"{storages[0]['root_directory']}/{uri}".replace("//", "/")
     if not rclone_access(storage_name, file_path):  # TODO: don't call into rclone directly
         raise UnmetPreconditionForOperation(f"File {file_path} does not exist on {storage_name}")
-    if query_exists(item_name):
-        ex_storage_id = query_data_item(item_name)[0]["storage_id"]
-        if storage_id == ex_storage_id:
-            raise ValueAlreadyInDB(f"Item is already registered on storage! {item_name=}")
+
+    ex_data_item = query_data_item(item_name=item_name, storage_id=storage_id)
+    if ex_data_item:
+        raise ValueAlreadyInDB(f"Item is already registered on storage! {item_name}")
+
     # (3)
     init_item = {
         "item_name": item_name,

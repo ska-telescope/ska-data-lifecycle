@@ -49,6 +49,7 @@ def setup_auth(env, request):
     # this should only run once per test suite
     if request.config.getoption("--auth"):
         token = get_token("admin", "admin", env.get_gateway_url())
+        token = token["access_token"]
         env.request_requests.TOKEN = token
         env.ingest_requests.TOKEN = token
         env.storage_requests.TOKEN = token
@@ -217,8 +218,8 @@ def test_copy(env):
     """Copy a test file from one storage to another."""
     # NOTE: this test will not work without requests being made via a gateway
 
-    # if isinstance(env, DlmTestClientLocal):
-    #    pytest.skip("Unprocessable Entity")
+    if isinstance(env, DlmTestClientLocal):
+        pytest.skip("Unprocessable Entity")
 
     __initialize_storage_config(env)
     dest_id = env.storage_requests.query_storage("MyDisk2")[0]["storage_id"]
@@ -243,12 +244,13 @@ def test_copy(env):
     assert result[0]["job_stats"]["bytes"] == RCLONE_TEST_FILE_SIZE
 
 
+@pytest.mark.integration_test
 def test_copy_container(env):
     """Copy a container from one storage to another."""
     # NOTE: this test will not work without requests being made via a gateway
 
-    # if isinstance(env, DlmTestClientLocal):
-    #    pytest.skip("Unprocessable Entity")
+    if isinstance(env, DlmTestClientLocal):
+        pytest.skip("Unprocessable Entity")
 
     __initialize_storage_config(env)
 
