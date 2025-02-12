@@ -21,11 +21,13 @@ def copy_data_item(
 
     Steps
     (1) get the current storage_id(s) of the item
-    (2) convert one(first) storage_id to a configured rclone backend
-    (3) check whether item already exists on destination
-    (4) initialize the new item with the same OID on the new storage
-    (5) use the rclone copy command to copy it to the new location
-    (6) make sure the copy was successful
+    (2) convert one (first) storage_id to a configured rclone backend
+    (3) initialize the new item with the same OID on the new storage
+    (4) use the rclone copy command to copy it to the new location
+    (5) set the access path to the payload
+    (6) set state to READY
+    (7) save metadata in the data_item table
+
 
     Parameters
     ----------
@@ -40,11 +42,13 @@ def copy_data_item(
     destination_id : str
         the destination storage, by default ""
     path : str
-        the destination path, by default ""
+        the destination path relative to storage root, by default ""
+    authorization : str, optional
+        Validated Bearer token with UserInfo
 
     Returns
     -------
-    json
+    dict
         uid: The uid of the new item copy.
         migration_id: Migration ID used to check current migration status of copy.
 

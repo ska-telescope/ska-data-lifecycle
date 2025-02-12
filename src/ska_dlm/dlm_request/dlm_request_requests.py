@@ -42,6 +42,7 @@ def invalidquery_exception_handler(request: Request, exc: InvalidQueryParameters
 
 @cli.command()
 @rest.get("/request/query_data_item", response_model=list[dict])
+# TODO: add option to query for a data_item in a specific storage
 def query_data_item(
     item_name: str = "",
     oid: str = "",

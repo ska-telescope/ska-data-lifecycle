@@ -18,7 +18,7 @@ from ska_dlm.fastapi_utils import decode_bearer, fastapi_auto_annotate
 from ska_dlm.typer_utils import dump_short_stacktrace
 
 from .. import CONFIG
-from ..data_item import set_state, set_uri
+from ..data_item import set_metadata, set_state, set_uri
 from ..dlm_db.db_access import DB
 from ..dlm_ingest import init_data_item
 from ..dlm_ingest.dlm_ingest_requests import ItemType
@@ -26,6 +26,12 @@ from ..dlm_request import query_data_item
 from ..dlm_storage import check_item_on_storage, get_storage_config, query_storage
 from ..exceptions import UnmetPreconditionForOperation
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,  # Set the lowest level to log (e.g., DEBUG, INFO, WARNING, ERROR)
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler()],  # Logs to the terminal (stdout)
+)
 logger = logging.getLogger(__name__)
 
 origins = ["http://localhost", "http://localhost:5000", "http://localhost:8004"]
@@ -126,7 +132,7 @@ def rclone_copy(
     dst_fs: str,
     dst_remote: str,
     dest_root_dir: str,
-    item_type: str
+    item_type: str,
     # pylint: disable=too-many-arguments,too-many-positional-arguments
 ):
     """Copy a file from one place to another."""
@@ -320,7 +326,9 @@ def copy_data_item(  # noqa: C901
     (2) convert one (first) storage_id to a configured rclone backend
     (3) initialize the new item with the same OID on the new storage
     (4) use the rclone copy command to copy it to the new location
-    (5) make sure the copy was successful
+    (5) set the access path to the payload
+    (6) set state to READY
+    (7) save metadata in the data_item table
 
 
     Parameters
@@ -354,7 +362,7 @@ def copy_data_item(  # noqa: C901
         No data item found for copying.
     """
     if not item_name and not oid and not uid:
-        raise InvalidQueryParameters("Either an item_name or an OID or an UID has to be provided!")
+        raise InvalidQueryParameters("Either item_name or OID or UID has to be provided!")
     orig_item = query_data_item(item_name, oid, uid)
     if orig_item:
         orig_item = orig_item[0]
@@ -427,6 +435,7 @@ def copy_data_item(  # noqa: C901
     )
 
     if status_code != 200:
+        logger.error("rclone_copy failed with status_code: %s, content: %s", status_code, content)
         return IOError("rclone copy failed")
 
     # add row to migration table
@@ -440,7 +449,12 @@ def copy_data_item(  # noqa: C901
     )
     # (5)
     set_uri(new_item_uid, path, destination_id)
-    # all done! Set data_item state to READY
+
+    # (6) Set data_item state to READY
     set_state(new_item_uid, "READY")
+
+    # (7) Populate the metadata column
+    metadata = orig_item["metadata"]
+    set_metadata(new_item_uid, metadata)
 
     return {"uid": new_item_uid, "migration_id": record[0]["migration_id"]}

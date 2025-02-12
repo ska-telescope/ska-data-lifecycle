@@ -3,11 +3,18 @@ SKA Data Lifecycle
 
 .. toctree::
    :maxdepth: 1
-   :caption: Contents:
+   :caption: SKA Data Lifecycle:
 
    overview/index
    api/index
-   example/index.md
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Guides:
+
+   guides/usage
+   guides/dp_cluster
+   guides/local_deployment
 
 Installation
 ------------

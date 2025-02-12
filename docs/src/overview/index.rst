@@ -1,5 +1,5 @@
-SKA DLM Overview
-================
+Overview
+========
 The SKA Data Lifecycle Management system provides the SKAO with the means to register, trace, query, retrieve and also move, copy and delete data of any type on the storage volumes managed by this system. Its focus is on the data lifecycle management part, not the management of domain specific metadata. Storage volumes in general are assumed to be geographically distributed as well as featuring a range of different access mechanisms, for example local POSIX file systems and S3-compliant object stores in some remote private or public cloud environment. The system has been designed to be flexible and scalable, but in the current state it is far from a complete solution and has also not been used in operations, yet. The SKA-DLM design is loosely based on previous experience with implementing and operating the `Next Generation Archive System  (NGAS) <https://github.com/ICRAR/NGAS>`_. However, the implementation is completely independent and it also adds the focus on lifecycle management, rather than just final persistent archive like NGAS.
 
 As outlined in the `design <https://confluence.skatelescope.org/display/SE/YAN-1589+%28SP-3809%29%3A+Design+of+Bulk+Data+product+Ingest+Service>`_, the DLM consists of five main services (managers):

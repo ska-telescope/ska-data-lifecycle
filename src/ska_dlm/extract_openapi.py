@@ -1,4 +1,5 @@
 """extract openapi utility module."""
+
 import argparse
 import json
 import sys

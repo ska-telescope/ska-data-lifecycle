@@ -21,8 +21,8 @@
 # pylint: disable=invalid-name,redefined-builtin,missing-module-docstring
 
 import os
-from pathlib import Path
 import sys
+from pathlib import Path
 
 from ska_dlm.extract_openapi import extract_openapi
 
@@ -35,6 +35,7 @@ sys.path.insert(0, os.path.abspath(os.path.join("..", "..", "src")))
 
 
 def setup(app):
+    """Setup."""
     # pylint: disable=missing-function-docstring
     app.add_css_file("css/custom.css")
     app.add_js_file("js/github.js")
@@ -114,7 +115,7 @@ todo_include_todos = True
 
 OPEN_API_DIR = Path("api/_openapi")
 if not os.path.isdir(OPEN_API_DIR):
-   os.makedirs(OPEN_API_DIR)
+    os.makedirs(OPEN_API_DIR)
 extract_openapi(
     "ska_dlm.dlm_request.dlm_request_requests:rest",
     out=str(OPEN_API_DIR / "request.yaml"),
@@ -143,8 +144,7 @@ html_theme = "ska_ser_sphinx_theme"
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-html_theme_options = {
-}
+html_theme_options = {}
 
 html_context = {
     "display_gitlab": True,  # Integrate GitLab

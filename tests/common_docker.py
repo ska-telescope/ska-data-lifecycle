@@ -1,6 +1,5 @@
 """Common utilities for interacting with native system"""
 
-
 import logging
 import os
 from pathlib import Path

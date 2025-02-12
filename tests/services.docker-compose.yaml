@@ -52,7 +52,7 @@ services:
       - dlm_network
 
   dlm_postgrest:
-    image: postgrest/postgrest
+    image: postgrest/postgrest:v12.2.3
     container_name: dlm_postgrest
     ports:
       - 3000:3000
