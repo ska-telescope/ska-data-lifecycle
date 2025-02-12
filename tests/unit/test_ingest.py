@@ -78,7 +78,7 @@ def test_register_data_item(
             "metadata": {"execution_block": "eb123", "uid": "test-uid", "item_name": "test-item"}
         },
     )
-    # assert mock_notify_data_dashboard.call_count == 1 # on hold - we're likely removing this
+    assert mock_notify_data_dashboard.call_count == 1  # TODO: don't notify DPD via REST
 
 
 # TODO: all the notify_data_dashboard tests could use updating
