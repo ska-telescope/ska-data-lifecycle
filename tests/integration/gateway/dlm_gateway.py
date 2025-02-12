@@ -8,6 +8,7 @@ import ssl
 
 import httpx
 import jwt
+import jwt.algorithms
 import msal
 import requests
 from cryptography.hazmat.primitives import serialization
