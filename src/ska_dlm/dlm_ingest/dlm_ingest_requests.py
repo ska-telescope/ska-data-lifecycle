@@ -10,7 +10,6 @@ from fastapi.responses import JSONResponse
 from ska_sdp_dataproduct_metadata import MetaData
 
 import ska_dlm
-from ska_dlm.dlm_storage.dlm_storage_requests import rclone_access
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
 from ska_dlm.fastapi_utils import decode_bearer, fastapi_auto_annotate
 from ska_dlm.typer_types import JsonObjectOption
@@ -203,14 +202,16 @@ def register_data_item(  # noqa: C901
             f"No storages found for {storage_name=}, {storage_id=}"
         )
     storage_id = storages[0]["storage_id"]
-    if not check_storage_access(storage_name=storage_name, storage_id=storage_id):
-        raise UnmetPreconditionForOperation(
-            f"Requested storage volume is not accessible by DLM! {storage_name}"
-        )
-    # (2)
     file_path = f"{storages[0]['root_directory']}/{uri}".replace("//", "/")
-    if not rclone_access(storage_name, file_path):  # TODO: don't call into rclone directly
-        raise UnmetPreconditionForOperation(f"File {file_path} does not exist on {storage_name}")
+
+    # (2)
+    if not check_storage_access(
+        storage_name=storage_name, storage_id=storage_id, remote_file_path=file_path
+    ):
+        raise UnmetPreconditionForOperation(
+            f"""Ingested data item is not accessible using {storage_name=},
+                remote_file_path={repr(file_path)}"""
+        )
 
     ex_data_item = query_data_item(item_name=item_name, storage_id=storage_id)
     if ex_data_item:
