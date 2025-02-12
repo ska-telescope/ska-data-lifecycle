@@ -208,7 +208,7 @@ def register_data_item(  # noqa: C901
         storage_name=storage_name, storage_id=storage_id, remote_file_path=file_path
     ):
         raise UnmetPreconditionForOperation(
-            f"""Ingested data item is not accessible using {storage_name},
+            f"""Ingested data item is not accessible using {storage_name=},
                 remote_file_path={repr(file_path)}"""
         )
 
