@@ -25,7 +25,7 @@ def fixture_mock_ingest_requests_storage(mocker: MockerFixture):
             }
         ],
     )
-    mocker.patch("ska_dlm.dlm_ingest.dlm_ingest_requests.rclone_access", return_value=True)
+    mocker.patch("ska_dlm.dlm_storage.dlm_storage_requests.rclone_access", return_value=True)
     mocker.patch("ska_dlm.dlm_ingest.dlm_ingest_requests.check_storage_access", return_value=True)
 
 
