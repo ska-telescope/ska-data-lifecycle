@@ -8,10 +8,12 @@ services:
     container_name: dlm_migration
     build:
        context: ..
-       dockerfile: tests/Dockerfile-dlm-compose
+       dockerfile: ./Dockerfile
     entrypoint: uvicorn ska_dlm.dlm_migration.dlm_migration_requests:rest --host 0.0.0.0 --port 8004
     ports:
       - 8004:8004
+    volumes:
+      - ./volumes/dockercompose:/home/ska-dlm/.dlm
     depends_on:
       - dlm_postgrest
       - dlm_rclone
@@ -25,12 +27,13 @@ services:
     container_name: dlm_storage
     build:
        context: ..
-       dockerfile: tests/Dockerfile-dlm-compose
+       dockerfile: ./Dockerfile
     entrypoint: uvicorn ska_dlm.dlm_storage.dlm_storage_requests:rest --host 0.0.0.0 --port 8003
     ports:
       - 8003:8003
     volumes:
       - shared-tmpfs:/data
+      - ./volumes/dockercompose:/home/ska-dlm/.dlm
     depends_on:
       - dlm_gateway
       - dlm_postgrest
@@ -44,10 +47,12 @@ services:
     platform: linux/amd64
     build:
        context: ..
-       dockerfile: tests/Dockerfile-dlm-compose
+       dockerfile: ./Dockerfile
     entrypoint: uvicorn ska_dlm.dlm_request.dlm_request_requests:rest --host 0.0.0.0 --port 8002
     ports:
       - 8002:8002
+    volumes:
+      - ./volumes/dockercompose:/home/ska-dlm/.dlm
     depends_on:
       - dlm_gateway
       - dlm_postgrest
@@ -61,12 +66,13 @@ services:
     container_name: dlm_ingest
     build:
        context: ..
-       dockerfile: tests/Dockerfile-dlm-compose
+       dockerfile: ./Dockerfile
     entrypoint: uvicorn ska_dlm.dlm_ingest.dlm_ingest_requests:rest --host 0.0.0.0 --port 8001
     ports:
       - 8001:8001
     volumes:
       - shared-tmpfs:/data
+      - ./volumes/dockercompose:/home/ska-dlm/.dlm
     depends_on:
       - dlm_postgrest
       - dlm_rclone
