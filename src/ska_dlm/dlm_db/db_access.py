@@ -72,16 +72,15 @@ class PostgRESTAccess(contextlib.AbstractContextManager):
         """Close the underlying requests session."""
         self._session.close()
 
-    def insert(self, table: str, *, json: object | None) -> list:
+    def insert(self, table: str, *, json: object | None) -> list[dict]:
         """Perform an insertion query, returning the JSON-encoded result as an object."""
         return self._query(table, "POST", json=json)
 
     def update(
         self, table: str, *, json: object | None, params: dict | list | None = None
-    ) -> bool | list[dict]:
+    ) -> list[dict]:
         """Perform an update query, returning the JSON-encoded result as an object."""
-        result = self._query(table, "PATCH", params=params, json=json)
-        return True if result is None else result
+        return self._query(table, "PATCH", params=params, json=json)
 
     def select(self, table: str, *, params: dict | list | None = None) -> list[dict]:
         """Perform a selection query, returning the JSON-encoded result as an object."""

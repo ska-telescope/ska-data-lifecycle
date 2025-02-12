@@ -8,11 +8,23 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 import ska_dlm
-from ska_dlm.dlm_db.db_access import DB
+from ska_dlm.data_item.data_item_requests import (
+    query_data_item,
+    update_data_item,
+    set_uri,
+    set_metadata,
+    set_state,
+    set_oid_expiration,
+    set_uid_expiration,
+    set_user,
+    set_group,
+    set_acl,
+    set_phase,
+    update_item_tags
+)
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
 from ska_dlm.fastapi_utils import fastapi_auto_annotate
 
-from .. import CONFIG
 from ..exceptions import InvalidQueryParameters
 
 logger = logging.getLogger(__name__)
@@ -38,61 +50,6 @@ def invalidquery_exception_handler(request: Request, exc: InvalidQueryParameters
         status_code=422,
         content={"exec": "InvalidQueryParameters", "message": f"{str(exc)}"},
     )
-
-
-@cli.command()
-@rest.get("/request/query_data_item", response_model=list[dict])
-# TODO: add option to query for a data_item in a specific storage
-def query_data_item(
-    item_name: str = "",
-    oid: str = "",
-    uid: str = "",
-    storage_id: str = "",
-    params: str | None = None,
-) -> list[dict]:
-    """Query a data_item.
-
-    At least one of item_name, oid, uid, or params is required.
-
-    Parameters
-    ----------
-    item_name : str
-        could be empty, in which case the first 1000 items are returned.
-    oid : str
-        Return data_items referred to by the OID provided.
-    uid : str
-        Return data_item referred to by the UID provided.
-    storage_id : str
-        Return data_item referred to by a given storage_id.
-    params : str | None
-        specify the query parameters
-
-    Raises
-    ------
-    InvalidQueryParameters
-        bad value.
-
-    Returns
-    -------
-    list[dict]
-        data item ids.
-    """
-    if bool(params) == (item_name or oid or uid):
-        raise InvalidQueryParameters("give either params or item_name/oid/uid")
-    params = dict(params) if params else {}
-    params["limit"] = 1000
-    if item_name:
-        params["item_name"] = f"eq.{item_name}"
-    elif oid:
-        params["oid"] = f"eq.{oid}"
-    elif uid:
-        params["uid"] = f"eq.{uid}"
-
-    if storage_id:
-        params["storage_id"] = f"eq.{storage_id}"
-
-    return DB.select(CONFIG.DLM.dlm_table, params=params)
-
 
 @rest.get("/request/query_expired", response_model=list[dict])
 def query_expired(offset: timedelta | None = None) -> list[dict]:
@@ -259,3 +216,18 @@ def query_item_storage(item_name: str = "", oid: str = "", uid: str = "") -> lis
     elif uid:
         params["uid"] = f"eq.{uid}"
     return query_data_item(params=params)
+
+
+# TODO: for more help see https://fastapi.tiangolo.com/tutorial/bigger-applications/#import-fastapi
+rest.get("/request/query_data_item")(query_data_item)
+rest.get("/request/update_data_item")(update_data_item)
+rest.get("/request/set_uri")(set_uri)
+rest.get("/request/set_metadata")(set_metadata)
+rest.get("/request/set_state")(set_state)
+rest.get("/request/set_oid_expiration")(set_oid_expiration)
+rest.get("/request/set_uid_expiration")(set_uid_expiration)
+rest.get("/request/set_user")(set_user)
+rest.get("/request/set_group")(set_group)
+rest.get("/request/set_acl")(set_acl)
+rest.get("/request/set_phase")(set_phase)
+rest.get("/request/update_item_tags")(update_item_tags)

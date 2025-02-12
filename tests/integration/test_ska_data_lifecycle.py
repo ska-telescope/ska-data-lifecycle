@@ -19,6 +19,7 @@ from ska_dlm.dlm_storage.main import persist_new_data_items
 from ska_dlm.exceptions import ValueAlreadyInDB
 from tests.common_local import DlmTestClientLocal
 from tests.integration.client.dlm_gateway_client import get_token
+from ska_dlm.exceptions import InvalidQueryParameters
 
 ROOT = "/data/"
 RCLONE_TEST_FILE_PATH = "/data/MyDisk/testfile"
@@ -321,16 +322,30 @@ def test_update_item_tags(env):
     _ = env.ingest_requests.register_data_item(
         item_name="/my/ingest/test/item2", uri=TEST_URI, storage_name="MyDisk"
     )
-    res = data_item.update_item_tags(
+    res = env.request_requests.update_item_tags(
         "/my/ingest/test/item2", item_tags={"a": "SKA", "b": "DLM", "c": "dummy"}
     )
-    assert res is True
-    res = data_item.update_item_tags(
+    assert res
+    res = env.request_requests.update_item_tags(
         "/my/ingest/test/item2", item_tags={"c": "Hello", "d": "World"}
     )
-    assert res is True
+    assert res
     tags = env.request_requests.query_data_item(item_name="/my/ingest/test/item2")[0]["item_tags"]
     assert tags == {"a": "SKA", "b": "DLM", "c": "Hello", "d": "World"}
+
+
+@pytest.mark.integration_test
+def test_update_item_tags_exception(env):
+    """Update the item_tags field of a data_item."""
+    _ = env.ingest_requests.register_data_item(
+        item_name="/my/ingest/test/item2", uri=TEST_URI, storage_name="MyDisk"
+    )
+    with pytest.raises(InvalidQueryParameters):
+        data_item.update_item_tags(
+            "/my/ingest/test/missing", item_tags={"a": "SKA", "b": "DLM", "c": "dummy"}
+        )
+
+    assert [] == env.request_requests.query_data_item(item_name="/my/ingest/test/missing")
 
 
 @pytest.mark.integration_test
