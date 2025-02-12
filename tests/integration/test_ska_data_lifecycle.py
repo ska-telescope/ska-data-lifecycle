@@ -16,10 +16,9 @@ from ska_dlm.dlm_migration.dlm_migration_requests import (
     update_migration_statuses,
 )
 from ska_dlm.dlm_storage.main import persist_new_data_items
-from ska_dlm.exceptions import ValueAlreadyInDB
+from ska_dlm.exceptions import InvalidQueryParameters, ValueAlreadyInDB
 from tests.common_local import DlmTestClientLocal
 from tests.integration.client.dlm_gateway_client import get_token
-from ska_dlm.exceptions import InvalidQueryParameters
 
 ROOT = "/data/"
 RCLONE_TEST_FILE_PATH = "/data/MyDisk/testfile"
