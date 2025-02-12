@@ -310,19 +310,19 @@ def check_storage_access(
         raise UnmetPreconditionForOperation(
             "No valid configuration for storage found!", storage_name
         )
-    rclone_fs = config[0]["name"]
-    return rclone_access(rclone_fs, remote_file_path)
+    volume_name = config[0]["name"]
+    return rclone_access(volume_name, remote_file_path)
 
 
-def rclone_access(volume: str, remote: str = "", config: dict | None = None) -> bool:
+def rclone_access(volume: str, remote_file_path: str = "", config: dict | None = None) -> bool:
     """Check whether a configured backend is accessible.
 
     Parameters
     ----------
     volume : str
         Volume name
-    remote : str, optional
-        Remote url to the volume, by default ""
+    remote_file_path : str, optional
+        Remote file path, by default ""
     config : dict, optional
         override rclone config values, by default None
 
@@ -335,10 +335,10 @@ def rclone_access(volume: str, remote: str = "", config: dict | None = None) -> 
     if config:
         post_data = config
     else:
-        volume = f"{volume}:" if volume[-1] != ":" else volume
+        volume_name = f"{volume}:" if volume[-1] != ":" else volume
         post_data = {
-            "fs": volume,
-            "remote": remote,
+            "fs": volume_name,
+            "remote": remote_file_path,
         }
     logger.info("rclone access check: %s, %s", request_url, post_data)
     request = requests.post(request_url, post_data, timeout=10)
@@ -363,13 +363,13 @@ def rclone_delete(volume: str, fpath: str) -> bool:
     bool
         True if successful
     """
-    volume = f"{volume}:" if volume[-1] != ":" else volume
-    if not rclone_access(volume, fpath):
-        logger.error("Can't access %s on %s!", fpath, volume)
+    volume_name = f"{volume}:" if volume[-1] != ":" else volume
+    if not rclone_access(volume_name, fpath):
+        logger.error("Can't access %s on %s!", fpath, volume_name)
         return False
     request_url = f"{CONFIG.RCLONE.url}/operations/deletefile"
     post_data = {
-        "fs": volume,
+        "fs": volume_name,
         "remote": fpath,
     }
     logger.info("rclone deletion: %s, %s", request_url, post_data)
@@ -517,8 +517,8 @@ def delete_data_item_payload(uid: str) -> bool:
         logger.error("More than one storage volume keeping this UID: %s", uid)
     storage = storages[0]
     config = get_storage_config(storage["storage_id"])[0]
-    storage_name = config["name"]
-    if not rclone_access(storage_name):
+    volume_name = config["name"]
+    if not rclone_access(volume_name):
         return False
     source_storage = query_storage(storage_id=storage["storage_id"])
     if not source_storage:
@@ -526,11 +526,11 @@ def delete_data_item_payload(uid: str) -> bool:
             f"Unable to get source storage: {storage['storage_id']}."
         )
     delete_path = f"{source_storage[0]['root_directory']}/{storage['uri']}".replace("//", "/")
-    if not rclone_delete(storage_name, delete_path):
+    if not rclone_delete(volume_name, delete_path):
         logger.warning("rclone unable to delete data item payload: %s", uid)
         return False
     set_state(uid, "DELETED")
-    logger.info("Deleted %s from %s", uid, storage_name)
+    logger.info("Deleted %s from %s", uid, volume_name)
     return True
 
 
