@@ -8,20 +8,11 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 import ska_dlm
-from ska_dlm.data_item.data_item_requests import (
-    query_data_item,
-    update_data_item,
-    set_uri,
-    set_metadata,
-    set_state,
-    set_oid_expiration,
-    set_uid_expiration,
-    set_user,
-    set_group,
-    set_acl,
-    set_phase,
-    update_item_tags
-)
+
+#  pylint: disable-next=wildcard-import,unused-wildcard-import
+from ska_dlm.data_item.data_item_requests import *  # noqa
+from ska_dlm.data_item.data_item_requests import query_data_item
+from ska_dlm.data_item.data_item_requests import rest as data_item_requests
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
 from ska_dlm.fastapi_utils import fastapi_auto_annotate
 
@@ -40,6 +31,7 @@ rest = fastapi_auto_annotate(
         license_info={"name": "BSD-3-Clause", "identifier": "BSD-3-Clause"},
     )
 )
+rest.include_router(data_item_requests)
 
 
 # pylint: disable=unused-argument
@@ -50,6 +42,7 @@ def invalidquery_exception_handler(request: Request, exc: InvalidQueryParameters
         status_code=422,
         content={"exec": "InvalidQueryParameters", "message": f"{str(exc)}"},
     )
+
 
 @rest.get("/request/query_expired", response_model=list[dict])
 def query_expired(offset: timedelta | None = None) -> list[dict]:
@@ -216,18 +209,3 @@ def query_item_storage(item_name: str = "", oid: str = "", uid: str = "") -> lis
     elif uid:
         params["uid"] = f"eq.{uid}"
     return query_data_item(params=params)
-
-
-# TODO: for more help see https://fastapi.tiangolo.com/tutorial/bigger-applications/#import-fastapi
-rest.get("/request/query_data_item")(query_data_item)
-rest.get("/request/update_data_item")(update_data_item)
-rest.get("/request/set_uri")(set_uri)
-rest.get("/request/set_metadata")(set_metadata)
-rest.get("/request/set_state")(set_state)
-rest.get("/request/set_oid_expiration")(set_oid_expiration)
-rest.get("/request/set_uid_expiration")(set_uid_expiration)
-rest.get("/request/set_user")(set_user)
-rest.get("/request/set_group")(set_group)
-rest.get("/request/set_acl")(set_acl)
-rest.get("/request/set_phase")(set_phase)
-rest.get("/request/update_item_tags")(update_item_tags)

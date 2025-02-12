@@ -17,7 +17,7 @@ def query_data_item(
     oid: str = "",
     uid: str = "",
     storage_id: str = "",
-    params: str | None = None,
+    params: str | None = None,  # TODO: meant to be dict | None
 ) -> list[dict]:
     """
     Query a data_item.

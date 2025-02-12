@@ -2,25 +2,29 @@
 
 import logging
 
-from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
-from ska_dlm.exceptions import InvalidQueryParameters
-from ska_dlm.typer_types import JsonContainerOption, JsonObjectOption
+from fastapi import APIRouter
 
 from ska_dlm import CONFIG
 from ska_dlm.dlm_db.db_access import DB
+from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
+from ska_dlm.exceptions import InvalidQueryParameters
+from ska_dlm.typer_types import JsonContainerOption, JsonObjectOption
 
 logger = logging.getLogger(__name__)
 
 cli = ExceptionHandlingTyper()
 
+rest = APIRouter()
+
 
 @cli.command()
+@rest.get("/request/query_data_item", response_model=list[dict])
 def query_data_item(
     item_name: str = "",
     oid: str = "",
     uid: str = "",
     storage_id: str = "",
-    params: str | None = None,
+    params: str | None = None,  # TODO: meant to be dict | None
 ) -> list[dict]:
     """Query a data_item.
 
@@ -67,6 +71,7 @@ def query_data_item(
 
 
 @cli.command()
+@rest.get("/request/update_data_item", response_model=dict)
 def update_data_item(
     item_name: str = "",
     oid: str = "",
@@ -112,7 +117,8 @@ def update_data_item(
 
 
 @cli.command()
-def set_uri(uid: str, uri: str, storage_id: str):
+@rest.get("/request/set_uri", response_model=dict)
+def set_uri(uid: str, uri: str, storage_id: str) -> dict:
     """Set the URI field of the uid data_item.
 
     Parameters
@@ -124,11 +130,12 @@ def set_uri(uid: str, uri: str, storage_id: str):
     storage_id : str
         the storage_id associated with the URI
     """
-    update_data_item(uid=uid, post_data={"uri": uri, "storage_id": storage_id})
+    return update_data_item(uid=uid, post_data={"uri": uri, "storage_id": storage_id})
 
 
 @cli.command()
-def set_metadata(uid: str, metadata_post: JsonContainerOption = None):
+@rest.get("/request/set_metadata", response_model=dict)
+def set_metadata(uid: str, metadata_post: JsonContainerOption = None) -> dict:
     """
     Populate the metadata column for a data_item with the metadata.
 
@@ -139,10 +146,11 @@ def set_metadata(uid: str, metadata_post: JsonContainerOption = None):
     metadata_post : dict | list
         a metadata JSON string
     """
-    update_data_item(uid=uid, post_data={"metadata": metadata_post})
+    return update_data_item(uid=uid, post_data={"metadata": metadata_post})
 
 
 @cli.command()
+@rest.get("/request/set_state", response_model=dict)
 def set_state(uid: str, state: str) -> dict:
     """Set the state field of the uid data_item.
 
@@ -162,6 +170,7 @@ def set_state(uid: str, state: str) -> dict:
 
 
 @cli.command()
+@rest.get("/request/set_oid_expiration", response_model=dict)
 def set_oid_expiration(oid: str, expiration: str) -> dict:
     """Set the oid_expiration field of the data_items with the given OID.
 
@@ -181,6 +190,7 @@ def set_oid_expiration(oid: str, expiration: str) -> dict:
 
 
 @cli.command()
+@rest.get("/request/set_uid_expiration", response_model=dict)
 def set_uid_expiration(uid: str, expiration: str) -> dict:
     """Set the uid_expiration field of the data_item with the given UID.
 
@@ -200,6 +210,7 @@ def set_uid_expiration(uid: str, expiration: str) -> dict:
 
 
 @cli.command()
+@rest.get("/request/set_user", response_model=dict)
 def set_user(oid: str = "", uid: str = "", user: str = "SKA") -> dict:
     """
     Set the user field of the data_item(s) with the given OID or UID.
@@ -230,6 +241,7 @@ def set_user(oid: str = "", uid: str = "", user: str = "SKA") -> dict:
 
 
 @cli.command()
+@rest.get("/request/set_group", response_model=dict)
 def set_group(oid: str = "", uid: str = "", group: str = "SKA") -> dict:
     """
     Set the user field of the data_item(s) with the given OID or UID.
@@ -260,6 +272,7 @@ def set_group(oid: str = "", uid: str = "", group: str = "SKA") -> dict:
 
 
 @cli.command()
+@rest.get("/request/set_acl", response_model=dict)
 def set_acl(oid: str = "", uid: str = "", acl: str = "{}") -> dict:
     """
     Set the user field of the data_item(s) with the given OID or UID.
@@ -290,6 +303,7 @@ def set_acl(oid: str = "", uid: str = "", acl: str = "{}") -> dict:
 
 
 @cli.command()
+@rest.get("/request/set_phase", response_model=dict)
 def set_phase(uid: str, phase: str) -> dict:
     """
     Set the phase field of the data_item(s) with given UID.
@@ -310,6 +324,7 @@ def set_phase(uid: str, phase: str) -> dict:
 
 
 @cli.command()
+@rest.get("/request/update_item_tags", response_model=dict)
 def update_item_tags(
     item_name: str = "", oid: str = "", item_tags: JsonObjectOption = None
 ) -> dict:
@@ -342,6 +357,6 @@ def update_item_tags(
 
     oid, existing_tags = (result[0]["oid"], result[0]["item_tags"])
     tags = {} if not existing_tags else existing_tags
-    logging.info(f"Updating tags: {tags} with {item_tags}")
+    logging.info("Updating tags: %s with %s", tags, item_tags)
     tags.update(item_tags)  # merge existing with new ones
     return update_data_item(oid=oid, post_data={"item_tags": tags})
