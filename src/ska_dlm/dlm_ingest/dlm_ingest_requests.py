@@ -205,7 +205,7 @@ def register_data_item(  # noqa: C901
 
     # (2)
     if not check_storage_access(
-        storage_name=storage_name, storage_id=storage_id, remote=file_path
+        storage_name=storage_name, storage_id=storage_id, remote_file_path=file_path
     ):
         raise UnmetPreconditionForOperation(
             f"Item is not accessible: Storage: {storage_name}, Remote: {file_path}"

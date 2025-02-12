@@ -278,7 +278,9 @@ def create_rclone_config(config: JsonObjectArg) -> bool:
     return request.status_code == 200
 
 
-def check_storage_access(storage_name: str = "", storage_id: str = "", remote: str = "") -> bool:
+def check_storage_access(
+    storage_name: str = "", storage_id: str = "", remote_file_path: str = ""
+) -> bool:
     """Check whether storage is accessible.
 
     Parameters
@@ -287,7 +289,7 @@ def check_storage_access(storage_name: str = "", storage_id: str = "", remote: s
         The name of the storage volume (either name or ID are required)
     storage_id: str
         The ID of the storage volume.
-    remote: str
+    remote_file_path: str
         Remote file.
 
     Returns
@@ -309,7 +311,7 @@ def check_storage_access(storage_name: str = "", storage_id: str = "", remote: s
             "No valid configuration for storage found!", storage_name
         )
     rclone_fs = config[0]["name"]
-    return rclone_access(rclone_fs, remote)
+    return rclone_access(rclone_fs, remote_file_path)
 
 
 def rclone_access(volume: str, remote: str = "", config: dict | None = None) -> bool:
