@@ -86,6 +86,9 @@ python-test:
   image: docker:27.0.2
   services:
     - docker:27.0.2-dind
+  variables:
+    CI_DEBUG_SERVICES: "true"
+    TEST_VOLUMES_DIR: builds/$CI_PROJECT_PATH/tests/volumes
   before_script:
     - docker compose --file tests/testrunner.docker-compose.yaml build
   script:

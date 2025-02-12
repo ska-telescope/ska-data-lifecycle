@@ -26,10 +26,10 @@ else
 endif
 endif  # GITLAB_CI
 
-SHARED_VOLUMES_DIR ?= ${PWD}/tests/volumes
+TEST_VOLUMES_DIR ?= ${PWD}/tests/volumes
 
 # Make these available as environment variables
-export KUBE_NAMESPACE K8S_HOST_URL SHARED_VOLUMES_DIR
+export KUBE_NAMESPACE K8S_HOST_URL TEST_VOLUMES_DIR
 
 .PHONY: docs-pre-build k8s-recreate-namespace k8s-do-test
 

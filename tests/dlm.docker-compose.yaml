@@ -13,7 +13,7 @@ services:
     ports:
       - 8004:8004
     volumes:
-      - ./volumes/dockercompose:/home/ska-dlm/.dlm:ro
+      - $TEST_VOLUMES_DIR/dockercompose:/home/ska-dlm/.dlm:ro
     depends_on:
       - dlm_postgrest
       - dlm_rclone
@@ -33,7 +33,7 @@ services:
       - 8003:8003
     volumes:
       - shared-tmpfs:/data
-      - ./volumes/dockercompose:/home/ska-dlm/.dlm:ro
+      - $TEST_VOLUMES_DIR/dockercompose:/home/ska-dlm/.dlm:ro
     depends_on:
       - dlm_gateway
       - dlm_postgrest
@@ -52,7 +52,7 @@ services:
     ports:
       - 8002:8002
     volumes:
-      - ./volumes/dockercompose:/home/ska-dlm/.dlm:ro
+      - $TEST_VOLUMES_DIR/dockercompose:/home/ska-dlm/.dlm:ro
     depends_on:
       - dlm_gateway
       - dlm_postgrest
@@ -72,7 +72,7 @@ services:
       - 8001:8001
     volumes:
       - shared-tmpfs:/data
-      - ./volumes/dockercompose:/home/ska-dlm/.dlm:ro
+      - $TEST_VOLUMES_DIR/dockercompose:/home/ska-dlm/.dlm:ro
     depends_on:
       - dlm_postgrest
       - dlm_rclone
