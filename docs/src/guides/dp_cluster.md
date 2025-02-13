@@ -27,22 +27,24 @@ The source code below demonstrates how to register a data item that exists on an
 _Note that at the time of writing (07 Feb 2025), due to a missing firewall exception, the restful endpoint was only accessible by either:
 (1) running with VPN access or (2) running from a terminal session inside the cluster using http://ska-dlm-gateway.dp-yanda.svc.cluster.local_
 
+Prepare token to be placed in the header of your REST calls
+
 ```python
 from requests import Session
 
 # this URL is for DLM deployment in the Yanda namespace on the DP integration cluster
 # other known locations are shown below
 DLM_URL = "https://sdhp.stfc.skao.int/dp-yanda/dlm"
-
-# Prepare token to be placed in the header of any REST call
 token = <your token>
 bearer = {"Authorization": f"Bearer {token}"}
+```
 
+Check if your location (e.g., Pawsey) is already known to DLM
+```python
 # create location details
 location_name = "Pawsey"
 location_type = "HPC centre"
 
-# check if this location is already known to DLM
 session = Session()
 location = session.get(
     f"{DLM_URL}/storage/query_location",
@@ -52,7 +54,10 @@ location = session.get(
 )
 print(location.json())
 location_id = location.json()[0]["location_id"]  # if location exists
-# if it doesn't already exist, initialise this location
+```
+
+If your location doesn't already exist, initialise it
+```python
 loc_params = {
     "location_name": location_name,
     "location_type": location_type,
@@ -62,8 +67,10 @@ location = session.post(
 )
 print(location.json())
 location_id = location.json()  # get the location id
+```
 
-# check if the 'Acacia' storage is already known to DLM
+Check if your storage (e.g., Acacia) is already known to DLM
+```python
 storage_params = {
     "storage_name": "Acacia",
     "location_id": location_id,
@@ -73,7 +80,10 @@ storage = session.get(
 )
 print(storage.json())
 storage_id = storage.json()[0]["storage_id"]  # if the storage exists
-# if it doesn't already exist, initialise this storage
+```
+
+If your storage doesn't already exist, initialise it
+```python
 storage_params = {
     "storage_name": "Acacia",
     "location_id": location_id,
@@ -89,8 +99,10 @@ storage = session.post(
 )
 print(storage.json())
 storage_id = storage.json()  # get the storage_id
+```
+Check if a storage config for your storage is already known to DLM
 
-# check if a storage config for this storage is already known to DLM
+```python
 config = session.get(
     f"{DLM_URL}/storage/get_storage_config",
     params={"storage_id": storage_id},
@@ -98,9 +110,11 @@ config = session.get(
     timeout=60,
 )
 print(config.json())
-# supply an rclone config for this storage (if it doesn’t already exist)
+```
+If an rclone config for your storage doesn't already exist, supply one
+```python
 acacia_config = {
-    "name": "Acacia",
+    "name": "myacacia",
     "type": "s3",
     "parameters": {
         "access_key_id": "<your-access-key-id>",
@@ -117,8 +131,9 @@ config = session.post(
     timeout=60,
 )
 print(config.json())
-
-# register a data item that exists on Acacia
+```
+Register a data item that exists on your storage
+```python
 item_params = {
     "item_name": "test_item",
     "uri": "rascil/1197634128-cal_avg32.ms.tar.xj",
@@ -134,9 +149,11 @@ acacia_response = session.post(
     timeout=60,
 )
 print(acacia_response.json())
+```
+Trigger a migration to a second storage
+```python
+# first, initialise a destination storage (if it doesn't already exist), using the method above
 
-# trigger a migration to a second storage
-# initialise a destination storage (if it doesn't already exist), using the method above
 migration_params = {
     "item_name": "test_item",
     "destination_name": <dest_storage>,
@@ -149,8 +166,9 @@ migration_response = session.post(
     timeout=60,
 )
 print(migration_response.json())
-
-# query for all copies of the item
+```
+Query for all copies of the item
+```python
 response = session.get(
     f"{DLM_URL}/request/query_data_item",
     params={"item_name": "test_item"},
