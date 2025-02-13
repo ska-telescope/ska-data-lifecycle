@@ -4,7 +4,7 @@ from datetime import timedelta
 
 import requests
 
-from ska_dlm.typer_types import JsonContainerOption, JsonObjectOption
+from ska_dlm.typer_types import JsonObjectOption
 from tests.integration.client.exception_handler import dlm_raise_for_status
 
 REQUEST_URL = ""
@@ -171,6 +171,51 @@ def query_item_storage(item_name: str = "", oid: str = "", uid: str = "") -> str
     return response.json()
 
 
+def update_data_item(
+    item_name: str = "",
+    oid: str = "",
+    uid: str = "",
+    post_data: JsonObjectOption = None,
+) -> dict:
+    """Update fields of an existing data_item.
+
+    This is mostly used by the other convenience functions. In general when specifying
+    an OID or an item_name, multiple entries will be updated at the same time.
+
+    Parameters
+    ----------
+    item_name : str
+        the name of the data_items to be updated
+    oid : str
+        the OID of the data_items to be updated
+    uid : str
+        the UID of the data_item to be updated
+    post_data : dict
+        the json formatted update data, compatible with postgREST
+
+    Returns
+    -------
+    dict
+        the updated data item entry
+
+    Raises
+    ------
+    InvalidQueryParameters
+        When neither item_name, oid or uid is given
+    """
+    params = {k: v for k, v in locals().items() if v}
+    headers = {"Authorization": f"Bearer {TOKEN}"}
+    response = requests.patch(
+        f"{REQUEST_URL}/request/update_data_item",
+        params=params,
+        headers=headers,
+        json=post_data,
+        timeout=60,
+    )
+    dlm_raise_for_status(response)
+    return response.json()
+
+
 def update_item_tags(
     item_name: str = "", oid: str = "", item_tags: JsonObjectOption = None
 ) -> dict:
@@ -196,56 +241,11 @@ def update_item_tags(
     """
     params = {k: v for k, v in locals().items() if v}
     headers = {"Authorization": f"Bearer {TOKEN}"}
-    response = requests.get(
+    response = requests.patch(
         f"{REQUEST_URL}/request/update_item_tags",
         params=params,
         headers=headers,
         json=item_tags,
-        timeout=60,
-    )
-    dlm_raise_for_status(response)
-    return response.json()
-
-
-def update_data_item(
-    item_name: str = "",
-    oid: str = "",
-    uid: str = "",
-    post_data: JsonContainerOption = None,
-) -> dict:
-    """Update fields of an existing data_item.
-
-    This is mostly used by the other convenience functions. In general when specifying
-    an OID or an item_name, multiple entries will be updated at the same time.
-
-    Parameters
-    ----------
-    item_name : str
-        the name of the data_items to be updated
-    oid : str
-        the OID of the data_items to be updated
-    uid : str
-        the UID of the data_item to be updated
-    post_data : dict | list[dict]
-        the json formatted update data, compatible with postgREST
-
-    Returns
-    -------
-    dict
-        the updated data item entry
-
-    Raises
-    ------
-    InvalidQueryParameters
-        When neither item_name, oid or uid is given
-    """
-    params = {k: v for k, v in locals().items() if v}
-    headers = {"Authorization": f"Bearer {TOKEN}"}
-    response = requests.get(
-        f"{REQUEST_URL}/request/update_data_item",
-        params=params,
-        headers=headers,
-        json=post_data,
         timeout=60,
     )
     dlm_raise_for_status(response)

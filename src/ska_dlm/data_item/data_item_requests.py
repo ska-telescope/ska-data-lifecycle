@@ -72,7 +72,7 @@ def query_data_item(
 
 
 @cli.command()
-@rest.get("/request/update_data_item")
+@rest.patch("/request/update_data_item")
 def update_data_item(
     item_name: str = "",
     oid: str = "",
@@ -118,7 +118,7 @@ def update_data_item(
 
 
 @cli.command()
-@rest.get("/request/set_uri", response_model=dict)
+@rest.patch("/request/set_uri", response_model=dict)
 def set_uri(uid: str, uri: str, storage_id: str) -> dict:
     """Set the URI field of the uid data_item.
 
@@ -135,7 +135,7 @@ def set_uri(uid: str, uri: str, storage_id: str) -> dict:
 
 
 @cli.command()
-@rest.get("/request/set_metadata", response_model=dict)
+@rest.patch("/request/set_metadata", response_model=dict)
 def set_metadata(uid: str, metadata_post: JsonObjectOption = None) -> dict:
     """
     Populate the metadata column for a data_item with the metadata.
@@ -151,7 +151,7 @@ def set_metadata(uid: str, metadata_post: JsonObjectOption = None) -> dict:
 
 
 @cli.command()
-@rest.get("/request/set_state", response_model=dict)
+@rest.patch("/request/set_state", response_model=dict)
 def set_state(uid: str, state: str) -> dict:
     """Set the state field of the uid data_item.
 
@@ -171,7 +171,7 @@ def set_state(uid: str, state: str) -> dict:
 
 
 @cli.command()
-@rest.get("/request/set_oid_expiration", response_model=dict)
+@rest.patch("/request/set_oid_expiration", response_model=dict)
 def set_oid_expiration(oid: str, expiration: str) -> dict:
     """Set the oid_expiration field of the data_items with the given OID.
 
@@ -191,7 +191,7 @@ def set_oid_expiration(oid: str, expiration: str) -> dict:
 
 
 @cli.command()
-@rest.get("/request/set_uid_expiration", response_model=dict)
+@rest.patch("/request/set_uid_expiration", response_model=dict)
 def set_uid_expiration(uid: str, expiration: str) -> dict:
     """Set the uid_expiration field of the data_item with the given UID.
 
@@ -211,7 +211,7 @@ def set_uid_expiration(uid: str, expiration: str) -> dict:
 
 
 @cli.command()
-@rest.get("/request/set_user", response_model=dict)
+@rest.patch("/request/set_user", response_model=dict)
 def set_user(oid: str = "", uid: str = "", user: str = "SKA") -> dict:
     """
     Set the user field of the data_item(s) with the given OID or UID.
@@ -242,7 +242,7 @@ def set_user(oid: str = "", uid: str = "", user: str = "SKA") -> dict:
 
 
 @cli.command()
-@rest.get("/request/set_group", response_model=dict)
+@rest.patch("/request/set_group", response_model=dict)
 def set_group(oid: str = "", uid: str = "", group: str = "SKA") -> dict:
     """
     Set the user field of the data_item(s) with the given OID or UID.
@@ -273,7 +273,7 @@ def set_group(oid: str = "", uid: str = "", group: str = "SKA") -> dict:
 
 
 @cli.command()
-@rest.get("/request/set_acl", response_model=dict)
+@rest.patch("/request/set_acl", response_model=dict)
 def set_acl(oid: str = "", uid: str = "", acl: str = "{}") -> dict:
     """
     Set the user field of the data_item(s) with the given OID or UID.
@@ -304,7 +304,7 @@ def set_acl(oid: str = "", uid: str = "", acl: str = "{}") -> dict:
 
 
 @cli.command()
-@rest.get("/request/set_phase", response_model=dict)
+@rest.patch("/request/set_phase", response_model=dict)
 def set_phase(uid: str, phase: str) -> dict:
     """
     Set the phase field of the data_item(s) with given UID.
@@ -325,7 +325,7 @@ def set_phase(uid: str, phase: str) -> dict:
 
 
 @cli.command()
-@rest.get("/request/update_item_tags", response_model=dict)
+@rest.patch("/request/update_item_tags", response_model=dict)
 def update_item_tags(
     item_name: str = "", oid: str = "", item_tags: JsonObjectOption = None
 ) -> dict:
