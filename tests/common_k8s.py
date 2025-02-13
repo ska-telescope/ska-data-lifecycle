@@ -6,6 +6,7 @@ import os
 from kubernetes import client, config, stream
 from overrides import override
 
+import tests.integration.client.data_item_client as data_item_requests
 import tests.integration.client.dlm_ingest_client as dlm_ingest_requests
 import tests.integration.client.dlm_migration_client as dlm_migration_requests
 import tests.integration.client.dlm_request_client as dlm_request_requests
@@ -37,6 +38,7 @@ class DlmTestClientK8s(DlmTestClient):
         dlm_storage_requests.STORAGE_URL = _generate_k8s_url("dlm", "ska-dlm-gateway")
         dlm_ingest_requests.INGEST_URL = _generate_k8s_url("dlm", "ska-dlm-gateway")
         dlm_request_requests.REQUEST_URL = _generate_k8s_url("dlm", "ska-dlm-gateway")
+        data_item_requests.REQUEST_URL = _generate_k8s_url("dlm", "ska-dlm-gateway")
         dlm_migration_requests.MIGRATION_URL = _generate_k8s_url("dlm", "ska-dlm-gateway")
 
         CONFIG.REST.base_url = _generate_k8s_url(
@@ -52,6 +54,10 @@ class DlmTestClientK8s(DlmTestClient):
     @property
     def request_requests(self):
         return dlm_request_requests
+
+    @property
+    def data_item_requests(self):
+        return data_item_requests
 
     @property
     def ingest_requests(self):

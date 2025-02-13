@@ -43,6 +43,11 @@ class DlmTestClient:
 
     @property
     @abstractmethod
+    def data_item_requests(self) -> ModuleType:
+        """Get data_item requests module."""
+
+    @property
+    @abstractmethod
     def ingest_requests(self) -> ModuleType:
         """Get ingest requests module."""
 
