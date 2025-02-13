@@ -8,13 +8,14 @@ from ska_dlm import CONFIG
 from ska_dlm.dlm_db.db_access import DB
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
 from ska_dlm.exceptions import InvalidQueryParameters
-from ska_dlm.typer_types import JsonContainerOption, JsonObjectOption
+from ska_dlm.fastapi_utils import fastapi_auto_annotate
+from ska_dlm.typer_types import JsonObjectOption
 
 logger = logging.getLogger(__name__)
 
 cli = ExceptionHandlingTyper()
 
-rest = APIRouter()
+rest = fastapi_auto_annotate(APIRouter())
 
 
 @cli.command()
@@ -71,12 +72,12 @@ def query_data_item(
 
 
 @cli.command()
-@rest.get("/request/update_data_item", response_model=dict)
+@rest.get("/request/update_data_item")
 def update_data_item(
     item_name: str = "",
     oid: str = "",
     uid: str = "",
-    post_data: JsonContainerOption = None,
+    post_data: JsonObjectOption = None,
 ) -> dict:
     """Update fields of an existing data_item.
 
@@ -91,7 +92,7 @@ def update_data_item(
         the OID of the data_items to be updated
     uid : str
         the UID of the data_item to be updated
-    post_data : dict | list[dict]
+    post_data : dict
         the json formatted update data, compatible with postgREST
 
     Returns
@@ -135,7 +136,7 @@ def set_uri(uid: str, uri: str, storage_id: str) -> dict:
 
 @cli.command()
 @rest.get("/request/set_metadata", response_model=dict)
-def set_metadata(uid: str, metadata_post: JsonContainerOption = None) -> dict:
+def set_metadata(uid: str, metadata_post: JsonObjectOption = None) -> dict:
     """
     Populate the metadata column for a data_item with the metadata.
 
@@ -143,7 +144,7 @@ def set_metadata(uid: str, metadata_post: JsonContainerOption = None) -> dict:
     ----------
     uid : str
         the UID of the data_item to be updated
-    metadata_post : dict | list
+    metadata_post : dict
         a metadata JSON string
     """
     return update_data_item(uid=uid, post_data={"metadata": metadata_post})
