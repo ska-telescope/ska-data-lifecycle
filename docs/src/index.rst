@@ -1,9 +1,9 @@
-SKA Data Lifecycle
-==================
+SKA Data Lifecycle Management
+=============================
 
 .. toctree::
    :maxdepth: 1
-   :caption: SKA Data Lifecycle:
+   :caption: SKA Data Lifecycle Management:
 
    overview/index
    api/index
