@@ -11,7 +11,9 @@ Typical usage of the DLM:
 7. Query the location of all copies of the item
 8. Access the items via the [Data Product Dashboard](https://developer.skao.int/projects/ska-dataproduct-dashboard/en/latest/?badge=latest)
 
-## Request API
+## Ingest and Migrate a Data Item
+
+This section outlines the steps required to ingest and migrate data within the DLM system using the REST API. The process begins with obtaining an API token and verifying if the required storage locations are registered. If they are not, users must initialize them. Next, storage configurations are checked and updated if necessary. Once the storage setup is complete, data items can be registered, ingested, and migrated to secondary storage. Finally, users can query the system to confirm the locations of their stored data items. The last step provides access to the data via the Data Product Dashboard.
 
 ### Step 1: Obtain an API token
 
