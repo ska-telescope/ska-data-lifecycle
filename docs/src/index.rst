@@ -3,9 +3,6 @@ SKA Data Lifecycle Management
 
 Summary
 
-Sitemap
--------
-
 .. toctree::
    :maxdepth: 1
    :caption: SKA Data Lifecycle Management

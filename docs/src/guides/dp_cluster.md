@@ -83,13 +83,13 @@ print(storage.json())
 storage_id = storage.json()[0]["storage_id"]  # if the storage exists, get the storage id
 ```
 
-*If the desired storage doesn't already exist*, initialise it
+If the desired storage is not listed, register an rclone supported storage endpoint where `storage_interface` is the rclone config type. For more information, refer to <https://rclone.org/docs/#configure>
 ```python
 storage_params = {
     "storage_name": "Acacia",
     "location_id": location_id,
     "storage_type": "object store",
-    "storage_interface": "s3",
+    "storage_interface": "s3",  # rclone config type
     "storage_capacity": 100000000,
 }
 storage = session.post(
@@ -112,7 +112,7 @@ config = session.get(
 )
 print(config.json())
 ```
-If you need to, supply an rclone config for the desired storage
+If you need to, supply an rclone config for the desired storage. (For further details, refer to <https://rclone.org/docs/#configure>)
 ```python
 acacia_config = {
     "name": "myacacia",
@@ -151,8 +151,8 @@ acacia_response = session.post(
 )
 print(acacia_response.json())
 ```
-6. Trigger a migration to a second storage
-_If your destination storage isn't known to DLM, first initialise it (using the method above)_
+6. Trigger a migration to a second storage.
+_If your destination storage isn't known to DLM, first initialise it (using the method above)_.
 ```python
 migration_params = {
     "item_name": "test_item",
