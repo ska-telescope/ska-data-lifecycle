@@ -1,16 +1,21 @@
 SKA Data Lifecycle Management
 =============================
 
+Summary
+
+Sitemap
+-------
+
 .. toctree::
    :maxdepth: 1
-   :caption: SKA Data Lifecycle Management:
+   :caption: SKA Data Lifecycle Management
 
    overview/index
    api/index
 
 .. toctree::
    :maxdepth: 1
-   :caption: Guides:
+   :caption: Guides
 
    guides/usage
    guides/dp_cluster

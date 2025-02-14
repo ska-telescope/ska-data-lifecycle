@@ -1,11 +1,11 @@
 # DP Cluster
 
-Typical usage of the DLM:
+Typical usage of DLM:
 
-1. Obtain an API token, authorizing use of the DLM by a specific user
+1. Obtain an API token, authorizing use of DLM by a specific user
 2. Determine the location of the file(s) you wish to register, and register this location with DLM
 3. Register the storage on the DLM system
-4. Ensure the storage is accessible (via rclone) from the DLM
+4. Ensure the storage is accessible (via rclone) from DLM
 5. Ingest the files into DLM one-by-one
 6. Instruct DLM to migrate the newly ingested item to a secondary storage
 7. Query the location of all copies of the item
@@ -13,7 +13,7 @@ Typical usage of the DLM:
 
 ## Request API
 
-### Step 1: Obtain an API token
+### Obtain an API token
 
 To obtain an API token:
 
@@ -21,7 +21,7 @@ To obtain an API token:
 * Login with your SKAO credentials
 * If successful, a token will be returned. Copy the token.
 
-### Steps 2-7: ska-dlm REST API
+### Use the ska-dlm REST API interface
 
 The source code below demonstrates how to register a data item that exists on an external storage (e.g., Acacia).
 
@@ -37,10 +37,10 @@ from requests import Session
 # other known locations are shown below
 DLM_URL = "https://sdhp.stfc.skao.int/dp-yanda/dlm"
 token = <your token>
-bearer = {"Authorization": f"Bearer {token}"}
+headers = {"Authorization": f"Bearer {token}"}
 ```
 
-2. Check if your location (e.g., Pawsey) is already known to DLM
+Check if the desired location (e.g., Pawsey) is already known to DLM
 ```python
 # create location details
 location_name = "Pawsey"
@@ -50,40 +50,40 @@ session = Session()
 location = session.get(
     f"{DLM_URL}/storage/query_location",
     params={"location_name": location_name},
-    headers=bearer,
+    headers=headers,
     timeout=60,
 )
 print(location.json())
 location_id = location.json()[0]["location_id"]  # if location exists, get the location id
 ```
 
-*If your location doesn't already exist*, initialise it
+*If the desired location doesn't already exist*, initialise it
 ```python
 loc_params = {
     "location_name": location_name,
     "location_type": location_type,
 }
 location = session.post(
-    f"{DLM_URL}/storage/init_location", params=loc_params, headers=bearer, timeout=60
+    f"{DLM_URL}/storage/init_location", params=loc_params, headers=headers, timeout=60
 )
 print(location.json())
 location_id = location.json()  # get the location id
 ```
 
-3. Check if your storage (e.g., Acacia) is already known to DLM
+Check if the desired storage (e.g., Acacia) is already known to DLM
 ```python
 storage_params = {
     "storage_name": "Acacia",
     "location_id": location_id,
 }
 storage = session.get(
-    f"{DLM_URL}/storage/query_storage", params=storage_params, headers=bearer, timeout=60
+    f"{DLM_URL}/storage/query_storage", params=storage_params, headers=headers, timeout=60
 )
 print(storage.json())
 storage_id = storage.json()[0]["storage_id"]  # if the storage exists, get the storage id
 ```
 
-*If your storage doesn't already exist*, initialise it
+*If the desired storage doesn't already exist*, initialise it
 ```python
 storage_params = {
     "storage_name": "Acacia",
@@ -95,24 +95,24 @@ storage_params = {
 storage = session.post(
     f"{DLM_URL}/storage/init_storage",
     params=storage_params,
-    headers=bearer,
+    headers=headers,
     timeout=60,
 )
 print(storage.json())
 storage_id = storage.json()  # get the storage_id
 ```
-4. Check what storage configs for your storage are already known to DLM
+Check what rclone configs for the desired storage are already known to DLM
 
 ```python
 config = session.get(
     f"{DLM_URL}/storage/get_storage_config",
     params={"storage_id": storage_id},
-    headers=bearer,
+    headers=headers,
     timeout=60,
 )
 print(config.json())
 ```
-If you need to, supply an rclone config for your storage
+If you need to, supply an rclone config for the desired storage
 ```python
 acacia_config = {
     "name": "myacacia",
@@ -128,12 +128,12 @@ config = session.post(
     f"{DLM_URL}/storage/create_storage_config",
     params={"storage_id": storage_id},
     json=acacia_config,
-    headers=bearer,
+    headers=headers,
     timeout=60,
 )
 print(config.json())
 ```
-5. Register a data item that exists on your storage
+Register a data item that exists on the desired storage
 ```python
 item_params = {
     "item_name": "test_item",
@@ -146,12 +146,12 @@ acacia_response = session.post(
     f"{DLM_URL}/ingest/register_data_item",
     params=item_params,
     json=json_body,
-    headers=bearer,
+    headers=headers,
     timeout=60,
 )
 print(acacia_response.json())
 ```
-6. Trigger a migration to a second storage
+Trigger a migration to a second storage
 _If your destination storage isn't known to DLM, first initialise it (using the method above)_
 ```python
 migration_params = {
@@ -162,23 +162,23 @@ migration_params = {
 migration_response = session.post(
     f"{DLM_URL}/migration/copy_data_item",
     params=migration_params,
-    headers=bearer,
+    headers=headers,
     timeout=60,
 )
 print(migration_response.json())
 ```
-7. Query for all copies of the data item
+Query for all copies of the data item
 ```python
 response = session.get(
     f"{DLM_URL}/request/query_data_item",
     params={"item_name": "test_item"},
-    headers=bearer,
+    headers=headers,
     timeout=60,
 )
 print(response.json())
 ```
 
-### Step 8: Access via Data Product Dashboard
+### Access via Data Product Dashboard
 
 At time of writing, here are the known medium-term deployments of the DLM system:
 
