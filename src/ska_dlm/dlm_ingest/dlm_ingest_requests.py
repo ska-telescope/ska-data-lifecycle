@@ -22,6 +22,7 @@ from ..dlm_request import query_data_item
 from ..dlm_storage import check_storage_access, query_storage
 from ..exceptions import InvalidQueryParameters, UnmetPreconditionForOperation, ValueAlreadyInDB
 
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 rest = fastapi_auto_annotate(
@@ -116,6 +117,7 @@ def init_data_item(
     if user_info:
         username = user_info.get("preferred_username", None)
         if username is None:
+            logger.warning("Username not found in profile, user_info: %s", user_info)
             raise ValueError("Username not found in profile")
 
     if item_name:
@@ -123,6 +125,7 @@ def init_data_item(
     elif json_data:
         post_data = json_data
     else:
+        logger.warning("Either item_name or json_data is required.")
         raise InvalidQueryParameters("Either item_name or json_data is required")
     return DB.insert(CONFIG.DLM.dlm_table, json=post_data)[0]["uid"]
 
@@ -190,31 +193,47 @@ def register_data_item(  # noqa: C901
     if user_info:
         username = user_info.get("preferred_username", None)
         if username is None:
+            logger.warning("Username not found in profile, user_info: %s", user_info)
             raise ValueError("Username not found in profile")
 
     if item_type not in set(ItemType):
+        logger.warning("Invalid item_type: %s", item_type)
         raise ValueError(f"Invalid item type {item_type}")
+    logger.debug("item_type: %s", item_type)
 
     # (1)
     storages = query_storage(storage_name=storage_name, storage_id=storage_id)
     if not storages:
+        logger.warning(
+            "No storages found for storage_name=%s, storage_id=%s", storage_name, storage_id
+        )
         raise UnmetPreconditionForOperation(
             f"No storages found for {storage_name=}, {storage_id=}"
         )
+    logger.debug("storages: %s", storages)
     storage_id = storages[0]["storage_id"]
+    logger.debug("storage_id: %s", storage_id)
     file_path = f"{storages[0]['root_directory']}/{uri}".replace("//", "/")
+    logger.debug("file_path: %s", file_path)
 
     # (2)
     if not check_storage_access(
         storage_name=storage_name, storage_id=storage_id, remote_file_path=file_path
     ):
+        logger.warning(
+            "Ingested data item is not accessible using %s, remote_file_path: %s",
+            storage_name,
+            repr(file_path),
+        )
         raise UnmetPreconditionForOperation(
             f"""Ingested data item is not accessible using {storage_name=},
                 remote_file_path={repr(file_path)}"""
         )
 
     ex_data_item = query_data_item(item_name=item_name, storage_id=storage_id)
+    logger.debug("ex_data_item: %s", ex_data_item)
     if ex_data_item:
+        logger.warning("Item is already registered on storage! %s", item_name)
         raise ValueAlreadyInDB(f"Item is already registered on storage! {item_name}")
 
     # (3)
@@ -226,13 +245,16 @@ def register_data_item(  # noqa: C901
         "item_owner": username,
         "parents": parents,
     }
+    logger.debug("init_item: %s", init_item)
     uid = init_data_item(json_data=init_item)
 
     # (5)
     set_uri(uid, uri, storage_id)
+    logger.debug("Completed set_uri()")
 
     # (6) Set data_item state to READY
     set_state(uid, "READY")
+    logger.debug("Completed set_state()")
 
     # (7) Populate the metadata column in the database
     if metadata is None:
@@ -241,10 +263,12 @@ def register_data_item(  # noqa: C901
 
     metadata["uid"] = uid
     metadata["item_name"] = item_name
+    logger.debug("metadata: %s", metadata)
     set_metadata(uid, metadata)
+    logger.debug("Completed set_metadata()")
 
     # (8)
-    notify_data_dashboard(metadata)  # TODO: don't notify DPD via REST
+    # notify_data_dashboard(metadata)  # TODO: don't notify DPD via REST
 
     return uid
 
@@ -261,6 +285,7 @@ def notify_data_dashboard(metadata: dict | MetaData) -> None:
     payload = None
     try:
         if not isinstance(metadata, dict) or "execution_block" not in metadata:
+            logger.warning("metadata must contain an 'execution_block', got %s", metadata)
             raise TypeError(
                 f"metadata must contain an 'execution_block', got {type(metadata)} {metadata}"
             )

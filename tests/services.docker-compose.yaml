@@ -46,6 +46,9 @@ services:
       - --rc-no-auth
       - --rc-web-gui
       - --rc-job-expire-duration=43200s
+      - --copy-links
+      - --log-level=DEBUG
+      # - --log-file=/root/rclone.log
     volumes:
       - shared-tmpfs:/data
     networks:
@@ -146,3 +149,8 @@ networks:
 volumes:
   shared-tmpfs:
     name: shared-tmpfs
+    driver: local
+    driver_opts:
+      type: none
+      device: "/data"
+      o: bind

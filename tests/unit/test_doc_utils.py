@@ -134,10 +134,8 @@ def assert_typer_annotation(annotation: Any, info_type: type, helpdoc: str):
 
 def assert_fastapi_annotation(annotation: Any, info_type: type):
     found = 0
-    info = None
     for meta in annotation.__metadata__:
         if isinstance(meta, info_type):
-            info = meta
             found += 1
     assert found == 1, f"expected a single {info_type} in {annotation.__metadata__}"
 

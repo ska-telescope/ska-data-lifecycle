@@ -17,7 +17,9 @@ from ..data_item import set_state
 from ..dlm_request import query_expired, query_item_storage
 from ..exceptions import InvalidQueryParameters, UnmetPreconditionForOperation, ValueAlreadyInDB
 
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
 
 cli = ExceptionHandlingTyper()
 rest = fastapi_auto_annotate(
@@ -268,11 +270,11 @@ def create_rclone_config(config: JsonObjectArg) -> bool:
         True if configuration is successful
     """
     request_url = f"{CONFIG.RCLONE.url}/config/create"
-    logger.info("Creating new rclone config: %s %s", request_url, config)
+    logger.debug("Creating new rclone config: %s %s", request_url, config)
     request = requests.post(
         request_url, json=config, headers={"Content-type": "application/json"}, timeout=10
     )
-    logger.info("Response status code: %s", request.status_code)
+    logger.debug("Response status code: %s", request.status_code)
     return request.status_code == 200
 
 
@@ -329,19 +331,24 @@ def rclone_access(volume: str, remote_file_path: str = "", config: dict | None =
     bool
         True if access is allowed.
     """
+    logger.debug("remote_file_path: %s", remote_file_path)
     request_url = f"{CONFIG.RCLONE.url}/operations/stat"
+    logger.debug("request_url %s", request_url)
     if config:
         post_data = config
+        logger.debug("if config: post_data %s", post_data)
     else:
         volume_name = f"{volume}:" if volume[-1] != ":" else volume
+        logger.debug("else config: volume_name %s", volume_name)
         post_data = {
             "fs": volume_name,
             "remote": remote_file_path,
         }
+    logger.debug("post_data %s", post_data)
     logger.info("rclone access check: %s, %s", request_url, post_data)
     request = requests.post(request_url, post_data, timeout=10)
     if request.status_code != 200 or not request.json()["item"]:
-        logger.info("rclone does not have access: %s, %s", request.status_code, request.json())
+        logger.wwarning("rclone does not have access: %s, %s", request.status_code, request.json())
         return False
     return True
 
@@ -373,7 +380,7 @@ def rclone_delete(volume: str, fpath: str) -> bool:
     logger.info("rclone deletion: %s, %s", request_url, post_data)
     request = requests.post(request_url, data=post_data, timeout=10)
     if request.status_code != 200:
-        logger.info("Error response status code: %s", request.status_code)
+        logger.warning("Error response status code: %s", request.status_code)
         return False
     return True
 
