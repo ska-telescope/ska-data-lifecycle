@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""Tests for `ska_data_lifecycle` package."""
+"""Tests for `ska_data_lifecycle` module."""
 
 import asyncio
 import datetime

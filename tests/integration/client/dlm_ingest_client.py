@@ -1,4 +1,4 @@
-"""dlm_ingest REST client"""
+"""dlm_ingest REST client."""
 
 from enum import Enum
 from typing import Any, Dict, List, Union
@@ -88,12 +88,16 @@ def register_data_item(
         could be empty, in which case the first 1000 items are returned
     uri : str
         the access path to the payload.
+    item_type: str
+        type of the data item (container, file)
     storage_name: str
         the name of the configured storage volume (name or ID required)
     storage_id: str, optional
         the ID of the configured storage.
     metadata: dict, optional
         metadata provided by the client
+    parents: str, optional
+        uuid of parent item
     eb_id: str, optional
         execution block ID provided by the client
 

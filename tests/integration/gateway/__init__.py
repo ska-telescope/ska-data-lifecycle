@@ -1,1 +1,1 @@
-"""REST Gateway package"""
+"""REST Gateway module."""

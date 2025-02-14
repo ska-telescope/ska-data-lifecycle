@@ -20,6 +20,7 @@ def _clear_database():
 
 @pytest.fixture(name="mock_db")
 def mock_database_fixture(env):
+    """Mock database fixture."""
     # NOTE: postgrest service required
     _clear_database()
     yield

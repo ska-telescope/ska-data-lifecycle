@@ -1,1 +1,1 @@
-"""REST Client package"""
+"""REST Client module."""

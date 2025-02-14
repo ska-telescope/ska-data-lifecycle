@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 #
 # developer.skatelescope.org documentation build configuration file, created by
 # sphinx-quickstart on Wed Dec 13 11:59:38 2017.

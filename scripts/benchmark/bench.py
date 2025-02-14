@@ -97,7 +97,7 @@ def wait_for_migration(migration_tuple: tuple) -> dict:
     return {name: record}
 
 
-def run_bench(config_file_path:str, output_file_path: str):
+def run_bench(config_file_path: str, output_file_path: str):
     """Run data item migration performance benchmark."""
     logger.info(f"Opening configuration file: {config_file_path}")
 

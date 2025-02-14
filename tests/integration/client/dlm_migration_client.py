@@ -1,4 +1,4 @@
-"""dlm_migration REST client"""
+"""dlm_migration REST client."""
 
 import requests
 
@@ -16,7 +16,7 @@ def copy_data_item(
     destination_name: str = "",
     destination_id: str = "",
     path: str = "",
-) -> str:
+) -> dict:
     """Copy a data_item from source to destination.
 
     Steps
@@ -43,8 +43,6 @@ def copy_data_item(
         the destination storage, by default ""
     path : str
         the destination path relative to storage root, by default ""
-    authorization : str, optional
-        Validated Bearer token with UserInfo
 
     Returns
     -------
@@ -87,8 +85,7 @@ def query_migrations() -> list[dict]:
 
 def get_migration_record(migration_id: int) -> list:
     # pylint: disable=unused-argument
-    """
-    Query for a specific migration.
+    """Query for a specific migration.
 
     Parameters
     ----------
@@ -98,8 +95,8 @@ def get_migration_record(migration_id: int) -> list:
     Returns
     -------
     list
+        list of matching migrations
     """
-
     params = {k: v for k, v in locals().items() if v}
     headers = {"Authorization": f"Bearer {TOKEN}"}
     response = requests.get(
