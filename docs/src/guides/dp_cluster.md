@@ -1,6 +1,8 @@
 # DP Cluster
 
-Typical usage of DLM:
+## Ingest and Migrate a Data Item
+
+This section outlines the steps required to ingest and migrate data within the DLM system using the REST API.
 
 1. Obtain an API token, authorizing use of DLM by a specific user
 2. Determine the location of the file(s) you wish to register, and register this location with DLM
@@ -11,11 +13,7 @@ Typical usage of DLM:
 7. Query the location of all copies of the item
 8. Access the items via the [Data Product Dashboard](https://developer.skao.int/projects/ska-dataproduct-dashboard/en/latest/?badge=latest)
 
-## Ingest and Migrate a Data Item
-
-This section outlines the steps required to ingest and migrate data within the DLM system using the REST API. The process begins with obtaining an API token and verifying if the required storage locations are registered. If they are not, users must initialize them. Next, storage configurations are checked and updated if necessary. Once the storage setup is complete, data items can be registered, ingested, and migrated to secondary storage. Finally, users can query the system to confirm the locations of their stored data items. The last step provides access to the data via the Data Product Dashboard.
-
-### Obtain an API token
+### 1. Obtain an API token
 
 To obtain an API token:
 
@@ -42,7 +40,7 @@ token = <your token>
 headers = {"Authorization": f"Bearer {token}"}
 ```
 
-Check if the desired location (e.g., Pawsey) is already known to DLM
+2. Check if the desired location (e.g., Pawsey) is already known to DLM
 ```python
 # create location details
 location_name = "Pawsey"
@@ -72,7 +70,7 @@ print(location.json())
 location_id = location.json()  # get the location id
 ```
 
-Check if the desired storage (e.g., Acacia) is already known to DLM
+3. Check if the desired storage (e.g., Acacia) is already known to DLM
 ```python
 storage_params = {
     "storage_name": "Acacia",
@@ -103,7 +101,7 @@ storage = session.post(
 print(storage.json())
 storage_id = storage.json()  # get the storage_id
 ```
-Check what rclone configs for the desired storage are already known to DLM
+4. Check what rclone configs for the desired storage are already known to DLM
 
 ```python
 config = session.get(
@@ -135,7 +133,7 @@ config = session.post(
 )
 print(config.json())
 ```
-Register a data item that exists on the desired storage
+5. Register a data item that exists on the desired storage
 ```python
 item_params = {
     "item_name": "test_item",
@@ -153,7 +151,7 @@ acacia_response = session.post(
 )
 print(acacia_response.json())
 ```
-Trigger a migration to a second storage
+6. Trigger a migration to a second storage
 _If your destination storage isn't known to DLM, first initialise it (using the method above)_
 ```python
 migration_params = {
@@ -169,7 +167,7 @@ migration_response = session.post(
 )
 print(migration_response.json())
 ```
-Query for all copies of the data item
+7. Query for all copies of the data item
 ```python
 response = session.get(
     f"{DLM_URL}/request/query_data_item",
@@ -180,7 +178,7 @@ response = session.get(
 print(response.json())
 ```
 
-### Access via Data Product Dashboard
+### 8. Access via Data Product Dashboard
 
 At time of writing, here are the known medium-term deployments of the DLM system:
 
