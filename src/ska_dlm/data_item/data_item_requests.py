@@ -72,7 +72,7 @@ def query_data_item(
 
 
 @cli.command()
-@rest.patch("/request/update_data_item")
+@rest.patch("/request/update_data_item", response_model=dict)
 def update_data_item(
     item_name: str = "",
     oid: str = "",
