@@ -21,19 +21,20 @@ ska-dlm storage init-location MyHost server
 # check if the storage MyDisk already exists
 ska-dlm storage query-storage --storage-name MyDisk
 # initialise storage (if it doesn't already exist)
-ska-dlm storage init-storage MyDisk disk posix --location-name MyHost
+ska-dlm storage init-storage MyDisk disk posix / --location-name MyHost
 
 # check if a storage config for MyDisk is already known to DLM
 ska-dlm storage get-storage-config --storage-name MyDisk
 # create a storage config for MyDisk (if it doesn't already exist)
-ska-dlm storage create-storage-config '{"name": "MyDisk","type":"local","parameters":{}}' \
+ska-dlm storage create-storage-config '{"name":"MyDisk", "type":"alias", "parameters":{"remote": "/"}}' \
     --storage-id '<the storage id received above>'
 
-# check for existing data items called test_item_name
-ska-dlm request query-data-item --item-name test_item_name
-# register data item
-ska-dlm ingest register-data-item test_item_name --storage-name MyDisk \
+# register a data item inside the Docker container (e.g., /etc/os-release)
+ska-dlm ingest register-data-item test_item_name etc/os-release --storage-name MyDisk \
     --metadata='{"execution_block":"eb-m001-20191031-12345"}'
+
+# query for data items called test_item_name
+ska-dlm request query-data-item --item-name test_item_name
 
 # if you can't find the command you need, follow the help prompts
 ska-dlm --help
@@ -68,7 +69,7 @@ storage_id = dlm_storage.init_storage(
 # check if an rclone config for 'MyDisk' already exists
 dlm_storage.get_storage_config(storage_name="MyDisk")
 # supply an rclone config (if it doesn't already exist)
-config = {"name":"MyDisk","type":"alias", "parameters":{"remote": "/"}}
+config = {"name":"MyDisk", "type":"alias", "parameters":{"remote": "/"}}}
 config_id = dlm_storage.create_storage_config(storage_id=storage_id, config=config)
 
 # register a data item
@@ -91,7 +92,7 @@ storage_id = dlm_storage.init_storage(
    storage_capacity=100000000,
 )
 # supply an rclone config
-config = {"name":"MyDisk2","type":"alias", "parameters":{"remote": "/"}}
+config = {"name":"MyDisk2", "type":"alias", "parameters":{"remote": "/"}}
 config_id = dlm_storage.create_storage_config(storage_id=storage_id, config=config)
 
 # copy "test_item" from MyDisk to MyDisk2
