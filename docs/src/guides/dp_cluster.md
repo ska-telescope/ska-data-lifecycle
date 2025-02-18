@@ -83,7 +83,7 @@ print(storage.json())
 storage_id = storage.json()[0]["storage_id"]  # if the storage exists, get the storage id
 ```
 
-If the desired storage is not listed, register an rclone supported storage endpoint where `storage_interface` is the rclone config type. For more information, refer to <https://rclone.org/docs/#configure>
+If the desired storage is not listed, register an rclone supported storage endpoint where `storage_interface` is the rclone config type. For more information, refer to the [rclone configuration docs](https://rclone.org/docs/#configure).
 ```python
 storage_params = {
     "storage_name": "Acacia",
@@ -112,7 +112,7 @@ config = session.get(
 )
 print(config.json())
 ```
-If you need to, supply an rclone config for the desired storage. (For further details, refer to <https://rclone.org/docs/#configure>)
+If you need to, supply an rclone config for the desired storage. For further details, refer to the [rclone configuration docs](https://rclone.org/docs/#configure).
 ```python
 acacia_config = {
     "name": "myacacia",

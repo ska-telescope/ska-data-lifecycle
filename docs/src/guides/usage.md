@@ -17,8 +17,3 @@ TODO
 ## swagger
 
 TODO
-
-https://sdhp.stfc.skao.int/dp-yanda/dlm/requests/docs
-https://sdhp.stfc.skao.int/dp-yanda/dlm/storage/docs
-https://sdhp.stfc.skao.int/dp-yanda/dlm/ingest/docs
-https://sdhp.stfc.skao.int/dp-yanda/dlm/migration/docs

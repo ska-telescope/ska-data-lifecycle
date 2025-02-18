@@ -2,8 +2,10 @@
 
 Interact with DLM by the way of local Docker deployment, using python methods or the CLI interface.
 From within your DLM directory, start the DLM services first, e.g., by running:
-`docker compose -f tests/services.docker-compose.yaml -p dlm-test-services build`\
-`docker compose -f tests/services.docker-compose.yaml -p dlm-test-services up -d`
+```
+docker compose -f tests/services.docker-compose.yaml -p dlm-test-services build
+docker compose -f tests/services.docker-compose.yaml -p dlm-test-services up -d
+```
 
 ## Register and Migrate Example Data Item
 
