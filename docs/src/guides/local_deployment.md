@@ -1,4 +1,4 @@
-# Local Deployment
+# Local Development
 
 Interact with DLM by the way of local Docker deployment, using python methods or the CLI interface.
 From within your DLM directory, start the DLM services first, e.g., by running:
@@ -9,7 +9,7 @@ From within your DLM directory, start the DLM services first, e.g., by running:
 
 The following sections describe how to perform a data item registration and migration example from within a DLM server without the RESTful interface. This can be performed either on a developer machine after installing the `ska-data-lifecycle` package, or via a remote session to a DLM server instance.
 
-(local-deployment-cli)=
+(local-development-cli)=
 ### Command Line Interface
 
 ```bash
@@ -39,8 +39,8 @@ ska-dlm ingest register-data-item test_item_name --storage-name MyDisk \
 ska-dlm --help
 ```
 
-(local-deployment-python-script)=
-### Python Script
+(local-development-python-script)=
+### Python module interface
 
 ```python
 from ska_dlm import dlm_storage, dlm_ingest, dlm_migration, dlm_request
@@ -57,12 +57,12 @@ location_id = dlm_storage.init_location(location_name, location_type)
 dlm_storage.query_storage(storage_name="MyDisk")
 # initialise the storage (if it doesn't already exist)
 storage_id = dlm_storage.init_storage(
-   storage_name="MyDisk",
-   root_directory="/data/MyDisk",
-   location_id=location_id,
-   storage_type="disk",
-   storage_interface="posix",
-   storage_capacity=100000000,
+  storage_name="MyDisk",
+  root_directory="/",
+  location_id=location_id,
+  storage_type="disk",
+  storage_interface="posix",
+  storage_capacity=100000000,
 )
 
 # check if an rclone config for 'MyDisk' already exists
@@ -73,18 +73,18 @@ config_id = dlm_storage.create_storage_config(storage_id=storage_id, config=conf
 
 # register a data item
 uid = dlm_ingest.register_data_item(
-    "test_item",
-    uri="",
-    storage_name="MyDisk",
-    item_type="file",
-    metadata={"execution_block": "eb-m001-20191031-12345"}
-)
+   "test_item",
+   uri="/etc/os-release",
+   storage_name="MyDisk",
+   item_type="file",
+   metadata={"execution_block": "eb-m001-20191031-12345"}
+ )
 
 # migrate an item from one storage to another
 # register a second storage
 storage_id = dlm_storage.init_storage(
    storage_name="MyDisk2",
-   root_directory="/data/MyDisk2",
+   root_directory="/",
    location_id=location_id,
    storage_type="disk",
    storage_interface="posix",
@@ -95,7 +95,7 @@ config = {"name":"MyDisk2","type":"alias", "parameters":{"remote": "/"}}
 config_id = dlm_storage.create_storage_config(storage_id=storage_id, config=config)
 
 # copy "test_item" from MyDisk to MyDisk2
-dlm_migration.copy_data_item("test_item", destination_name="MyDisk2", path="")
+dlm_migration.copy_data_item("test_item", destination_name="MyDisk2", path="/data/test_item")
 
 # query for all copies of the item
 dlm_request.query_data_item("test_item")

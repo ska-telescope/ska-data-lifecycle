@@ -27,6 +27,6 @@ The following is showing the actual command options for the ``ska-dlm storage in
 
 .. image:: ../_static/img/ska-dlm-location.png
 
-All options of the SKA-DLM can be explored and used in this way. See :ref:`Command Line Interface <local-deployment-cli>` for a full example.
+All options of the SKA-DLM can be explored and used in this way. See :ref:`Command Line Interface <local-development-cli>` for a full example.
 
 

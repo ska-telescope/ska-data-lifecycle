@@ -18,7 +18,7 @@ Then the package can be imported into python:
    >>> import ska_dlm
    >>> print(ska_dlm.__doc__)
 
-See :ref:`Python Script <local-deployment-python-script>` for a full example.
+See :ref:`Python Script <local-development-python-script>` for a full example.
 
 .. autosummary::
    :caption: Package API:
