@@ -22,7 +22,7 @@ ska-dlm storage init-location MyHost server
 
 # check if the storage MyDisk already exists
 ska-dlm storage query-storage --storage-name MyDisk
-# initialise storage (if it doesn't already exist)
+# initialise storage with root directory "/" (if it doesn't already exist)
 ska-dlm storage init-storage MyDisk disk posix / --location-name MyHost
 
 # check if a storage config for MyDisk is already known to DLM
