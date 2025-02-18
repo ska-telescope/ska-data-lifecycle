@@ -173,8 +173,6 @@ def register_data_item(  # noqa: C901
         uuid of parent item
     do_storage_access_check: bool, optional
         perform check_storage_access() against provided storage and uri
-    eb_id: str | None, optional
-        execution block ID provided by the client
     authorization: str
         Validated Bearer token with UserInfo
 
