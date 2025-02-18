@@ -21,7 +21,6 @@ _Note that at the time of writing (07 Feb 2025), due to a missing firewall excep
 
 **1. Prepare token to be placed in the header of your REST calls**
 
-To obtain an API token:
 * Open a browser and go to the `/token_by_auth_flow` endpoint on the DLM server URL. For example: `https://sdhp.stfc.skao.int/dp-yanda/dlm/token_by_auth_flow`.
 * Login with your SKAO credentials
 * If successful, a token will be returned. Copy the token.
