@@ -45,7 +45,7 @@ def _clear_database():
 
 @pytest.fixture(name="auth", scope="session", autouse=True)
 def setup_auth(env, request):
-    """Initialze Auth per session."""
+    """Initialize Auth per session."""
     # this should only run once per test suite
     if request.config.getoption("--auth"):
         token = get_token("admin", "admin", env.get_gateway_url())
@@ -58,7 +58,7 @@ def setup_auth(env, request):
 
 @pytest.fixture(scope="function", autouse=True)
 def setup(env):
-    """Initialze test storage and rclone configuration."""
+    """Initialize test storage and rclone configuration."""
     _clear_database()
 
     env.write_rclone_file_content(RCLONE_TEST_FILE_PATH, RCLONE_TEST_FILE_CONTENT)
