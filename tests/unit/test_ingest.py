@@ -104,7 +104,7 @@ def test_register_data_item_no_rclone_access(caplog, mock_storage_rclone_access_
         assert True
 
     try:
-        # In this case we mock the call after the check for storage access to reutrn
+        # In this case we mock the call after the check for storage access to return
         # from the method early. This forces the ValueAlreadyInDB exception...
         dlm_ingest.register_data_item(
             metadata=metadata, item_name=item_name, uri=uri, do_storage_access_check=False

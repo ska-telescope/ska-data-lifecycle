@@ -213,11 +213,12 @@ def register_data_item(  # noqa: C901
                 remote_file_path={repr(file_path)}"""
         )
 
+    # (3)
     ex_data_item = query_data_item(item_name=item_name, storage_id=storage_id)
     if ex_data_item:
         raise ValueAlreadyInDB(f"Item is already registered on storage! {item_name}")
 
-    # (3)
+    # (4)
     init_item = {
         "item_name": item_name,
         "storage_id": storage_id,
