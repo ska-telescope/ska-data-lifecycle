@@ -1,7 +1,4 @@
 global:
-  dataProduct:
-    api:
-      url: http://ska-dataproduct-dashboard-api-service.ci-dev-ska-dataproduct-dashboard.svc:8000
 
 gateway:
   enabled: true

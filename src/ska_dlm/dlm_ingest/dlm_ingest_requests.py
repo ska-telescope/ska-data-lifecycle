@@ -4,10 +4,8 @@ import logging
 from enum import Enum
 from typing import Annotated
 
-import requests
 from fastapi import FastAPI, Header, Request
 from fastapi.responses import JSONResponse
-from ska_sdp_dataproduct_metadata import MetaData
 
 import ska_dlm
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
@@ -138,7 +136,7 @@ def register_data_item(  # noqa: C901
     storage_id: str = "",
     parents: str | None = None,
     metadata: JsonObjectOption = None,
-    eb_id: str | None = None,
+    do_storage_access_check: bool = True,
     authorization: Annotated[str | None, Header()] = None,
 ) -> str:
     """Ingest a data_item (register function is an alias).
@@ -147,13 +145,12 @@ def register_data_item(  # noqa: C901
     It also checks whether a data_item is already registered on the requested storage.
 
     (1) check whether requested storage is known and accessible
-    (2) check whether item is accessible/exists on that storage
+    (2) check, if required, whether item is accessible/exists on that storage
     (3) check whether item is already registered on that storage
     (4) initialize the item on the storage
     (5) set the access path to the payload
     (6) set state to READY
     (7) save metadata in the data_item table
-    (8) notify the data dashboard
 
     Parameters
     ----------
@@ -171,8 +168,8 @@ def register_data_item(  # noqa: C901
         metadata provided by the client
     parents: str, optional
         uuid of parent item
-    eb_id: str | None, optional
-        execution block ID provided by the client
+    do_storage_access_check: bool, optional
+        perform check_storage_access() against provided storage and uri
     authorization: str
         Validated Bearer token with UserInfo
 
@@ -205,7 +202,7 @@ def register_data_item(  # noqa: C901
     file_path = f"{storages[0]['root_directory']}/{uri}".replace("//", "/")
 
     # (2)
-    if not check_storage_access(
+    if do_storage_access_check and not check_storage_access(
         storage_name=storage_name, storage_id=storage_id, remote_file_path=file_path
     ):
         raise UnmetPreconditionForOperation(
@@ -213,11 +210,12 @@ def register_data_item(  # noqa: C901
                 remote_file_path={repr(file_path)}"""
         )
 
+    # (3)
     ex_data_item = query_data_item(item_name=item_name, storage_id=storage_id)
     if ex_data_item:
         raise ValueAlreadyInDB(f"Item is already registered on storage! {item_name}")
 
-    # (3)
+    # (4)
     init_item = {
         "item_name": item_name,
         "storage_id": storage_id,
@@ -243,37 +241,4 @@ def register_data_item(  # noqa: C901
     metadata["item_name"] = item_name
     set_metadata(uid, metadata)
 
-    # (8)
-    notify_data_dashboard(metadata)  # TODO: don't notify DPD via REST
-
     return uid
-
-
-def notify_data_dashboard(metadata: dict | MetaData) -> None:
-    """HTTP POST MetaData json object to the Data Product Dashboard."""
-    headers = {"Content-Type": "application/json"}
-    url = CONFIG.DATA_PRODUCT_API.url + "/ingestnewmetadata"
-
-    if isinstance(metadata, MetaData):
-        metadata = metadata.get_data()
-
-    # Validation
-    payload = None
-    try:
-        if not isinstance(metadata, dict) or "execution_block" not in metadata:
-            raise TypeError(
-                f"metadata must contain an 'execution_block', got {type(metadata)} {metadata}"
-            )
-        payload = metadata
-    except (TypeError, ValueError) as err:
-        logger.error("Failed to parse metadata: %s. Not notifying dashboard.", err)
-
-    if payload is not None:
-        try:
-            resp = requests.request("POST", url, headers=headers, data=payload, timeout=2)
-            resp.raise_for_status()
-            logger.info(
-                "POSTed metadata (execution_block: %s) to %s", metadata["execution_block"], url
-            )
-        except requests.RequestException as err:
-            logger.exception("POST error notifying dataproduct dashboard at: %s - %s", url, err)

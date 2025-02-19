@@ -67,7 +67,6 @@ def register_data_item(
     storage_id: str = "",
     parents: str | None = None,
     metadata: JsonObjectOption = None,
-    eb_id: str | None = None,
 ) -> str:
     """Ingest a data_item (register function is an alias).
 
@@ -75,32 +74,38 @@ def register_data_item(
     It also checks whether a data_item is already registered on the requested storage.
 
     (1) check whether requested storage is known and accessible
-    (2) check whether item is accessible/exists on that storage
+    (2) check, if required, whether item is accessible/exists on that storage
     (3) check whether item is already registered on that storage
-    (4) initialize the new item with the same OID on the new storage
-    (5) set state to READY
-    (6) save metadata
-    (7) notify the data dashboard
+    (4) initialize the item on the storage
+    (5) set the access path to the payload
+    (6) set state to READY
+    (7) save metadata in the data_item table
 
     Parameters
     ----------
     item_name: str
-        could be empty, in which case the first 1000 items are returned
-    uri : str
-        the access path to the payload.
+        item name to register with. Does not need to be unique.
+    uri: str
+        the relative access path to the payload.
+    item_type: str
+        type of the data item (container, file)
     storage_name: str
         the name of the configured storage volume (name or ID required)
     storage_id: str, optional
         the ID of the configured storage.
     metadata: dict, optional
         metadata provided by the client
-    eb_id: str, optional
-        execution block ID provided by the client
+    parents: str, optional
+        uuid of parent item
+    do_storage_access_check: bool, optional
+        perform check_storage_access() against provided storage and uri
+    authorization: str
+        Validated Bearer token with UserInfo
 
     Returns
     -------
     str
-        created data_item UID
+        data_item UID
 
     Raises
     ------
