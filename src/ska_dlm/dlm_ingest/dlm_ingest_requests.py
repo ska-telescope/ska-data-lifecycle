@@ -244,33 +244,3 @@ def register_data_item(  # noqa: C901
     set_metadata(uid, metadata)
 
     return uid
-
-
-def notify_data_dashboard(metadata: dict | MetaData) -> None:
-    """HTTP POST MetaData json object to the Data Product Dashboard."""
-    headers = {"Content-Type": "application/json"}
-    url = CONFIG.DATA_PRODUCT_API.url + "/ingestnewmetadata"
-
-    if isinstance(metadata, MetaData):
-        metadata = metadata.get_data()
-
-    # Validation
-    payload = None
-    try:
-        if not isinstance(metadata, dict) or "execution_block" not in metadata:
-            raise TypeError(
-                f"metadata must contain an 'execution_block', got {type(metadata)} {metadata}"
-            )
-        payload = metadata
-    except (TypeError, ValueError) as err:
-        logger.error("Failed to parse metadata: %s. Not notifying dashboard.", err)
-
-    if payload is not None:
-        try:
-            resp = requests.request("POST", url, headers=headers, data=payload, timeout=2)
-            resp.raise_for_status()
-            logger.info(
-                "POSTed metadata (execution_block: %s) to %s", metadata["execution_block"], url
-            )
-        except requests.RequestException as err:
-            logger.exception("POST error notifying dataproduct dashboard at: %s - %s", url, err)

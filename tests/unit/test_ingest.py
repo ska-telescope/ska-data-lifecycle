@@ -76,7 +76,7 @@ def test_register_data_item(caplog, mock_init_data_item, mock_update_data_item):
     )
 
 
-def test_register_data_item_no_rclone_access(caplog, mock_storage_rclone_access_false):
+def test_register_data_item_no_rclone_access(mock_storage_rclone_access_false):
     """Test the registration of a data item with no rclone/storage access."""
 
     metadata = {"execution_block": "eb123"}  # Client-provided metadata
@@ -98,3 +98,6 @@ def test_register_data_item_no_rclone_access(caplog, mock_storage_rclone_access_
         assert False
     except ValueAlreadyInDB:
         assert True
+
+    # Assert that the check_storage_access mock was called
+    assert mock_storage_rclone_access_false.call_count == 1
