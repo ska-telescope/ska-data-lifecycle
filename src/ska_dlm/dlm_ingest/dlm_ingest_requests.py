@@ -153,7 +153,6 @@ def register_data_item(  # noqa: C901
     (5) set the access path to the payload
     (6) set state to READY
     (7) save metadata in the data_item table
-    (8) notify the data dashboard
 
     Parameters
     ----------
@@ -242,9 +241,6 @@ def register_data_item(  # noqa: C901
     metadata["uid"] = uid
     metadata["item_name"] = item_name
     set_metadata(uid, metadata)
-
-    # (8)
-    notify_data_dashboard(metadata)  # TODO: don't notify DPD via REST
 
     return uid
 
