@@ -9,6 +9,7 @@
 ### Changed
 
 * Updated the `requests.post` call in the client `register_data_item` function to send metadata as JSON in the request body.
+* Updated `register_data_item` with option `do_storage_access_check` to provide the client the abillity  to tell DLM server to not do `rclone_access` check.
 
 ## 0.2.0
 

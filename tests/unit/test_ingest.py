@@ -7,6 +7,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 from ska_dlm import dlm_ingest
+from ska_dlm.exceptions import UnmetPreconditionForOperation, ValueAlreadyInDB
 
 
 @pytest.fixture(name="mock_ingest_requests_storage", autouse=True)
@@ -24,6 +25,14 @@ def fixture_mock_ingest_requests_storage(mocker: MockerFixture):
     )
     mocker.patch("ska_dlm.dlm_storage.dlm_storage_requests.rclone_access", return_value=True)
     mocker.patch("ska_dlm.dlm_ingest.dlm_ingest_requests.check_storage_access", return_value=True)
+
+
+@pytest.fixture(name="mock_storage_rclone_access_false")
+def fixture_mock_storage_rclone_access_false(mocker: MockerFixture):
+    """Fixture to mock call to rclone access testing false."""
+    mocker.patch("ska_dlm.dlm_ingest.dlm_ingest_requests.check_storage_access", return_value=False)
+    # Hack to make register_data_item return early
+    mocker.patch("ska_dlm.dlm_ingest.dlm_ingest_requests.query_data_item", return_value=True)
 
 
 @pytest.fixture(name="mock_init_data_item")
@@ -65,3 +74,27 @@ def test_register_data_item(caplog, mock_init_data_item, mock_update_data_item):
             "metadata": {"execution_block": "eb123", "uid": "test-uid", "item_name": "test-item"}
         },
     )
+
+
+def test_register_data_item_no_rclone_access(caplog, mock_storage_rclone_access_false):
+    """Test the registration of a data item with no rclone/storage access."""
+
+    metadata = {"execution_block": "eb123"}  # Client-provided metadata
+    item_name = "test-item"
+    uri = "test-uri"
+
+    try:
+        dlm_ingest.register_data_item(metadata=metadata, item_name=item_name, uri=uri)
+        assert False
+    except UnmetPreconditionForOperation:
+        assert True
+
+    try:
+        # In this case we mock the call after the check for storage access to return
+        # from the method early. This forces the ValueAlreadyInDB exception...
+        dlm_ingest.register_data_item(
+            metadata=metadata, item_name=item_name, uri=uri, do_storage_access_check=False
+        )
+        assert False
+    except ValueAlreadyInDB:
+        assert True

@@ -341,7 +341,7 @@ def rclone_access(volume: str, remote_file_path: str = "", config: dict | None =
     logger.info("rclone access check: %s, %s", request_url, post_data)
     request = requests.post(request_url, post_data, timeout=10)
     if request.status_code != 200 or not request.json()["item"]:
-        logger.info("rclone does not have access: %s, %s", request.status_code, request.json())
+        logger.warning("rclone does not have access: %s, %s", request.status_code, request.json())
         return False
     return True
 
