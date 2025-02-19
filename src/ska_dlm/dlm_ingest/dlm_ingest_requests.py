@@ -4,10 +4,8 @@ import logging
 from enum import Enum
 from typing import Annotated
 
-import requests
 from fastapi import FastAPI, Header, Request
 from fastapi.responses import JSONResponse
-from ska_sdp_dataproduct_metadata import MetaData
 
 import ska_dlm
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
@@ -153,7 +151,6 @@ def register_data_item(  # noqa: C901
     (5) set the access path to the payload
     (6) set state to READY
     (7) save metadata in the data_item table
-    (8) notify the data dashboard
 
     Parameters
     ----------
@@ -244,37 +241,4 @@ def register_data_item(  # noqa: C901
     metadata["item_name"] = item_name
     set_metadata(uid, metadata)
 
-    # (8)
-    notify_data_dashboard(metadata)  # TODO: don't notify DPD via REST
-
     return uid
-
-
-def notify_data_dashboard(metadata: dict | MetaData) -> None:
-    """HTTP POST MetaData json object to the Data Product Dashboard."""
-    headers = {"Content-Type": "application/json"}
-    url = CONFIG.DATA_PRODUCT_API.url + "/ingestnewmetadata"
-
-    if isinstance(metadata, MetaData):
-        metadata = metadata.get_data()
-
-    # Validation
-    payload = None
-    try:
-        if not isinstance(metadata, dict) or "execution_block" not in metadata:
-            raise TypeError(
-                f"metadata must contain an 'execution_block', got {type(metadata)} {metadata}"
-            )
-        payload = metadata
-    except (TypeError, ValueError) as err:
-        logger.error("Failed to parse metadata: %s. Not notifying dashboard.", err)
-
-    if payload is not None:
-        try:
-            resp = requests.request("POST", url, headers=headers, data=payload, timeout=2)
-            resp.raise_for_status()
-            logger.info(
-                "POSTed metadata (execution_block: %s) to %s", metadata["execution_block"], url
-            )
-        except requests.RequestException as err:
-            logger.exception("POST error notifying dataproduct dashboard at: %s - %s", url, err)

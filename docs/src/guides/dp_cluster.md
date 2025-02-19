@@ -11,7 +11,6 @@ This section outlines the steps required to ingest and migrate data within the D
 5. Ingest the files into DLM one-by-one
 6. Instruct DLM to migrate the newly ingested item to a secondary storage
 7. Query the location of all copies of the item
-8. Access the items via the [Data Product Dashboard](https://developer.skao.int/projects/ska-dataproduct-dashboard/en/latest/?badge=latest)
 
 
 **The source code below demonstrates how to register a data item that exists on an external storage (e.g., Acacia).**
@@ -172,11 +171,3 @@ response = session.get(
 )
 print(response.json())
 ```
-
-**8. Access via Data Product Dashboard**
-
-At time of writing, here are the known medium-term deployments of the DLM system:
-
-| Location                         | Data Lifecycle Management URL           | Data Product Dashboard URL                                                  |
-| -------------------------------- | --------------------------------------- | --------------------------------------------------------------------------- |
-| DP Integration (yanda namespace) | https://sdhp.stfc.skao.int/dp-yanda/dlm | https://sdhp.stfc.skao.int/integration-ska-dataproduct-dashboard/dashboard/ |

@@ -18,5 +18,3 @@ data:
       base_url: "http://{{ include "ska-dlm.fullname" . }}-postgrest.{{ .Release.Namespace }}.svc.cluster.local"
     RCLONE:
       url: "http://{{ include "ska-dlm.fullname" . }}-rclone.{{ .Release.Namespace }}.svc.cluster.local"
-    DATA_PRODUCT_API:
-      url: {{ $.Values.global.dataProduct.api.url }}
