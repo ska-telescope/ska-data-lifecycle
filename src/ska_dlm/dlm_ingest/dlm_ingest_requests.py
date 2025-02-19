@@ -4,10 +4,8 @@ import logging
 from enum import Enum
 from typing import Annotated
 
-import requests
 from fastapi import FastAPI, Header, Request
 from fastapi.responses import JSONResponse
-from ska_sdp_dataproduct_metadata import MetaData
 
 import ska_dlm
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper

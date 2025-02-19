@@ -121,8 +121,6 @@ k8s-test:
   - |-
     echo "Status of pods in $KUBE_NAMESPACE namespace:"
     kubectl get pods -n $KUBE_NAMESPACE -o jsonpath="{range .items[*]}{'Pod: '}{.metadata.name}:{'\n'}{'\t'}{'Image: '}{.spec.containers[*].image}{'\n'}{'\t'}{'Status: '}{.status.phase}{'\n'}{end}{'\n'}"
-    echo "Addresses to connect to the deployment of the Dataproduct Dashboard: "
-    echo "  https://sdhp.stfc.skao.int/$KUBE_NAMESPACE/dashboard/"
     echo "Backend API:"
     echo "  https://sdhp.stfc.skao.int/$KUBE_NAMESPACE/api/"
     make k8s-info

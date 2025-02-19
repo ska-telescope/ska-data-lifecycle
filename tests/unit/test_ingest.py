@@ -30,9 +30,17 @@ def fixture_mock_ingest_requests_storage(mocker: MockerFixture):
 @pytest.fixture(name="mock_storage_rclone_access_false")
 def fixture_mock_storage_rclone_access_false(mocker: MockerFixture):
     """Fixture to mock call to rclone access testing false."""
-    mocker.patch("ska_dlm.dlm_ingest.dlm_ingest_requests.check_storage_access", return_value=False)
-    # Hack to make register_data_item return early
-    mocker.patch("ska_dlm.dlm_ingest.dlm_ingest_requests.query_data_item", return_value=True)
+    return mocker.patch(
+        "ska_dlm.dlm_ingest.dlm_ingest_requests.check_storage_access", return_value=False
+    )
+
+
+@pytest.fixture(name="mock_query_data_item")
+def fixture_mock_query_data_item(mocker: MockerFixture):
+    """Hack to make register_data_item return early."""
+    return mocker.patch(
+        "ska_dlm.dlm_ingest.dlm_ingest_requests.query_data_item", return_value=True
+    )
 
 
 @pytest.fixture(name="mock_init_data_item")
@@ -76,7 +84,9 @@ def test_register_data_item(caplog, mock_init_data_item, mock_update_data_item):
     )
 
 
-def test_register_data_item_no_rclone_access(mock_storage_rclone_access_false):
+def test_register_data_item_no_rclone_access(
+    mock_storage_rclone_access_false, mock_query_data_item
+):
     """Test the registration of a data item with no rclone/storage access."""
 
     metadata = {"execution_block": "eb123"}  # Client-provided metadata
@@ -101,3 +111,4 @@ def test_register_data_item_no_rclone_access(mock_storage_rclone_access_false):
 
     # Assert that the check_storage_access mock was called
     assert mock_storage_rclone_access_false.call_count == 1
+    assert mock_query_data_item.call_count == 1

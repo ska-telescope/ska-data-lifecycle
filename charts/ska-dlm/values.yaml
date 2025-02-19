@@ -16,8 +16,6 @@ global:
       name: default-pvc
       create: false  # create or use existing pvc
       storageSize: 2Gi  # created claim size
-    api:
-      url: "http://localhost:8000"
 
 nameOverride: ""
 fullnameOverride: ""
