@@ -129,7 +129,7 @@ def init_data_item(
 @rest.post("/ingest/register_data_item", response_model=str)
 def register_data_item(  # noqa: C901
     # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals
-    item_name: str,
+    item_name: str,  # TODO: YAN-2002
     uri: str,
     item_type: ItemType = ItemType.FILE,
     storage_name: str = "",
@@ -155,7 +155,7 @@ def register_data_item(  # noqa: C901
     Parameters
     ----------
     item_name: str
-        item name to register with. Does not need to be unique.
+        item name to register with. Does not need to be unique.  # TODO: YAN-2002
     uri: str
         the relative access path to the payload.
     item_type: str
