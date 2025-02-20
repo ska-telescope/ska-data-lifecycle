@@ -1,8 +1,8 @@
 # https://helm.sh/docs/developing_charts/
 apiVersion: v2
 name: ska-dlm
-version: 0.2.0
-appVersion: 0.2.0
+version: 1.0.0
+appVersion: 1.0.0
 description: SKA Data Lifecycle Manager
 home: https://developer.skao.int/projects/
 sources:
