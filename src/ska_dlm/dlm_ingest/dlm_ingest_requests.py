@@ -155,7 +155,7 @@ def register_data_item(  # noqa: C901
     Parameters
     ----------
     item_name: str
-        item name to register with. Does not need to be unique.  # TODO: YAN-2002
+        item name to register with. Does not need to be unique.
     uri: str
         the relative access path to the payload.
     item_type: str
