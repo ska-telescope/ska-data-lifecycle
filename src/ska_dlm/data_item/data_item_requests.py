@@ -1,27 +1,84 @@
 """Convenience functions to update data_item records."""
 
 import logging
-from typing import Literal
 
+from fastapi import APIRouter
+
+from ska_dlm import CONFIG
+from ska_dlm.dlm_db.db_access import DB
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
 from ska_dlm.exceptions import InvalidQueryParameters
-from ska_dlm.typer_types import JsonContainerOption, JsonObjectOption
-
-from .. import CONFIG
-from ..dlm_db.db_access import DB
-from ..dlm_request import query_data_item
+from ska_dlm.fastapi_utils import fastapi_auto_annotate
+from ska_dlm.typer_types import JsonObjectOption
 
 logger = logging.getLogger(__name__)
 
 cli = ExceptionHandlingTyper()
 
+rest = fastapi_auto_annotate(APIRouter())
 
+
+@cli.command()
+@rest.get("/request/query_data_item", response_model=list[dict])
+def query_data_item(
+    item_name: str = "",
+    oid: str = "",
+    uid: str = "",
+    storage_id: str = "",
+    params: str | None = None,  # TODO: meant to be dict | None
+) -> list[dict]:
+    """Query a data_item.
+
+    At least one of item_name, oid, uid, or params is required.
+
+    Parameters
+    ----------
+    item_name : str
+        could be empty, in which case the first 1000 items are returned.
+    oid : str
+        Return data_items referred to by the OID provided.
+    uid : str
+        Return data_item referred to by the UID provided.
+    storage_id : str
+        Return data_item referred to by a given storage_id.
+    params : str | None
+        specify the query parameters
+
+    Raises
+    ------
+    InvalidQueryParameters
+        bad value.
+
+    Returns
+    -------
+    list[dict]
+        data item ids.
+    """
+    if bool(params) == (item_name or oid or uid):
+        raise InvalidQueryParameters("give either params or item_name/oid/uid")
+    params = dict(params) if params else {}
+    params["limit"] = 1000
+    if item_name:
+        params["item_name"] = f"eq.{item_name}"
+    elif oid:
+        params["oid"] = f"eq.{oid}"
+    elif uid:
+        params["uid"] = f"eq.{uid}"
+
+    if storage_id:
+        params["storage_id"] = f"eq.{storage_id}"
+
+    return DB.select(CONFIG.DLM.dlm_table, params=params)
+
+
+@cli.command()
+@rest.patch("/request/update_data_item", response_model=dict)
 def update_data_item(
     item_name: str = "",
     oid: str = "",
     uid: str = "",
-    post_data: JsonContainerOption = None,
-) -> str | Literal[True]:
+    post_data: JsonObjectOption = None,
+) -> dict:
     """Update fields of an existing data_item.
 
     This is mostly used by the other convenience functions. In general when specifying
@@ -35,12 +92,13 @@ def update_data_item(
         the OID of the data_items to be updated
     uid : str
         the UID of the data_item to be updated
-    post_data : dict | list[dict]
+    post_data : dict
         the json formatted update data, compatible with postgREST
 
     Returns
     -------
-    str | Literal[True]
+    dict
+        the updated data item entry
 
     Raises
     ------
@@ -60,7 +118,8 @@ def update_data_item(
 
 
 @cli.command()
-def set_uri(uid: str, uri: str, storage_id: str):
+@rest.patch("/request/set_uri", response_model=dict)
+def set_uri(uid: str, uri: str, storage_id: str) -> dict:
     """Set the URI field of the uid data_item.
 
     Parameters
@@ -72,11 +131,12 @@ def set_uri(uid: str, uri: str, storage_id: str):
     storage_id : str
         the storage_id associated with the URI
     """
-    update_data_item(uid=uid, post_data={"uri": uri, "storage_id": storage_id})
+    return update_data_item(uid=uid, post_data={"uri": uri, "storage_id": storage_id})
 
 
 @cli.command()
-def set_metadata(uid: str, metadata_post: JsonContainerOption = None):
+@rest.patch("/request/set_metadata", response_model=dict)
+def set_metadata(uid: str, metadata_post: JsonObjectOption = None) -> dict:
     """
     Populate the metadata column for a data_item with the metadata.
 
@@ -84,14 +144,15 @@ def set_metadata(uid: str, metadata_post: JsonContainerOption = None):
     ----------
     uid : str
         the UID of the data_item to be updated
-    metadata_post : dict | list
+    metadata_post : dict
         a metadata JSON string
     """
-    update_data_item(uid=uid, post_data={"metadata": metadata_post})
+    return update_data_item(uid=uid, post_data={"metadata": metadata_post})
 
 
 @cli.command()
-def set_state(uid: str, state: str) -> str | Literal[True]:
+@rest.patch("/request/set_state", response_model=dict)
+def set_state(uid: str, state: str) -> dict:
     """Set the state field of the uid data_item.
 
     Parameters
@@ -103,13 +164,15 @@ def set_state(uid: str, state: str) -> str | Literal[True]:
 
     Returns
     -------
-    str | Literal[True]
+    dict
+        the updated data item entry
     """
     return update_data_item(uid=uid, post_data={"item_state": state})
 
 
 @cli.command()
-def set_oid_expiration(oid: str, expiration: str) -> str:
+@rest.patch("/request/set_oid_expiration", response_model=dict)
+def set_oid_expiration(oid: str, expiration: str) -> dict:
     """Set the oid_expiration field of the data_items with the given OID.
 
     Parameters
@@ -121,13 +184,15 @@ def set_oid_expiration(oid: str, expiration: str) -> str:
 
     Returns
     -------
-    str
+    dict
+        the updated data item entry
     """
     return update_data_item(oid=oid, post_data={"oid_expiration": expiration})
 
 
 @cli.command()
-def set_uid_expiration(uid: str, expiration: str) -> str | Literal[True]:
+@rest.patch("/request/set_uid_expiration", response_model=dict)
+def set_uid_expiration(uid: str, expiration: str) -> dict:
     """Set the uid_expiration field of the data_item with the given UID.
 
     Parameters
@@ -139,13 +204,15 @@ def set_uid_expiration(uid: str, expiration: str) -> str | Literal[True]:
 
     Returns
     -------
-    str | Literal[True]
+    dict
+        the updated data item entry
     """
     return update_data_item(uid=uid, post_data={"uid_expiration": expiration})
 
 
 @cli.command()
-def set_user(oid: str = "", uid: str = "", user: str = "SKA") -> str | Literal[True]:
+@rest.patch("/request/set_user", response_model=dict)
+def set_user(oid: str = "", uid: str = "", user: str = "SKA") -> dict:
     """
     Set the user field of the data_item(s) with the given OID or UID.
 
@@ -160,7 +227,8 @@ def set_user(oid: str = "", uid: str = "", user: str = "SKA") -> str | Literal[T
 
     Returns
     -------
-    str | Literal[True]
+    dict
+        the updated data item entry
 
     Raises
     ------
@@ -174,7 +242,8 @@ def set_user(oid: str = "", uid: str = "", user: str = "SKA") -> str | Literal[T
 
 
 @cli.command()
-def set_group(oid: str = "", uid: str = "", group: str = "SKA") -> str | Literal[True]:
+@rest.patch("/request/set_group", response_model=dict)
+def set_group(oid: str = "", uid: str = "", group: str = "SKA") -> dict:
     """
     Set the user field of the data_item(s) with the given OID or UID.
 
@@ -189,7 +258,8 @@ def set_group(oid: str = "", uid: str = "", group: str = "SKA") -> str | Literal
 
     Returns
     -------
-    str | Literal[True]
+    dict
+        the updated data item entry
 
     Raises
     ------
@@ -203,7 +273,8 @@ def set_group(oid: str = "", uid: str = "", group: str = "SKA") -> str | Literal
 
 
 @cli.command()
-def set_acl(oid: str = "", uid: str = "", acl: str = "{}") -> str | Literal[True]:
+@rest.patch("/request/set_acl", response_model=dict)
+def set_acl(oid: str = "", uid: str = "", acl: str = "{}") -> dict:
     """
     Set the user field of the data_item(s) with the given OID or UID.
 
@@ -218,7 +289,8 @@ def set_acl(oid: str = "", uid: str = "", acl: str = "{}") -> str | Literal[True
 
     Returns
     -------
-    str | Literal[True]
+    dict
+        the updated data item entry
 
     Raises
     ------
@@ -232,7 +304,8 @@ def set_acl(oid: str = "", uid: str = "", acl: str = "{}") -> str | Literal[True
 
 
 @cli.command()
-def set_phase(uid: str, phase: str) -> str | Literal[True]:
+@rest.patch("/request/set_phase", response_model=dict)
+def set_phase(uid: str, phase: str) -> dict:
     """
     Set the phase field of the data_item(s) with given UID.
 
@@ -245,15 +318,17 @@ def set_phase(uid: str, phase: str) -> str | Literal[True]:
 
     Returns
     -------
-    str | Literal[True]
+    dict
+        the updated data item entry
     """
     return update_data_item(uid=uid, post_data={"item_phase": phase})
 
 
 @cli.command()
+@rest.patch("/request/update_item_tags", response_model=dict)
 def update_item_tags(
     item_name: str = "", oid: str = "", item_tags: JsonObjectOption = None
-) -> bool:
+) -> dict:
     """
     Update/set the item_tags field of a data_item with given item_name/OID.
 
@@ -271,17 +346,18 @@ def update_item_tags(
 
     Returns
     -------
-    bool
+    dict
+        the updated data item entry
     """
     if (not item_name and not oid) or not item_tags:
-        logger.error("Either item_name or OID or item_tags are missing")
-        return False
+        raise InvalidQueryParameters("Either item_name or OID or item_tags are missing")
 
     result = query_data_item(item_name, oid)
     if not result:
-        return False
+        raise InvalidQueryParameters("item_name or OID not found")
+
     oid, existing_tags = (result[0]["oid"], result[0]["item_tags"])
     tags = {} if not existing_tags else existing_tags
-    print(f"Existing tags: {tags}")
+    logging.info("Updating tags: %s with %s", tags, item_tags)
     tags.update(item_tags)  # merge existing with new ones
-    return bool(update_data_item(oid=oid, post_data={"item_tags": tags}))
+    return update_data_item(oid=oid, post_data={"item_tags": tags})
