@@ -7,6 +7,7 @@
 ### Added
 
 * Benchmark utility for DLM migration.
+* PostgREST connection details can be now obtained from Vault.
 
 ### Removed
 
