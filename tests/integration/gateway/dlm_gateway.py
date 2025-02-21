@@ -361,7 +361,7 @@ async def _reverse_proxy(request: Request):
         raise HTTPException(500, str(e))
 
 
-app.add_route("/request/{path:path}", _reverse_proxy, ["GET", "POST"])
+app.add_route("/request/{path:path}", _reverse_proxy, ["GET", "POST", "PATCH"])
 app.add_route("/storage/{path:path}", _reverse_proxy, ["GET", "POST"])
 app.add_route("/ingest/{path:path}", _reverse_proxy, ["GET", "POST"])
 app.add_route("/migration/{path:path}", _reverse_proxy, ["GET", "POST"])

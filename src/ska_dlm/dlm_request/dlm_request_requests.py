@@ -8,11 +8,14 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 import ska_dlm
-from ska_dlm.dlm_db.db_access import DB
+
+#  pylint: disable-next=wildcard-import,unused-wildcard-import
+from ska_dlm.data_item.data_item_requests import *  # noqa
+from ska_dlm.data_item.data_item_requests import query_data_item
+from ska_dlm.data_item.data_item_requests import rest as data_item_requests
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
 from ska_dlm.fastapi_utils import fastapi_auto_annotate
 
-from .. import CONFIG
 from ..exceptions import InvalidQueryParameters
 
 logger = logging.getLogger(__name__)
@@ -28,6 +31,7 @@ rest = fastapi_auto_annotate(
         license_info={"name": "BSD-3-Clause", "identifier": "BSD-3-Clause"},
     )
 )
+rest.include_router(data_item_requests)
 
 
 # pylint: disable=unused-argument
@@ -38,60 +42,6 @@ def invalidquery_exception_handler(request: Request, exc: InvalidQueryParameters
         status_code=422,
         content={"exec": "InvalidQueryParameters", "message": f"{str(exc)}"},
     )
-
-
-@cli.command()
-@rest.get("/request/query_data_item", response_model=list[dict])
-# TODO: add option to query for a data_item in a specific storage
-def query_data_item(
-    item_name: str = "",
-    oid: str = "",
-    uid: str = "",
-    storage_id: str = "",
-    params: str | None = None,
-) -> list[dict]:
-    """Query a data_item.
-
-    At least one of item_name, oid, uid, or params is required.
-
-    Parameters
-    ----------
-    item_name : str
-        could be empty, in which case the first 1000 items are returned.
-    oid : str
-        Return data_items referred to by the OID provided.
-    uid : str
-        Return data_item referred to by the UID provided.
-    storage_id : str
-        Return data_item referred to by a given storage_id.
-    params : str | None
-        specify the query parameters
-
-    Raises
-    ------
-    InvalidQueryParameters
-        bad value.
-
-    Returns
-    -------
-    list[dict]
-        data item ids.
-    """
-    if bool(params) == (item_name or oid or uid):
-        raise InvalidQueryParameters("give either params or item_name/oid/uid")
-    params = dict(params) if params else {}
-    params["limit"] = 1000
-    if item_name:
-        params["item_name"] = f"eq.{item_name}"
-    elif oid:
-        params["oid"] = f"eq.{oid}"
-    elif uid:
-        params["uid"] = f"eq.{uid}"
-
-    if storage_id:
-        params["storage_id"] = f"eq.{storage_id}"
-
-    return DB.select(CONFIG.DLM.dlm_table, params=params)
 
 
 @rest.get("/request/query_expired", response_model=list[dict])

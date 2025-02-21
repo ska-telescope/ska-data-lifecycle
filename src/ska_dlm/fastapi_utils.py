@@ -17,6 +17,7 @@ from typing_extensions import _AnnotatedAlias
 
 ParamsT = ParamSpec("ParamsT")
 ReturnT = TypeVar("ReturnT")
+RoutableT = TypeVar("RoutableT", fastapi.FastAPI, fastapi.APIRouter)
 
 
 def get_underlying_type(annotation: type | UnionType | _AnnotatedAlias) -> tuple[type, ...]:
@@ -26,7 +27,7 @@ def get_underlying_type(annotation: type | UnionType | _AnnotatedAlias) -> tuple
     return get_args(annotation) if isinstance(annotation, UnionType) else (annotation,)
 
 
-def fastapi_auto_annotate(app: fastapi.FastAPI) -> fastapi.FastAPI:
+def fastapi_auto_annotate(app: RoutableT) -> RoutableT:
     """Automatically applies `fastapi_docstring_annotate` to all FastAPI app routes."""
 
     def api_route(self: fastapi.APIRouter, path: str, *_, **kwargs):
@@ -38,7 +39,10 @@ def fastapi_auto_annotate(app: fastapi.FastAPI) -> fastapi.FastAPI:
 
         return decorator
 
-    app.router.api_route = types.MethodType(api_route, app.router)
+    if isinstance(app, fastapi.FastAPI):
+        app.router.api_route = types.MethodType(api_route, app.router)
+    elif isinstance(app, fastapi.APIRouter):
+        app.api_route = types.MethodType(api_route, app)
     return app
 
 
