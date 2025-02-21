@@ -34,6 +34,19 @@ spec:
     metadata:
       labels:
         {{- include "ska-dlm.postgrest.labels" . | indent 8 }}
+      {{- if .Values.postgrest.vault.enabled }}
+      annotations:
+        vault.hashicorp.com/agent-inject: "true"
+        vault.hashicorp.com/agent-inject-status: "update"
+        vault.hashicorp.com/role: "kube-role"
+        vault.hashicorp.com/agent-inject-secret-postgrest-config.conf: "{{ .Values.postgrest.vault.path }}"
+        vault.hashicorp.com/agent-inject-template-postgrest-config.conf: |-
+          {{`{{- with secret `}}"{{ .Values.postgrest.vault.path }}"{{` }}
+            {{- range $k, $v := .Data.data }}
+              {{ $k }} = "{{ $v }}"
+            {{- end }}
+          {{- end }}`}}
+      {{- end }}
     spec:
       {{- if .Values.postgresql.enabled }}
       initContainers:
@@ -60,11 +73,15 @@ spec:
             port: 3001
           initialDelaySeconds: 5
           periodSeconds: 5
+        {{- if .Values.postgrest.vault.enabled }}
+        command:
+          - /bin/postgrest
+          - /vault/secrets/postgrest-config.conf
+        {{- end }}
         env:
+          {{/* DB uri/schema are set via config file when using the vault */}}
           {{ $env := dict
-            "PGRST_DB_URI" (include "ska-dlm.postgrest.postgresql.uri" .)
             "PGRST_SERVER_PORT" 3001
-            "PGRST_DB_SCHEMA" .Values.postgrest.db_schema
             "PGRST_DB_ANON_ROLE" .Values.postgrest.db_anon_role
             "PGRST_DB_POOL" .Values.postgresql.db_pool
             "PGRST_SERVER_HOST" .Values.postgrest.server_host
@@ -73,6 +90,10 @@ spec:
             "PGRST_PRE_REQUEST" .Values.postgrest.pre_request
             "PGRST_ROLE_CLAIM_KEY" .Values.postgrest.role_claim_key
           }}
+          {{ if not .Values.postgrest.vault.enabled }}
+          {{ $_ := set $env "PGRST_DB_URI" (include "ska-dlm.postgrest.postgresql.uri" .) }}
+          {{ $_ := set $env "PGRST_DB_SCHEMA" .Values.postgrest.db_schema }}
+          {{- end }}
           {{- range $envvar_name, $value := $env }}
           {{- if $value }}
           - name: {{ $envvar_name }}

@@ -63,7 +63,7 @@ postgrest:
   imagePullPolicy: Always
 
   replicas: 1
-  db_uri: ""  # no value auto-generates to test postgresql database
+  db_uri: ""  # no value auto-generates to test postgresql database, or gets it from vault
   db_schema: public
   db_anon_role: ska_dlm_admin
   db_pool: 10
@@ -72,6 +72,10 @@ postgrest:
   max_rows: ""
   pre_request: ""
   role_claim_key: '.role'
+
+  vault:
+    enabled: false
+    path: ""
 
 rclone:
   component: rclone
