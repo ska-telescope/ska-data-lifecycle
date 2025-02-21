@@ -24,7 +24,7 @@ fullnameOverride: ""
 request:
   component: request
   subsystem: data-lifecycle-management
-  image: harbor.skao.int/production/ska-data-lifecycle
+  image: artefact.skao.int/ska-data-lifecycle
   version: "1.0.0"
   imagePullPolicy: Always
   replicas: 1
@@ -32,7 +32,7 @@ request:
 migration:
   component: migration
   subsystem: data-lifecycle-management
-  image: harbor.skao.int/production/ska-data-lifecycle
+  image: artefact.skao.int/ska-data-lifecycle
   version: "1.0.0"
   imagePullPolicy: Always
   replicas: 1
@@ -40,7 +40,7 @@ migration:
 storage:
   component: storage
   subsystem: data-lifecycle-management
-  image: harbor.skao.int/production/ska-data-lifecycle
+  image: artefact.skao.int/ska-data-lifecycle
   version: "1.0.0"
   imagePullPolicy: Always
   replicas: 1
@@ -48,7 +48,7 @@ storage:
 ingest:
   component: ingest
   subsystem: data-lifecycle-management
-  image: harbor.skao.int/production/ska-data-lifecycle
+  image: artefact.skao.int/ska-data-lifecycle
   version: "1.0.0"
   imagePullPolicy: Always
   replicas: 1
