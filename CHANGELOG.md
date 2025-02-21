@@ -2,6 +2,10 @@
 
 ## Development
 
+### Added
+
+* PostgREST connection details can be now obtained from Vault.
+
 ### Removed
 
 * Removed dependency on `casacore` and `ska-sdp-metadata-generator` module.
