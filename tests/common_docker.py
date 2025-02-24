@@ -6,6 +6,7 @@ from pathlib import Path
 
 from overrides import override
 
+import tests.integration.client.data_item_client as data_item_requests
 import tests.integration.client.dlm_ingest_client as dlm_ingest_requests
 import tests.integration.client.dlm_migration_client as dlm_migration_requests
 import tests.integration.client.dlm_request_client as dlm_request_requests
@@ -28,6 +29,7 @@ class DlmTestClientDocker(DlmTestClient):
         dlm_storage_requests.STORAGE_URL = "http://dlm_gateway:8000"
         dlm_ingest_requests.INGEST_URL = "http://dlm_gateway:8000"
         dlm_request_requests.REQUEST_URL = "http://dlm_gateway:8000"
+        data_item_requests.REQUEST_URL = "http://dlm_gateway:8000"
         dlm_migration_requests.MIGRATION_URL = "http://dlm_gateway:8000"
 
     @property
@@ -37,6 +39,10 @@ class DlmTestClientDocker(DlmTestClient):
     @property
     def request_requests(self):
         return dlm_request_requests
+
+    @property
+    def data_item_requests(self):
+        return data_item_requests
 
     @property
     def ingest_requests(self):
