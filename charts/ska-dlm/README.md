@@ -10,6 +10,11 @@ The main options of interest are:
  * `postgresql.initialise`: if enabled, the DLM tables will be created automatically in the database.
  * `postgresql.primary.persistence.enabled`: if enabled, PostgreSQL will persist data between executions, otherwise it will start from scratch each time.
 
+The PostgreSQL connection information can be stored in a secret in Vault.
+It should contain the following keys:
+
+ * `db-uri`: the full `postgres://...` postgresql connection URI.
+ * `db-schema`: the database schema to use.
 
 ## Test Deployment
 
