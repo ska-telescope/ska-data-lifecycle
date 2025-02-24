@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ska_data_lifecycle"
-version = "0.2.0"
+version = "1.0.0"
 description = "Services for managing the lifecycle of SKA data products"
 authors = [
     "Andreas Wicenec <andreas.wicenec@icrar.org>",

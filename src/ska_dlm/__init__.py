@@ -12,10 +12,9 @@ from pathlib import Path
 import yaml
 from benedict import benedict
 
-# from . import dlm_db, dlm_ingest, dlm_migration, dlm_request, dlm_storage
 from . import dlm_db
 
-__version__ = "0.2.0"
+__version__ = "1.0.0"
 
 DLM_LIB_DIR = Path(__file__).parent
 """The library install path of dlm."""

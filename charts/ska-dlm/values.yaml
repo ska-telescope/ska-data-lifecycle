@@ -24,32 +24,32 @@ fullnameOverride: ""
 request:
   component: request
   subsystem: data-lifecycle-management
-  image: harbor.skao.int/production/ska-data-lifecycle
-  version: "0.2.0"
+  image: artefact.skao.int/ska-data-lifecycle
+  version: "1.0.0"
   imagePullPolicy: Always
   replicas: 1
 
 migration:
   component: migration
   subsystem: data-lifecycle-management
-  image: harbor.skao.int/production/ska-data-lifecycle
-  version: "0.2.0"
+  image: artefact.skao.int/ska-data-lifecycle
+  version: "1.0.0"
   imagePullPolicy: Always
   replicas: 1
 
 storage:
   component: storage
   subsystem: data-lifecycle-management
-  image: harbor.skao.int/production/ska-data-lifecycle
-  version: "0.2.0"
+  image: artefact.skao.int/ska-data-lifecycle
+  version: "1.0.0"
   imagePullPolicy: Always
   replicas: 1
 
 ingest:
   component: ingest
   subsystem: data-lifecycle-management
-  image: harbor.skao.int/production/ska-data-lifecycle
-  version: "0.2.0"
+  image: artefact.skao.int/ska-data-lifecycle
+  version: "1.0.0"
   imagePullPolicy: Always
   replicas: 1
 
@@ -126,7 +126,7 @@ gateway:
   component: gateway
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-test-gateway
-  version: "0.2.0"
+  version: "1.0.0"
   imagePullPolicy: Always
   replicas: 1
   vault:
@@ -140,7 +140,7 @@ keycloak:
   ##image: quay.io/keycloak/keycloak
   # version: "25.0"
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-test-keycloak
-  version: "0.2.0"
+  version: "1.0.0"
   imagePullPolicy: Always
   replicas: 1
   use_https: true
