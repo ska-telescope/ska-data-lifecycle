@@ -51,6 +51,7 @@ def setup_auth(env, request):
         token = get_token("admin", "admin", env.get_gateway_url())
         token = token["access_token"]
         env.request_requests.TOKEN = token
+        env.data_item_requests.TOKEN = token
         env.ingest_requests.TOKEN = token
         env.storage_requests.TOKEN = token
         env.migration_requests.TOKEN = token
@@ -137,7 +138,7 @@ def test_query_expired(env):
         pytest.skip("Unprocessable Entity")
 
     __initialize_data_item(env)
-    uid = env.request_requests.query_data_item()[0]["uid"]
+    uid = env.data_item_requests.query_data_item()[0]["uid"]
     offset = datetime.timedelta(days=1)
     data_item.set_state(uid=uid, state="READY")
     result = env.request_requests.query_expired(offset)
@@ -158,10 +159,10 @@ def test_set_uri_state_phase(env):
     uid = env.ingest_requests.init_data_item(item_name="this/is/the/first/test/item")
     storage_id = env.storage_requests.query_storage(storage_name="MyDisk")[0]["storage_id"]
     data_item.set_uri(uid, TEST_URI, storage_id)
-    assert env.request_requests.query_data_item(uid=uid)[0]["uri"] == TEST_URI
+    assert env.data_item_requests.query_data_item(uid=uid)[0]["uri"] == TEST_URI
     data_item.set_state(uid, "READY")
     data_item.set_phase(uid, "PLASMA")
-    items = env.request_requests.query_data_item(uid=uid)
+    items = env.data_item_requests.query_data_item(uid=uid)
     assert len(items) == 1
     assert items[0]["item_state"] == "READY"
     assert items[0]["item_phase"] == "PLASMA"
@@ -176,7 +177,7 @@ def test_delete_item_payload(env):
     uid = env.ingest_requests.register_data_item(item_name=fpath, uri=fpath, storage_name="MyDisk")
     data_item.set_state(uid, "READY")
     data_item.set_uri(uid, fpath, storage_id)
-    queried_uid = env.request_requests.query_data_item(item_name=fpath)[0]["uid"]
+    queried_uid = env.data_item_requests.query_data_item(item_name=fpath)[0]["uid"]
     assert uid == queried_uid
 
     # TODO: not a client endpoint
@@ -184,8 +185,8 @@ def test_delete_item_payload(env):
     from ska_dlm.dlm_storage.dlm_storage_requests import delete_data_item_payload
 
     delete_data_item_payload(uid)
-    assert env.request_requests.query_data_item(item_name=fpath)[0]["uri"] == fpath
-    assert env.request_requests.query_data_item(item_name=fpath)[0]["item_state"] == "DELETED"
+    assert env.data_item_requests.query_data_item(item_name=fpath)[0]["uri"] == fpath
+    assert env.data_item_requests.query_data_item(item_name=fpath)[0]["item_state"] == "DELETED"
 
 
 def __initialize_storage_config(env):
@@ -321,15 +322,17 @@ def test_update_item_tags(env):
     _ = env.ingest_requests.register_data_item(
         item_name="/my/ingest/test/item2", uri=TEST_URI, storage_name="MyDisk"
     )
-    res = env.request_requests.update_item_tags(
+    res = env.data_item_requests.update_item_tags(
         "/my/ingest/test/item2", item_tags={"a": "SKA", "b": "DLM", "c": "dummy"}
     )
     assert res
-    res = env.request_requests.update_item_tags(
+    res = env.data_item_requests.update_item_tags(
         "/my/ingest/test/item2", item_tags={"c": "Hello", "d": "World"}
     )
     assert res
-    tags = env.request_requests.query_data_item(item_name="/my/ingest/test/item2")[0]["item_tags"]
+    tags = env.data_item_requests.query_data_item(item_name="/my/ingest/test/item2")[0][
+        "item_tags"
+    ]
     assert tags == {"a": "SKA", "b": "DLM", "c": "Hello", "d": "World"}
 
 
@@ -344,7 +347,7 @@ def test_update_item_tags_exception(env):
             "/my/ingest/test/missing", item_tags={"a": "SKA", "b": "DLM", "c": "dummy"}
         )
 
-    assert [] == env.request_requests.query_data_item(item_name="/my/ingest/test/missing")
+    assert [] == env.data_item_requests.query_data_item(item_name="/my/ingest/test/missing")
 
 
 @pytest.mark.integration_test
@@ -420,7 +423,7 @@ def test_populate_metadata_col(env):
         metadata=METADATA_RECEIVED,  # metadata
     )
 
-    metadata_str_from_db = env.request_requests.query_data_item(uid=uid)
+    metadata_str_from_db = env.data_item_requests.query_data_item(uid=uid)
     METADATA_RECEIVED["uid"] = uid
     METADATA_RECEIVED["item_name"] = "/my/metadata/test/item"
     assert metadata_str_from_db[0]["metadata"] == METADATA_RECEIVED

@@ -7,7 +7,7 @@ import tarfile
 import docker
 from overrides import override
 
-from ska_dlm import dlm_ingest, dlm_migration, dlm_request, dlm_storage
+from ska_dlm import data_item, dlm_ingest, dlm_migration, dlm_request, dlm_storage
 from tests.test_env import DlmTestClient
 
 logger = logging.getLogger(__name__)
@@ -28,6 +28,10 @@ class DlmTestClientLocal(DlmTestClient):
     @property
     def request_requests(self):
         return dlm_request.dlm_request_requests
+
+    @property
+    def data_item_requests(self):
+        return data_item.data_item_requests
 
     @property
     def ingest_requests(self):

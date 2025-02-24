@@ -8,9 +8,6 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 import ska_dlm
-
-#  pylint: disable-next=wildcard-import,unused-wildcard-import
-from ska_dlm.data_item.data_item_requests import *  # noqa
 from ska_dlm.data_item.data_item_requests import query_data_item
 from ska_dlm.data_item.data_item_requests import rest as data_item_requests
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
