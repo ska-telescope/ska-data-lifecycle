@@ -6,7 +6,8 @@
 
 ### Added
 
-* Benchmark utility for DLM migration.
+* Added request service `PATCH` endpoints for modifying data items.
+* Added benchmark utility for DLM migration.
 * PostgREST connection details can be now obtained from Vault.
 
 ### Removed
