@@ -88,7 +88,6 @@ def test_register_data_item_no_rclone_access(
     mock_storage_rclone_access_false, mock_query_data_item
 ):
     """Test the registration of a data item with no rclone/storage access."""
-
     metadata = {"execution_block": "eb123"}  # Client-provided metadata
     item_name = "test-item"
     uri = "test-uri"

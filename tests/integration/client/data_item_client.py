@@ -1,4 +1,4 @@
-"""data_item_request REST client"""
+"""data_item_request REST client."""
 
 import requests
 
@@ -17,23 +17,27 @@ def query_data_item(
     storage_id: str = "",
     params: str | None = None,  # TODO: meant to be dict | None
 ) -> list[dict]:
-    """
-    Query a data_item.
+    """Query a data_item.
 
     params or item_name/oid/uid is required.
 
-    Parameters:
-    -----------
-    item_name: could be empty, in which case the first 1000 items are returned
-    oid:    Return data_items referred to by the OID provided.
-    uid:    Return data_item referred to by the UID provided.
+    Parameters
+    ----------
+    item_name: str
+        Could be empty, in which case the first 1000 items are returned
+    oid: str
+        Return data_items referred to by the OID provided.
+    uid: str
+        Return data_item referred to by the UID provided.
     storage_id : str
         Return data_item referred to by a given storage_id.
-    params: specify the query parameters
+    params: str | None
+        specify the query parameters
 
-    Returns:
-    --------
+    Returns
+    -------
     list[dict]
+        data item ids.
     """
     params = {k: v for k, v in locals().items() if v}
     headers = {"Authorization": f"Bearer {TOKEN}"}

@@ -1,10 +1,12 @@
-"""API Gateway"""
+"""API Gateway."""
 
 import asyncio
 import json
 import logging
 import os
 import ssl
+from abc import abstractmethod
+from typing import Any
 
 import httpx
 import jwt
@@ -12,23 +14,26 @@ import jwt.algorithms
 import msal
 import requests
 from cryptography.hazmat.primitives import serialization
-from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import RedirectResponse
+from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi.responses import RedirectResponse, StreamingResponse
 from keycloak import KeycloakOpenID, KeycloakUMA
 from keycloak.exceptions import KeycloakAuthenticationError
+from overrides import override
 from starlette.background import BackgroundTask
 from starlette.middleware.sessions import SessionMiddleware
-from starlette.responses import StreamingResponse
 
 
 class Provider:
-    """Represents base class for an OIDC Provider"""
+    """Represents base class for an OIDC Provider."""
 
     def __init__(self):
         pass
 
-    async def token_by_auth_flow(self, request: Request):
+    @abstractmethod
+    async def token_by_auth_flow(self, request: Request) -> Response:
         """Initiate Auth flow to obain a token.
+
+        Redirects to IdP for Authentication/Authorization.
 
         Parameters
         ----------
@@ -37,28 +42,28 @@ class Provider:
 
         Returns
         -------
-        Redirect to IdP for Authentication/Authorization
+        str
+            Bearer token
         """
-        raise HTTPException(404, "Not implemented")
 
-    async def has_scope(self, token: str, permission: str):
-        """Check if a token has the permission scope
+    @abstractmethod
+    async def has_scope(self, token: str, permission: str) -> Any:
+        """Check if a token has the permission scope.
 
         Parameters
         ----------
         token: str
             Auth token
-
         permission: str
             Permission string relevant for the provider
 
         Returns
         -------
-        True: has permissions otherwise False
+        Any
+            True if has permissions, otherwise False
         """
 
-        raise HTTPException(404, "Not implemented")
-
+    @abstractmethod
     async def token_by_username_password(self, username: str, password: str):
         """Get token via username and password. Should not be used in production.
 
@@ -66,7 +71,6 @@ class Provider:
         ----------
         username: str
             username or user
-
         password: str
             password of user
 
@@ -76,10 +80,9 @@ class Provider:
             Structure containing tokens
         """
 
-        raise HTTPException(404, "Not implemented")
-
-    async def auth_callback(self, request: Request):
-        """Call back from token_by_auth_flow
+    @abstractmethod
+    async def auth_callback(self, request: Request) -> str:
+        """Call back from token_by_auth_flow.
 
         Parameters
         ----------
@@ -92,16 +95,14 @@ class Provider:
             Structure containing tokens
         """
 
-        raise HTTPException(404, "Not implemented")
-
+    @abstractmethod
     async def validate_token(self, token: str):
-        """Validate client session token/cookie"""
-        raise HTTPException(404, "Not implemented")
+        """Validate client session token/cookie."""
 
 
 # pylint: disable=too-many-instance-attributes
 class Keycloak(Provider):
-    """Keycloak OIDC Provider"""
+    """Keycloak OIDC Provider."""
 
     def __init__(self):
         self.keycloak_url = os.environ["KEYCLOAK_URL"]
@@ -121,14 +122,17 @@ class Keycloak(Provider):
 
         self.uma = KeycloakUMA(connection=self.kc)
 
+    @override
     async def token_by_username_password(self, username: str, password: str):
         auth = await self.kc.a_token(username, password)
         return auth
 
-    async def has_scope(self, token: str, permission: str):
+    @override
+    async def has_scope(self, token: str, permission: str) -> Any:
         return await self.kc.a_has_uma_access(token, permission)
 
-    async def token_by_auth_flow(self, request: Request):
+    @override
+    async def token_by_auth_flow(self, request: Request) -> Response:
         auth_url = await self.kc.a_auth_url(
             redirect_uri=self.redirect_url,
             scope="basic profile openid uma_authorization",
@@ -136,7 +140,8 @@ class Keycloak(Provider):
         )
         return RedirectResponse(auth_url)
 
-    async def auth_callback(self, request: Request):
+    @override
+    async def auth_callback(self, request: Request) -> str:
         code = request.query_params["code"]
         state = request.query_params["state"]
         if state != self.state:
@@ -149,7 +154,7 @@ class Keycloak(Provider):
         return access_token["access_token"]
 
     async def _check_token(self, token: str):
-        """Check if client can access endpoint based on token and permissions"""
+        """Check if client can access endpoint based on token and permissions."""
         try:
             return await self.kc.a_userinfo(token)
         except KeycloakAuthenticationError as e:
@@ -157,12 +162,13 @@ class Keycloak(Provider):
         except Exception as e:
             raise HTTPException(401, "Token error") from e
 
+    @override
     async def validate_token(self, token: str):
         await self._check_token(token)
 
 
 class Entra(Provider):
-    """MS Entra OIDC Provider"""
+    """MS Entra OIDC Provider."""
 
     def __init__(self):
         self.tenant_id = os.environ["TENANT_ID"]
@@ -185,7 +191,8 @@ class Entra(Provider):
         )
         self.keys = response.json()["keys"]
 
-    async def token_by_auth_flow(self, request: Request):
+    @override
+    async def token_by_auth_flow(self, request: Request) -> Response:
         loop = asyncio.get_running_loop()
         auth = await loop.run_in_executor(
             None,
@@ -197,7 +204,16 @@ class Entra(Provider):
 
         return RedirectResponse(auth["auth_uri"])
 
-    async def auth_callback(self, request: Request):
+    @override
+    async def token_by_username_password(self, username: str, password: str):
+        raise HTTPException(404, "Not implemented")
+
+    @override
+    async def has_scope(self, token: str, permission: str):
+        raise HTTPException(404, "Not implemented")
+
+    @override
+    async def auth_callback(self, request: Request) -> str:
         flow = request.session.get("flow", None)
         if not flow:
             raise HTTPException(403, "Unknown flow state")
@@ -239,6 +255,7 @@ class Entra(Provider):
         )
         return decoded_token
 
+    @override
     async def validate_token(self, token: str):
         await self._check_token(token)
 
@@ -276,32 +293,32 @@ ssl_context.load_cert_chain("./cert.pem", keyfile="./key.pem")
 
 @app.get("/token_by_auth_flow")
 async def token_by_auth_flow(request: Request):
-    """Redirect to IDP for user authorisation"""
+    """Redirect to IDP for user authorisation."""
     # Get Code With Oauth Authorization Request
     return await PROVIDER.token_by_auth_flow(request)
 
 
 @app.get("/auth_callback")
 async def auth_callback(request: Request):
-    """Auth callback from Provider"""
+    """Auth callback from Provider."""
     return await PROVIDER.auth_callback(request)
 
 
 @app.get("/heartbeat")
 async def heartbeat():
-    """Endpoint to check if Gateway is contactable"""
+    """Endpoint to check if Gateway is contactable."""
     return "ACK"
 
 
 @app.get("/token_by_username_password")
 async def token_by_username_password(username: str, password: str):
-    """Get OAUTH token based on username and password"""
+    """Get OAUTH token based on username and password."""
     return await PROVIDER.token_by_username_password(username, password)
 
 
 @app.get("/scope")
 async def has_scope(token: str, permission: str):
-    """Get UMA scopes"""
+    """Get UMA scopes."""
     return await PROVIDER.has_scope(token, permission)
 
 
@@ -331,7 +348,7 @@ async def _send_endpoint(url: httpx.URL, auth: dict, request: Request):
 
 
 async def _reverse_proxy(request: Request):
-    """Proxy client requests and check permissions based on token"""
+    """Proxy client requests and check permissions based on token."""
     url = httpx.URL(path=request.url.path, query=request.url.query.encode("utf-8"))
 
     auth = None
