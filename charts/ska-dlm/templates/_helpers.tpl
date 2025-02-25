@@ -147,4 +147,3 @@ component: {{ .Values.keycloak.component }}
 subsystem: {{ .Values.keycloak.subsystem }}
 intent: production
 {{- end }}
-
