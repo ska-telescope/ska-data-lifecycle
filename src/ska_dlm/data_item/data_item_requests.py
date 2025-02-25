@@ -37,7 +37,7 @@ def query_data_item(
         Could be empty, in which case the first 1000 items are returned
     oid: str
         Return data_items referred to by the OID provided.
-    uid: sr
+    uid: str
         Return data_item referred to by the UID provided.
     storage_id : str
         Return data_item referred to by a given storage_id.
