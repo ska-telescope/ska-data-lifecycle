@@ -21,7 +21,7 @@ def test_get_underlying_type():
     assert get_underlying_type(Annotated[str | None, "info"]) == (str, types.NoneType)
 
 
-def mock_command(  # pylint: disable=unused-argument, too-many-arguments
+def mock_command(  # pylint: disable=unused-argument, too-many-arguments, too-many-positional-arguments
     arg1: str,
     arg2: Annotated[
         str,

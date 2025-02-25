@@ -1,7 +1,8 @@
 """Error handler typer module."""
 
 import sys
-from typing import Any, Callable, Optional, Type
+from collections.abc import Callable
+from typing import Any
 
 import typer
 from overrides import override
@@ -22,7 +23,7 @@ class ExceptionHandlingTyper(typer.Typer):
 
     exception_handlers: dict[Any, ErrorHandlingCallback] = {}
 
-    def exception_handler(self, exc: Type[Exception]):
+    def exception_handler(self, exc: type[Exception]):
         """Extend the app with an custom exception handler."""
 
         def decorator(f: Callable[[Exception], int]):
@@ -34,13 +35,13 @@ class ExceptionHandlingTyper(typer.Typer):
     @override
     def command(  # pylint: disable=too-many-arguments
         self,
-        name: Optional[str] = None,
+        name: str | None = None,
         *,
-        cls: Optional[Type[TyperCommand]] = None,
-        context_settings: Optional[dict[Any, Any]] = None,
-        help: Optional[str] = None,  # pylint: disable=redefined-builtin
-        epilog: Optional[str] = None,
-        short_help: Optional[str] = None,
+        cls: type[TyperCommand] | None = None,
+        context_settings: dict[Any, Any] | None = None,
+        help: str | None = None,  # pylint: disable=redefined-builtin
+        epilog: str | None = None,
+        short_help: str | None = None,
         options_metavar: str = "[OPTIONS]",
         add_help_option: bool = True,
         no_args_is_help: bool = False,

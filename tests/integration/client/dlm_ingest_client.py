@@ -1,7 +1,7 @@
 """dlm_ingest REST client."""
 
 from enum import Enum
-from typing import Any, Dict, List, Union
+from typing import Any, Union
 
 import requests
 
@@ -11,7 +11,7 @@ from tests.integration.client.exception_handler import dlm_raise_for_status
 INGEST_URL = ""
 TOKEN: str = None
 
-JsonType = Union[Dict[str, Any], List[Any], str, int, float, bool, None]
+JsonType = Union[dict[str, Any], list[Any], str, int, float, bool, None]
 
 
 class ItemType(str, Enum):

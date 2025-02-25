@@ -5,9 +5,8 @@ from datetime import timedelta
 import inflect
 import pytest
 
-import ska_dlm.data_item as data_item
 import ska_dlm.dlm_request.dlm_request_requests as dlm_request
-from ska_dlm import CONFIG, dlm_ingest
+from ska_dlm import CONFIG, data_item, dlm_ingest
 from ska_dlm.dlm_db.db_access import DB
 
 
@@ -18,6 +17,7 @@ def _clear_database():
     DB.delete(CONFIG.DLM.location_table)
 
 
+# pylint: disable=unused-argument
 @pytest.fixture(name="mock_db")
 def mock_database_fixture(env):
     """Mock database fixture."""
@@ -27,6 +27,7 @@ def mock_database_fixture(env):
     _clear_database()
 
 
+# pylint: disable=unused-argument
 @pytest.fixture(name="mock_data_items")
 def mock_data_items_fixture(mock_db):
     """Test data_item init."""
@@ -40,6 +41,7 @@ def mock_data_items_fixture(mock_db):
     assert success
 
 
+# pylint: disable=unused-argument
 def test_query_expired(mock_data_items):
     """Test the query expired returning records."""
     uid = dlm_request.query_data_item()[0]["uid"]

@@ -17,7 +17,7 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 """sphinx config."""
 
-# pylint: disable=invalid-name,redefined-builtin,missing-module-docstring
+# pylint: disable=invalid-name,redefined-builtin
 
 import os
 import sys
@@ -35,7 +35,6 @@ sys.path.insert(0, os.path.abspath(os.path.join("..", "..", "src")))
 
 def setup(app):
     """Run additional setup-time operations."""
-    # pylint: disable=missing-function-docstring
     app.add_css_file("css/custom.css")
     app.add_js_file("js/github.js")
 
