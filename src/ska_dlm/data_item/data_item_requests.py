@@ -29,25 +29,20 @@ def query_data_item(
 ) -> list[dict]:
     """Query a data_item.
 
-    At least one of item_name, oid, uid, or params is required.
+    params or item_name/oid/uid is required.
 
     Parameters
     ----------
-    item_name : str
-        could be empty, in which case the first 1000 items are returned.
-    oid : str
+    item_name: str
+        Could be empty, in which case the first 1000 items are returned
+    oid: str
         Return data_items referred to by the OID provided.
-    uid : str
+    uid: sr
         Return data_item referred to by the UID provided.
     storage_id : str
         Return data_item referred to by a given storage_id.
-    params : str | None
+    params: str | None
         specify the query parameters
-
-    Raises
-    ------
-    InvalidQueryParameters
-        bad value.
 
     Returns
     -------

@@ -1,5 +1,6 @@
 DOCS_SPHINXOPTS = -W --keep-going
 PYTHON_LINE_LENGTH = 99
+PYTHON_SWITCHES_FOR_FLAKE8 = --ignore-decorator=override
 
 K8S_CHART = ska-dlm
 KUBE_NAMESPACE ?=

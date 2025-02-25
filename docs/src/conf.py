@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 #
 # developer.skatelescope.org documentation build configuration file, created by
 # sphinx-quickstart on Wed Dec 13 11:59:38 2017.
@@ -35,7 +34,7 @@ sys.path.insert(0, os.path.abspath(os.path.join("..", "..", "src")))
 
 
 def setup(app):
-    """Setup."""
+    """Run additional setup-time operations."""
     # pylint: disable=missing-function-docstring
     app.add_css_file("css/custom.css")
     app.add_js_file("js/github.js")

@@ -1,4 +1,4 @@
-"""Common utilities for interacting with native system"""
+"""Common utilities for interacting with native system."""
 
 import logging
 import os
@@ -23,7 +23,8 @@ class DlmTestClientDocker(DlmTestClient):
     inside docker.
 
     This requires the rclone path is hosted on shared filesystem
-    mount with the test runtime."""
+    mount with the test runtime.
+    """
 
     def __init__(self):
         dlm_storage_requests.STORAGE_URL = "http://dlm_gateway:8000"
@@ -33,22 +34,27 @@ class DlmTestClientDocker(DlmTestClient):
         dlm_migration_requests.MIGRATION_URL = "http://dlm_gateway:8000"
 
     @property
+    @override
     def storage_requests(self):
         return dlm_storage_requests
 
     @property
+    @override
     def request_requests(self):
         return dlm_request_requests
 
     @property
+    @override
     def data_item_requests(self):
         return data_item_requests
 
     @property
+    @override
     def ingest_requests(self):
         return dlm_ingest_requests
 
     @property
+    @override
     def migration_requests(self):
         return dlm_migration_requests
 
@@ -56,12 +62,12 @@ class DlmTestClientDocker(DlmTestClient):
     def write_rclone_file_content(self, rclone_path: str, content: str):
         self.create_rclone_directory(os.path.dirname(rclone_path))
         # Assume shared file system or docker shared volume
-        with open(rclone_path, "wt", encoding="ascii") as file:
+        with open(rclone_path, "w", encoding="ascii") as file:
             file.write(content)
 
     @override
     def get_rclone_local_file_content(self, rclone_path: str) -> str:
-        with open(rclone_path, "rt", encoding="ascii") as file:
+        with open(rclone_path, encoding="ascii") as file:
             return file.read()
 
     @override

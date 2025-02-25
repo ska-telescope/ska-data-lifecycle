@@ -1,6 +1,7 @@
 **/build/
 **/.idea/
 **/.vscode/
+**/.vale/
 **/.bash_history
 **/.cache
 **/.local
@@ -72,5 +73,3 @@ LICENSE_copy
 .postgrest.pid
 .rclone.pid
 scripts/postgrest
-
-.pre-commit-config.yaml

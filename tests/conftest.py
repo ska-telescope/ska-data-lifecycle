@@ -12,7 +12,7 @@ from tests.test_env import DlmTestClient
 
 
 def pytest_addoption(parser):
-    """Setup command line"""
+    """Set up command line options."""
     parser.addoption("--env", action="store", default="local", help="local, docker, or k8s")
     parser.addoption("--auth", action="store", default="1", help="Use OAuth flow")
 

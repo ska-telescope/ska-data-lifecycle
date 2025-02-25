@@ -88,7 +88,6 @@ docstring-style = "numpy"  # darglint
 docstring-convention = "numpy"  # flake8-docstrings
 strictness = "short"
 rst-directives = "literalinclude"
-ignore-decorator = "overrides"
 rst-roles = [
     "py:attr",
     "py:class",
@@ -100,9 +99,6 @@ rst-roles = [
 ]
 enable = "DAR104"
 max-complexity = 10
-exclude = [
-    "tests/",
-]
 ignore = [
     # Use black to handle formatting
     "E203", # Whitespace before ':'

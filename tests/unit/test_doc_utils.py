@@ -13,7 +13,8 @@ from ska_dlm.fastapi_utils import fastapi_docstring_annotate, get_underlying_typ
 from ska_dlm.typer_utils import typer_docstring
 
 
-def test_get_annotation_types():
+def test_get_underlying_type():
+    """Test get_underlying_type function."""
     assert get_underlying_type(str) == (str,)
     assert get_underlying_type(str | None) == (str, types.NoneType)
     assert get_underlying_type(Annotated[str, "info"]) == (str,)
@@ -67,10 +68,16 @@ def mock_command(  # pylint: disable=unused-argument, too-many-arguments
         opt3 description
     opt4 : Any | None
         opt4 description
+    header1 : str | None
+        header1 description
     cookie1 : str | None
         cookie1 description
     file1 : str | None
         file1 description
+    dep1 : str | None
+        dep1 description
+    sec1: str | None
+        sec1 description
     """
 
 
@@ -133,17 +140,16 @@ def assert_typer_annotation(annotation: Any, info_type: type, helpdoc: str):
 
 
 def assert_fastapi_annotation(annotation: Any, info_type: type):
+    """Assert annotation contains fastapi info."""
     found = 0
-    info = None
     for meta in annotation.__metadata__:
         if isinstance(meta, info_type):
-            info = meta
             found += 1
     assert found == 1, f"expected a single {info_type} in {annotation.__metadata__}"
 
 
 def assert_fastapi_annotation_doc(annotation: Any, info_type: type, helpdoc: str):
-    """Assert annotations contains specificed fastapi info."""
+    """Assert annotation contains specific fastapi info."""
     found = 0
     info = None
     for meta in annotation.__metadata__:

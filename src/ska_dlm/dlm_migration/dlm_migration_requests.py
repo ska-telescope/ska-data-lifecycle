@@ -68,7 +68,7 @@ async def _poll_status_loop(interval: int):
             await update_migration_statuses()
         except asyncio.CancelledError:
             break
-        except IOError:
+        except OSError:
             logger.exception("Failed to poll migration job statuses")
         except Exception:  # pylint: disable=broad-except
             logger.exception("Unexpected error polling migration job statuses")

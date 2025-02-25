@@ -1,4 +1,4 @@
-"""dlm_storage REST client"""
+"""dlm_storage REST client."""
 
 import requests
 

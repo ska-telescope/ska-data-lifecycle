@@ -1,4 +1,4 @@
-"""dlm_ingest REST client"""
+"""dlm_ingest REST client."""
 
 from enum import Enum
 from typing import Any, Dict, List, Union
@@ -67,6 +67,8 @@ def register_data_item(
     storage_id: str = "",
     parents: str | None = None,
     metadata: JsonObjectOption = None,
+    do_storage_access_check: bool = True,
+    authorization: str | None = None,
 ) -> str:
     """Ingest a data_item (register function is an alias).
 
