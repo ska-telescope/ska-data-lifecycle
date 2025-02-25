@@ -749,6 +749,17 @@ files = [
 ]
 
 [[package]]
+name = "docstring-parser-fork"
+version = "0.0.12"
+description = "Parse Python docstrings in reST, Google and Numpydoc format"
+optional = false
+python-versions = "<4.0,>=3.7"
+files = [
+    {file = "docstring_parser_fork-0.0.12-py3-none-any.whl", hash = "sha256:55d7cbbc8b367655efd64372b9a0b33a49bae930a8ddd5cdc4c6112312e28a87"},
+    {file = "docstring_parser_fork-0.0.12.tar.gz", hash = "sha256:b44c5e0be64ae80f395385f01497d381bd094a57221fd9ff020987d06857b2a0"},
+]
+
+[[package]]
 name = "docutils"
 version = "0.20.1"
 description = "Docutils -- Python Documentation Utilities"
@@ -2127,6 +2138,25 @@ files = [
 
 [package.dependencies]
 typing-extensions = ">=4.6.0,<4.7.0 || >4.7.0"
+
+[[package]]
+name = "pydoclint"
+version = "0.6.2"
+description = "A Python docstring linter that checks arguments, returns, yields, and raises sections"
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "pydoclint-0.6.2-py2.py3-none-any.whl", hash = "sha256:1db52b9949c11c1e84b9be1ae757beffcb50477af90f5b8d83e7290bde5dee45"},
+    {file = "pydoclint-0.6.2.tar.gz", hash = "sha256:f6d22ccdc41047ad4cdfd1a4b6ac197e834af3c8c249a97da23705fde3cff70f"},
+]
+
+[package.dependencies]
+click = ">=8.1.0"
+docstring_parser_fork = ">=0.0.12"
+tomli = {version = ">=2.0.1", markers = "python_version < \"3.11\""}
+
+[package.extras]
+flake8 = ["flake8 (>=4)"]
 
 [[package]]
 name = "pydocstyle"
@@ -3869,4 +3899,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "f9142fb29c23e946d84b1c49439269fccbac480a61dbb119ba45ad873b69af9d"
+content-hash = "3ba344c9ebdfffa83b69c4cf5787e6dbe4a0dc4eeea87f8d7742e844842faa7c"

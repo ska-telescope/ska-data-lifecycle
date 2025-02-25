@@ -30,11 +30,11 @@ def init_location(
 # pylint: disable=unused-argument,too-many-arguments,too-many-positional-arguments
 def init_storage(
     storage_name: str = "",
-    location_name: str = "",
+    storage_type: str = "",
     storage_interface: str = "",
     root_directory: str = "",
     location_id: str = "",
-    storage_type: str = "",
+    location_name: str = "",
     storage_capacity: int = -1,
     storage_phase_level: str = "GAS",
     json_data: dict | None = None,
@@ -42,28 +42,26 @@ def init_storage(
     """
     Initialize a new storage.
 
-    location_name or location_id is required.
-
     Parameters
     ----------
-    storage_name : str
+    storage_name
         An organisation or owner name for the storage.
-    storage_type: str
+    storage_type
         high level type of the storage, e.g. "disk", "s3"
-    storage_interface: str
+    storage_interface
         storage interface for rclone access, e.g. "posix", "s3"
-    location_name : str, optional
-        a dlm registered location name
-    location_id : str, optional
+    root_directory
+        data directory as an absolute path on the remote storage endpoint
+    location_id
         a dlm registered location id
-    root_directory : str
-        root directory of storage
-    storage_capacity: int, optional
+    location_name
+        a dlm registered location name
+    storage_capacity
         reserved storage capacity in bytes
-    storage_phase_level: str, optional
+    storage_phase_level
         one of "GAS", "LIQUID", "SOLID"
-    json_data: dict, optional
-        extra rclone values such as secrets required for connection
+    json_data
+        rclone config such as secrets required for connection
 
     Returns
     -------
@@ -112,7 +110,7 @@ def query_location(location_name: str = "", location_id: str = "") -> list:
 
 # pylint: disable=unused-argument
 def create_storage_config(
-    config: dict, storage_id: str = "", storage_name: str = "", config_type="rclone"
+    config: dict, storage_id: str = "", storage_name: str = "", config_type: str = "rclone"
 ) -> str:
     """
     Create a new record in the storage_config table for a storage with the given id.
@@ -172,9 +170,9 @@ def query_storage(storage_name: str = "", storage_id: str = "") -> list[dict]:
 
     Parameters
     ----------
-    storage_name: str, optional
+    storage_name
         could be empty, in which case the first 1000 items are returned
-    storage_id: str, optional
+    storage_id
         Return locations referred to by the location_id provided.
 
     Returns
@@ -197,11 +195,11 @@ def get_storage_config(
 
     Parameters
     ----------
-    storage_id : str, optional
+    storage_id
         the storage id, by default ""
-    storage_name : str, optional
+    storage_name
         the name of the storage volume, by default ""
-    config_type : str, optional
+    config_type
         query only the specified type, by default "rclone"
 
     Returns

@@ -31,17 +31,17 @@ def copy_data_item(
 
     Parameters
     ----------
-    item_name : str
+    item_name
         data item name, when empty the first 1000 items are returned, by default ""
-    oid : str
+    oid
         object id, Return data_items referred to by the OID provided, by default ""
-    uid : str
+    uid
         Return data_item referred to by the UID provided, by default ""
-    destination_name : str
+    destination_name
         the name of the destination storage volume, by default ""
-    destination_id : str
+    destination_id
         the destination storage, by default ""
-    path : str
+    path
         the destination path relative to storage root, by default ""
 
     Returns
@@ -89,7 +89,7 @@ def get_migration_record(migration_id: int) -> list:
 
     Parameters
     ----------
-    migration_id : int
+    migration_id
         Migration id of migration
 
     Returns

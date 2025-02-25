@@ -1,3 +1,7 @@
+[build-system]
+requires = ["poetry>=1.8.2"]
+build-backend = "poetry.core.masonry.api"
+
 [tool.poetry]
 name = "ska_data_lifecycle"
 version = "1.0.0"
@@ -55,6 +59,7 @@ pytest-cov = "^4.1.0"
 pytest-integration = "^0.2.3"
 pytest-mock = "^3.14.0"
 darglint2 = "^1.8.2"
+pydoclint = "^0.6.2"
 flake8-docstrings = "^1.7.0"
 flake8-rst-docstrings = "^0.3.0"
 flake8-pyproject = "^1.2.3"
@@ -86,7 +91,7 @@ log_cli = true
 [tool.flake8]
 docstring-style = "numpy"  # darglint
 docstring-convention = "numpy"  # flake8-docstrings
-arg-type-hints-in-docstring = false  # pydocstyle
+arg-type-hints-in-docstring = false  # pydoclint
 strictness = "short"
 rst-directives = "literalinclude"
 rst-roles = [
@@ -107,17 +112,18 @@ ignore = [
     "E501", # line too long
 
     # pydocstyle
-    # These hinder adoption of documentation
-    "D401", # First line should be in imperative mood; try rephrasing
-
     # flake8 darglint and pydoclint
-    "DOC103", "DAR103", # Parameter type mismatch
+    "DAR103", # Parameter type mismatch
     "DOC201", "DAR201", # Missing "Returns" in Docstring
+    "DOC203",  # Incorrect return type(s) in docstring
     "DOC301", "DAR301", # Missing "Yields" in Docstring
     "DOC401", "DAR401", # Missing "Exception" in Docstring
     "DAR402", # Excess exception(s) in Raises section
     "DOC501", "DAR501", # Missing "Raises" in Docstring
+    "DOC502", # Missing "raise" statements in the body
+    "DOC503", # To remove
 ]
+ignore-decorator = "override"
 
 [tool.pylint.messages_control]
 disable = ["duplicate-code", "fixme"]
@@ -126,10 +132,6 @@ enable = ["useless-suppression"]
 [tool.pylint.similarities]
 min-similarity-lines = 7
 ignore-imports = "yes"
-
-[build-system]
-requires = ["poetry>=1.8.2"]
-build-backend = "poetry.core.masonry.api"
 
 [tool.black]
 line-length = 99
