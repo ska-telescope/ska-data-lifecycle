@@ -152,9 +152,9 @@ def _generate_k8s_url(ingress_path: str, service_name: str):
 
     Parameters
     ----------
-    ingress_path: str
+    ingress_path
         ingress path to append to the url host
-    service_name: str
+    service_name
         service name for generating the url if ingress is not enabled
     """
     if host_url := os.getenv("K8S_HOST_URL"):

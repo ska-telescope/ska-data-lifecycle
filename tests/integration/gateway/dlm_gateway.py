@@ -37,7 +37,7 @@ class Provider:
 
         Parameters
         ----------
-        request: Request
+        request
             HTTP client request object
 
         Returns
@@ -52,9 +52,9 @@ class Provider:
 
         Parameters
         ----------
-        token: str
+        token
             Auth token
-        permission: str
+        permission
             Permission string relevant for the provider
 
         Returns
@@ -64,19 +64,19 @@ class Provider:
         """
 
     @abstractmethod
-    async def token_by_username_password(self, username: str, password: str):
+    async def token_by_username_password(self, username: str, password: str) -> str:
         """Get token via username and password. Should not be used in production.
 
         Parameters
         ----------
-        username: str
+        username
             username or user
-        password: str
+        password
             password of user
 
         Returns
         -------
-        auth: str
+        str
             Structure containing tokens
         """
 
@@ -86,12 +86,12 @@ class Provider:
 
         Parameters
         ----------
-        request: Request
+        request
             HTTP from Auth provider
 
         Returns
         -------
-        auth: str
+        str
             Structure containing tokens
         """
 

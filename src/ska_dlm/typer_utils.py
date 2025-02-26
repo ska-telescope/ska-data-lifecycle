@@ -76,7 +76,7 @@ def typer_docstring(func: typing.Callable[ParamsT, ReturnT]) -> typing.Callable[
 
     Parameters
     ----------
-    func : typing.Callable[ParamsT, T]
+    func
         Typer compatible function signature.
 
     Returns
