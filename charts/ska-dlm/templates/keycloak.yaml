@@ -47,11 +47,6 @@ spec:
         - /opt/keycloak/bin/kc.sh
         - {{ ternary "start-dev" "start" .Values.global.development }}
         - --import-realm
-        ports:
-        - containerPort: 8080
-          name: http-port
-        - containerPort: 8443
-          name: https-port
         - containerPort: 9000
           name: probe-port
         startupProbe:
