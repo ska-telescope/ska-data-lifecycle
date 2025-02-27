@@ -47,26 +47,24 @@ spec:
         - /opt/keycloak/bin/kc.sh
         - {{ ternary "start-dev" "start" .Values.global.development }}
         - --import-realm
-        - containerPort: 9000
-          name: probe-port
         startupProbe:
           httpGet:
             path: /health/started
-            port: probe-port
+            port: 9000
             scheme: {{ ternary "HTTPS" "HTTP" .Values.keycloak.use_https }}
           failureThreshold: 30
           periodSeconds: 5
         readinessProbe:
           httpGet:
             path: /health/ready
-            port: probe-port
+            port: 9000
             scheme: {{ ternary "HTTPS" "HTTP" .Values.keycloak.use_https }}
           initialDelaySeconds: 10
           periodSeconds: 5
         livenessProbe:
           httpGet:
             path: /health/live
-            port: probe-port
+            port: 9000
             scheme: {{ ternary "HTTPS" "HTTP" .Values.keycloak.use_https }}
           initialDelaySeconds: 5
           periodSeconds: 5

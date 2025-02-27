@@ -11,7 +11,7 @@ spec:
   ports:
     - name: http
       port: 80
-      targetPort: http-port
+      targetPort: 8000
       protocol: TCP
   selector:
     component: {{ .Values.gateway.component }}
@@ -68,19 +68,16 @@ spec:
             /app/tests/integration/gateway/dlm_gateway.py
             --host 0.0.0.0 --port 8000
           {{- end }}
-        ports:
-        - containerPort: 8000
-          name: http-port
         readinessProbe:
           httpGet:
             path: /heartbeat
-            port: http-port
+            port: 8000
           periodSeconds: 5
           initialDelaySeconds: 5
         livenessProbe:
           httpGet:
             path: /heartbeat
-            port: http-port
+            port: 8000
           periodSeconds: 5
           initialDelaySeconds: 5
         env:
