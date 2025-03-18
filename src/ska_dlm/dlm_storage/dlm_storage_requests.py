@@ -1,6 +1,7 @@
 """DLM Storage API module."""
 
 import logging
+import random
 
 import requests
 from fastapi import FastAPI, Request
@@ -267,13 +268,20 @@ def create_rclone_config(config: JsonObjectArg) -> bool:
     bool
         True if configuration is successful
     """
-    request_url = f"{CONFIG.RCLONE.url}/config/create"
-    logger.info("Creating new rclone config: %s %s", request_url, config)
-    request = requests.post(
-        request_url, json=config, headers={"Content-type": "application/json"}, timeout=10
-    )
-    logger.info("Response status code: %s", request.status_code)
-    return request.status_code == 200
+    for url in CONFIG.RCLONE:
+        request_url = f"{url}/config/create"
+        logger.info("Creating new rclone config: %s %s", request_url, config)
+        request = requests.post(
+            request_url,
+            json=config,
+            headers={"Content-type": "application/json"},
+            timeout=10,
+            verify=False,
+        )
+        logger.info("Response status code: %s", request.status_code)
+        if request.status_code != 200:
+            return False
+    return True
 
 
 def check_storage_access(
@@ -329,7 +337,8 @@ def rclone_access(volume: str, remote_file_path: str = "", config: dict | None =
     bool
         True if access is allowed.
     """
-    request_url = f"{CONFIG.RCLONE.url}/operations/stat"
+    url = random.choice(CONFIG.RCLONE)
+    request_url = f"{url}/operations/stat"
     if config:
         post_data = config
     else:
@@ -339,7 +348,7 @@ def rclone_access(volume: str, remote_file_path: str = "", config: dict | None =
             "remote": remote_file_path,
         }
     logger.info("rclone access check: %s, %s", request_url, post_data)
-    request = requests.post(request_url, post_data, timeout=10)
+    request = requests.post(request_url, post_data, timeout=10, verify=False)
     if request.status_code != 200 or not request.json()["item"]:
         logger.warning("rclone does not have access: %s, %s", request.status_code, request.json())
         return False
@@ -365,13 +374,14 @@ def rclone_delete(volume: str, fpath: str) -> bool:
     if not rclone_access(volume_name, fpath):
         logger.error("Can't access %s on %s!", fpath, volume_name)
         return False
-    request_url = f"{CONFIG.RCLONE.url}/operations/deletefile"
+    url = random.choice(CONFIG.RCLONE)
+    request_url = f"{url}/operations/deletefile"
     post_data = {
         "fs": volume_name,
         "remote": fpath,
     }
     logger.info("rclone deletion: %s, %s", request_url, post_data)
-    request = requests.post(request_url, data=post_data, timeout=10)
+    request = requests.post(request_url, data=post_data, timeout=10, verify=False)
     if request.status_code != 200:
         logger.info("Error response status code: %s", request.status_code)
         return False

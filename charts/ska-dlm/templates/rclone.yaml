@@ -45,6 +45,8 @@ spec:
           - --rc-addr
           - :5572
           - --rc-no-auth
+          - --rc-key=/etc/ssl/private/selfsigned.key
+          - --rc-cert=/etc/ssl/certs/selfsigned.cert
         readinessProbe:
           httpGet:
             path: /
