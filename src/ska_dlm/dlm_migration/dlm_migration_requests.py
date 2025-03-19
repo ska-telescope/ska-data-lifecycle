@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import random
 from contextlib import asynccontextmanager
 from functools import partial
 from typing import Annotated
@@ -37,47 +38,12 @@ logger = logging.getLogger(__name__)
 origins = ["http://localhost", "http://localhost:5000", "http://localhost:8004"]
 
 
-async def _query_job_status(job_id: int):
-    request_url = f"{CONFIG.RCLONE.url}/job/status"
-    post_data = {"jobid": job_id}
-
-    loop = asyncio.get_event_loop()
-    logger.info("rclone request: %s, %s", request_url, post_data)
-    request = await loop.run_in_executor(
-        None, partial(requests.post, request_url, post_data, timeout=1800)
-    )
-    return request.json()
-
-
-async def _query_core_stats(group_id: str):
-    request_url = f"{CONFIG.RCLONE.url}/core/stats"
-    post_data = {"group": group_id}
-
-    loop = asyncio.get_event_loop()
-    logger.info("rclone request: %s, %s", request_url, post_data)
-    request = await loop.run_in_executor(
-        None, partial(requests.post, request_url, post_data, timeout=1800)
-    )
-    return request.json()
-
-
-async def _poll_status_loop(interval: int):
-    """Periodically wake up and poll migration status."""
-    while True:
-        try:
-            await update_migration_statuses()
-        except asyncio.CancelledError:
-            break
-        except IOError:
-            logger.exception("Failed to poll migration job statuses")
-        except Exception:  # pylint: disable=broad-except
-            logger.exception("Unexpected error polling migration job statuses")
-        await asyncio.sleep(interval)
-
-
 @asynccontextmanager
 async def app_lifespan(_):
     """Lifespan hook for startup and shutdown."""
+    if len(CONFIG.RCLONE) == 0:
+        raise ValueError("No Rclone URLs")
+
     task = asyncio.create_task(
         _poll_status_loop(
             interval=CONFIG.DLM.migration_manager.polling_interval,
@@ -115,6 +81,44 @@ cli = ExceptionHandlingTyper()
 cli.exception_handler(ValueAlreadyInDB)(dump_short_stacktrace)
 
 
+async def _query_job_status(url: str, job_id: int):
+    request_url = f"{url}/job/status"
+    post_data = {"jobid": job_id}
+
+    loop = asyncio.get_event_loop()
+    logger.info("rclone request: %s, %s", request_url, post_data)
+    request = await loop.run_in_executor(
+        None, partial(requests.post, request_url, post_data, timeout=1800, verify=False)
+    )
+    return request.json()
+
+
+async def _query_core_stats(url: str, group_id: str):
+    request_url = f"{url}/core/stats"
+    post_data = {"group": group_id}
+
+    loop = asyncio.get_event_loop()
+    logger.info("rclone request: %s, %s", request_url, post_data)
+    request = await loop.run_in_executor(
+        None, partial(requests.post, request_url, post_data, timeout=1800, verify=False)
+    )
+    return request.json()
+
+
+async def _poll_status_loop(interval: int):
+    """Periodically wake up and poll migration status."""
+    while True:
+        try:
+            await update_migration_statuses()
+        except asyncio.CancelledError:
+            break
+        except IOError:
+            logger.exception("Failed to poll migration job statuses")
+        except Exception:  # pylint: disable=broad-except
+            logger.exception("Unexpected error polling migration job statuses")
+        await asyncio.sleep(interval)
+
+
 # pylint: disable=unused-argument
 @rest.exception_handler(IOError)
 def ioerror_exception_handler(request: Request, exc: IOError):
@@ -126,6 +130,7 @@ def ioerror_exception_handler(request: Request, exc: IOError):
 
 
 def rclone_copy(
+    url: str,
     src_fs: str,
     src_remote: str,
     src_root_dir: str,
@@ -141,7 +146,7 @@ def rclone_copy(
     src_abs_path = f"{src_root_dir}/{src_remote}".replace("//", "/")
     dest_abs_path = f"{dest_root_dir}/{dst_remote}".replace("//", "/")
     if item_type == ItemType.CONTAINER:
-        request_url = f"{CONFIG.RCLONE.url}/sync/copy"
+        request_url = f"{url}/sync/copy"
         post_data = {
             "srcFs": f"{src_fs}{src_abs_path}",
             "dstFs": f"{dst_fs}{dest_abs_path}",
@@ -150,7 +155,7 @@ def rclone_copy(
             "_async": "true",
         }
     else:
-        request_url = f"{CONFIG.RCLONE.url}/operations/copyfile"
+        request_url = f"{url}/operations/copyfile"
         post_data = {
             "srcFs": src_fs,
             "srcRemote": src_abs_path,
@@ -160,7 +165,7 @@ def rclone_copy(
         }
 
     logger.info("rclone copy request: %s, %s", request_url, post_data)
-    request = requests.post(request_url, post_data, timeout=1800)
+    request = requests.post(request_url, post_data, timeout=1800, verify=False)
     logger.info("Response status code: %s", request.status_code)
     return request.status_code, request.json()
 
@@ -194,15 +199,16 @@ async def update_migration_statuses():
         # get details for this migration
         migration_id = migration["migration_id"]
         job_id = migration["job_id"]
+        url = migration["url"]
         logger.info("migration %s: %s", migration_id, job_id)
 
         stats_json = ""
         complete = False
         # query rclone for job/status
-        status_json = await _query_job_status(job_id)
+        status_json = await _query_job_status(url, job_id)
         if not status_json["error"]:
             # query rclone for core/stats
-            stats_json = await _query_core_stats(status_json["group"])
+            stats_json = await _query_core_stats(url, status_json["group"])
             complete = status_json["success"]
         else:
             # if job is in error we dont want to query it again so mark it complete
@@ -286,7 +292,13 @@ def _get_migration_record(migration_id: int) -> list[dict]:
 
 
 def _create_migration_record(
-    job_id, oid, source_storage_id, destination_storage_id, authorization
+    job_id,
+    oid,
+    url,
+    source_storage_id,
+    destination_storage_id,
+    authorization
+    # pylint: disable=too-many-arguments,too-many-positional-arguments
 ):
     # decode the username from the authorization
     username = None
@@ -300,6 +312,7 @@ def _create_migration_record(
     json_data = {
         "job_id": job_id,
         "oid": oid,
+        "url": url,
         "source_storage_id": source_storage_id,
         "destination_storage_id": destination_storage_id,
         "user": username,
@@ -424,7 +437,11 @@ def copy_data_item(  # noqa: C901
     # scheduling a job for dlm_migration service.
     logger.info("source: %s", source)
 
+    # get random Rclone instance to deal with copy
+    url = random.choice(CONFIG.RCLONE)
+
     status_code, content = rclone_copy(
+        url,
         source["backend"],
         source["path"],
         source_storage[0]["root_directory"],
@@ -443,6 +460,7 @@ def copy_data_item(  # noqa: C901
     record = _create_migration_record(
         content["jobid"],
         orig_item["oid"],
+        url,
         source_storage[0]["storage_id"],
         destination_id,
         authorization,

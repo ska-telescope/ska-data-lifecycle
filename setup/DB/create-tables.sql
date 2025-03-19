@@ -168,6 +168,7 @@ CREATE TABLE migration (
     migration_id bigint GENERATED always as IDENTITY PRIMARY KEY,
     job_id bigint NOT NULL,
     OID uuid NOT NULL,
+    URL varchar NOT NULL,
     source_storage_id uuid NOT NULL,
     destination_storage_id uuid NOT NULL,
     "user" varchar DEFAULT 'SKA',

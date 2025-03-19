@@ -15,7 +15,4 @@ REST:
   base_url: "http://dlm_postgrest:3000"
 
 RCLONE:
-  url: "http://dlm_rclone:5572"
-
-DATA_PRODUCT_API:
-  url: "http://dlm_gateway:8000"
+  - "https://dlm_rclone:5572"
