@@ -72,6 +72,7 @@ postgrest:
   max_rows: ""
   pre_request: ""
   role_claim_key: '.role'
+  log_level: info
 
   vault:
     enabled: false

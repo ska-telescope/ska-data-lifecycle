@@ -89,6 +89,7 @@ spec:
             "PGRST_MAX_ROWS" .Values.postgrest.max_rows
             "PGRST_PRE_REQUEST" .Values.postgrest.pre_request
             "PGRST_ROLE_CLAIM_KEY" .Values.postgrest.role_claim_key
+            "PGRST_LOG_LEVEL" .Values.postgrest.log_level
           }}
           {{ if not .Values.postgrest.vault.enabled }}
           {{ $_ := set $env "PGRST_DB_URI" (include "ska-dlm.postgrest.postgresql.uri" .) }}
