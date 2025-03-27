@@ -90,16 +90,16 @@ spec:
         {{- if $.Values.global.ingress.enabled }}
           value: "https://{{ .Values.global.ingress.domainName }}/{{ .Release.Namespace }}/dlm/auth_callback"
         {{- else }}
-          value: "http://{{ include "ska-dlm.fullname" . }}-gateway.{{ .Release.Namespace }}.svc.cluster.local/auth_callback"
+          value: "http://{{ include "ska-dlm.fullname" . }}-gateway.{{ .Release.Namespace }}/auth_callback"
         {{- end }}
         - name: INGEST_CLIENT
-          value: "http://{{ include "ska-dlm.fullname" . }}-ingest.{{ .Release.Namespace }}.svc.cluster.local:80"
+          value: "http://{{ include "ska-dlm.fullname" . }}-ingest.{{ .Release.Namespace }}:80"
         - name: REQUESTS_CLIENT
-          value: "http://{{ include "ska-dlm.fullname" . }}-request.{{ .Release.Namespace }}.svc.cluster.local:80"
+          value: "http://{{ include "ska-dlm.fullname" . }}-request.{{ .Release.Namespace }}:80"
         - name: STORAGE_CLIENT
-          value: "http://{{ include "ska-dlm.fullname" . }}-storage.{{ .Release.Namespace }}.svc.cluster.local:80"
+          value: "http://{{ include "ska-dlm.fullname" . }}-storage.{{ .Release.Namespace }}:80"
         - name: MIGRATION_CLIENT
-          value: "http://{{ include "ska-dlm.fullname" . }}-migration.{{ .Release.Namespace }}.svc.cluster.local:80"
+          value: "http://{{ include "ska-dlm.fullname" . }}-migration.{{ .Release.Namespace }}:80"
         envFrom:
         {{- if $.Values.keycloak.enabled }}
         - configMapRef:
