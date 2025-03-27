@@ -5,6 +5,11 @@ postgresql:
   enabled: true
   initialise: true
 
+postgrest:
+  db_auth_secret:
+    vault:
+      enabled: false
+
 keycloak:
   enabled: true
 

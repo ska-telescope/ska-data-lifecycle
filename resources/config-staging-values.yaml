@@ -11,7 +11,11 @@ postgresql:
   initialise: false
 
 postgrest:
-  db_uri: "postgres://ska_dlm_admin:password@productiondb:5432/ska_dlm"
+  db_auth_secret:
+    vault:
+      type: "kv-v2"
+      mount: "kv"
+      path: "a/path/to/the/secret"
 
 keycloak:
   enabled: false
