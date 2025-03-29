@@ -16,9 +16,27 @@ spec:
   selector:
     component: {{ .Values.postgrest.component }}
     subsystem: {{ .Values.postgrest.subsystem }}
-{{ with .Values.postgrest.db_auth_secret -}}
+{{- if $.Values.postgresql.enabled }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "ska-dlm.postgrest.labels" $ | indent 4 }}
+type: Opaque
+data:
+  PGHOST: {{ include "ska-dlm.postgresql.name" $ | b64enc }}
+  PGUSER: {{ $.Values.postgresql.auth.username | b64enc }}
+  PGPASSWORD: {{ $.Values.postgresql.auth.password | b64enc }}
+  PGDATABASE: {{ $.Values.postgresql.auth.database | b64enc }}
+{{- else -}}
+{{  with .Values.postgrest.db_auth_secret -}}
 {{- if .create -}}
-{{- if .vault.enabled -}}
+{{- if or (not .vault.mount) (not .vault.type) (not .vault.path) -}}
+{{- fail (printf "No embedded PostgreSQL server enabled (postgresql.enabled=%s), but Vault values are missing (postgrest.db_auth_secret.vault.{mount,type,path})" ($.Values.postgresql.enabled | toString)) -}}
+{{- end -}}
 ---
 apiVersion: secrets.hashicorp.com/v1beta1
 kind: VaultStaticSecret
@@ -34,25 +52,6 @@ spec:
     name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
     transformation:
       excludeRaw: true
-{{- else -}}
-{{- if not $.Values.postgresql.enabled -}}
-{{- fail (printf "No embedded PostgreSQL server enabled (postgresql.enabled=%s), can't generate DB authentication secret" ($.Values.postgresql.enabled | toString)) -}}
-{{- else -}}
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
-  namespace: {{ $.Release.Namespace }}
-  labels:
-    {{- include "ska-dlm.postgrest.labels" $ | indent 4 }}
-type: Opaque
-data:
-  PGHOST: {{ include "ska-dlm.postgresql.name" $ | b64enc }}
-  PGUSER: {{ $.Values.postgresql.auth.username | b64enc }}
-  PGPASSWORD: {{ $.Values.postgresql.auth.password | b64enc }}
-  PGDATABASE: {{ $.Values.postgresql.auth.database | b64enc }}
-{{- end -}}
 {{- end -}}
 {{- end -}}
 {{- end }}
