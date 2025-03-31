@@ -1,5 +1,5 @@
 gateway:
-  enabled: true
+  enabled: false
 
 postgresql:
   enabled: true
