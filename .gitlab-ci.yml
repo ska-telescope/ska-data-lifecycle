@@ -64,6 +64,10 @@ include:
   - project: 'ska-telescope/templates-repository'
     file: 'gitlab-ci/includes/deploy.gitlab-ci.yml'
 
+    # add template
+  - project: 'ska-telescope/templates-repository'
+    file: 'gitlab-ci/includes/gitlab-templates.gitlab-ci.yml'
+
 
 oci-image-build-keycloak:
   extends:
