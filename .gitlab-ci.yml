@@ -27,6 +27,9 @@ stages:
   - staging-dp
   - publish
 
+gitlab-static-reachability:
+  stage: scan
+
 # Include CI templates
 include:
     # Python
