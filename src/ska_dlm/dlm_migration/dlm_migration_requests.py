@@ -262,13 +262,15 @@ def query_migrations(
 
     params = {"limit": 1000, "user": f"eq.{username}"}
 
+    date_filters = []
     if start_date:
-        params["date"] = f"gte.{start_date}"
+        date_filters.append(f"gte.{start_date}")
 
     if end_date:
-        if "date" in params:
-            params["date"] += f"&lte.{end_date}"
-            params["date"] = f"lte.{end_date}"
+        date_filters.append(f"lte.{end_date}")
+
+    if date_filters:
+        params["date"] = ",".join(date_filters)  # join conditions
 
     if storage_id:
         params["storage_id"] = storage_id
