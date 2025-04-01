@@ -69,6 +69,7 @@ def copy_data_item(
 
 
 def query_migrations(
+    # pylint: disable=unused-argument
     start_date: str | None = None,
     end_date: str | None = None,
     storage_id: str | None = None,
