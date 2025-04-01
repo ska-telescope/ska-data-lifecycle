@@ -27,9 +27,6 @@ stages:
   - staging-dp
   - publish
 
-gitlab-static-reachability:
-  stage: scan
-
 # Include CI templates
 include:
     # Python
@@ -63,10 +60,6 @@ include:
     # deploy steps
   - project: 'ska-telescope/templates-repository'
     file: 'gitlab-ci/includes/deploy.gitlab-ci.yml'
-
-    # add template
-  - project: 'ska-telescope/templates-repository'
-    file: 'gitlab-ci/includes/gitlab-templates.gitlab-ci.yml'
 
 
 oci-image-build-keycloak:

@@ -39,7 +39,7 @@ spec:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: {{ .name }}
+  name: {{ include "ska-dlm.rclone.secret.name" $ }}
   namespace: {{ $.Release.Namespace }}
   labels:
     {{- include "ska-dlm.rclone.labels" $ | indent 4 }}

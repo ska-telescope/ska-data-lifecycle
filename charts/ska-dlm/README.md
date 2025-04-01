@@ -26,7 +26,7 @@ DB authentication details for PostgREST are stored in a secret, which is governe
     * `vault`:
         * `enabled`: if `true`, then use the vault to populate the secret. `secret.enabled` must also `true` or an error is thrown.
         * `mount`: vault root.
-        * `type`: kv-v2
+        * `type`: vault engine type, defaults to `kv-v2`
         * `path`: vault path.
 
 
