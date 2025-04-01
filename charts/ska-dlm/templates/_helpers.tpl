@@ -64,17 +64,17 @@ intent: production
 {{- end}}
 
 {{/*
-Template to generate the Postgresql URI
+Generates the PostgreREST Secret name
 */}}
-{{- define "ska-dlm.postgrest.postgresql.uri" -}}
-{{- if .Values.postgrest.db_uri }}
-{{ .Values.postgrest.db_uri }}
-{{- else }}
-{{- $user := .Values.postgresql.auth.username -}}
-{{- $pass := .Values.postgresql.auth.password -}}
-{{- $host := include "ska-dlm.postgresql.name" . -}}
-{{- $db := .Values.postgresql.auth.database -}}
-{{- printf "postgres://%s:%s@%s/%s" $user $pass $host $db -}}
+{{- define "ska-dlm.postgrest.db-auth-secret-name" -}}
+{{- if not .Values.postgrest.db_auth_secret.create -}}
+{{- if not .Values.postgrest.db_auth_secret.name -}}
+{{- fail "postgrest.db_auth_secret.enable=false but no postgrest.secret.name given" }}
+{{- else -}}
+{{ .Values.postgrest.db_auth_secret.name }}
+{{- end -}}
+{{- else -}}
+{{- printf "%s-postgrest-secret" (include "ska-dlm.fullname" .) -}}
 {{- end -}}
 {{- end -}}
 

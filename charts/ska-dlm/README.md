@@ -10,6 +10,14 @@ The main options of interest are:
  * `postgresql.initialise`: if enabled, the DLM tables will be created automatically in the database.
  * `postgresql.primary.persistence.enabled`: if enabled, PostgreSQL will persist data between executions, otherwise it will start from scratch each time.
 
+DB authentication details for PostgREST are stored in a Kubernetes `Secret`.
+The `Secret` is **always** automatically created to point to the internal PostgreSQL server, if that is enabled.
+Otherwise, he following Helm values under `postgrest.db_auth_secret` take effect:
+
+ * `create`: Whether to create a `Secret` or not.
+   * If unset, an existing one has to be provided via `name`.
+   * If set, the `Secret` is created from the Vault contents at `vault.{mount,path,type}`.
+ * In both cases, the `Secret` should provide the following keys: `PGHOST`, `PGUSER`, `PGPASSWORD` and `PGDATABASE`.
 
 ## Test Deployment
 

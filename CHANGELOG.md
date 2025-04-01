@@ -2,6 +2,14 @@
 
 ## Development
 
+### Added
+
+* Support for Vault Secret Operator
+
+### Removed
+
+* Support for Vault Agent Injector
+
 ## 1.0.0
 
 ### Added

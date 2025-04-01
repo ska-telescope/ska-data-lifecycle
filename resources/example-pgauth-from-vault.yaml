@@ -1,0 +1,8 @@
+# Example values to point to a path in Vault to obtain the authentication details
+# used by the PostgREST service to connect to PostgreSQL
+postgrest:
+  db_auth_secret:
+    vault:
+      path: testing/ska-dlm/postgrest-pgauth
+      mount: kv
+      type: kv-v2
