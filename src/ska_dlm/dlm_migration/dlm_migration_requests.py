@@ -230,14 +230,23 @@ async def update_migration_statuses():
 @rest.get("/migration/query_migrations", response_model=list[dict])
 def query_migrations(
     authorization: Annotated[str | None, Header()] = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    storage_id: str | None = None,
 ) -> list[dict]:
     """
-    Query for all migrations by a given user.
+    Query for all migrations by a given user, with optional filters.
 
     Parameters
     ----------
     authorization : str, optional
         Validated Bearer token with UserInfo
+    start_date : str, optional
+        Filter migrations that started after this date (YYYY-MM-DD or YYYYMMDD)
+    end_date : str, optional
+        Filter migrations that ended before this date (YYYY-MM-DD or YYYYMMDD)
+    storage_id : str, optional
+        Filter migrations by a specific storage location
 
     Returns
     -------
@@ -252,6 +261,19 @@ def query_migrations(
             raise ValueError("Username not found in profile")
 
     params = {"limit": 1000, "user": f"eq.{username}"}
+
+    date_filters = []
+    if start_date:
+        date_filters.append(f"gte.{start_date}")
+
+    if end_date:
+        date_filters.append(f"lte.{end_date}")
+
+    if date_filters:
+        params["date"] = ",".join(date_filters)  # join conditions
+
+    if storage_id:
+        params["storage_id"] = storage_id
 
     return DB.select(CONFIG.DLM.migration_table, params=params)
 
