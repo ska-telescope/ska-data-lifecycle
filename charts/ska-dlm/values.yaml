@@ -97,9 +97,8 @@ rclone:
 
   secret:
     enabled: false
-    name: rclone-ssh-keys
+    name: ""
     mountPoint: "/secrets/"
-    secretData:
     vault:
       enabled: false
       mount: ""
