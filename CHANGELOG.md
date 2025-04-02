@@ -5,6 +5,7 @@
 ### Added
 
 * Support for Vault Secret Operator
+* Optional date and storage_id filters for migration query
 
 ### Removed
 
