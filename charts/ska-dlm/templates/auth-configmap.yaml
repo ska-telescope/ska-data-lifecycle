@@ -16,9 +16,9 @@ data:
   PROVIDER: KC
   AUTH: "1"
   {{- if $.Values.keycloak.use_https }}
-  KEYCLOAK_URL: "https://{{ include "ska-dlm.fullname" . }}-keycloak.{{ .Release.Namespace }}.svc.cluster.local"
+  KEYCLOAK_URL: "https://{{ include "ska-dlm.fullname" . }}-keycloak.{{ .Release.Namespace }}"
   {{- else }}
-  KEYCLOAK_URL: "http://{{ include "ska-dlm.fullname" . }}-keycloak.{{ .Release.Namespace }}.svc.cluster.local"
+  KEYCLOAK_URL: "http://{{ include "ska-dlm.fullname" . }}-keycloak.{{ .Release.Namespace }}"
   {{- end }}
 {{- else }}
 apiVersion: v1

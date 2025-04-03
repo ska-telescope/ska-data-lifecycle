@@ -16,7 +16,7 @@ This section outlines the steps required to ingest and migrate data within the D
 **The source code below demonstrates how to register a data item that exists on an external storage (e.g., Acacia).**
 
 _Note that at the time of writing (07 Feb 2025), due to a missing firewall exception, the restful endpoint was only accessible by either:
-(1) running with VPN access or (2) running from a terminal session inside the cluster using http://ska-dlm-gateway.dp-yanda.svc.cluster.local_
+(1) running with VPN access or (2) running from a terminal session inside the cluster using http://ska-dlm-gateway.dp-yanda_
 
 **1. Prepare token to be placed in the header of your REST calls**
 
