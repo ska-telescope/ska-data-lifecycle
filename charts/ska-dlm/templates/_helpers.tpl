@@ -152,9 +152,9 @@ intent: production
 Rclone secret name
 */}}
 {{- define "ska-dlm.rclone.secret.name" -}}
-{{- if and .Values.rclone.secret.name (not .Values.rclone.secret.vault.enabled) }}
-{{- .Values.rclone.secret.name -}}
-{{- else -}}
+{{- if .Values.rclone.secret.vault.enabled }}
 {{- include "ska-dlm.fullname" . }}-rclone-secret-vso
+{{- else -}}
+{{- .Values.rclone.secret.name -}}
 {{- end -}}
 {{- end -}}

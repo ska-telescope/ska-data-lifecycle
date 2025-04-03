@@ -33,10 +33,6 @@ spec:
     name: {{ include "ska-dlm.rclone.secret.name" $ }}
     transformation:
       excludeRaw: true
-{{- else if and (not .enabled) .vault.enabled }}
-  {{- fail "rclone secret can not be disabled while the vault is enabled" }}
-{{- else if and .enabled (not .vault.enabled) (not .name) }}
-  {{- fail "rclone secret name must not be empty" }}
 {{- end }}
 {{- end }}
 
@@ -83,7 +79,12 @@ spec:
             readOnly: true
         {{- end }}
         {{- end }}
+
+      {{ with .Values.rclone.secret }}
+      {{- if .enabled }}
       volumes:
       - name: {{ include "ska-dlm.rclone.secret.name" $ }}
         secret:
             secretName: {{ include "ska-dlm.rclone.secret.name" $ }}
+      {{- end }}
+      {{- end }}

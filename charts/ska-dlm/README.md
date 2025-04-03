@@ -26,7 +26,7 @@ Otherwise, he following Helm values under `postgrest.db_auth_secret` take effect
     * `name`: name of an existing secret created by an external mechanism. This will only be used if `secret.vault.enabled` is `false` and it's not empty.
     * `mountPoint`: rclone pod mount point.
     * `vault`:
-        * `enabled`: if `true`, then use the vault to populate the secret. `secret.enabled` must also `true` or an error is thrown.
+        * `enabled`: if `true`, then use the vault to populate the secret. `secret.enabled` must also `true`.
         * `mount`: vault root.
         * `type`: vault engine type, defaults to `kv-v2`
         * `path`: vault path.
