@@ -17,8 +17,7 @@ spec:
     subsystem: {{ .Values.rclone.subsystem }}
 
 {{ with .Values.rclone.secret }}
-{{- if .enabled }}
-{{- if .vault.enabled }}
+{{- if and .enabled .vault.enabled }}
 ---
 apiVersion: secrets.hashicorp.com/v1beta1
 kind: VaultStaticSecret
@@ -34,27 +33,6 @@ spec:
     name: {{ include "ska-dlm.rclone.secret.name" $ }}
     transformation:
       excludeRaw: true
-{{- else }}
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: {{ include "ska-dlm.rclone.secret.name" $ }}
-  namespace: {{ $.Release.Namespace }}
-  labels:
-    {{- include "ska-dlm.rclone.labels" $ | indent 4 }}
-type: Opaque
-data:
-  {{- with .secretData | default dict }}
-  {{- range $key, $value := . }}
-  {{ $key }}: {{ $value | b64enc | quote }}
-  {{- end }}
-  {{- end }}
-{{- end }}
-{{- else }}
-{{- if .vault.enabled }}
-{{- fail "Rclone secrets can not be disabled while the vault is enabled" }}
-{{- end }}
 {{- end }}
 {{- end }}
 
@@ -101,7 +79,12 @@ spec:
             readOnly: true
         {{- end }}
         {{- end }}
+
+      {{ with .Values.rclone.secret }}
+      {{- if .enabled }}
       volumes:
       - name: {{ include "ska-dlm.rclone.secret.name" $ }}
         secret:
             secretName: {{ include "ska-dlm.rclone.secret.name" $ }}
+      {{- end }}
+      {{- end }}

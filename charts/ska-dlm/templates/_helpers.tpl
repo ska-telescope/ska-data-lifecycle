@@ -148,10 +148,13 @@ subsystem: {{ .Values.keycloak.subsystem }}
 intent: production
 {{- end }}
 
-
 {{/*
 Rclone secret name
 */}}
 {{- define "ska-dlm.rclone.secret.name" -}}
-{{- printf "%s%s" .Values.rclone.secret.name (ternary "-vso" "" .Values.rclone.secret.vault.enabled) -}}
+{{- if .Values.rclone.secret.vault.enabled }}
+{{- include "ska-dlm.fullname" . }}-rclone-secret-vso
+{{- else -}}
+{{- .Values.rclone.secret.name -}}
+{{- end -}}
 {{- end -}}
