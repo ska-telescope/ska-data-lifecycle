@@ -270,10 +270,17 @@ def query_migrations(
         date_filters.append(f"lte.{end_date}")
 
     if date_filters:
-        params["date"] = ",".join(date_filters)  # join conditions
+        if start_date and end_date:
+            params["and"] = f"(date.gte.{start_date},date.lte.{end_date})"  # join conditions
+        elif start_date:
+            params["date"] = f"gte.{start_date}"
+        elif end_date:
+            params["date"] = f"lte.{end_date}"
 
     if storage_id:
-        params["storage_id"] = storage_id
+        params[
+            "or"
+        ] = f"(source_storage_id.eq.{storage_id},destination_storage_id.eq.{storage_id})"
 
     return DB.select(CONFIG.DLM.migration_table, params=params)
 
