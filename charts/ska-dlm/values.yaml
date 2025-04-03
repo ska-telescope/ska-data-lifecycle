@@ -95,6 +95,18 @@ rclone:
   imagePullPolicy: Always
   replicas: 1
 
+  secret:
+    enabled: false
+    name: rclone-ssh-keys
+    mountPoint: "/secrets/"
+    secretData:
+    vault:
+      enabled: false
+      mount: ""
+      type: kv-v2
+      path: ""
+
+
 kubectl:
   image: bitnami/kubectl
   version: 1.28.6
