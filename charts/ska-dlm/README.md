@@ -22,12 +22,11 @@ Otherwise, he following Helm values under `postgrest.db_auth_secret` take effect
 #### Rclone Helm Chart `secret` values
 
  * `secret`:
-    * `enabled`: if `true`, then enabled rclone ssh key secrets.
-    * `name`: name of secret that will be created.
-    * `mountPoint`: rclone pod ssh key mount point.
-    * `secretData`: key value pair, with the value containing the ssh key, will only be used if `vault.enabled` is `false` and `secret.enabled` is `true`.
+    * `enabled`: if `true`, then enable rclone secrets.
+    * `name`: name of an existing secret created by an external mechanism. This will only be used if `secret.vault.enabled` is `false` and it's not empty.
+    * `mountPoint`: rclone pod mount point.
     * `vault`:
-        * `enabled`: if `true`, then use the vault to populate the secret. `secret.enabled` must also `true` or an error is thrown.
+        * `enabled`: if `true`, then use the vault to populate the secret. `secret.enabled` must also `true`.
         * `mount`: vault root.
         * `type`: vault engine type, defaults to `kv-v2`
         * `path`: vault path.
