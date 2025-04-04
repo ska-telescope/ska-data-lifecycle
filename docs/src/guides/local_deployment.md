@@ -36,7 +36,7 @@ ska-dlm ingest register-data-item test_item_name etc/os-release --storage-name M
     --metadata='{"execution_block":"eb-m001-20191031-12345"}'
 
 # query for data items called test_item_name
-ska-dlm request query-data-item --item-name test_item_name
+ska-dlm data-item query-data-item --item-name test_item_name
 
 # if you can't find the command you need, follow the help prompts
 ska-dlm --help
