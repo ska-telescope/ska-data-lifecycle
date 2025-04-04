@@ -29,14 +29,26 @@ ska-dlm storage init-storage MyDisk disk posix / --location-name MyHost
 ska-dlm storage get-storage-config --storage-name MyDisk
 # create a storage config for MyDisk (if it doesn't already exist)
 ska-dlm storage create-storage-config '{"name":"MyDisk", "type":"alias", "parameters":{"remote": "/"}}' \
-    --storage-id '<the storage id received above>'
+--storage-id '<the storage id received above>'
 
 # register a data item inside the Docker container (e.g., /etc/os-release)
 ska-dlm ingest register-data-item test_item_name etc/os-release --storage-name MyDisk \
-    --metadata='{"execution_block":"eb-m001-20191031-12345"}'
+--metadata='{"execution_block":"eb-m001-20191031-12345"}'
 
 # query for data items called test_item_name
 ska-dlm data-item query-data-item --item-name test_item_name
+
+# migrate an item from one storage to another
+# register a second storage
+ska-dlm storage init-storage MyDisk2 disk posix / --location-name MyHost
+
+# supply an rclone config
+ska-dlm storage create-storage-config '{"name":"MyDisk2", "type":"alias", "parameters":{"remote": "/"}}' \
+--storage-id '<the storage id received above>'
+
+# copy your data item from MyDisk to MyDisk2
+ska-dlm migration copy-data-item --item-name "test_item_name" --destination-name "MyDisk2" \
+--path "/data/test_item"
 
 # if you can't find the command you need, follow the help prompts
 ska-dlm --help
@@ -102,4 +114,9 @@ dlm_migration.copy_data_item("test_item", destination_name="MyDisk2", path="/dat
 
 # query for all copies of the item
 dlm_request.query_data_item("test_item")
+```
+
+Remember to tear down the services:
+```
+docker compose -f tests/services.docker-compose.yaml -p dlm-test-services down
 ```
