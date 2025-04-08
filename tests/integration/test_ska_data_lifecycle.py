@@ -235,8 +235,8 @@ def test_copy(env: DlmTestClient):
 
     # trigger manual update of migrations status
     asyncio.run(update_migration_statuses())
-    print('results["migration_id"]',results["migration_id"])
-    print('results',results)
+    print('results["migration_id"]', results["migration_id"])
+    print("results", results)
     # check that a query for all migrations returns the details of this single migration
     result = _get_migration_record(results["migration_id"])
 
@@ -248,10 +248,7 @@ def test_copy(env: DlmTestClient):
 
     # test the query_migration function
     yesterday = (TODAY_DATE - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
-    result = env.migration_requests.query_migrations(
-        start_date=yesterday,
-        storage_id=dest_id
-    )
+    result = env.migration_requests.query_migrations(start_date=yesterday, storage_id=dest_id)
     assert len(result) == 1
     # a query for migrations made up until yesterday should return nothing
     query_result = env.migration_requests.query_migrations(end_date=yesterday)
