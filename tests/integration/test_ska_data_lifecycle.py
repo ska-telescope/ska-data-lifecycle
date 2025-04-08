@@ -235,8 +235,7 @@ def test_copy(env: DlmTestClient):
 
     # trigger manual update of migrations status
     asyncio.run(update_migration_statuses())
-    print('results["migration_id"]', results["migration_id"])
-    print("results", results)
+
     # check that a query for all migrations returns the details of this single migration
     result = _get_migration_record(results["migration_id"])
 
