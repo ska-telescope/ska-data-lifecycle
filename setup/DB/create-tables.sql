@@ -27,7 +27,7 @@ CREATE TABLE storage (
     storage_id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     location_id uuid NOT NULL,
     storage_name varchar NOT NULL UNIQUE,
-    root_directory varchar DEFAULT NULL,
+    root_directory varchar DEFAULT '/',
     storage_type varchar NOT NULL,
     storage_interface varchar NOT NULL,
     storage_phase_level varchar DEFAULT 'GAS',
