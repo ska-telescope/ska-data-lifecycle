@@ -21,18 +21,22 @@ from ska_dlm import CONFIG, dlm_migration
             "2022-01-01",
             "2024-01-01",
             None,
-            {"limit": 1000, "user": "eq.testuser", "date": "gte.2022-01-01,lte.2024-01-01"},
+            {
+                "limit": 1000,
+                "user": "eq.testuser",
+                "and": "(date.gte.2022-01-01,date.lte.2024-01-01)",
+            },
         ),
         # Case 3: Start_date, end_date, and storage_id
         (
             "2022-01-01",
             "2024-01-01",
-            "abcdefgh-1234",
+            "abcdef-1234",
             {
                 "limit": 1000,
                 "user": "eq.testuser",
-                "date": "gte.2022-01-01,lte.2024-01-01",
-                "storage_id": "abcdefgh-1234",
+                "and": "(date.gte.2022-01-01,date.lte.2024-01-01)",
+                "or": "(source_storage_id.eq.abcdef-1234,destination_storage_id.eq.abcdef-1234)",
             },
         ),
     ],

@@ -19,6 +19,7 @@ from ska_dlm.dlm_storage.main import persist_new_data_items
 from ska_dlm.exceptions import InvalidQueryParameters, ValueAlreadyInDB
 from tests.common_local import DlmTestClientLocal
 from tests.integration.client.dlm_gateway_client import get_token
+from tests.test_env import DlmTestClient
 
 ROOT = "/data/"
 RCLONE_TEST_FILE_PATH = "/data/MyDisk/testfile"
@@ -29,7 +30,7 @@ ROOT_DIRECTORY2 = "/data/MyDisk2/"
 """A file that is available locally in the rclone container"""
 RCLONE_TEST_FILE_CONTENT = "license content"
 RCLONE_TEST_FILE_SIZE = 15  # bytes
-TODAY_DATE = datetime.datetime.now().strftime("%Y%m%d")
+TODAY_DATE = datetime.datetime.now()
 METADATA_RECEIVED = {
     "execution_block": "eb-meta-20240723-00000",
 }
@@ -215,7 +216,7 @@ def __initialize_storage_config(env):
 
 
 @pytest.mark.integration_test
-def test_copy(env):
+def test_copy(env: DlmTestClient):
     """Copy a test file from one storage to another."""
     # NOTE: this test will not work without requests being made via a gateway
 
@@ -243,6 +244,14 @@ def test_copy(env):
     assert result[0]["complete"] is True
     assert result[0]["job_status"]["finished"] is True
     assert result[0]["job_stats"]["bytes"] == RCLONE_TEST_FILE_SIZE
+
+    # test the query_migration function
+    yesterday = (TODAY_DATE - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+    result = env.migration_requests.query_migrations(start_date=yesterday, storage_id=dest_id)
+    assert len(result) == 1
+    # a query for migrations made up until yesterday should return nothing
+    query_result = env.migration_requests.query_migrations(end_date=yesterday)
+    assert query_result == []
 
 
 @pytest.mark.integration_test
@@ -435,7 +444,7 @@ def test_populate_metadata_col(env):
 
 
 @pytest.mark.integration_test
-def test_query_migration(env):
+def test_query_migration(env: DlmTestClient):
     """Test that query migration returns an empty set."""
     result = env.migration_requests.query_migrations()
     assert len(result) == 0
