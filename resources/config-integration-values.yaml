@@ -8,7 +8,7 @@ gateway:
 
 postgresql:
   enabled: true
-  initialise: true
+  migrate: true
 
 keycloak:
   enabled: false

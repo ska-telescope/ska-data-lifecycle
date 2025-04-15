@@ -1,0 +1,42 @@
+{{- if .Values.postgresql.migrate }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: dlm-db-migration
+spec:
+  template:
+    spec:
+      containers:
+      - name: dlm-db-migration
+        image: postgres:latest
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+            export PGPORT=${PGPORT:-5432}
+            psql -U "$PGUSER" -h "$PGHOST" -p "$PGPORT" -d "$PGDATABASE" -f /etc/sql/10_create_roles.sql
+            psql -U "$PGUSER" -h "$PGHOST" -p "$PGPORT" -d "$PGDATABASE" -f /etc/sql/10_create_tables.sql
+        env:
+        {{ range $envvar_name := tuple "PGUSER" "PGPASSWORD" "PGHOST" "PGDATABASE" -}}
+        - name: {{ $envvar_name }}
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
+              key: {{ $envvar_name }}
+              optional: false
+        {{ end -}}
+        - name: PGPORT
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
+              key: PGPORT
+              optional: true
+        volumeMounts:
+        - name: sql-volume
+          mountPath: "/etc/sql/"
+      volumes:
+      - name: sql-volume
+        configMap:
+          name: ska-dlm-postgresql-initdb-scripts
+      restartPolicy: Never
+  backoffLimit: 4
+  {{- end }}

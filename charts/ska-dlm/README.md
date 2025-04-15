@@ -7,7 +7,7 @@ This chart currently installs PostgREST, and optionally Postgres via the bitnami
 The main options of interest are:
 
  * `postgresql.enabled`: if enabled, PostgreSQL is installed, otherwise an external installation will be necessary.
- * `postgresql.initialise`: if enabled, the DLM tables will be created automatically in the database.
+ * `postgresql.migrate`: if enabled, the DLM tables will be created automatically in the database.
  * `postgresql.primary.persistence.enabled`: if enabled, PostgreSQL will persist data between executions, otherwise it will start from scratch each time.
 
 DB authentication details for PostgREST are stored in a Kubernetes `Secret`.
