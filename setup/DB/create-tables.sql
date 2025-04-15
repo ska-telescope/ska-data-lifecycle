@@ -6,7 +6,7 @@
 -- Table location
 --
 
-CREATE TABLE location (
+CREATE TABLE IF NOT EXISTS location (
     location_id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     location_name varchar NOT NULL UNIQUE,
     location_type varchar NOT NULL,
@@ -23,7 +23,7 @@ ALTER TABLE location OWNER TO ska_dlm_admin;
 -- Table storage
 --
 
-CREATE TABLE storage (
+CREATE TABLE IF NOT EXISTS storage (
     storage_id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     location_id uuid NOT NULL,
     storage_name varchar NOT NULL UNIQUE,
@@ -56,7 +56,7 @@ ALTER TABLE storage OWNER TO ska_dlm_admin;
 -- converted by the storage_manager software. Being a separate table
 -- this allows for multiple configurations for different mechanisms.
 --
-CREATE TABLE storage_config (
+CREATE TABLE IF NOT EXISTS storage_config (
     config_id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     storage_id uuid NOT NULL,
     config_type varchar DEFAULT 'rclone',
@@ -74,7 +74,7 @@ ALTER TABLE storage_config OWNER TO ska_dlm_admin;
 -- Table data_item
 --
 
-CREATE TABLE data_item (
+CREATE TABLE IF NOT EXISTS data_item (
     UID uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     OID uuid DEFAULT NULL,
     item_version integer DEFAULT 1,
@@ -118,9 +118,9 @@ CREATE TABLE data_item (
       ON DELETE SET NULL
 );
 ALTER TABLE data_item OWNER TO ska_dlm_admin;
-CREATE INDEX idx_fk_storage_id ON data_item USING btree (storage_id);
+CREATE INDEX IF NOT EXISTS idx_fk_storage_id ON data_item USING btree (storage_id);
 
-CREATE UNIQUE INDEX idx_unq_OID_UID_item_version ON data_item USING btree (OID, UID, item_version);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_unq_OID_UID_item_version ON data_item USING btree (OID, UID, item_version);
 CREATE FUNCTION sync_oid_uid() RETURNS trigger AS $$
   DECLARE oidc RECORD;
   DECLARE tnow timestamp DEFAULT now();
@@ -151,7 +151,7 @@ FOR EACH ROW EXECUTE PROCEDURE
 -- Table phase_change
 --
 
-CREATE TABLE phase_change (
+CREATE TABLE IF NOT EXISTS phase_change (
     phase_change_ID bigint GENERATED always as IDENTITY PRIMARY KEY,
     OID uuid NOT NULL,
     requested_phase varchar DEFAULT 'GAS',
@@ -164,7 +164,7 @@ ALTER TABLE phase_change OWNER TO ska_dlm_admin;
 -- Table migration
 --
 
-CREATE TABLE migration (
+CREATE TABLE IF NOT EXISTS migration (
     migration_id bigint GENERATED always as IDENTITY PRIMARY KEY,
     job_id bigint NOT NULL,
     OID uuid NOT NULL,

@@ -114,7 +114,7 @@ kubectl:
 # Test Database
 postgresql:  # see https://github.com/bitnami/charts/tree/main/bitnami/postgresql
   enabled: false
-  initialise: false
+  migrate: false
   nameOverride: postgresql
 
   # Custom user/password/db to create, has to match primary.initdb authentication
