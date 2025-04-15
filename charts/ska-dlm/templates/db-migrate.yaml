@@ -13,7 +13,6 @@ spec:
         args:
         - |
             export PGPORT=${PGPORT:-5432}
-            psql -U "$PGUSER" -h "$PGHOST" -p "$PGPORT" -d "$PGDATABASE" -f /etc/sql/10_create_roles.sql
             psql -U "$PGUSER" -h "$PGHOST" -p "$PGPORT" -d "$PGDATABASE" -f /etc/sql/10_create_tables.sql
         env:
         {{ range $envvar_name := tuple "PGUSER" "PGPASSWORD" "PGHOST" "PGDATABASE" -}}
