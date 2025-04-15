@@ -116,6 +116,8 @@ postgresql:  # see https://github.com/bitnami/charts/tree/main/bitnami/postgresq
   enabled: false
   migrate: false
   nameOverride: postgresql
+  image_name: postgres
+  version: "17.4"
 
   # Custom user/password/db to create, has to match primary.initdb authentication
   auth:

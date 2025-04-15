@@ -1,19 +1,20 @@
+{{- if not .Values.postgresql.enabled }}
 {{- if .Values.postgresql.migrate }}
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: dlm-db-migration
+  name: {{ include "ska-dlm.fullname" . }}-db-migration
 spec:
   template:
     spec:
       containers:
-      - name: dlm-db-migration
-        image: postgres:latest
+      - name: {{ include "ska-dlm.fullname" . }}-db-migration
+        image: {{ .Values.postgresql.image_name}}:{{ .Values.postgresql.version }}
         command: ["/bin/sh", "-c"]
         args:
         - |
             export PGPORT=${PGPORT:-5432}
-            psql -U "$PGUSER" -h "$PGHOST" -p "$PGPORT" -d "$PGDATABASE" -f /etc/sql/10_create_tables.sql
+            psql -f /etc/sql/10_create_tables.sql
         env:
         {{ range $envvar_name := tuple "PGUSER" "PGPASSWORD" "PGHOST" "PGDATABASE" -}}
         - name: {{ $envvar_name }}
@@ -38,4 +39,5 @@ spec:
           name: ska-dlm-postgresql-initdb-scripts
       restartPolicy: Never
   backoffLimit: 4
+  {{- end }}
   {{- end }}
