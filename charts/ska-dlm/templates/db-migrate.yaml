@@ -1,5 +1,5 @@
 {{- if not .Values.postgresql.enabled }}
-{{- if .Values.database.migrate }}
+{{- if .Values.database.migration.enabled }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -9,7 +9,7 @@ spec:
     spec:
       containers:
       - name: {{ include "ska-dlm.fullname" . }}-db-migration
-        image: {{ .Values.postgresql.image_name}}:{{ .Values.postgresql.version }}
+        image: {{ .Values.database.migration.image }}:{{ .Values.database.migration.version }}
         command: ["/bin/sh", "-c"]
         args:
         - psql -f /etc/sql/10_create_tables.sql
