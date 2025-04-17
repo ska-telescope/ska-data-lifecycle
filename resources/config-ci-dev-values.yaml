@@ -3,7 +3,6 @@ gateway:
 
 postgresql:
   enabled: true
-  initialise: true
 
 keycloak:
   enabled: true
