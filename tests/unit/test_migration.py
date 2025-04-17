@@ -42,9 +42,7 @@ from ska_dlm import CONFIG, dlm_migration
     ],
 )
 def test_query_migrations(mocker: MockerFixture, start_date, end_date, storage_id, exp_params):
-    """
-    Test the `query_migrations` function with different filter combinations.
-    """
+    """Test the `query_migrations` function with different filter combinations."""
     # Mock the DB.select method
     mock_db_select = mocker.patch("ska_dlm.dlm_db.db_access.DB.select")
 

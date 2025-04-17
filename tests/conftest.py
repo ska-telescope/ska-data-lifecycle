@@ -12,20 +12,20 @@ from tests.test_env import DlmTestClient
 
 
 def pytest_addoption(parser):
-    """Setup command line"""
+    """Set up command line options."""
     parser.addoption("--env", action="store", default="local", help="local, docker, or k8s")
     parser.addoption("--auth", action="store", default="1", help="Use OAuth flow")
 
 
 @pytest.fixture(name="env", scope="session")
-def env_fixture(request) -> DlmTestClient:
+def env_fixture(request: pytest.FixtureRequest) -> DlmTestClient:
     """Fixture that creates deployment environment specific client.
 
     Additionally overrides ska_dlm.CONFIG with the environment in the test runner runtime.
 
     Parameters
     ----------
-    request : FixtureRequest
+    request
         pytest fixture request context.
 
     Returns

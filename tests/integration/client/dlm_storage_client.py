@@ -1,4 +1,4 @@
-"""dlm_storage REST client"""
+"""dlm_storage REST client."""
 
 import requests
 
@@ -46,23 +46,23 @@ def init_storage(
 
     Parameters
     ----------
-    storage_name : str
+    storage_name
         An organisation or owner name for the storage.
-    storage_type: str
-        high level type of the storage, e.g. "disk", "s3"
-    storage_interface: str
-        storage interface for rclone access, e.g. "posix", "s3"
-    location_name : str, optional
+    location_name
         a dlm registered location name
-    location_id : str, optional
-        a dlm registered location id
-    root_directory : str
+    storage_interface
+        storage interface for rclone access, e.g. "posix", "s3"
+    root_directory
         root directory of storage
-    storage_capacity: int, optional
+    location_id
+        a dlm registered location id
+    storage_type
+        high level type of the storage, e.g. "disk", "s3"
+    storage_capacity
         reserved storage capacity in bytes
-    storage_phase_level: str, optional
+    storage_phase_level
         one of "GAS", "LIQUID", "SOLID"
-    json_data: dict, optional
+    json_data
         extra rclone values such as secrets required for connection
 
     Returns
@@ -99,7 +99,7 @@ def query_location(location_name: str = "", location_id: str = "") -> list:
 
     Returns
     -------
-    str
+    list
     """
     params = {k: v for k, v in locals().items() if v}
     headers = {"Authorization": f"Bearer {TOKEN}"}
@@ -112,7 +112,7 @@ def query_location(location_name: str = "", location_id: str = "") -> list:
 
 # pylint: disable=unused-argument
 def create_storage_config(
-    config: dict, storage_id: str = "", storage_name: str = "", config_type="rclone"
+    config: dict, storage_id: str = "", storage_name: str = "", config_type: str = "rclone"
 ) -> str:
     """
     Create a new record in the storage_config table for a storage with the given id.
@@ -154,6 +154,10 @@ def create_rclone_config(config: JsonObjectArg) -> bool:
     ----------
     config
         a dictionary containing the configuration
+
+    Returns
+    -------
+    bool
     """
     headers = {"Authorization": f"Bearer {TOKEN}"}
     response = requests.post(
@@ -172,9 +176,9 @@ def query_storage(storage_name: str = "", storage_id: str = "") -> list[dict]:
 
     Parameters
     ----------
-    storage_name: str, optional
+    storage_name
         could be empty, in which case the first 1000 items are returned
-    storage_id: str, optional
+    storage_id
         Return locations referred to by the location_id provided.
 
     Returns
@@ -197,11 +201,11 @@ def get_storage_config(
 
     Parameters
     ----------
-    storage_id : str, optional
+    storage_id
         the storage id, by default ""
-    storage_name : str, optional
+    storage_name
         the name of the storage volume, by default ""
-    config_type : str, optional
+    config_type
         query only the specified type, by default "rclone"
 
     Returns

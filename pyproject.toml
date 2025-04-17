@@ -54,7 +54,7 @@ pytest = "^7.3.1"
 pytest-cov = "^4.1.0"
 pytest-integration = "^0.2.3"
 pytest-mock = "^3.14.0"
-darglint = "^1.8.1"
+darglint2 = "^1.8.2"
 flake8-docstrings = "^1.7.0"
 flake8-rst-docstrings = "^0.3.0"
 flake8-pyproject = "^1.2.3"
@@ -86,9 +86,9 @@ log_cli = true
 [tool.flake8]
 docstring-style = "numpy"  # darglint
 docstring-convention = "numpy"  # flake8-docstrings
+arg-type-hints-in-docstring = false  # pydocstyle
 strictness = "short"
 rst-directives = "literalinclude"
-ignore-decorator = "overrides"
 rst-roles = [
     "py:attr",
     "py:class",
@@ -100,9 +100,6 @@ rst-roles = [
 ]
 enable = "DAR104"
 max-complexity = 10
-exclude = [
-    "tests/",
-]
 ignore = [
     # Use black to handle formatting
     "E203", # Whitespace before ':'
@@ -120,6 +117,8 @@ ignore = [
     "DOC401", "DAR401", # Missing "Exception" in Docstring
     "DAR402", # Excess exception(s) in Raises section
     "DOC501", "DAR501", # Missing "Raises" in Docstring
+    "DOC502", # Raises section in docstring but no matching body
+    "DOC503", # Raises section does not match body
 ]
 
 [tool.pylint.messages_control]
