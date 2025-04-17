@@ -70,18 +70,18 @@ def create_typer_function_info(
 
 
 def typer_docstring(func: typing.Callable[ParamsT, ReturnT]) -> typing.Callable[ParamsT, ReturnT]:
-    """Decorator that generates Typer annotations from the function signature and docstring.
+    """Decorate a function with Typer annotations from the function signature and docstring.
 
     NOTE: This does not modify the __doc__ member.
 
     Parameters
     ----------
-    func : typing.Callable[ParamsT, T]
+    func
         Typer compatible function signature.
 
     Returns
     -------
-    typing.Callable[ParamsT, T]
+    typing.Callable[ParamsT, ReturnT]
         Decorated function with updated annotations and docstring.
     """
     # Parse docstring

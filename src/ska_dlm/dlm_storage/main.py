@@ -19,7 +19,7 @@ def persist_new_data_items(last_check_time: str) -> dict:
 
     Parameters
     ----------
-    last_check_time: str
+    last_check_time
         ISO formatted datetime string
 
     Returns

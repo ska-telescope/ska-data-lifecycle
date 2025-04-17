@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 #
 # developer.skatelescope.org documentation build configuration file, created by
 # sphinx-quickstart on Wed Dec 13 11:59:38 2017.
@@ -18,7 +17,7 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 """sphinx config."""
 
-# pylint: disable=invalid-name,redefined-builtin,missing-module-docstring
+# pylint: disable=invalid-name,redefined-builtin
 
 import os
 import sys
@@ -35,8 +34,7 @@ sys.path.insert(0, os.path.abspath(os.path.join("..", "..", "src")))
 
 
 def setup(app):
-    """Setup."""
-    # pylint: disable=missing-function-docstring
+    """Run additional setup-time operations."""
     app.add_css_file("css/custom.css")
     app.add_js_file("js/github.js")
 

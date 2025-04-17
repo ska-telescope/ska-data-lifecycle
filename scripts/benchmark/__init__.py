@@ -1,1 +1,1 @@
-"""Benchmark package."""
+"""Benchmark module."""

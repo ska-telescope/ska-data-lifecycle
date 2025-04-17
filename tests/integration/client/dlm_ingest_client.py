@@ -1,7 +1,7 @@
-"""dlm_ingest REST client"""
+"""dlm_ingest REST client."""
 
 from enum import Enum
-from typing import Any, Dict, List, Union
+from typing import Any, Union
 
 import requests
 
@@ -11,7 +11,7 @@ from tests.integration.client.exception_handler import dlm_raise_for_status
 INGEST_URL = ""
 TOKEN: str = None
 
-JsonType = Union[Dict[str, Any], List[Any], str, int, float, bool, None]
+JsonType = Union[dict[str, Any], list[Any], str, int, float, bool, None]
 
 
 class ItemType(str, Enum):
@@ -33,11 +33,11 @@ def init_data_item(item_name: str | None = None, phase: str = "GAS", json_data: 
 
     Parameters
     ----------
-    item_name : str
+    item_name
         the item_name, can be empty, but then json_data has to be specified.
-    phase : str
+    phase
         the phase this item is set to (usually inherited from the storage)
-    json_data : dict | None
+    json_data
         data item table values.
 
     Returns
@@ -67,6 +67,8 @@ def register_data_item(
     storage_id: str = "",
     parents: str | None = None,
     metadata: JsonObjectOption = None,
+    do_storage_access_check: bool = True,
+    authorization: str | None = None,
 ) -> str:
     """Ingest a data_item (register function is an alias).
 
@@ -83,23 +85,23 @@ def register_data_item(
 
     Parameters
     ----------
-    item_name: str
+    item_name
         item name to register with. Does not need to be unique.
-    uri: str
+    uri
         the relative access path to the payload.
-    item_type: str
+    item_type
         type of the data item (container, file)
-    storage_name: str
+    storage_name
         the name of the configured storage volume (name or ID required)
-    storage_id: str, optional
+    storage_id
         the ID of the configured storage.
-    metadata: dict, optional
-        metadata provided by the client
-    parents: str, optional
+    parents
         uuid of parent item
-    do_storage_access_check: bool, optional
+    metadata
+        metadata provided by the client
+    do_storage_access_check
         perform check_storage_access() against provided storage and uri
-    authorization: str
+    authorization
         Validated Bearer token with UserInfo
 
     Returns

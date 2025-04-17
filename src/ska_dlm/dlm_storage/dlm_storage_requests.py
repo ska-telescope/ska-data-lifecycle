@@ -69,9 +69,9 @@ def query_location(location_name: str = "", location_id: str = "") -> list[dict]
 
     Parameters
     ----------
-    location_name: str, optional
+    location_name
         could be empty, in which case the first 1000 items are returned
-    location_id: str, optional
+    location_id
         Return locations referred to by the location_id provided.
 
     Returns
@@ -106,23 +106,23 @@ def init_storage(
 
     Parameters
     ----------
-    storage_name : str
+    storage_name
         An organisation or owner name for the storage.
-    storage_type : str
+    storage_type
         high level type of the storage, e.g. "disk", "s3"
-    storage_interface : str
+    storage_interface
         storage interface for rclone access, e.g. "posix", "s3"
-    root_directory : str
+    root_directory
         data directory as an absolute path on the remote storage endpoint
-    location_name : str, optional
-        a dlm registered location name
-    location_id : str, optional
+    location_id
         a dlm registered location id
-    storage_capacity : int, optional
+    location_name
+        a dlm registered location name
+    storage_capacity
         reserved storage capacity in bytes
-    storage_phase_level : str, optional
+    storage_phase_level
         one of "GAS", "LIQUID", "SOLID"
-    rclone_config : dict, optional
+    rclone_config
         extra rclone values such as secrets required for connection
 
     Returns
@@ -174,13 +174,13 @@ def create_storage_config(
 
     Parameters
     ----------
-    config: str
+    config
         the configuration entry. For rclone this is a JSON formatted string
-    storage_id: str, optional
+    storage_id
         the storage_id for which to create the entry.
-    storage_name: str, optional
+    storage_name
         the name of the storage for which the config is provided.
-    config_type: str, optional
+    config_type
         default is rclone, but could be something else in the future.
 
     Returns
@@ -216,11 +216,11 @@ def get_storage_config(
 
     Parameters
     ----------
-    storage_id : str, optional
+    storage_id
         the storage id, by default ""
-    storage_name : str, optional
+    storage_name
         the name of the storage volume, by default ""
-    config_type : str, optional
+    config_type
         query only the specified type, by default "rclone"
 
     Returns
@@ -260,7 +260,7 @@ def create_rclone_config(config: JsonObjectArg) -> bool:
 
     Parameters
     ----------
-    config: str
+    config
         a json string containing the configuration
 
     Returns
@@ -291,11 +291,11 @@ def check_storage_access(
 
     Parameters
     ----------
-    storage_name: str
+    storage_name
         The name of the storage volume (either name or ID are required)
-    storage_id: str
+    storage_id
         The ID of the storage volume.
-    remote_file_path: str
+    remote_file_path
         Remote file.
 
     Returns
@@ -325,11 +325,11 @@ def rclone_access(volume: str, remote_file_path: str = "", config: dict | None =
 
     Parameters
     ----------
-    volume : str
+    volume
         Volume name
-    remote_file_path : str, optional
+    remote_file_path
         Remote file path, by default ""
-    config : dict, optional
+    config
         override rclone config values, by default None
 
     Returns
@@ -360,9 +360,9 @@ def rclone_delete(volume: str, fpath: str) -> bool:
 
     Parameters
     ----------
-    volume: str
+    volume
         the configured volume name hosting <fpath>.
-    fpath: str
+    fpath
         the file path.
 
     Returns
@@ -401,15 +401,15 @@ def init_location(
 
     Parameters
     ----------
-    location_name : str
+    location_name
         the orgization or owner's name managing the storage location.
-    location_type : str
+    location_type
         the location type, e.g. "server"
-    location_country : str, optional
+    location_country
         the location country name
-    location_city : str, optional
+    location_city
         the location city name
-    location_facility : str, optional
+    location_facility
         the location facility name
 
     Returns
@@ -446,9 +446,9 @@ def query_storage(storage_name: str = "", storage_id: str = "") -> list[dict]:
 
     Parameters
     ----------
-    storage_name: str, optional
+    storage_name
         Name of the storage to query. If not provided, the first 1000 locations are returned.
-    storage_id: str, optional
+    storage_id
         ID of the storage to query. Ignored if storage_name is provided.
 
     Returns
@@ -475,15 +475,15 @@ def check_item_on_storage(
 
     Parameters
     ----------
-    item_name: str, optional
+    item_name
         could be empty, in which case the first 1000 items are returned
-    oid: str, optional
+    oid
         Return data_items referred to by the OID provided.
-    uid: str, optional
+    uid
         Return data_item referred to by the UID provided.
-    storage_name: str, optional
+    storage_name
         the name of the storage device
-    storage_id: str, optional
+    storage_id
         the storage_id of a destination storage
 
     Returns
@@ -509,7 +509,7 @@ def delete_data_item_payload(uid: str) -> bool:
 
     Parameters
     ----------
-    uid: str
+    uid
         The UID of the data_item whose payload should be deleted.
 
     Returns

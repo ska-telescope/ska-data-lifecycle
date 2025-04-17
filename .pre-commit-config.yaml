@@ -1,0 +1,21 @@
+repos:
+- repo: https://gitlab.com/ska-telescope/ska-pre-commit-hooks
+  rev: 1d5fe365
+  hooks:
+  # python lint
+  - id: isort
+  - id: black
+  - id: flake8
+    args: ['--ignore-decorator=override']
+  - id: pylint
+  # jira ticket
+  - id: branch ticket id
+  - id: commit msg ticket id
+- repo: https://github.com/asottile/pyupgrade
+  rev: v3.16.0
+  hooks:
+  - id: pyupgrade
+    args: ["--py310-plus", "--keep-runtime-typing"]
+default_install_hook_types:
+- pre-commit
+- commit-msg

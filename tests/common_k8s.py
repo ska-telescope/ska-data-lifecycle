@@ -1,4 +1,4 @@
-"""Common utilities for interacting with Kubernetes"""
+"""Common utilities for interacting with Kubernetes."""
 
 import logging
 import os
@@ -48,22 +48,27 @@ class DlmTestClientK8s(DlmTestClient):
         DB.api_url = CONFIG.REST.base_url
 
     @property
+    @override
     def storage_requests(self):
         return dlm_storage_requests
 
     @property
+    @override
     def request_requests(self):
         return dlm_request_requests
 
     @property
+    @override
     def data_item_requests(self):
         return data_item_requests
 
     @property
+    @override
     def ingest_requests(self):
         return dlm_ingest_requests
 
     @property
+    @override
     def migration_requests(self):
         return dlm_migration_requests
 
@@ -141,11 +146,17 @@ class DlmTestClientK8s(DlmTestClient):
 
 
 def _generate_k8s_url(ingress_path: str, service_name: str):
-    """
-    Generate a URL appropriate to query depending on whether
-    ingress is running or not.
-    """
+    """Generate the service host URL.
 
+    Uses the ingress path if K8S_HOST_URL envvar is defined.
+
+    Parameters
+    ----------
+    ingress_path
+        ingress path to append to the url host
+    service_name
+        service name for generating the url if ingress is not enabled
+    """
     if host_url := os.getenv("K8S_HOST_URL"):
         # public host with ingress path
         return f"{host_url}/{NAMESPACE}/{ingress_path}"

@@ -32,7 +32,7 @@ def read_config(user_config_file: Path = DLM_HOME / "config.yaml") -> benedict:
         default_user_config_file = DLM_LIB_DIR / "config.yaml"
         shutil.copy(default_user_config_file, user_config_file)
 
-    with open(user_config_file, "r", encoding="utf-8") as file:
+    with open(user_config_file, encoding="utf-8") as file:
         return benedict(yaml.safe_load(file))
 
 

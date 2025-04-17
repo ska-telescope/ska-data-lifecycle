@@ -1,4 +1,4 @@
-"""dlm_storage REST client"""
+"""dlm_storage REST client."""
 
 import json
 
@@ -12,7 +12,7 @@ from ska_dlm.exceptions import (
 
 
 def dlm_raise_for_status(response: requests.Response):
-    """Raises a DLM exception where possible for error response status codes."""
+    """Raise a suitable exception where possible for error response status codes."""
     try:
         response.raise_for_status()
     except requests.HTTPError as exc:

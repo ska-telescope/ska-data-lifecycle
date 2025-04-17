@@ -47,8 +47,12 @@ def query_expired(offset: timedelta | None = None) -> list[dict]:
 
     Parameters
     ----------
-    offset : timedelta | None, optional
+    offset
         optional offset for the query
+
+    Returns
+    -------
+    list[dict]
     """
     now = datetime.now(timezone.utc)
     if offset:
@@ -71,7 +75,7 @@ def query_deleted(uid: str = "") -> list[dict]:
 
     Parameters
     ----------
-    uid: str
+    uid
         The UID to be checked, optional.
 
     Returns
@@ -92,9 +96,9 @@ def query_new(check_date: str, uid: str = "") -> list[dict]:
 
     Parameters
     ----------
-    check_date: str
+    check_date
         the UTC starting date (exclusive)
-    uid: str
+    uid
         The UID to be checked, optional.
 
     Returns
@@ -120,13 +124,13 @@ def query_exists(item_name: str = "", oid: str = "", uid: str = "", ready: bool 
 
     Parameters
     ----------
-    item_name: str, optional
+    item_name
         optional item_name
-    oid: str, optional
+    oid
         the oid to be searched for
-    uid: str, optional
+    uid
         this returns only one storage_id
-    ready: bool, optional
+    ready
         whether the item must be in ready state.
 
     Returns
@@ -156,11 +160,11 @@ def query_exists_and_ready(item_name: str = "", oid: str = "", uid: str = "") ->
 
     Parameters
     ----------
-    item_name: str, optional
+    item_name
         optional item_name
-    oid: str, optional
+    oid
         the oid to be searched for
-    uid: str, optional
+    uid
         this returns only one storage_id
 
     Returns
@@ -181,11 +185,11 @@ def query_item_storage(item_name: str = "", oid: str = "", uid: str = "") -> lis
 
     Parameters
     ----------
-    item_name: str, optional
+    item_name
         optional item_name
-    oid: str, optional
+    oid
         the oid to be searched for
-    uid: str, optional
+    uid
         this returns only one storage_id
 
     Returns
