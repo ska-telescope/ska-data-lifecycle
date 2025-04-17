@@ -2,6 +2,8 @@
 
 ## Development
 
+## 1.1.0
+
 ### Added
 
 * Support for Vault Secret Operator
