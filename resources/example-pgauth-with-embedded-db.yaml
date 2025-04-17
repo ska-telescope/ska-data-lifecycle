@@ -1,0 +1,12 @@
+# Example values disable Vault to obtain the authentication details
+# used by the PostgREST service to connect to PostgreSQL
+
+# Enable embedded PostgreSQL server
+postgresql:
+  enabled: true
+
+# For the authentication we simply disable the vault (it's enabled by default)
+postgrest:
+  db_auth_secret:
+    vault:
+      enabled: false

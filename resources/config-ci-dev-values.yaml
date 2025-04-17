@@ -1,11 +1,8 @@
-global:
-
 gateway:
-  enabled: true
+  enabled: false
 
 postgresql:
   enabled: true
-  initialise: true
 
 keycloak:
   enabled: true

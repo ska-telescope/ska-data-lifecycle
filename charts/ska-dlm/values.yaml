@@ -63,7 +63,6 @@ postgrest:
   imagePullPolicy: Always
 
   replicas: 1
-  db_uri: ""  # no value auto-generates to test postgresql database, or gets it from vault
   db_schema: public
   db_anon_role: ska_dlm_admin
   db_pool: 10
@@ -72,10 +71,27 @@ postgrest:
   max_rows: ""
   pre_request: ""
   role_claim_key: '.role'
+  log_level: info
 
-  vault:
+  # PostgREST's auth details against PostgreSQL come from a Secret, which can be:
+  # * Given to us by name, or
+  # * Created via:
+  #   * VSO, or
+  #   * Automatically from the postgresql.auth section
+  db_auth_secret:
+    create: true
+    vault:
+      enabled: true
+      path: ""
+      mount: ""
+      type: "kv-v2"
+    name: ""
+
+database:
+  migration:
     enabled: false
-    path: ""
+    image: postgres
+    version: "17.4"
 
 rclone:
   component: rclone
@@ -85,6 +101,16 @@ rclone:
   imagePullPolicy: Always
   replicas: 1
 
+  secret:
+    enabled: false
+    name: ""
+    mountPoint: "/secrets/"
+    vault:
+      enabled: false
+      mount: ""
+      type: kv-v2
+      path: ""
+
 kubectl:
   image: bitnami/kubectl
   version: 1.28.6
@@ -93,11 +119,9 @@ kubectl:
 # Test Database
 postgresql:  # see https://github.com/bitnami/charts/tree/main/bitnami/postgresql
   enabled: false
-  initialise: false
   nameOverride: postgresql
 
-  # Custom user/password/db to create, has to match postgrest's config below
-  # and primary.initdb authentication
+  # Custom user/password/db to create, has to match primary.initdb authentication
   auth:
     username: ska_dlm_admin
     password: password
@@ -110,7 +134,7 @@ postgresql:  # see https://github.com/bitnami/charts/tree/main/bitnami/postgresq
     # matches auth.database
     name: ska_dlm
     persistence:
-      enabled: true
+      enabled: false
     initdb:
       user: ska_dlm_admin
       password: password

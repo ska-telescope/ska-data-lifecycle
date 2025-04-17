@@ -6,9 +6,32 @@ This chart currently installs PostgREST, and optionally Postgres via the bitnami
 
 The main options of interest are:
 
- * `postgresql.enabled`: if enabled, PostgreSQL is installed, otherwise an external installation will be necessary.
- * `postgresql.initialise`: if enabled, the DLM tables will be created automatically in the database.
+ * `postgresql.enabled`: if true, PostgreSQL is installed, otherwise an external installation will be necessary.
+ * `database.migration.enabled`: if true, the DLM tables will be created automatically in the database.
+ * `database.migration.image`: image to use for migration pod, default is `postgres`
+ * `database.migration.version`: version of the image to use for migration pod, default is `17.4`
  * `postgresql.primary.persistence.enabled`: if enabled, PostgreSQL will persist data between executions, otherwise it will start from scratch each time.
+
+DB authentication details for PostgREST are stored in a Kubernetes `Secret`.
+The `Secret` is **always** automatically created to point to the internal PostgreSQL server, if that is enabled.
+Otherwise, he following Helm values under `postgrest.db_auth_secret` take effect:
+
+ * `create`: Whether to create a `Secret` or not.
+   * If unset, an existing one has to be provided via `name`.
+   * If set, the `Secret` is created from the Vault contents at `vault.{mount,path,type}`.
+ * In both cases, the `Secret` should provide the following keys: `PGHOST`, `PGUSER`, `PGPASSWORD` and `PGDATABASE`.
+
+#### Rclone Helm Chart `secret` values
+
+ * `secret`:
+    * `enabled`: if `true`, then enable rclone secrets.
+    * `name`: name of an existing secret created by an external mechanism. This will only be used if `secret.vault.enabled` is `false` and it's not empty.
+    * `mountPoint`: rclone pod mount point.
+    * `vault`:
+        * `enabled`: if `true`, then use the vault to populate the secret. `secret.enabled` must also `true`.
+        * `mount`: vault root.
+        * `type`: vault engine type, defaults to `kv-v2`
+        * `path`: vault path.
 
 
 ## Test Deployment
@@ -49,7 +72,7 @@ With public network access to the development k8s cluster:
 
 * navigate a browser to `http://<minikube ip>/pgweb/` (or with minikube tunneling, `http://localhost/pgweb/`)
 * Select the scheme option
-* Enter the URL `postgres://ska_dlm_admin:password@<helm-release>-postgresql.<namespace>.svc.cluster.local/ska_dlm?sslmode=disable`
+* Enter the URL `postgres://ska_dlm_admin:password@<helm-release>-postgresql.<namespace>/ska_dlm?sslmode=disable`
 
 ### Running Helm Chart Tests
 

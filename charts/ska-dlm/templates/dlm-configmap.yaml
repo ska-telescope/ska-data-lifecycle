@@ -18,6 +18,6 @@ data:
       migration_manager:
         polling_interval: 10 # seconds
     REST:
-      base_url: "http://{{ include "ska-dlm.fullname" . }}-postgrest.{{ .Release.Namespace }}.svc.cluster.local"
+      base_url: "http://{{ include "ska-dlm.fullname" . }}-postgrest.{{ .Release.Namespace }}"
     RCLONE:
-      url: "http://{{ include "ska-dlm.fullname" . }}-rclone.{{ .Release.Namespace }}.svc.cluster.local"
+      url: "http://{{ include "ska-dlm.fullname" . }}-rclone.{{ .Release.Namespace }}"

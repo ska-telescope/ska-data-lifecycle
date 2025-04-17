@@ -66,8 +66,23 @@ def copy_data_item(
     return response.json()
 
 
-def query_migrations() -> list[dict]:
-    """Query for all migrations by a given user.
+def query_migrations(
+    # pylint: disable=unused-argument
+    start_date: str | None = None,
+    end_date: str | None = None,
+    storage_id: str | None = None,
+) -> list[dict]:
+    """
+    Query for all migrations by a given user, with optional filters.
+
+    Parameters
+    ----------
+    start_date : str, optional
+        Filter migrations that started after this date (YYYY-MM-DD or YYYYMMDD)
+    end_date : str, optional
+        Filter migrations that ended before this date (YYYY-MM-DD or YYYYMMDD)
+    storage_id : str, optional
+        Filter migrations by a specific storage location
 
     Returns
     -------

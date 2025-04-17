@@ -44,7 +44,7 @@ class DlmTestClientK8s(DlmTestClient):
         CONFIG.REST.base_url = _generate_k8s_url(
             ingress_path="postgrest", service_name="ska-dlm-postgrest"
         )
-        CONFIG.RCLONE.url = _generate_k8s_url(ingress_path="rclone", service_name="ska-dlm-rclone")
+        CONFIG.RCLONE = [_generate_k8s_url(ingress_path="rclone", service_name="ska-dlm-rclone")]
         DB.api_url = CONFIG.REST.base_url
 
     @property

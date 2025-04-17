@@ -36,6 +36,9 @@ services:
   dlm_rclone:
     image: rclone/rclone
     container_name: dlm_rclone
+    build:
+       context: ..
+       dockerfile: tests/Dockerfile-rclone
     ports:
       - 5572:5572
     command:
@@ -46,6 +49,8 @@ services:
       - --rc-no-auth
       - --rc-web-gui
       - --rc-job-expire-duration=43200s
+      - --rc-key=/etc/ssl/private/selfsigned.key
+      - --rc-cert=/etc/ssl/certs/selfsigned.cert
     volumes:
       - shared-tmpfs:/data
     networks:

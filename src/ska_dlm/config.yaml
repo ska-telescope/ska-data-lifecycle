@@ -18,7 +18,4 @@ REST:
   base_url: "http://localhost:3000"
 
 RCLONE:
-  url: "http://localhost:5572"
-
-DATA_PRODUCT_API:
-  url: "http://localhost:8000"
+  - "https://localhost:5572"

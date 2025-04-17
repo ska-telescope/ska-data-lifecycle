@@ -2,6 +2,19 @@
 
 ## Development
 
+### Added
+
+* Support for Vault Secret Operator
+* Optional date and storage_id filters for migration query
+
+### Removed
+
+* Support for Vault Agent Injector
+
+### Changed
+
+* Removed use of .svc.cluster.local from service names for compatability with LOW cluster.
+
 ## 1.0.0
 
 ### Added

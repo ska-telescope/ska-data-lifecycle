@@ -15,6 +15,27 @@ spec:
   selector:
     component: {{ .Values.rclone.component }}
     subsystem: {{ .Values.rclone.subsystem }}
+
+{{ with .Values.rclone.secret }}
+{{- if and .enabled .vault.enabled }}
+---
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultStaticSecret
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name: {{ include "ska-dlm.rclone.secret.name" $ }}
+spec:
+  mount: {{ .vault.mount }}
+  type: {{ .vault.type }}
+  path: {{ .vault.path }}
+  destination:
+    create: true
+    name: {{ include "ska-dlm.rclone.secret.name" $ }}
+    transformation:
+      excludeRaw: true
+{{- end }}
+{{- end }}
+
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -51,9 +72,19 @@ spec:
             port: 5572
           periodSeconds: 5
         volumeMounts:
-        - name: data-product-storage
-          mountPath: /data
+        {{ with .Values.rclone.secret }}
+        {{- if .enabled }}
+          - mountPath: {{ .mountPoint }}
+            name: {{ include "ska-dlm.rclone.secret.name" $ }}
+            readOnly: true
+        {{- end }}
+        {{- end }}
+
+      {{ with .Values.rclone.secret }}
+      {{- if .enabled }}
       volumes:
-      - name: data-product-storage
-        persistentVolumeClaim:
-          claimName: "{{ $.Values.global.dataProduct.pvc.name }}"
+      - name: {{ include "ska-dlm.rclone.secret.name" $ }}
+        secret:
+            secretName: {{ include "ska-dlm.rclone.secret.name" $ }}
+      {{- end }}
+      {{- end }}

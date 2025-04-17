@@ -16,6 +16,45 @@ spec:
   selector:
     component: {{ .Values.postgrest.component }}
     subsystem: {{ .Values.postgrest.subsystem }}
+{{- if $.Values.postgresql.enabled }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "ska-dlm.postgrest.labels" $ | indent 4 }}
+type: Opaque
+data:
+  PGHOST: {{ include "ska-dlm.postgresql.name" $ | b64enc }}
+  PGUSER: {{ $.Values.postgresql.auth.username | b64enc }}
+  PGPASSWORD: {{ $.Values.postgresql.auth.password | b64enc }}
+  PGDATABASE: {{ $.Values.postgresql.auth.database | b64enc }}
+{{- else -}}
+{{  with .Values.postgrest.db_auth_secret -}}
+{{- if .create -}}
+{{- if or (not .vault.mount) (not .vault.type) (not .vault.path) -}}
+{{- fail (printf "No embedded PostgreSQL server enabled (postgresql.enabled=%s), but Vault values are missing (postgrest.db_auth_secret.vault.{mount,type,path})" ($.Values.postgresql.enabled | toString)) -}}
+{{- end -}}
+---
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultStaticSecret
+metadata:
+  namespace: {{ $.Release.Namespace }}
+  name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}-vaultstaticsecret
+spec:
+  mount: {{ .vault.mount }}
+  type: {{ .vault.type }}
+  path: {{ .vault.path }}
+  destination:
+    create: true
+    name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
+    transformation:
+      excludeRaw: true
+{{- end -}}
+{{- end -}}
+{{- end }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -34,19 +73,6 @@ spec:
     metadata:
       labels:
         {{- include "ska-dlm.postgrest.labels" . | indent 8 }}
-      {{- if .Values.postgrest.vault.enabled }}
-      annotations:
-        vault.hashicorp.com/agent-inject: "true"
-        vault.hashicorp.com/agent-inject-status: "update"
-        vault.hashicorp.com/role: "kube-role"
-        vault.hashicorp.com/agent-inject-secret-postgrest-config.conf: "{{ .Values.postgrest.vault.path }}"
-        vault.hashicorp.com/agent-inject-template-postgrest-config.conf: |-
-          {{`{{- with secret `}}"{{ .Values.postgrest.vault.path }}"{{` }}
-            {{- range $k, $v := .Data.data }}
-              {{ $k }} = "{{ $v }}"
-            {{- end }}
-          {{- end }}`}}
-      {{- end }}
     spec:
       {{- if .Values.postgresql.enabled }}
       initContainers:
@@ -73,13 +99,20 @@ spec:
             port: 3001
           initialDelaySeconds: 5
           periodSeconds: 5
-        {{- if .Values.postgrest.vault.enabled }}
-        command:
-          - /bin/postgrest
-          - /vault/secrets/postgrest-config.conf
-        {{- end }}
         env:
-          {{/* DB uri/schema are set via config file when using the vault */}}
+          {{/* DB connection parameters are first read from the secret, then put into PGRST_DB_URI */ -}}
+          {{ range $envvar_name := tuple "PGUSER" "PGPASSWORD" "PGHOST" "PGDATABASE" -}}
+          - name: {{ $envvar_name }}
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
+                key: {{ $envvar_name }}
+                optional: false
+          {{ end -}}
+          - name: PGRST_DB_URI
+            value: "postgres://$(PGUSER):$(PGPASSWORD)@$(PGHOST)/$(PGDATABASE)"
+
+          {{- /* The rest of the configuration is always taken from the given Helm values */ -}}
           {{ $env := dict
             "PGRST_SERVER_PORT" 3001
             "PGRST_DB_ANON_ROLE" .Values.postgrest.db_anon_role
@@ -89,11 +122,9 @@ spec:
             "PGRST_MAX_ROWS" .Values.postgrest.max_rows
             "PGRST_PRE_REQUEST" .Values.postgrest.pre_request
             "PGRST_ROLE_CLAIM_KEY" .Values.postgrest.role_claim_key
+            "PGRST_DB_SCHEMA" .Values.postgrest.db_schema
+            "PGRST_LOG_LEVEL" .Values.postgrest.log_level
           }}
-          {{ if not .Values.postgrest.vault.enabled }}
-          {{ $_ := set $env "PGRST_DB_URI" (include "ska-dlm.postgrest.postgresql.uri" .) }}
-          {{ $_ := set $env "PGRST_DB_SCHEMA" .Values.postgrest.db_schema }}
-          {{- end }}
           {{- range $envvar_name, $value := $env }}
           {{- if $value }}
           - name: {{ $envvar_name }}
