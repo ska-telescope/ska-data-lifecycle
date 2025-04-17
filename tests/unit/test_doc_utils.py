@@ -52,31 +52,31 @@ def mock_command(  # pylint: disable=unused-argument, too-many-arguments, too-ma
 
     Parameters
     ----------
-    arg1 : str
+    arg1
         arg1 description
-    arg2 : str
+    arg2
         arg2 description
-    arg3 : str
+    arg3
         arg3 description
-    arg4 : str
+    arg4
         arg4 description
-    opt1 : str
+    opt1
         opt1 description
-    opt2 : str | None
+    opt2
         opt2 description
-    opt3 : str
+    opt3
         opt3 description
-    opt4 : Any | None
+    opt4
         opt4 description
-    header1 : str | None
+    header1
         header1 description
-    cookie1 : str | None
+    cookie1
         cookie1 description
-    file1 : str | None
+    file1
         file1 description
-    dep1 : str | None
+    dep1
         dep1 description
-    sec1: str | None
+    sec1
         sec1 description
     """
 

@@ -117,6 +117,8 @@ ignore = [
     "DOC401", "DAR401", # Missing "Exception" in Docstring
     "DAR402", # Excess exception(s) in Raises section
     "DOC501", "DAR501", # Missing "Raises" in Docstring
+    "DOC502", # Raises section in docstring but no matching body
+    "DOC503", # Raises section does not match body
 ]
 
 [tool.pylint.messages_control]

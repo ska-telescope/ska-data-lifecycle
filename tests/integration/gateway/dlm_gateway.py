@@ -37,12 +37,12 @@ class Provider:
 
         Parameters
         ----------
-        request: Request
+        request
             HTTP client request object
 
         Returns
         -------
-        str
+        Response
             Bearer token
         """
 
@@ -52,9 +52,9 @@ class Provider:
 
         Parameters
         ----------
-        token: str
+        token
             Auth token
-        permission: str
+        permission
             Permission string relevant for the provider
 
         Returns
@@ -64,19 +64,19 @@ class Provider:
         """
 
     @abstractmethod
-    async def token_by_username_password(self, username: str, password: str):
+    async def token_by_username_password(self, username: str, password: str) -> dict:
         """Get token via username and password. Should not be used in production.
 
         Parameters
         ----------
-        username: str
+        username
             username or user
-        password: str
+        password
             password of user
 
         Returns
         -------
-        auth: str
+        dict
             Structure containing tokens
         """
 
@@ -86,13 +86,13 @@ class Provider:
 
         Parameters
         ----------
-        request: Request
+        request
             HTTP from Auth provider
 
         Returns
         -------
-        auth: str
-            Structure containing tokens
+        str
+            Bearer token
         """
 
     @abstractmethod
@@ -123,7 +123,7 @@ class Keycloak(Provider):
         self.uma = KeycloakUMA(connection=self.kc)
 
     @override
-    async def token_by_username_password(self, username: str, password: str):
+    async def token_by_username_password(self, username: str, password: str) -> dict:
         auth = await self.kc.a_token(username, password)
         return auth
 
@@ -205,7 +205,7 @@ class Entra(Provider):
         return RedirectResponse(auth["auth_uri"])
 
     @override
-    async def token_by_username_password(self, username: str, password: str):
+    async def token_by_username_password(self, username: str, password: str) -> dict:
         raise HTTPException(404, "Not implemented")
 
     @override
@@ -311,7 +311,7 @@ async def heartbeat():
 
 
 @app.get("/token_by_username_password")
-async def token_by_username_password(username: str, password: str):
+async def token_by_username_password(username: str, password: str) -> dict:
     """Get OAUTH token based on username and password."""
     return await PROVIDER.token_by_username_password(username, password)
 

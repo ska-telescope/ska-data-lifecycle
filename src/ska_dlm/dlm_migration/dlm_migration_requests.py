@@ -39,7 +39,7 @@ origins = ["http://localhost", "http://localhost:5000", "http://localhost:8004"]
 
 
 @asynccontextmanager
-async def app_lifespan(_):
+async def app_lifespan(_: FastAPI):
     """Lifespan hook for startup and shutdown."""
     if len(CONFIG.RCLONE) == 0:
         raise ValueError("No Rclone URLs")
@@ -239,13 +239,13 @@ def query_migrations(
 
     Parameters
     ----------
-    authorization : str, optional
+    authorization
         Validated Bearer token with UserInfo
-    start_date : str, optional
+    start_date
         Filter migrations that started after this date (YYYY-MM-DD or YYYYMMDD)
-    end_date : str, optional
+    end_date
         Filter migrations that ended before this date (YYYY-MM-DD or YYYYMMDD)
-    storage_id : str, optional
+    storage_id
         Filter migrations by a specific storage location
 
     Returns
@@ -293,12 +293,12 @@ def get_migration_record(migration_id: int) -> list[dict]:
 
     Parameters
     ----------
-    migration_id : int
+    migration_id
         Migration id of migration
 
     Returns
     -------
-    list
+    list[dict]
     """
     return _get_migration_record(migration_id)
 
@@ -309,7 +309,7 @@ def _get_migration_record(migration_id: int) -> list[dict]:
 
     Parameters
     ----------
-    migration_id : int
+    migration_id
         Migration id of migration
 
     Returns
@@ -375,19 +375,19 @@ def copy_data_item(  # noqa: C901
 
     Parameters
     ----------
-    item_name : str
+    item_name
         data item name, when empty the first 1000 items are returned, by default ""
-    oid : str
+    oid
         object id, Return data_items referred to by the OID provided, by default ""
-    uid : str
+    uid
         Return data_item referred to by the UID provided, by default ""
-    destination_name : str
+    destination_name
         the name of the destination storage volume, by default ""
-    destination_id : str
+    destination_id
         the destination storage, by default ""
-    path : str
+    path
         the destination path relative to storage root, by default ""
-    authorization : str, optional
+    authorization
         Validated Bearer token with UserInfo
 
     Returns
@@ -482,7 +482,7 @@ def copy_data_item(  # noqa: C901
 
     if status_code != 200:
         logger.error("rclone_copy failed with status_code: %s, content: %s", status_code, content)
-        return IOError("rclone copy failed")
+        raise OSError("rclone copy failed")
 
     # add row to migration table
     # NOTE: temporarily use server_id='rclone0' until we actually have multiple rclone servers

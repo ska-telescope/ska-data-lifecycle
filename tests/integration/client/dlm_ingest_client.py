@@ -33,11 +33,11 @@ def init_data_item(item_name: str | None = None, phase: str = "GAS", json_data: 
 
     Parameters
     ----------
-    item_name : str
+    item_name
         the item_name, can be empty, but then json_data has to be specified.
-    phase : str
+    phase
         the phase this item is set to (usually inherited from the storage)
-    json_data : dict | None
+    json_data
         data item table values.
 
     Returns
@@ -85,23 +85,23 @@ def register_data_item(
 
     Parameters
     ----------
-    item_name: str
+    item_name
         item name to register with. Does not need to be unique.
-    uri: str
+    uri
         the relative access path to the payload.
-    item_type: str
+    item_type
         type of the data item (container, file)
-    storage_name: str
+    storage_name
         the name of the configured storage volume (name or ID required)
-    storage_id: str, optional
+    storage_id
         the ID of the configured storage.
-    metadata: dict, optional
-        metadata provided by the client
-    parents: str, optional
+    parents
         uuid of parent item
-    do_storage_access_check: bool, optional
+    metadata
+        metadata provided by the client
+    do_storage_access_check
         perform check_storage_access() against provided storage and uri
-    authorization: str
+    authorization
         Validated Bearer token with UserInfo
 
     Returns

@@ -119,7 +119,7 @@ def fastapi_docstring_annotate(
 
     Parameters
     ----------
-    func : typing.Callable[ParamsT, ReturnT]
+    func
         A fastapi endpoint function to modify the docstring and annotation.
 
     Returns

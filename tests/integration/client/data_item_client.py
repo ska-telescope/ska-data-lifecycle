@@ -23,15 +23,15 @@ def query_data_item(
 
     Parameters
     ----------
-    item_name: str
+    item_name
         Could be empty, in which case the first 1000 items are returned
-    oid: str
+    oid
         Return data_items referred to by the OID provided.
-    uid: str
+    uid
         Return data_item referred to by the UID provided.
-    storage_id : str
+    storage_id
         Return data_item referred to by a given storage_id.
-    params: str | None
+    params
         specify the query parameters
 
     Returns
@@ -61,13 +61,13 @@ def update_data_item(
 
     Parameters
     ----------
-    item_name : str
+    item_name
         the name of the data_items to be updated
-    oid : str
+    oid
         the OID of the data_items to be updated
-    uid : str
+    uid
         the UID of the data_item to be updated
-    post_data : dict | list[dict]
+    post_data
         the json formatted update data, compatible with postgREST
 
     Returns
@@ -104,11 +104,11 @@ def update_item_tags(
 
     Parameters
     ----------
-    item_name: str
+    item_name
         the name of the data_item
-    oid : str
+    oid
         the OID of the data_item to be updated
-    item_tags : dict | None
+    item_tags
         dictionary of keyword/value pairs
 
     Returns

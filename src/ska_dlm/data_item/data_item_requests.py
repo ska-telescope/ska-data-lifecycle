@@ -33,15 +33,15 @@ def query_data_item(
 
     Parameters
     ----------
-    item_name: str
+    item_name
         Could be empty, in which case the first 1000 items are returned
-    oid: str
+    oid
         Return data_items referred to by the OID provided.
-    uid: str
+    uid
         Return data_item referred to by the UID provided.
-    storage_id : str
+    storage_id
         Return data_item referred to by a given storage_id.
-    params: str | None
+    params
         specify the query parameters
 
     Returns
@@ -81,13 +81,13 @@ def update_data_item(
 
     Parameters
     ----------
-    item_name : str
+    item_name
         the name of the data_items to be updated
-    oid : str
+    oid
         the OID of the data_items to be updated
-    uid : str
+    uid
         the UID of the data_item to be updated
-    post_data : dict
+    post_data
         the json formatted update data, compatible with postgREST
 
     Returns
@@ -119,12 +119,17 @@ def set_uri(uid: str, uri: str, storage_id: str) -> dict:
 
     Parameters
     ----------
-    uid : str
+    uid
         the uid of the data_item to be updated
-    uri : str
+    uri
         the access URI for the data_item
-    storage_id : str
+    storage_id
         the storage_id associated with the URI
+
+    Returns
+    -------
+    dict
+        the updated data item entry
     """
     return update_data_item(uid=uid, post_data={"uri": uri, "storage_id": storage_id})
 
@@ -137,10 +142,14 @@ def set_metadata(uid: str, metadata_post: JsonObjectOption = None) -> dict:
 
     Parameters
     ----------
-    uid : str
+    uid
         the UID of the data_item to be updated
-    metadata_post : dict
+    metadata_post
         a metadata JSON string
+
+    Returns
+    -------
+    dict
     """
     return update_data_item(uid=uid, post_data={"metadata": metadata_post})
 
@@ -152,9 +161,9 @@ def set_state(uid: str, state: str) -> dict:
 
     Parameters
     ----------
-    uid : str
+    uid
         the uid of the data_item to be updated
-    state : str
+    state
         the new state for the data_item
 
     Returns
@@ -172,9 +181,9 @@ def set_oid_expiration(oid: str, expiration: str) -> dict:
 
     Parameters
     ----------
-    oid : str
+    oid
         the oid of the data_item to be updated
-    expiration : str
+    expiration
         the expiration date for the data_item
 
     Returns
@@ -192,9 +201,9 @@ def set_uid_expiration(uid: str, expiration: str) -> dict:
 
     Parameters
     ----------
-    uid : str
+    uid
         the UID of the data_item to be updated
-    expiration : str
+    expiration
         the expiration date for the data_item
 
     Returns
@@ -213,11 +222,11 @@ def set_user(oid: str = "", uid: str = "", user: str = "SKA") -> dict:
 
     Parameters
     ----------
-    oid : str
+    oid
         the OID of the data_item to be updated
-    uid : str
+    uid
         the UID of the data_item to be updated
-    user : str
+    user
         the user for the data_item
 
     Returns
@@ -244,11 +253,11 @@ def set_group(oid: str = "", uid: str = "", group: str = "SKA") -> dict:
 
     Parameters
     ----------
-    oid : str
+    oid
         the OID of the data_item to be updated
-    uid : str
+    uid
         the UID of the data_item to be updated
-    group : str
+    group
         the group for the data_item
 
     Returns
@@ -275,11 +284,11 @@ def set_acl(oid: str = "", uid: str = "", acl: str = "{}") -> dict:
 
     Parameters
     ----------
-    oid : str
+    oid
         the OID of the data_item to be updated
-    uid : str
+    uid
         the UID of the data_item to be updated
-    acl : str
+    acl
         the acl dict for the data_item
 
     Returns
@@ -306,9 +315,9 @@ def set_phase(uid: str, phase: str) -> dict:
 
     Parameters
     ----------
-    uid : str
+    uid
         the UID of the data_item to be updated
-    phase : str
+    phase
         the phase for the data_item
 
     Returns
@@ -332,11 +341,11 @@ def update_item_tags(
 
     Parameters
     ----------
-    item_name: str
+    item_name
         the name of the data_item
-    oid : str
+    oid
         the OID of the data_item to be updated
-    item_tags : dict | None
+    item_tags
         dictionary of keyword/value pairs
 
     Returns

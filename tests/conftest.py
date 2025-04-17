@@ -18,14 +18,14 @@ def pytest_addoption(parser):
 
 
 @pytest.fixture(name="env", scope="session")
-def env_fixture(request) -> DlmTestClient:
+def env_fixture(request: pytest.FixtureRequest) -> DlmTestClient:
     """Fixture that creates deployment environment specific client.
 
     Additionally overrides ska_dlm.CONFIG with the environment in the test runner runtime.
 
     Parameters
     ----------
-    request : FixtureRequest
+    request
         pytest fixture request context.
 
     Returns
