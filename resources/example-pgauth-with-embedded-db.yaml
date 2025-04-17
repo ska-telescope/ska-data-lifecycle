@@ -4,6 +4,8 @@
 # Enable embedded PostgreSQL server
 postgresql:
   enabled: true
+
+database:
   migrate: true
 
 # For the authentication we simply disable the vault (it's enabled by default)

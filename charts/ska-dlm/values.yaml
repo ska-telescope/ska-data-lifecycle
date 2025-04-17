@@ -87,6 +87,9 @@ postgrest:
       type: "kv-v2"
     name: ""
 
+database:
+  migrate: true
+
 rclone:
   component: rclone
   subsystem: data-lifecycle-management
@@ -105,7 +108,6 @@ rclone:
       type: kv-v2
       path: ""
 
-
 kubectl:
   image: bitnami/kubectl
   version: 1.28.6
@@ -114,7 +116,6 @@ kubectl:
 # Test Database
 postgresql:  # see https://github.com/bitnami/charts/tree/main/bitnami/postgresql
   enabled: false
-  migrate: false
   nameOverride: postgresql
   image_name: postgres
   version: "17.4"
@@ -132,7 +133,7 @@ postgresql:  # see https://github.com/bitnami/charts/tree/main/bitnami/postgresq
     # matches auth.database
     name: ska_dlm
     persistence:
-      enabled: true
+      enabled: false
     initdb:
       user: ska_dlm_admin
       password: password

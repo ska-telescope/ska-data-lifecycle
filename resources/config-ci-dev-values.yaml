@@ -3,6 +3,8 @@ gateway:
 
 postgresql:
   enabled: true
+
+database:
   migrate: true
 
 keycloak:

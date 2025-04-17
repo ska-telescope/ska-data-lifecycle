@@ -7,6 +7,6 @@ metadata:
   labels:
     {{- include "ska-dlm.postgrest.labels" . | indent 4 }}
 data:
-{{- if .Values.postgresql.migrate }}
+{{- if .Values.database.migrate }}
 {{ (.Files.Glob "initdb-scripts/*.sql").AsConfig | indent 2 }}
 {{- end }}

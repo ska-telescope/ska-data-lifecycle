@@ -1,5 +1,5 @@
 {{- if not .Values.postgresql.enabled }}
-{{- if .Values.postgresql.migrate }}
+{{- if .Values.database.migrate }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -12,9 +12,7 @@ spec:
         image: {{ .Values.postgresql.image_name}}:{{ .Values.postgresql.version }}
         command: ["/bin/sh", "-c"]
         args:
-        - |
-            export PGPORT=${PGPORT:-5432}
-            psql -f /etc/sql/10_create_tables.sql
+        - psql -f /etc/sql/10_create_tables.sql
         env:
         {{ range $envvar_name := tuple "PGUSER" "PGPASSWORD" "PGHOST" "PGDATABASE" -}}
         - name: {{ $envvar_name }}

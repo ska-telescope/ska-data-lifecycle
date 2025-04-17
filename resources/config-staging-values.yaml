@@ -8,7 +8,9 @@ gateway:
 
 postgresql:
   enabled: false
-  migrate: false
+
+database:
+  migrate: true
 
 postgrest:
   db_uri: "postgres://ska_dlm_admin:password@productiondb:5432/ska_dlm"
