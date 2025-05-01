@@ -20,4 +20,4 @@ data:
     REST:
       base_url: "http://{{ include "ska-dlm.fullname" . }}-postgrest.{{ .Release.Namespace }}"
     RCLONE:
-      url: "http://{{ include "ska-dlm.fullname" . }}-rclone.{{ .Release.Namespace }}"
+      - "http://{{ include "ska-dlm.fullname" . }}-rclone.{{ .Release.Namespace }}"
