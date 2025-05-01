@@ -2,6 +2,10 @@
 
 ## Development
 
+### Changed
+
+* Fixed the RCLONE url line in k8s configmap.
+
 ## 1.1.0
 
 ### Added
