@@ -2,6 +2,12 @@
 
 ## Development
 
+## 1.1.2
+
+### Deprecated
+
+* Deprecates 1.1.1 which had a CI failure (digicert) during OCI image build.
+
 ## 1.1.1
 
 ### Changed
