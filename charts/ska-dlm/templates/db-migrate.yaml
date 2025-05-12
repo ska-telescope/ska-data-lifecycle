@@ -12,7 +12,9 @@ spec:
         image: {{ .Values.database.migration.image }}:{{ .Values.database.migration.version }}
         command: ["/bin/sh", "-c"]
         args:
-        - psql -f /etc/sql/10_create_tables.sql
+        - >
+          psql -f /etc/sql/10_create_tables.sql &&
+          psql -f /etc/sql/20_alter_data_item_metadata_to_jsonb.sql
         env:
         {{ range $envvar_name := tuple "PGUSER" "PGPASSWORD" "PGHOST" "PGDATABASE" -}}
         - name: {{ $envvar_name }}
