@@ -66,7 +66,6 @@ spec:
         {{- if and .enabled (not (empty .ssl_cert_name)) (not (empty .ssl_key_name)) }}
           - --rc-cert={{ .mountPoint }}/{{ .ssl_cert_name }}
           - --rc-key={{ .mountPoint }}/{{ .ssl_key_name }}
-          - --no-check-certificate
         {{- end }}
         {{- end }}
           - --rc-serve
