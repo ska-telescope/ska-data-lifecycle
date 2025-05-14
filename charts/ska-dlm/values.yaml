@@ -110,6 +110,8 @@ rclone:
     enabled: false
     name: ""
     mountPoint: "/secrets/"
+    ssl_key_name: ""
+    ssl_cert_name: ""
     vault:
       enabled: false
       mount: ""

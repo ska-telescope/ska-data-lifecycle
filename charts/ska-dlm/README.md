@@ -26,7 +26,9 @@ Otherwise, he following Helm values under `postgrest.db_auth_secret` take effect
  * `secret`:
     * `enabled`: if `true`, then enable rclone secrets.
     * `name`: name of an existing secret created by an external mechanism. This will only be used if `secret.vault.enabled` is `false` and it's not empty.
-    * `mountPoint`: rclone pod mount point.
+    * `mountPoint`: secrets mount point in rclone pod.
+    * `ssl_cert_name`: name of the SSL cert secret that exists in the directory `mountPoint`. If empty then SSL will be disabled.
+    * `ssl_key_name`: name of the SSL key secret that exists in the directory `mountPoint`. If empty then SSL will be disabled.
     * `vault`:
         * `enabled`: if `true`, then use the vault to populate the secret. `secret.enabled` must also `true`.
         * `mount`: vault root.
