@@ -1,20 +1,68 @@
 {{- if not .Values.postgresql.enabled }}
-{{- if .Values.database.migration.enabled }}
+
+{{- if and .Values.database.migration.enabled .Values.database.migration.base.baseInstall }}
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ include "ska-dlm.fullname" . }}-db-migration
+  name: {{ include "ska-dlm.fullname" . }}-base-migration
 spec:
   template:
     spec:
       containers:
-      - name: {{ include "ska-dlm.fullname" . }}-db-migration
+      - name: base-migration
         image: {{ .Values.database.migration.image }}:{{ .Values.database.migration.version }}
         command: ["/bin/sh", "-c"]
         args:
-        - >
-          psql -f /etc/sql/10_create_tables.sql &&
-          psql -f /etc/sql/20_alter_data_item_metadata_to_jsonb.sql
+          - >
+            for f in /etc/sql/base/*.sql; do
+              echo "Running $f";
+              psql -f "$f";
+            done
+        env:
+        {{- range $envvar_name := tuple "PGUSER" "PGPASSWORD" "PGHOST" "PGDATABASE" }}
+        - name: {{ $envvar_name }}
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
+              key: {{ $envvar_name }}
+        {{- end }}
+        - name: PGPORT
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
+              key: PGPORT
+              optional: true
+        volumeMounts:
+        - name: base-volume
+          mountPath: /etc/sql/base/
+      volumes:
+      - name: base-volume
+        configMap:
+          name: ska-dlm-base-sql-scripts
+      restartPolicy: Never
+  backoffLimit: 4
+{{- end }}
+
+---
+
+{{- if and .Values.database.migration.enabled .Values.database.migration.patch.patchInstall }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "ska-dlm.fullname" . }}-patch-migration
+spec:
+  template:
+    spec:
+      containers:
+      - name: patch-migration
+        image: {{ .Values.database.migration.image }}:{{ .Values.database.migration.version }}
+        command: ["/bin/sh", "-c"]
+        args:
+          - >
+            for f in /etc/sql/patch/*.sql; do
+              echo "Running $f";
+              psql -f "$f";
+            done
         env:
         {{ range $envvar_name := tuple "PGUSER" "PGPASSWORD" "PGHOST" "PGDATABASE" -}}
         - name: {{ $envvar_name }}
@@ -22,7 +70,6 @@ spec:
             secretKeyRef:
               name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
               key: {{ $envvar_name }}
-              optional: false
         {{ end -}}
         - name: PGPORT
           valueFrom:
@@ -31,13 +78,14 @@ spec:
               key: PGPORT
               optional: true
         volumeMounts:
-        - name: sql-volume
-          mountPath: "/etc/sql/"
+        - name: patch-volume
+          mountPath: /etc/sql/patch/
       volumes:
-      - name: sql-volume
+      - name: patch-volume
         configMap:
-          name: ska-dlm-postgresql-initdb-scripts
+          name: ska-dlm-patch-sql-scripts
       restartPolicy: Never
   backoffLimit: 4
-  {{- end }}
-  {{- end }}
+{{- end }}
+
+{{- end }}

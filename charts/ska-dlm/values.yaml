@@ -92,6 +92,11 @@ database:
     enabled: false
     image: postgres
     version: "17.4"
+    base:
+      baseInstall: true
+    patch:
+      patchInstall: false
+      patchVersion: v1.1.2  # Default patch version (bump this when applying new schema upgrades)
 
 rclone:
   component: rclone
