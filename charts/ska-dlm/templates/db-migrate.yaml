@@ -38,7 +38,7 @@ spec:
       volumes:
       - name: base-volume
         configMap:
-          name: ska-dlm-base-sql-scripts
+          name: ska-dlm-postgresql-initdb-base-scripts
       restartPolicy: Never
   backoffLimit: 4
 {{- end }}
@@ -83,7 +83,7 @@ spec:
       volumes:
       - name: patch-volume
         configMap:
-          name: ska-dlm-patch-sql-scripts
+          name: ska-dlm-db-patch-scripts
       restartPolicy: Never
   backoffLimit: 4
 {{- end }}
