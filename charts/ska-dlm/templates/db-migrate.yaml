@@ -13,7 +13,11 @@ spec:
         image: {{ .Values.database.migration.image }}:{{ .Values.database.migration.version }}
         command: ["/bin/sh", "-c"]
         args:
-          - >
+          - |
+            echo "Waiting for Postgres to be ready...";
+            until pg_isready -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE"; do
+              sleep 2;
+            done;
             for f in /etc/sql/base/*.sql; do
               echo "Running $f";
               psql -f "$f";
@@ -58,25 +62,45 @@ spec:
         image: {{ .Values.database.migration.image }}:{{ .Values.database.migration.version }}
         command: ["/bin/sh", "-c"]
         args:
-          - >
-            for f in /etc/sql/patch/*.sql; do
-              echo "Running $f";
-              psql -f "$f";
-            done
+          - |
+            echo "Waiting for Postgres to be ready...";
+            until pg_isready -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE"; do
+              sleep 2;
+            done;
+
+            if [ "$BASE_INSTALL_ENABLED" = "true" ]; then
+              echo "Waiting for base schema (e.g., data_item table) to be present...";
+              until psql -qtAX -c "SELECT to_regclass('public.data_item');" | grep -q 'data_item'; do
+                echo "data_item table not found yet. Retrying...";
+                sleep 2;
+              done;
+            fi
+
+            echo "Looking for patch files in /etc/sql/patch/";
+            if ls /etc/sql/patch/*.sql 1> /dev/null 2>&1; then
+              for f in /etc/sql/patch/*.sql; do
+                echo "Running $f";
+                psql -v ON_ERROR_STOP=1 -f "$f";
+              done;
+            else
+              echo "No patch files found";
+            fi
         env:
-        {{ range $envvar_name := tuple "PGUSER" "PGPASSWORD" "PGHOST" "PGDATABASE" -}}
+        {{- range $envvar_name := tuple "PGUSER" "PGPASSWORD" "PGHOST" "PGDATABASE" }}
         - name: {{ $envvar_name }}
           valueFrom:
             secretKeyRef:
               name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
               key: {{ $envvar_name }}
-        {{ end -}}
+        {{- end }}
         - name: PGPORT
           valueFrom:
             secretKeyRef:
               name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
               key: PGPORT
               optional: true
+        - name: BASE_INSTALL_ENABLED
+          value: {{ .Values.database.migration.base.baseInstall | default false | quote }}
         volumeMounts:
         - name: patch-volume
           mountPath: /etc/sql/patch/

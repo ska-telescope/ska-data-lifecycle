@@ -8,5 +8,5 @@ metadata:
   labels:
     {{- include "ska-dlm.postgrest.labels" . | indent 4 }}
 data:
-  {{ (.Files.Glob (printf "patches/%s/*.sql" $patchVersion)).AsConfig | indent 2 }}
+{{ (.Files.Glob (printf "patches/%s/*.sql" $patchVersion)).AsConfig | indent 2 }}
 {{- end }}
