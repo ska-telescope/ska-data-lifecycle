@@ -1,5 +1,9 @@
 {{- if not .Values.postgresql.enabled }}
 
+{{- if and .Values.database.migration.enabled .Values.database.migration.base.baseInstall .Values.database.migration.patch.patchInstall }}
+{{- fail "You cannot enable both baseInstall and patchInstall simultaneously." }}
+{{- end }}
+
 {{- if and .Values.database.migration.enabled .Values.database.migration.base.baseInstall }}
 apiVersion: batch/v1
 kind: Job
@@ -83,14 +87,6 @@ spec:
               sleep 2;
             done;
 
-            if [ "$BASE_INSTALL_ENABLED" = "true" ]; then
-              echo "Waiting for base schema (e.g., data_item table) to be present...";
-              until psql -qtAX -c "SELECT to_regclass('public.data_item');" | grep -q 'data_item'; do
-                echo "data_item table not found yet. Retrying...";
-                sleep 2;
-              done;
-            fi
-
             echo "Looking for patch files in /etc/sql/patch/";
             if ls /etc/sql/patch/*.sql 1> /dev/null 2>&1; then
               for f in /etc/sql/patch/*.sql; do
@@ -114,8 +110,6 @@ spec:
               name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
               key: PGPORT
               optional: true
-        - name: BASE_INSTALL_ENABLED
-          value: {{ .Values.database.migration.base.baseInstall | default false | quote }}
         volumeMounts:
         - name: patch-volume
           mountPath: /etc/sql/patch/
