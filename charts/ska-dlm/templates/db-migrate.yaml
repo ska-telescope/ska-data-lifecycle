@@ -15,9 +15,17 @@ spec:
         args:
           - |
             echo "Waiting for Postgres to be ready...";
+            attempts=0
+            max_attempts=30
             until pg_isready -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE"; do
+              attempts=$((attempts + 1))
+              if [ "$attempts" -ge "$max_attempts" ]; then
+                echo "Postgres not ready after $((max_attempts * 2)) seconds, exiting."
+                exit 1
+              fi
               sleep 2;
             done;
+
             for f in /etc/sql/base/*.sql; do
               echo "Running $f";
               psql -f "$f";
@@ -64,7 +72,14 @@ spec:
         args:
           - |
             echo "Waiting for Postgres to be ready...";
+            attempts=0
+            max_attempts=30
             until pg_isready -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE"; do
+              attempts=$((attempts + 1))
+              if [ "$attempts" -ge "$max_attempts" ]; then
+                echo "Postgres not ready after $((max_attempts * 2)) seconds, exiting."
+                exit 1
+              fi
               sleep 2;
             done;
 
