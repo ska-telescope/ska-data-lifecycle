@@ -2,6 +2,14 @@
 
 ## Development
 
+### Changed
+
+* Changed data_item.metadata column type from json to jsonb.
+
+### Added
+
+* Set up the Helm chart infrastructure to support database patch releases via versioned SQL files.
+
 ## 1.1.2
 
 ### Deprecated
