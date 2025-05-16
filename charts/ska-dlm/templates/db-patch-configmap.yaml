@@ -1,5 +1,8 @@
 {{- if and .Values.database.migration.enabled .Values.database.migration.patch.patchInstall }}
-{{- $patchVersion := .Values.database.migration.patch.patchVersion | default "v1.1.2" }}
+{{- $patchVersion := .Values.database.migration.patch.patchVersion }}
+{{- if not $patchVersion }}
+{{- fail "You must provide a valid patch version for 'database.migration.patch.patchVersion', e.g., 1.1.2" }}
+{{- end }}
 apiVersion: v1
 kind: ConfigMap
 metadata:

@@ -96,7 +96,7 @@ database:
       baseInstall: true
     patch:
       patchInstall: false
-      patchVersion: v1.1.2  # Default patch version (bump this when applying new schema upgrades)
+      patchVersion: ""  # Supply a valid patch version vx.x.x
 
 rclone:
   component: rclone
