@@ -1,7 +1,5 @@
 # SKA Data Lifecycle Management Chart
 
-*This is a work in progress*
-
 This chart installs the DLM services, including PostgREST and, optionally, a PostgreSQL instance via the Bitnami chart.
 
 The main configuration options are:
