@@ -14,7 +14,7 @@ The main configuration options are:
 
 DB authentication details for PostgREST are stored in a Kubernetes `Secret`.
 The `Secret` is **always** automatically created to point to the internal PostgreSQL server, if that is enabled.
-Otherwise, he following Helm values under `postgrest.db_auth_secret` take effect:
+Otherwise, the following Helm values under `postgrest.db_auth_secret` take effect:
 
  * `create`: Whether to create a `Secret` or not.
    * If unset, an existing one has to be provided via `name`.
@@ -59,9 +59,9 @@ Note: `database.migration.base.baseInstall` and `database.migration.patch.patchI
 
 ## Schema changes by release
 
-### Release 1.1.2
+### Working version
 
-Note: Although this patch is named for v1.1.2, the changes will only be included in the *next* chart release.
+Note: The v1.1.2 directory holds the code required to migrate the database *from* 1.1.2 to the *next* release.
 
 **Changes**:
 * `data_item.metadata` column changed from `json` to `jsonb`

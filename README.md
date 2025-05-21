@@ -19,7 +19,7 @@ In addition we have implemented an AAA API gateway to enable testing of the auth
 For more detailed information, see [ReadTheDocs](https://developer.skao.int/projects/ska-data-lifecycle/en/latest/?badge=latest)
 
 ## Installation
-This repository contains Helm charts for deploying the DLM services, including an optional PostgreSQL database. While the DLM is designed to run in an operational environment using SKAO-managed services (e.g., a high-availability database and central authentication), the included charts provide a working configuration suitable for local development, internal testing, and evaluation.
+This repository contains Helm charts for deploying the DLM services, including an optional PostgreSQL database. While the DLM is designed to run in an operational environment using SKAO-managed services (e.g., a high-availability database and central authentication), the provided Helm charts support deployment in non-production contexts for evaluation and development-adjacent workflows.
 For full instructions on how to deploy the DLM using Helm see [charts/README.md](./charts/ska-dlm/README.md).
 
 ## SKA-DLM evaluation environment
