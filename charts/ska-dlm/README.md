@@ -54,7 +54,7 @@ To apply schema changes introduced after the initial deployment:
 * Set `database.migration.patch.patchInstall` = `true`.
 * Set `database.migration.patch.patchVersion` to the release version (e.g., v1.1.2).
 
-Patch SQL scripts are located at `charts/ska-dlm/patches/<version>/`. They are mounted into the migration pod at `/etc/sql/patch/` and executed in deployment order. The following section provides a breakdown of all patch releases in version order.
+Patch SQL scripts are located at `charts/ska-dlm/patches/<version>/`. They are mounted into the migration pod at `/etc/sql/patch/` and executed in alphabetical order. The following section provides a breakdown of all patch releases in version order.
 Note: `database.migration.base.baseInstall` and `database.migration.patch.patchInstall` can **not** be true at the same time.
 
 ## Schema changes by release
