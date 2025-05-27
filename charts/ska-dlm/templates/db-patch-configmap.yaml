@@ -1,0 +1,15 @@
+{{- if and .Values.database.migration.enabled .Values.database.migration.patch.patchInstall }}
+{{- $patchVersion := .Values.database.migration.patch.patchVersion }}
+{{- if not $patchVersion }}
+{{- fail "You must provide a valid patch version for 'database.migration.patch.patchVersion', e.g., 1.1.2" }}
+{{- end }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ska-dlm-db-patch-scripts
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ska-dlm.postgrest.labels" . | indent 4 }}
+data:
+{{ (.Files.Glob (printf "patches/%s/*.sql" $patchVersion)).AsConfig | indent 2 }}
+{{- end }}

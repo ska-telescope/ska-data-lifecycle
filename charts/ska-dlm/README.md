@@ -1,27 +1,27 @@
 # SKA Data Lifecycle Management Chart
 
-*This is a work in progress*
+This chart installs the DLM services, including PostgREST and, optionally, a PostgreSQL instance via the Bitnami chart.
 
-This chart currently installs PostgREST, and optionally Postgres via the bitnami chart.
+The main configuration options are:
 
-The main options of interest are:
+ * `postgresql.enabled`: If true, a PostgreSQL instance will be deployed via the Bitnami chart. Otherwise, an external PostgreSQL service is assumed.
+ * `postgresql.primary.persistence.enabled`: If enabled, PostgreSQL will persist data between executions, otherwise it will start from scratch each time.
+ * `database.migration.enabled`: If true, the DLM tables will be created automatically in the database. Must be true for any base or patch migration to run. See [Database Migrations](#database-migrations) for more information.
+ * `database.migration.image`: The Docker image used for executing SQL migration jobs (default: `postgres`)
+ * `database.migration.version`: Version tag of the migration image (default: 17.4).
 
- * `postgresql.enabled`: if true, PostgreSQL is installed, otherwise an external installation will be necessary.
- * `database.migration.enabled`: if true, the DLM tables will be created automatically in the database.
- * `database.migration.image`: image to use for migration pod, default is `postgres`
- * `database.migration.version`: version of the image to use for migration pod, default is `17.4`
- * `postgresql.primary.persistence.enabled`: if enabled, PostgreSQL will persist data between executions, otherwise it will start from scratch each time.
+## Authentication
 
 DB authentication details for PostgREST are stored in a Kubernetes `Secret`.
 The `Secret` is **always** automatically created to point to the internal PostgreSQL server, if that is enabled.
-Otherwise, he following Helm values under `postgrest.db_auth_secret` take effect:
+Otherwise, the following Helm values under `postgrest.db_auth_secret` take effect:
 
  * `create`: Whether to create a `Secret` or not.
    * If unset, an existing one has to be provided via `name`.
    * If set, the `Secret` is created from the Vault contents at `vault.{mount,path,type}`.
  * In both cases, the `Secret` should provide the following keys: `PGHOST`, `PGUSER`, `PGPASSWORD` and `PGDATABASE`.
 
-#### Rclone Helm Chart `secret` values
+## Rclone Helm Chart `secret` values
 
  * `secret`:
     * `enabled`: if `true`, then enable rclone secrets.
@@ -35,6 +35,36 @@ Otherwise, he following Helm values under `postgrest.db_auth_secret` take effect
         * `type`: vault engine type, defaults to `kv-v2`
         * `path`: vault path.
 
+## Database Migrations
+
+Database migrations are executed by Kubernetes Job resources as part of the Helm deployment process. There are two types of migrations:
+
+**1. Base Migrations (Initial Schema Creation)**
+To install the base DLM schema from scratch:
+
+* Set `database.migration.enabled` = `true`
+* Set `database.migration.base.baseInstall` = `true`
+
+This will run the SQL scripts located under `charts/ska-dlm/initdb-scripts/`. Use this option when deploying into a fresh database with no existing schema.
+
+**2. Patch Migrations (Schema Updates Between Releases)**
+To apply schema changes introduced after the initial deployment:
+
+* Set `database.migration.enabled` = `true`
+* Set `database.migration.patch.patchInstall` = `true`.
+* Set `database.migration.patch.patchVersion` to the release version (e.g., v1.1.2).
+
+Patch SQL scripts are located at `charts/ska-dlm/patches/<version>/`. They are mounted into the migration pod at `/etc/sql/patch/` and executed in alphabetical order. The following section provides a breakdown of all patch releases in version order.
+Note: `database.migration.base.baseInstall` and `database.migration.patch.patchInstall` can **not** be true at the same time.
+
+## Schema changes by release
+
+### Working version
+
+Note: The v1.1.2 directory holds the code required to migrate the database *from* 1.1.2 to the *next* release.
+
+**Changes**:
+* `data_item.metadata` column changed from `json` to `jsonb`
 
 ## Test Deployment
 
@@ -63,18 +93,19 @@ Otherwise, he following Helm values under `postgrest.db_auth_secret` take effect
 
   * The chart lock can be regenerated using `make k8s-dep-update`
 
-- Depending on you system you may also need to run `minikube tunnel` in a separate terminal(notably [M1 Macs](https://github.com/kubernetes/minikube/issues/13510)). In this case, you can access ingress services via `localhost` instead of `minikube ip`.
+- Depending on you system you may also need to run `minikube tunnel` in a separate terminal (notably [M1 Macs](https://github.com/kubernetes/minikube/issues/13510)). In this case, you can access ingress services via `localhost` instead of `minikube ip`.
 
 
 ### pgweb (optional)
 
-Web IDE access to Postgres can be enabled by deploying pgweb in the cluster by adding `--set pgweb.enabled=true` to `K8S_CHART_PARAMS` in the project `Makefile`.
+Web IDE access to Postgres can be enabled by deploying pgweb in the cluster by adding `--set pgweb.enabled=true` to `K8S_CHART_PARAMS` in the project `Makefile`, or by setting `pgweb.enabled=true` in `values.yaml`. Once deployed, you can access the interface by port-forwarding to the pgweb service.
 
 With public network access to the development k8s cluster:
 
 * navigate a browser to `http://<minikube ip>/pgweb/` (or with minikube tunneling, `http://localhost/pgweb/`)
 * Select the scheme option
-* Enter the URL `postgres://ska_dlm_admin:password@<helm-release>-postgresql.<namespace>/ska_dlm?sslmode=disable`
+* Enter the URL `postgres://ska_dlm_admin:password@<helm-release>-postgresql.<host>:<port>/ska_dlm?sslmode=disable`
+Example of <host> on the DP cluster: *dp-shared.svc.cluster.local*
 
 ### Running Helm Chart Tests
 

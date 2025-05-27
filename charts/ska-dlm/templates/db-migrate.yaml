@@ -1,27 +1,47 @@
 {{- if not .Values.postgresql.enabled }}
-{{- if .Values.database.migration.enabled }}
+
+{{- if and .Values.database.migration.enabled .Values.database.migration.base.baseInstall .Values.database.migration.patch.patchInstall }}
+{{- fail "You cannot enable both baseInstall and patchInstall simultaneously." }}
+{{- end }}
+
+{{- if and .Values.database.migration.enabled .Values.database.migration.base.baseInstall }}
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ include "ska-dlm.fullname" . }}-db-migration
+  name: {{ include "ska-dlm.fullname" . }}-base-migration
 spec:
   template:
     spec:
       containers:
-      - name: {{ include "ska-dlm.fullname" . }}-db-migration
+      - name: base-migration
         image: {{ .Values.database.migration.image }}:{{ .Values.database.migration.version }}
         command: ["/bin/sh", "-c"]
         args:
-        - psql -f /etc/sql/10_create_tables.sql
+          - |
+            echo "Waiting for Postgres to be ready...";
+            attempts=0
+            max_attempts=30
+            until pg_isready -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE"; do
+              attempts=$((attempts + 1))
+              if [ "$attempts" -ge "$max_attempts" ]; then
+                echo "Postgres not ready after $((max_attempts * 2)) seconds, exiting."
+                exit 1
+              fi
+              sleep 2;
+            done;
+
+            for f in /etc/sql/base/*.sql; do
+              echo "Running $f";
+              psql -f "$f";
+            done
         env:
-        {{ range $envvar_name := tuple "PGUSER" "PGPASSWORD" "PGHOST" "PGDATABASE" -}}
+        {{- range $envvar_name := tuple "PGUSER" "PGPASSWORD" "PGHOST" "PGDATABASE" }}
         - name: {{ $envvar_name }}
           valueFrom:
             secretKeyRef:
               name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
               key: {{ $envvar_name }}
-              optional: false
-        {{ end -}}
+        {{- end }}
         - name: PGPORT
           valueFrom:
             secretKeyRef:
@@ -29,13 +49,76 @@ spec:
               key: PGPORT
               optional: true
         volumeMounts:
-        - name: sql-volume
-          mountPath: "/etc/sql/"
+        - name: base-volume
+          mountPath: /etc/sql/base/
       volumes:
-      - name: sql-volume
+      - name: base-volume
         configMap:
-          name: ska-dlm-postgresql-initdb-scripts
+          name: ska-dlm-postgresql-initdb-base-scripts
       restartPolicy: Never
   backoffLimit: 4
-  {{- end }}
-  {{- end }}
+{{- end }}
+
+---
+
+{{- if and .Values.database.migration.enabled .Values.database.migration.patch.patchInstall }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "ska-dlm.fullname" . }}-patch-migration
+spec:
+  template:
+    spec:
+      containers:
+      - name: patch-migration
+        image: {{ .Values.database.migration.image }}:{{ .Values.database.migration.version }}
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            echo "Waiting for Postgres to be ready...";
+            attempts=0
+            max_attempts=30
+            until pg_isready -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE"; do
+              attempts=$((attempts + 1))
+              if [ "$attempts" -ge "$max_attempts" ]; then
+                echo "Postgres not ready after $((max_attempts * 2)) seconds, exiting."
+                exit 1
+              fi
+              sleep 2;
+            done;
+
+            echo "Looking for patch files in /etc/sql/patch/";
+            if ls /etc/sql/patch/*.sql 1> /dev/null 2>&1; then
+              for f in /etc/sql/patch/*.sql; do
+                echo "Running $f";
+                psql -v ON_ERROR_STOP=1 -f "$f";
+              done;
+            else
+              echo "No patch files found";
+            fi
+        env:
+        {{- range $envvar_name := tuple "PGUSER" "PGPASSWORD" "PGHOST" "PGDATABASE" }}
+        - name: {{ $envvar_name }}
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
+              key: {{ $envvar_name }}
+        {{- end }}
+        - name: PGPORT
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
+              key: PGPORT
+              optional: true
+        volumeMounts:
+        - name: patch-volume
+          mountPath: /etc/sql/patch/
+      volumes:
+      - name: patch-volume
+        configMap:
+          name: ska-dlm-db-patch-scripts
+      restartPolicy: Never
+  backoffLimit: 4
+{{- end }}
+
+{{- end }}

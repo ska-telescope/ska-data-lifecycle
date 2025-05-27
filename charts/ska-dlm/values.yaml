@@ -92,6 +92,11 @@ database:
     enabled: false
     image: postgres
     version: "17.4"
+    base:
+      baseInstall: true
+    patch:
+      patchInstall: false
+      patchVersion: ""  # Supply a valid patch version vx.x.x
 
 rclone:
   component: rclone
@@ -140,7 +145,7 @@ postgresql:  # see https://github.com/bitnami/charts/tree/main/bitnami/postgresq
     initdb:
       user: ska_dlm_admin
       password: password
-      scriptsConfigMap: ska-dlm-postgresql-initdb-scripts
+      scriptsConfigMap: ska-dlm-postgresql-initdb-base-scripts
     podLabels:
       component: postgresql
       subsystem: data-lifecycle-management
