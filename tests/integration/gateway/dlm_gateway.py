@@ -195,7 +195,7 @@ class Entra(Provider):
     @override
     async def token_by_auth_flow(self, request: Request) -> Response:
         loop = asyncio.get_running_loop()
-        auth = await loop.run_in_executor(
+        auth_url = await loop.run_in_executor(
             None,
             partial(
                 self.entra.get_authorization_request_url,
@@ -204,7 +204,7 @@ class Entra(Provider):
             ),
         )
 
-        return RedirectResponse(auth["auth_uri"])
+        return RedirectResponse(auth_url)
 
     @override
     async def token_by_username_password(self, username: str, password: str) -> dict:
