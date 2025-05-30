@@ -196,11 +196,10 @@ class Entra(Provider):
         loop = asyncio.get_running_loop()
         auth = await loop.run_in_executor(
             None,
-            self.entra.initiate_auth_code_flow,
-            self.scope,
-            self.redirect_url,
+            lambda: self.entra.get_authorization_request_url,
+            scopes=self.scope,
+            redirect_uri=self.redirect_url,
         )
-        request.session["flow"] = auth
 
         return RedirectResponse(auth["auth_uri"])
 
@@ -214,18 +213,27 @@ class Entra(Provider):
 
     @override
     async def auth_callback(self, request: Request) -> str:
-        flow = request.session.get("flow", None)
-        if not flow:
-            raise HTTPException(403, "Unknown flow state")
+        code = request.query_params.get("code", None)
+        if code is None:
+            raise HTTPException(403, "code not found")
 
         try:
             loop = asyncio.get_running_loop()
-            access_token = await loop.run_in_executor(
-                None, self.entra.acquire_token_by_auth_code_flow, flow, dict(request.query_params)
+            result = await loop.run_in_executor(
+                None,
+                lambda: self.entra.acquire_token_by_authorization_code,
+                code=code,
+                scopes=self.scope,
+                redirect_uri=self.redirect_url,
             )
 
-            return access_token["access_token"]
+            if "access_token" not in result:
+                raise HTTPException(403, "can not obtain token")
+            return result["access_token"]
+
         # pylint: disable=raise-missing-from
+        except HTTPException:
+            raise
         except Exception as e:
             raise HTTPException(status_code=403, detail=str(e))
 
