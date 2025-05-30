@@ -237,9 +237,8 @@ class Entra(Provider):
             return result["access_token"]
 
         # pylint: disable=raise-missing-from
-        except HTTPException:
-            raise
         except Exception as e:
+            logging.exception("auth_callback")
             raise HTTPException(status_code=403, detail=str(e))
 
     async def _check_token(self, token: str):
