@@ -158,3 +158,12 @@ Rclone secret name
 {{- .Values.rclone.secret.name -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Gateway secret name
+*/}}
+{{- define "ska-dlm.gateway.secret.name" -}}
+{{- if and (.Values.gateway.enabled) (ne .Values.gateway.secret.name "") }}
+{{- .Values.gateway.secret.name -}}
+{{- end -}}
+{{- end -}}
