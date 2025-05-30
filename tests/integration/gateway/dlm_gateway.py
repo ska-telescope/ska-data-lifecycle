@@ -16,7 +16,7 @@ import msal
 import requests
 from cryptography.hazmat.primitives import serialization
 from fastapi import FastAPI, HTTPException, Request, Response
-from fastapi.responses import RedirectResponse, StreamingResponse
+from fastapi.responses import PlainTextResponse, RedirectResponse, StreamingResponse
 from keycloak import KeycloakOpenID, KeycloakUMA
 from keycloak.exceptions import KeycloakAuthenticationError
 from overrides import override
@@ -235,7 +235,7 @@ class Entra(Provider):
             if "access_token" not in result:
                 logging.error(result.get("error_description"))
                 raise HTTPException(403, "can not obtain token")
-            return result["access_token"]
+            return PlainTextResponse(content=result["access_token"])
 
         # pylint: disable=raise-missing-from
         except Exception as e:
