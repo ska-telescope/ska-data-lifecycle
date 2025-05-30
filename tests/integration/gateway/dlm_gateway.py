@@ -6,6 +6,7 @@ import logging
 import os
 import ssl
 from abc import abstractmethod
+from functools import partial
 from typing import Any
 
 import httpx
@@ -196,9 +197,11 @@ class Entra(Provider):
         loop = asyncio.get_running_loop()
         auth = await loop.run_in_executor(
             None,
-            lambda: self.entra.get_authorization_request_url,
-            scopes=self.scope,
-            redirect_uri=self.redirect_url,
+            partial(
+                self.entra.get_authorization_request_url,
+                scopes=self.scope,
+                redirect_uri=self.redirect_url,
+            ),
         )
 
         return RedirectResponse(auth["auth_uri"])
@@ -221,10 +224,12 @@ class Entra(Provider):
             loop = asyncio.get_running_loop()
             result = await loop.run_in_executor(
                 None,
-                lambda: self.entra.acquire_token_by_authorization_code,
-                code=code,
-                scopes=self.scope,
-                redirect_uri=self.redirect_url,
+                partial(
+                    self.entra.acquire_token_by_authorization_code,
+                    code=code,
+                    scopes=self.scope,
+                    redirect_uri=self.redirect_url,
+                ),
             )
 
             if "access_token" not in result:
