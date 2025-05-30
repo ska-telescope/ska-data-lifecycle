@@ -233,6 +233,7 @@ class Entra(Provider):
             )
 
             if "access_token" not in result:
+                logging.error(result.get("error_description"))
                 raise HTTPException(403, "can not obtain token")
             return result["access_token"]
 
