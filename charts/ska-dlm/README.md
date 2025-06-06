@@ -63,9 +63,9 @@ Note: `database.migration.base.baseInstall` and `database.migration.patch.patchI
 To install the OAuth API gateway:
 
   * Set `gateway.enabled` = `true`
-  * Set `image` to the image path.
-  * Set `version` to the image version.
-  * Set `gateway.secret.name` to the name of the k8 secret (below).
+  * Set `image` to the registry path of the container image.
+  * Set `version` to the container image version.
+  * Set `gateway.secret.name` to the name of the k8 secret (see below).
 
 Create a k8 secret with the following Entra configuration items obtained by SKAO IT:
 
