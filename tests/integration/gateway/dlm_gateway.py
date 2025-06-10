@@ -6,6 +6,7 @@ import logging
 import os
 import ssl
 from abc import abstractmethod
+from functools import partial
 from typing import Any
 
 import httpx
@@ -15,7 +16,7 @@ import msal
 import requests
 from cryptography.hazmat.primitives import serialization
 from fastapi import FastAPI, HTTPException, Request, Response
-from fastapi.responses import RedirectResponse, StreamingResponse
+from fastapi.responses import PlainTextResponse, RedirectResponse, StreamingResponse
 from keycloak import KeycloakOpenID, KeycloakUMA
 from keycloak.exceptions import KeycloakAuthenticationError
 from overrides import override
@@ -194,15 +195,16 @@ class Entra(Provider):
     @override
     async def token_by_auth_flow(self, request: Request) -> Response:
         loop = asyncio.get_running_loop()
-        auth = await loop.run_in_executor(
+        auth_url = await loop.run_in_executor(
             None,
-            self.entra.initiate_auth_code_flow,
-            self.scope,
-            self.redirect_url,
+            partial(
+                self.entra.get_authorization_request_url,
+                scopes=self.scope,
+                redirect_uri=self.redirect_url,
+            ),
         )
-        request.session["flow"] = auth
 
-        return RedirectResponse(auth["auth_uri"])
+        return RedirectResponse(auth_url)
 
     @override
     async def token_by_username_password(self, username: str, password: str) -> dict:
@@ -214,19 +216,30 @@ class Entra(Provider):
 
     @override
     async def auth_callback(self, request: Request) -> str:
-        flow = request.session.get("flow", None)
-        if not flow:
-            raise HTTPException(403, "Unknown flow state")
+        code = request.query_params.get("code", None)
+        if code is None:
+            raise HTTPException(403, "code not found")
 
         try:
             loop = asyncio.get_running_loop()
-            access_token = await loop.run_in_executor(
-                None, self.entra.acquire_token_by_auth_code_flow, flow, dict(request.query_params)
+            result = await loop.run_in_executor(
+                None,
+                partial(
+                    self.entra.acquire_token_by_authorization_code,
+                    code=code,
+                    scopes=self.scope,
+                    redirect_uri=self.redirect_url,
+                ),
             )
 
-            return access_token["access_token"]
+            if "access_token" not in result:
+                logging.error(result.get("error_description"))
+                raise HTTPException(403, "can not obtain token")
+            return PlainTextResponse(content=result["access_token"])
+
         # pylint: disable=raise-missing-from
         except Exception as e:
+            logging.exception("auth_callback")
             raise HTTPException(status_code=403, detail=str(e))
 
     async def _check_token(self, token: str):
