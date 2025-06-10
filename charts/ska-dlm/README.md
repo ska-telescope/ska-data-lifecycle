@@ -4,6 +4,7 @@ This chart installs the DLM services, including PostgREST and, optionally, a Pos
 
 The main configuration options are:
 
+ * `global.ingress.enabled`: If set to false, no Ingress resources will be created, meaning external access to services like pgweb and PostgREST will be unavailable. Set to true to expose these services outside the cluster.
  * `postgresql.enabled`: If true, a PostgreSQL instance will be deployed via the Bitnami chart. Otherwise, an external PostgreSQL service is assumed.
  * `postgresql.primary.persistence.enabled`: If enabled, PostgreSQL will persist data between executions, otherwise it will start from scratch each time.
  * `database.migration.enabled`: If true, the DLM tables will be created automatically in the database. Must be true for any base or patch migration to run. See [Database Migrations](#database-migrations) for more information.
@@ -104,8 +105,8 @@ With public network access to the development k8s cluster:
 
 * navigate a browser to `http://<minikube ip>/pgweb/` (or with minikube tunneling, `http://localhost/pgweb/`)
 * Select the scheme option
-* Enter the URL `postgres://ska_dlm_admin:password@<helm-release>-postgresql.<host>:<port>/ska_dlm?sslmode=disable`
-Example of <host> on the DP cluster: *dp-shared.svc.cluster.local*
+* Enter the URL `postgres://ska_dlm_admin:password@<helm-release>-postgresql.<host>:<port>/ska_dlm?sslmode=disable`.
+Example of `<host>` on the DP cluster: *dp-shared.svc.cluster.local*
 
 ### Running Helm Chart Tests
 
