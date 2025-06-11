@@ -108,7 +108,7 @@ def query_new(check_date: str, uid: str = "") -> list[dict]:
     """
     params = {
         "uid_creation": f"gt.{check_date}",
-        "item_phase": "eq.GAS",
+        "uid_phase": "eq.GAS",
         "item_state": "eq.READY",
         "select": "uid,item_name,uid_creation,storage_id",
     }

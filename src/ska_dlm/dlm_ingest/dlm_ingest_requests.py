@@ -117,7 +117,7 @@ def init_data_item(
             raise ValueError("Username not found in profile")
 
     if item_name:
-        post_data = {"item_name": item_name, "item_phase": phase, "item_owner": username}
+        post_data = {"item_name": item_name, "uid_phase": phase, "item_owner": username}
     elif json_data:
         post_data = json_data
     else:
@@ -219,7 +219,7 @@ def register_data_item(  # noqa: C901
     init_item = {
         "item_name": item_name,
         "storage_id": storage_id,
-        "item_phase": storages[0]["storage_phase_level"],
+        "uid_phase": storages[0]["storage_phase_level"],
         "item_type": item_type,
         "item_owner": username,
         "parents": parents,

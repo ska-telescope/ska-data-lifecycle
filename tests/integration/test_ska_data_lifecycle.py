@@ -166,7 +166,7 @@ def test_set_uri_state_phase(env):
     items = env.data_item_requests.query_data_item(uid=uid)
     assert len(items) == 1
     assert items[0]["item_state"] == "READY"
-    assert items[0]["item_phase"] == "PLASMA"
+    assert items[0]["uid_phase"] == "PLASMA"
 
 
 # TODO: We don't want RCLONE_TEST_FILE_PATH to disappear after one test run.

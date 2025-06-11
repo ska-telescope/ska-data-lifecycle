@@ -69,7 +69,7 @@ CREATE TABLE public.storage (
     storage_retire_date TIMESTAMP without time zone DEFAULT NULL,
     storage_date timestamp without time zone DEFAULT now(),
     CONSTRAINT fk_location
-      FOREIGN KEY(location_id) 
+      FOREIGN KEY(location_id)
       REFERENCES public.location(location_id)
       ON DELETE SET NULL
 );
@@ -90,7 +90,7 @@ CREATE TABLE public.data_item (
     item_encoding varchar DEFAULT 'unknown',
     item_mime_type varchar DEFAULT 'application/octet-stream',
     item_level smallint DEFAULT -1,
-    item_phase varchar DEFAULT 'GAS',
+    uid_phase varchar DEFAULT 'GAS',
     item_state varchar DEFAULT 'initialized',
     UID_creation timestamp without time zone DEFAULT now(),
     OID_creation timestamp without time zone DEFAULT NULL,
