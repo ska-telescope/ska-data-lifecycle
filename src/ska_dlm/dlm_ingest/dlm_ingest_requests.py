@@ -219,7 +219,7 @@ def register_data_item(  # noqa: C901
     init_item = {
         "item_name": item_name,
         "storage_id": storage_id,
-        "uid_phase": storages[0]["storage_phase_level"],
+        "uid_phase": storages[0]["storage_phase"],
         "item_type": item_type,
         "item_owner": username,
         "parents": parents,

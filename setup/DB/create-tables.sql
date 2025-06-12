@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS storage (
     root_directory varchar DEFAULT NULL,
     storage_type varchar NOT NULL,
     storage_interface varchar NOT NULL,
-    storage_phase_level varchar DEFAULT 'GAS',
+    storage_phase varchar DEFAULT 'GAS',
     storage_capacity BIGINT DEFAULT -1,
     storage_use_pct NUMERIC(3,1) DEFAULT 0.0,
     storage_permissions varchar DEFAULT 'RW',

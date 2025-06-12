@@ -98,7 +98,7 @@ def init_storage(
     location_id: str | None = None,
     location_name: str | None = None,
     storage_capacity: int = -1,
-    storage_phase_level: str = "GAS",
+    storage_phase: str = "GAS",
     rclone_config: JsonObjectOption = None,
 ) -> str:
     """
@@ -120,7 +120,7 @@ def init_storage(
         a dlm registered location name
     storage_capacity
         reserved storage capacity in bytes
-    storage_phase_level
+    storage_phase
         one of "GAS", "LIQUID", "SOLID"
     rclone_config
         extra rclone values such as secrets required for connection
@@ -137,7 +137,7 @@ def init_storage(
         "storage_interface",
         "location_id",
         "storage_capacity",
-        "storage_phase_level",
+        "storage_phase",
         "root_directory",
     ]
     # TODO remove keys none values

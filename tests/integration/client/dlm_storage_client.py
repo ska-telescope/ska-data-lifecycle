@@ -36,7 +36,7 @@ def init_storage(
     location_id: str = "",
     storage_type: str = "",
     storage_capacity: int = -1,
-    storage_phase_level: str = "GAS",
+    storage_phase: str = "GAS",
     json_data: dict | None = None,
 ) -> str:
     """
@@ -60,7 +60,7 @@ def init_storage(
         high level type of the storage, e.g. "disk", "s3"
     storage_capacity
         reserved storage capacity in bytes
-    storage_phase_level
+    storage_phase
         one of "GAS", "LIQUID", "SOLID"
     json_data
         extra rclone values such as secrets required for connection
