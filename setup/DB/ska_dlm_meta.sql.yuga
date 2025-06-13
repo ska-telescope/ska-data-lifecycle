@@ -69,7 +69,7 @@ CREATE TABLE public.storage (
     storage_retire_date TIMESTAMP without time zone DEFAULT NULL,
     storage_date timestamp without time zone DEFAULT now(),
     CONSTRAINT fk_location
-      FOREIGN KEY(location_id) 
+      FOREIGN KEY(location_id)
       REFERENCES public.location(location_id)
       ON DELETE SET NULL
 );
