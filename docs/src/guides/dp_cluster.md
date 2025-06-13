@@ -30,6 +30,7 @@ from requests import Session
 DLM_URL = "https://sdhp.stfc.skao.int/dp-dm/dlm"
 token = <your token>
 headers = {"Authorization": f"Bearer {token}"}
+session = Session()
 ```
 
 **2. Check if the desired location (e.g., Pawsey) is already known to DLM**
@@ -38,7 +39,6 @@ headers = {"Authorization": f"Bearer {token}"}
 location_name = "Pawsey"
 location_type = "HPC centre"
 
-session = Session()
 location = session.get(
     f"{DLM_URL}/storage/query_location",
     params={"location_name": location_name},
@@ -79,6 +79,7 @@ If the desired storage is not listed, register an rclone supported storage endpo
 ```python
 storage_params = {
     "storage_name": "Acacia",
+    "root_directory": "rascil", # example of an existing directory
     "location_id": location_id,
     "storage_type": "object store",
     "storage_interface": "s3",  # rclone config type
@@ -129,7 +130,7 @@ print(config.json())
 ```python
 item_params = {
     "item_name": "test_item",
-    "uri": "rascil/1197634128-cal_avg32.ms.tar.xj",
+    "uri": "1197634128-cal_avg32.ms.tar.xj", # randomly chosen example file
     "storage_name": "Acacia",
     "storage_id": storage_id,
 }
