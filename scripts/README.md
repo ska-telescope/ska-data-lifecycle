@@ -5,7 +5,7 @@ Utility that allows a user to define multiple migrations between DLM endpoints a
 
 ## Configuration YAML File
 ```yaml
-- Benchmarks: 
+- Benchmarks:
     - migration(#): can define 1 or many
         - enabled: include migration test (true/false)
         - name: item name
@@ -24,7 +24,7 @@ Utility that allows a user to define multiple migrations between DLM endpoints a
     - name: storage name
     - type: type of storage enpoint
     - interface: posix, s3 etc
-    - root_directory: root directory of mount point. 
+    - root_directory: root directory of mount point.
     - config: RClone config
 
 
@@ -95,7 +95,7 @@ storage:
 
 ## Usage
 
-1) Create config file with necessary entries eg. config.yaml 
+1) Create config file with necessary entries eg. config.yaml
 2) Ensure that the file or directory, specified by the migration uri, is already on the source storage endpoint.
 3) Manually obtain access token from the DLM auth provider (i.e. https://sdhp.stfc.skao.int/dp-yanda/dlm/token_by_auth_flow) and place it in the config file.
 4) Run
