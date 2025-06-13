@@ -3,7 +3,7 @@
 API
 ===
 
-The DLM exposes four different interfaces:
+The DLM supports four different access use cases involving:
 
 .. toctree::
    :maxdepth: 1
