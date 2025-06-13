@@ -18,7 +18,6 @@ For high-level design details, see the `Solution Intent page <https://confluence
    :maxdepth: 1
    :caption: Guides
 
-   guides/usage
    guides/dp_cluster
    guides/local_deployment
 
