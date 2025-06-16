@@ -58,6 +58,23 @@ To apply schema changes introduced after the initial deployment:
 Patch SQL scripts are located at `charts/ska-dlm/patches/<version>/`. They are mounted into the migration pod at `/etc/sql/patch/` and executed in alphabetical order. The following section provides a breakdown of all patch releases in version order.
 Note: `database.migration.base.baseInstall` and `database.migration.patch.patchInstall` can **not** be true at the same time.
 
+
+## API Gateway
+
+To install the OAuth API gateway:
+
+  * Set `gateway.enabled` = `true`
+  * Set `image` to the registry path of the container image.
+  * Set `version` to the container image version.
+  * Set `gateway.secret.name` to the name of the k8 secret (see below).
+
+Create a k8 secret with the following Entra configuration items obtained by SKAO IT:
+
+  * `PROVIDER` = `ENTRA`
+  * `TENANT_ID` = `<Tenant ID>`
+  * `CLIENT_ID` = `<Client ID>`
+  * `CLIENT_CRED` = `<Client credential>`
+
 ## Schema changes by release
 
 ### Working version
