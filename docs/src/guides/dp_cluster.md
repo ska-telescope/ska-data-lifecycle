@@ -1,5 +1,6 @@
 # DP Cluster
 
+(dp-cluster)=
 ## Ingest and Migrate a Data Item
 
 This section outlines the steps required to ingest and migrate data within the DLM system using the **ska-dlm REST API interface**.
@@ -13,25 +14,24 @@ This section outlines the steps required to ingest and migrate data within the D
 7. Query the location of all copies of the item
 
 
-**The source code below demonstrates how to register a data item that exists on an external storage (e.g., Acacia).**
+The source code below demonstrates how to register a data item that exists on an external storage (e.g., Acacia).
 
-_Note that at the time of writing (07 Feb 2025), due to a missing firewall exception, the restful endpoint was only accessible by either:
-(1) running with VPN access or (2) running from a terminal session inside the cluster using http://ska-dlm-gateway.dp-yanda_
 
 **1. Prepare token to be placed in the header of your REST calls**
 
-* Open a browser and go to the `/token_by_auth_flow` endpoint on the DLM server URL. For example: `https://sdhp.stfc.skao.int/dp-yanda/dlm/token_by_auth_flow`.
+* Open a browser and go to the `/token_by_auth_flow` endpoint on the DLM server URL. For example: `https://sdhp.stfc.skao.int/dp-dm/dlm/token_by_auth_flow`.
 * Login with your SKAO credentials
 * If successful, a token will be returned. Copy the token.
 
 ```python
 from requests import Session
 
-# this URL is for DLM deployment in the Yanda namespace on the DP integration cluster
+# this URL is for DLM deployment in the 'dp-dm' namespace on the DP integration cluster
 # other known locations are shown below
-DLM_URL = "https://sdhp.stfc.skao.int/dp-yanda/dlm"
+DLM_URL = "https://sdhp.stfc.skao.int/dp-dm/dlm"
 token = <your token>
 headers = {"Authorization": f"Bearer {token}"}
+session = Session()
 ```
 
 **2. Check if the desired location (e.g., Pawsey) is already known to DLM**
@@ -40,7 +40,6 @@ headers = {"Authorization": f"Bearer {token}"}
 location_name = "Pawsey"
 location_type = "HPC centre"
 
-session = Session()
 location = session.get(
     f"{DLM_URL}/storage/query_location",
     params={"location_name": location_name},
@@ -81,6 +80,7 @@ If the desired storage is not listed, register an rclone supported storage endpo
 ```python
 storage_params = {
     "storage_name": "Acacia",
+    "root_directory": "rascil", # example of an existing directory
     "location_id": location_id,
     "storage_type": "object store",
     "storage_interface": "s3",  # rclone config type
@@ -131,7 +131,7 @@ print(config.json())
 ```python
 item_params = {
     "item_name": "test_item",
-    "uri": "rascil/1197634128-cal_avg32.ms.tar.xj",
+    "uri": "1197634128-cal_avg32.ms.tar.xj", # randomly chosen example file
     "storage_name": "Acacia",
     "storage_id": storage_id,
 }

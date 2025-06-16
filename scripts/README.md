@@ -97,7 +97,7 @@ storage:
 
 1) Create config file with necessary entries eg. config.yaml
 2) Ensure that the file or directory, specified by the migration uri, is already on the source storage endpoint.
-3) Manually obtain access token from the DLM auth provider (i.e. https://sdhp.stfc.skao.int/dp-yanda/dlm/token_by_auth_flow) and place it in the config file.
+3) Manually obtain access token from the DLM auth provider (i.e. https://sdhp.stfc.skao.int/dp-dm/dlm/token_by_auth_flow) and place it in the config file.
 4) Run
 
 
