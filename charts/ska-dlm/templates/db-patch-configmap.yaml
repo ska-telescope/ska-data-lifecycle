@@ -6,7 +6,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ska-dlm-db-patch-scripts
+  name: {{ include "ska-dlm.fullname" . }}-patch-migration-{{ .Values.database.migration.patch.patchVersion | replace "." "-" }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "ska-dlm.postgrest.labels" . | indent 4 }}

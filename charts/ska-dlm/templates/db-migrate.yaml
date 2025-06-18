@@ -65,7 +65,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ include "ska-dlm.fullname" . }}-patch-migration
+  name: {{ include "ska-dlm.fullname" . }}-patch-migration-{{ .Values.database.migration.patch.patchVersion | replace "." "-" }}
 spec:
   template:
     spec:
@@ -116,7 +116,7 @@ spec:
       volumes:
       - name: patch-volume
         configMap:
-          name: ska-dlm-db-patch-scripts
+          name: {{ include "ska-dlm.fullname" . }}-patch-migration-{{ .Values.database.migration.patch.patchVersion | replace "." "-" }}
       restartPolicy: Never
   backoffLimit: 4
 {{- end }}
