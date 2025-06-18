@@ -10,6 +10,8 @@ As described in the overview, the SKA-DLM is exposing all the managers and their
 - http://localhost:8003/docs for the Storage Manager service REST I/F
 - http://localhost:8004/docs for the Migration Manager REST I/F
 
+For an example, see our :ref:`DP Cluster guide <dp-cluster>`.
+
 As an example the Request Manager REST page looks like this:
 
 .. image:: ../_static/img/ska-dlm-rest.png

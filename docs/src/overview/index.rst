@@ -92,7 +92,7 @@ Interfaces
 ----------
 The SKA-DLM provides four different ways of interacting with it, which can be used in different scenarios.
 
+    - An independent `ska-dlm-client package <https://gitlab.com/ska-telescope/ska-dlm-client/>`_, which provides the most transparent way of registering data with the DLM.
     - A python library, exposing plain python functions (see :ref:`python api`).
     - A Command Line Interface (CLI) (see :ref:`cli api`).
     - REST interfaces to each of the managers (see :ref:`rest api`).
-    - An independent ska-dlm-client package, which provides the most transparent way of registering data with the SKA-DLM.
