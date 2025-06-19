@@ -325,7 +325,7 @@ def set_phase(uid: str, phase: str) -> dict:
     dict
         the updated data item entry
     """
-    return update_data_item(uid=uid, post_data={"item_phase": phase})
+    return update_data_item(uid=uid, post_data={"uid_phase": phase})
 
 
 @cli.command()

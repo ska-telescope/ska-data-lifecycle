@@ -18,7 +18,7 @@ def fixture_mock_ingest_requests_storage(mocker: MockerFixture):
         return_value=[
             {
                 "storage_id": uuid.uuid4(),
-                "storage_phase_level": "some-phase-level",
+                "storage_phase": "some-phase-level",
                 "root_directory": "/root/",
             }
         ],
