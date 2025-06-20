@@ -17,7 +17,6 @@ CREATE TABLE IF NOT EXISTS location (
     location_last_check TIMESTAMP without time zone DEFAULT NULL,
     location_date timestamp without time zone DEFAULT now()
 );
-ALTER TABLE location OWNER TO ska_dlm_admin;
 
 --
 -- Table storage
@@ -47,7 +46,6 @@ CREATE TABLE IF NOT EXISTS storage (
       REFERENCES location(location_id)
       ON DELETE SET NULL
 );
-ALTER TABLE storage OWNER TO ska_dlm_admin;
 
 --
 -- Table storage_config holds a JSON version of the configuration
@@ -67,7 +65,6 @@ CREATE TABLE IF NOT EXISTS storage_config (
       REFERENCES storage(storage_id)
       ON DELETE SET NULL
 );
-ALTER TABLE storage_config OWNER TO ska_dlm_admin;
 
 
 --
@@ -118,7 +115,7 @@ CREATE TABLE IF NOT EXISTS data_item (
       REFERENCES storage(storage_id)
       ON DELETE SET NULL
 );
-ALTER TABLE data_item OWNER TO ska_dlm_admin;
+
 CREATE INDEX IF NOT EXISTS idx_fk_storage_id ON data_item USING btree (storage_id);
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_unq_OID_UID_item_version ON data_item USING btree (OID, UID, item_version);
@@ -158,7 +155,6 @@ CREATE TABLE IF NOT EXISTS phase_change (
     requested_phase varchar DEFAULT 'GAS',
     request_creation timestamp without time zone DEFAULT now()
 );
-ALTER TABLE phase_change OWNER TO ska_dlm_admin;
 
 
 --
@@ -188,4 +184,4 @@ CREATE TABLE IF NOT EXISTS migration (
       REFERENCES storage(storage_id)
       ON DELETE SET NULL
 );
-ALTER TABLE migration OWNER TO ska_dlm_admin;
+
