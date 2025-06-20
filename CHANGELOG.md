@@ -5,6 +5,7 @@
 ### Changed
 
 * Changed data_item.metadata column type from json to jsonb.
+* Remove ALTER TABLE ownership statments. 
 
 ### Added
 
