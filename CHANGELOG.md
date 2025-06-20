@@ -6,7 +6,7 @@
 
 * Changed data_item.metadata column type from json to jsonb.
 * Remove ALTER TABLE ownership statements. 
-
+* Added a patch SQL script for v1.1.2
 ### Added
 
 * Set up the Helm chart infrastructure to support database patch releases via versioned SQL files.
