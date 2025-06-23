@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS storage (
     root_directory varchar DEFAULT NULL,
     storage_type varchar NOT NULL,
     storage_interface varchar NOT NULL,
-    storage_phase varchar DEFAULT 'GAS',
+    storage_phase phase_type DEFAULT 'GAS',
     storage_capacity BIGINT DEFAULT -1,
     storage_use_pct NUMERIC(3,1) DEFAULT 0.0,
     storage_permissions varchar DEFAULT 'RW',
@@ -85,8 +85,8 @@ CREATE TABLE IF NOT EXISTS data_item (
     item_encoding varchar DEFAULT 'unknown',
     item_mime_type varchar DEFAULT 'application/octet-stream',
     item_level smallint DEFAULT -1,
-    uid_phase varchar DEFAULT 'GAS',
-    oid_phase varchar DEFAULT 'GAS',
+    uid_phase phase_type DEFAULT 'GAS',
+    oid_phase phase_type DEFAULT 'GAS',
     item_state varchar DEFAULT 'INITIALIZED',
     UID_creation timestamp without time zone DEFAULT now(),
     OID_creation timestamp without time zone DEFAULT NULL,
@@ -152,7 +152,7 @@ FOR EACH ROW EXECUTE PROCEDURE
 CREATE TABLE IF NOT EXISTS phase_change (
     phase_change_ID bigint GENERATED always as IDENTITY PRIMARY KEY,
     OID uuid NOT NULL,
-    requested_phase varchar DEFAULT 'GAS',
+    requested_phase phase_type DEFAULT 'GAS',
     request_creation timestamp without time zone DEFAULT now()
 );
 
