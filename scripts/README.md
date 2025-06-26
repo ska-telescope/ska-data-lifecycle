@@ -2,7 +2,7 @@
 
 ## Summary
 
-[Locust](https://docs.locust.io/en/stable/what-is-locust.html) utilites that test the performance of the various DLM subsystems.
+[Locust](https://docs.locust.io/en/stable/what-is-locust.html) utilities that test the performance of the various DLM subsystems.
 
 * `migration.py`: performs end-to-end data migration tests with performance metrics. 
 * `register.py`: performs parallel `register_data_item()` API requests to stress the DLM backend.
@@ -37,7 +37,7 @@ Within a configuration, a user can:
     - storage<integer>: can define 1 or many
       - location: name of storage location
       - name: storage name
-      - type: type of storage enpoint
+      - type: type of storage endpoint
       - interface: posix, s3 etc
       - root_directory: root directory of mount point.
       - config: RClone config
@@ -133,7 +133,7 @@ output_file = <output file path of stats>
 cd ska-data-lifecycle/
 poetry install
 
-cd scripts/branchmark/
+cd scripts/benchmark/
 
 locust -f migrate.py --config=migrate.conf
 ```
@@ -268,7 +268,7 @@ output_file = <output file path of stats>
 cd ska-data-lifecycle/
 poetry install
 
-cd scripts/branchmark/
+cd scripts/benchmark/
 
 locust -f register.py --config=register.conf
 ```
