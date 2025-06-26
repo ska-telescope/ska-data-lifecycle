@@ -3,12 +3,19 @@
 import json
 import logging
 import time
+from functools import partial
 from multiprocessing.pool import ThreadPool
+from typing import Callable
 
 import yaml
 
 from ska_dlm.exceptions import ValueAlreadyInDB
-from tests.integration.client import dlm_ingest_client, dlm_migration_client, dlm_storage_client
+from tests.integration.client import (
+    data_item_client,
+    dlm_ingest_client,
+    dlm_migration_client,
+    dlm_storage_client,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -24,9 +31,11 @@ def setup_clients(url: str, token: str):
     dlm_storage_client.STORAGE_URL = url
     dlm_ingest_client.INGEST_URL = url
     dlm_migration_client.MIGRATION_URL = url
+    data_item_client.REQUEST_URL = url
     dlm_storage_client.TOKEN = token
     dlm_ingest_client.TOKEN = token
     dlm_migration_client.TOKEN = token
+    data_item_client.TOKEN = token
 
 
 def setup_storage(storage: dict):
@@ -69,6 +78,11 @@ def register_item(migration: dict):
         logging.warning(str(e))
 
 
+def get_data_item(oid: str, storage_id: str) -> list[dict]:
+    """Get the details of a specific data item."""
+    return data_item_client.query_data_item(oid=oid, storage_id=storage_id)
+
+
 def copy_item(migration: dict) -> dict:
     """Copy item request to migration service."""
     return dlm_migration_client.copy_data_item(
@@ -83,7 +97,9 @@ def get_record(migration_id: int) -> list:
     return dlm_migration_client.get_migration_record(migration_id)[0]
 
 
-def wait_for_migration(migration_tuple: tuple) -> dict:
+def wait_for_migration(
+    migration_tuple: tuple, migration_polltime: int, migration_callback: Callable[[dict], None]
+) -> dict:
     """Wait for migration to finish."""
     name, m_id = migration_tuple
     while True:
@@ -92,22 +108,21 @@ def wait_for_migration(migration_tuple: tuple) -> dict:
         if status:
             if status["finished"] is True:
                 break
-        time.sleep(5)
+        time.sleep(migration_polltime)
+
+    if migration_callback:
+        migration_callback(record)
 
     return {name: record}
 
 
-def run_bench(config_file_path: str, output_file_path: str):
+def run_bench(
+    bench: dict,
+    output_file_path: str,
+    migration_polltime: int,
+    migration_callback: Callable[[dict], None] = None,
+):
     """Run data item migration performance benchmark."""
-    logger.info(f"Opening configuration file: {config_file_path}")
-
-    if not config_file_path:
-        raise ValueError("Config file not defined.")
-
-    bench = open_yaml(config_file_path)
-
-    setup_clients(bench["dlm"]["url"], bench["dlm"]["token"])
-
     logger.info("Setting up storage endpoints")
 
     for storage in bench["storage"]:
@@ -124,7 +139,12 @@ def run_bench(config_file_path: str, output_file_path: str):
 
     with ThreadPool() as pool:
         # issue tasks into the thread pool
-        result = pool.map_async(wait_for_migration, migration_ids)
+        wait_for_migration_partial = partial(
+            wait_for_migration,
+            migration_polltime=migration_polltime,
+            migration_callback=migration_callback,
+        )
+        result = pool.map_async(wait_for_migration_partial, migration_ids)
         logger.info("Waiting for migrations to finish")
         # wait for tasks to complete
         result.wait()
