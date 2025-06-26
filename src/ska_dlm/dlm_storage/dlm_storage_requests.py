@@ -208,10 +208,10 @@ def create_storage_config(
 
 
 @cli.command()
-@rest.get("/storage/get_storage_config", response_model=list[str])
+@rest.get("/storage/get_storage_config", response_model=list[dict])
 def get_storage_config(
     storage_id: str = "", storage_name: str = "", config_type: str = "rclone"
-) -> list[str]:
+) -> list[dict]:
     """Get the storage configuration entry for a particular storage backend.
 
     Parameters
@@ -225,7 +225,7 @@ def get_storage_config(
 
     Returns
     -------
-    list[str]
+    list[dict]
         list of configs as json
 
     Raises
