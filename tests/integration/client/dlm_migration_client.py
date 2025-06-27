@@ -25,7 +25,7 @@ def copy_data_item(
     (3) initialize the new item with the same OID on the new storage
     (4) use the rclone copy command to copy it to the new location
     (5) set the access path to the payload
-    (6) set state to READY
+    (6) set state to 'ready'
     (7) save metadata in the data_item table
 
 

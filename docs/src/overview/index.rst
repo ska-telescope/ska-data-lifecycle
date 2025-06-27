@@ -52,12 +52,12 @@ The current implementation of the DLM-IngestManager is a FastAPI based registrat
   #. Initialisation of the data_item using *init_data_item*
   #. Writing of the data payload *independently* from the DLM system using whatever is required by the application or system producing the data.
   #. Setting of the URI pointing to the payload using *set_uri*
-  #. Setting of the READY state using *set_state*
+  #. Setting of the 'ready' state using *set_state*
 
 Steps 1 and 2 are interchangeable since the writing is totally independent from the DLM system. The last step *needs* to be the final step in order to ensure that the data_item is really finished.
 
 Functions exposed:
-  - ingest_data_item, given an item_name, a path to a payload and a storage_id register a new data_item and transition to READY state.
+  - ingest_data_item, given an item_name, a path to a payload and a storage_id register a new data_item and transition to 'ready' state.
   - init_data_item, given an item_name and optionally additional meta-data items initialize a new data_item.
 
 The DLM Storage Manager Module
@@ -84,7 +84,7 @@ The current implementation of this FastAPI based manager is limited to a number 
 
   - query_data_item, generic function to query the data_item table.
   - query_exists, checks for the existence of a data_item identified by an item_name, OID or UID.
-  - query_exists_and_ready, same as above, but only returns data_items if they are in READY state.
+  - query_exists_and_ready, same as above, but only returns data_items if they are in 'ready' state.
   - query_expired, returns all expired data_items given a datetime.
   - query_item_storage, returns a list of all storage volumes containing a copy of a data_item identified by an item_name, OID or UID.
 

@@ -57,7 +57,7 @@ def init_storage(
     location_id
         a dlm registered location id
     storage_type
-        high level type of the storage, e.g. "disk", "s3"
+        high level type of the storage: 'filesystem', 'objectstore' or 'tape'
     storage_capacity
         reserved storage capacity in bytes
     storage_phase
@@ -126,7 +126,7 @@ def create_storage_config(
     storage_name
         the name of the storage for which the config is provided.
     config_type
-        default is rclone, but could be something else in the future.
+        default is 'rclone'. Alternatives are 'ssh', 'aws', 'gcs'.
 
     Returns
     -------

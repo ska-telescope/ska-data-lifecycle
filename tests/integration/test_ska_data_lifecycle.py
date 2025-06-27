@@ -66,12 +66,12 @@ def setup(env):
     env.write_rclone_file_content(RCLONE_TEST_FILE_PATH, RCLONE_TEST_FILE_CONTENT)
 
     # we need a location to register the storage
-    location_id = env.storage_requests.init_location("MyOwnStorage", "Server")
+    location_id = env.storage_requests.init_location("MyOwnStorage", "external")
     uuid = env.storage_requests.init_storage(
         storage_name="MyDisk",
         root_directory=ROOT_DIRECTORY1,
         location_id=location_id,
-        storage_type="disk",
+        storage_type="filesystem",
         storage_interface="posix",
         storage_capacity=100000000,
     )
@@ -141,7 +141,7 @@ def test_query_expired(env):
     __initialize_data_item(env)
     uid = env.data_item_requests.query_data_item()[0]["uid"]
     offset = datetime.timedelta(days=1)
-    data_item.set_state(uid=uid, state="READY")
+    data_item.set_state(uid=uid, state="ready")
     result = env.request_requests.query_expired(offset)
     assert len(result) != 0
 
@@ -149,9 +149,9 @@ def test_query_expired(env):
 @pytest.mark.integration_test
 def test_location_init(env):
     """Test initialisation on a location."""
-    env.storage_requests.init_location("TestLocation", "SKAO Data Centre")
+    env.storage_requests.init_location("TestLocation", "low-itf")
     location = env.storage_requests.query_location(location_name="TestLocation")[0]
-    assert location["location_type"] == "SKAO Data Centre"
+    assert location["location_type"] == "low-itf"
 
 
 @pytest.mark.integration_test
@@ -161,11 +161,11 @@ def test_set_uri_state_phase(env):
     storage_id = env.storage_requests.query_storage(storage_name="MyDisk")[0]["storage_id"]
     data_item.set_uri(uid, TEST_URI, storage_id)
     assert env.data_item_requests.query_data_item(uid=uid)[0]["uri"] == TEST_URI
-    data_item.set_state(uid, "READY")
+    data_item.set_state(uid, "ready")
     data_item.set_phase(uid, "PLASMA")
     items = env.data_item_requests.query_data_item(uid=uid)
     assert len(items) == 1
-    assert items[0]["item_state"] == "READY"
+    assert items[0]["item_state"] == "ready"
     assert items[0]["uid_phase"] == "PLASMA"
 
 
@@ -176,7 +176,7 @@ def test_delete_item_payload(env):
     fpath = TEST_URI
     storage_id = env.storage_requests.query_storage(storage_name="MyDisk")[0]["storage_id"]
     uid = env.ingest_requests.register_data_item(item_name=fpath, uri=fpath, storage_name="MyDisk")
-    data_item.set_state(uid, "READY")
+    data_item.set_state(uid, "ready")
     data_item.set_uri(uid, fpath, storage_id)
     queried_uid = env.data_item_requests.query_data_item(item_name=fpath)[0]["uid"]
     assert uid == queried_uid
@@ -187,7 +187,7 @@ def test_delete_item_payload(env):
 
     delete_data_item_payload(uid)
     assert env.data_item_requests.query_data_item(item_name=fpath)[0]["uri"] == fpath
-    assert env.data_item_requests.query_data_item(item_name=fpath)[0]["item_state"] == "DELETED"
+    assert env.data_item_requests.query_data_item(item_name=fpath)[0]["item_state"] == "deleted"
 
 
 def __initialize_storage_config(env):
@@ -197,14 +197,14 @@ def __initialize_storage_config(env):
     if location:
         location_id = location[0]["location_id"]
     else:
-        location_id = env.storage_requests.init_location("MyHost", "Server")
+        location_id = env.storage_requests.init_location("MyHost", "external")
     assert len(location_id) == 36
     config = {"name": "MyDisk2", "type": "alias", "parameters": {"remote": "/"}}
     uuid = env.storage_requests.init_storage(
         storage_name="MyDisk2",
         root_directory=ROOT_DIRECTORY2,
         location_id=location_id,
-        storage_type="disk",
+        storage_type="filesystem",
         storage_interface="posix",
         storage_capacity=100000000,
     )
@@ -373,7 +373,7 @@ def test_expired_by_storage_daemon(env):
 
     # add an item, and expire immediately
     uid = env.ingest_requests.register_data_item(item_name=fname, uri=fname, storage_name="MyDisk")
-    data_item.set_state(uid=uid, state="READY")
+    data_item.set_state(uid=uid, state="ready")
     data_item.set_uid_expiration(uid, "2000-01-01")
 
     # check the expired item was found

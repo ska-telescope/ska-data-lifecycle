@@ -369,7 +369,7 @@ def copy_data_item(  # noqa: C901
     (3) initialize the new item with the same OID on the new storage
     (4) use the rclone copy command to copy it to the new location
     (5) set the access path to the payload
-    (6) set state to READY
+    (6) set state to 'ready'
     (7) save metadata in the data_item table
 
 
@@ -497,8 +497,8 @@ def copy_data_item(  # noqa: C901
     # (5)
     set_uri(new_item_uid, path, destination_id)
 
-    # (6) Set data_item state to READY
-    set_state(new_item_uid, "READY")
+    # (6) Set data_item state to 'ready'
+    set_state(new_item_uid, "ready")
 
     # (7) Populate the metadata column
     metadata = orig_item["metadata"]
