@@ -114,7 +114,7 @@ storage:
 ```
 
 ### Locust Configuration
-Create a locust configuration file: `migration.conf`
+Create a locust configuration file: `migrate.conf`
 
 ```
 host = <url of gateway>
@@ -138,7 +138,7 @@ cd scripts/benchmark/
 locust -f migrate.py --config=migrate.conf
 ```
 
-5. The goto the webpage provided on the command line i.e. `http://0.0.0.0:8089` then click START.
+5. Then go to the webpage provided on the command line i.e. `http://0.0.0.0:8089` then click START.
 
 
 ### Output
@@ -255,7 +255,6 @@ Create a locust configuration file: `register.conf`
 ```
 host = <url of gateway>
 token = <access API token>
-output_file = <output file path of stats>
 ```
 
 ### Usage Steps
@@ -273,5 +272,5 @@ cd scripts/benchmark/
 locust -f register.py --config=register.conf
 ```
 
-4. The goto the webpage provided on the command line i.e. `http://0.0.0.0:8089`
+4. Then go to the webpage provided on the command line i.e. `http://0.0.0.0:8089`
 5. Can specify the number of parallel users and ramp up time, then click START.
