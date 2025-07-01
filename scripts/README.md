@@ -126,7 +126,7 @@ output_file = <output file path of stats>
 
 1) Create the necessary config files (as above).
 2) Ensure that the file or directory, specified by the `benchmarks.migrate<#>.uri` in the migration config file, is already on the source storage endpoint.
-3) Manually obtain access token from the DLM auth provider (i.e. https://sdhp.stfc.skao.int/dp-dm/dlm/token_by_auth_flow) and place it in the migration config file under `dlm.token`.
+3) Manually obtain access token from the DLM auth provider (e.g. https://sdhp.stfc.skao.int/dp-dm/dlm/token_by_auth_flow) and place it in the migration config file under `dlm.token`.
 4) Run
 
 ```
@@ -260,7 +260,7 @@ token = <access API token>
 ### Usage Steps
 
 1) Create the necessary config file(s) (as above).
-2) Manually obtain access token from the DLM auth provider (i.e. https://sdhp.stfc.skao.int/dp-dm/dlm/token_by_auth_flow) and place it in the migration config file under `dlm.token`.
+2) Manually obtain access token from the DLM auth provider (e.g. https://sdhp.stfc.skao.int/dp-dm/dlm/token_by_auth_flow) and place it in the migration config file under `dlm.token`.
 3) Run
 
 ```

@@ -12,7 +12,7 @@ sys.path.append(_git_root)
 
 from datetime import datetime
 
-from bench import get_data_item, open_yaml, run_bench, setup_clients
+from bench import get_data_item, load_yaml, run_bench, setup_clients
 from locust import HttpUser, events, run_single_user, task
 from locust.exception import StopUser
 
@@ -29,8 +29,8 @@ class Migrate(HttpUser):
 
     def on_start(self):
         """Startup function called once when a Locust user starts."""
-        self.bench = open_yaml(self.environment.parsed_options.migration_config)
-        setup_clients(self.bench["dlm"]["url"], self.bench["dlm"]["token"])
+        self.bench_config = load_yaml(self.environment.parsed_options.migration_config)
+        setup_clients(self.bench_config["dlm"]["url"], self.bench_config["dlm"]["token"])
 
     def migration_status(self, record):
         """Migration callback service."""
@@ -54,9 +54,9 @@ class Migrate(HttpUser):
     def migration_test(self):
         """Simulate the registration of data from multiple clients in parallel."""
         run_bench(
-            bench=self.bench,
+            bench_config=self.bench_config,
             output_file_path=self.environment.parsed_options.output_file,
-            migration_polltime=self.bench["dlm"]["migration_polltime"],
+            migration_polltime=self.bench_config["dlm"]["migration_polltime"],
             migration_callback=self.migration_status,
         )
         raise StopUser()  # only want to run once

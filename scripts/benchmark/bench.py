@@ -20,7 +20,7 @@ from tests.integration.client import (
 logger = logging.getLogger(__name__)
 
 
-def open_yaml(name: str) -> dict:
+def load_yaml(name: str) -> dict:
     """Open yaml config file."""
     with open(name, encoding="utf-8") as f:
         return yaml.safe_load(f)
@@ -117,7 +117,7 @@ def wait_for_migration(
 
 
 def run_bench(
-    bench: dict,
+    bench_config: dict,
     output_file_path: str,
     migration_polltime: int,
     migration_callback: Callable[[dict], None] = None,
@@ -125,16 +125,16 @@ def run_bench(
     """Run data item migration performance benchmark."""
     logger.info("Setting up storage endpoints")
 
-    for storage in bench["storage"]:
-        setup_storage(bench["storage"][storage])
+    for storage in bench_config["storage"]:
+        setup_storage(bench_config["storage"][storage])
 
     migration_ids = []
-    for migrate in bench["benchmarks"]:
-        if bench["benchmarks"][migrate]["enabled"] is False:
+    for migrate in bench_config["benchmarks"]:
+        if bench_config["benchmarks"][migrate]["enabled"] is False:
             continue
         logger.info(f"Executing migration {migrate}")
-        register_item(bench["benchmarks"][migrate])
-        migration = copy_item(bench["benchmarks"][migrate])
+        register_item(bench_config["benchmarks"][migrate])
+        migration = copy_item(bench_config["benchmarks"][migrate])
         migration_ids.append((migrate, migration["migration_id"]))
 
     with ThreadPool() as pool:

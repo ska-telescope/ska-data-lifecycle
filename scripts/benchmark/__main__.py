@@ -4,7 +4,7 @@ import argparse
 import logging
 import sys
 
-from scripts.benchmark.bench import open_yaml, run_bench, setup_clients
+from scripts.benchmark.bench import load_yaml, run_bench, setup_clients
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
@@ -16,12 +16,12 @@ def main():
     parser.add_argument("--output", type=str, help="JSON file output")
 
     args = parser.parse_args()
-    bench = open_yaml(args.config)
-    setup_clients(bench["dlm"]["url"], bench["dlm"]["token"])
+    bench_config = load_yaml(args.config)
+    setup_clients(bench_config["dlm"]["url"], bench_config["dlm"]["token"])
     run_bench(
-        bench=bench,
+        bench_config=bench_config,
         output_file_path=args.output,
-        migration_polltime=bench["dlm"]["migration_polltime"],
+        migration_polltime=bench_config["dlm"]["migration_polltime"],
     )
 
 
