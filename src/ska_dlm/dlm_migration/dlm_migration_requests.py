@@ -278,9 +278,9 @@ def query_migrations(
             params["date"] = f"lte.{end_date}"
 
     if storage_id:
-        params[
-            "or"
-        ] = f"(source_storage_id.eq.{storage_id},destination_storage_id.eq.{storage_id})"
+        params["or"] = (
+            f"(source_storage_id.eq.{storage_id},destination_storage_id.eq.{storage_id})"
+        )
 
     return DB.select(CONFIG.DLM.migration_table, params=params)
 
@@ -326,7 +326,7 @@ def _create_migration_record(
     url,
     source_storage_id,
     destination_storage_id,
-    authorization
+    authorization,
     # pylint: disable=too-many-arguments,too-many-positional-arguments
 ):
     # decode the username from the authorization
