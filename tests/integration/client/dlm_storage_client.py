@@ -196,7 +196,7 @@ def query_storage(storage_name: str = "", storage_id: str = "") -> list[dict]:
 
 def get_storage_config(
     storage_id: str = "", storage_name: str = "", config_type: str = "rclone"
-) -> list[str]:
+) -> list[dict]:
     """Get the storage configuration entry for a particular storage backend.
 
     Parameters
@@ -210,7 +210,7 @@ def get_storage_config(
 
     Returns
     -------
-    list[str]
+    list[dict]
         list of json configs
 
     Raises
