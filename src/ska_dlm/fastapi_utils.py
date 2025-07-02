@@ -136,35 +136,42 @@ def fastapi_docstring_annotate(
     # Recreate function preserving any explicit annotations
     output_func = copy.copy(func)
     output_annotations: dict = {}
+
     for arg_name, arg_info in generated_infos.items():
-        updated_annotation: type | typing.Annotated = copy.deepcopy(func.__annotations__[arg_name])
+        original_annotation = func.__annotations__.get(arg_name)
+        if original_annotation is None:
+            continue  # skip parameters with no annotation
+
+        updated_annotation = copy.deepcopy(original_annotation)
+
         if hasattr(updated_annotation, "__metadata__"):
             updated = False
             for meta in updated_annotation.__metadata__:
                 if isinstance(meta, FieldInfo):
-                    # override missing help with docstring
-                    if meta.description is None:
+                    # Only overwrite if docstring has a description
+                    if meta.description is None and getattr(arg_info, "description", None):
                         meta.description = copy.deepcopy(arg_info.description)
-
                     updated = True
             if not updated:
-                # annotations found but none for fastapi
+                # No FieldInfo found — just add the arg_info as metadata
                 updated_annotation.__metadata__ += (arg_info,)
         else:
-            # create annotation
+            # No Annotated wrapper — create a new one
             updated_annotation = typing.Annotated[updated_annotation, arg_info]
+
         output_annotations[arg_name] = updated_annotation
 
     if "return" in output_annotations:
         output_annotations["return"] = func.__annotations__["return"]
 
     output_func.__annotations__ = output_annotations
+
     docstring.blank_after_short_description = docstring.long_description is not None
     docstring.blank_after_long_description = docstring.long_description is not None
-    # insert form feed \f to end FastAPI description
     docstring.long_description = f"{docstring.long_description or ''}\f"
     docstring.style = DocstringStyle.NUMPYDOC
     output_func.__doc__ = compose(docstring)
+
     return output_func
 
 
