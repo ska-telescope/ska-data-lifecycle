@@ -168,6 +168,7 @@ def fastapi_docstring_annotate(
 
     docstring.blank_after_short_description = docstring.long_description is not None
     docstring.blank_after_long_description = docstring.long_description is not None
+    # insert form feed \f to end FastAPI description
     docstring.long_description = f"{docstring.long_description or ''}\f"
     docstring.style = DocstringStyle.NUMPYDOC
     output_func.__doc__ = compose(docstring)
