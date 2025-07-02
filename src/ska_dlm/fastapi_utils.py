@@ -22,7 +22,7 @@ RoutableT = TypeVar("RoutableT", fastapi.FastAPI, fastapi.APIRouter)
 
 def get_underlying_type(annotation: type | UnionType | Annotated) -> tuple[type, ...]:
     """Get the underlying type union of an annotation."""
-    while isinstance(annotation, Annotated):
+    while typing.get_origin(annotation) is Annotated:
         annotation = get_args(annotation)[0]
     return get_args(annotation) if isinstance(annotation, UnionType) else (annotation,)
 
