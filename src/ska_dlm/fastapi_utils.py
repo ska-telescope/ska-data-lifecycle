@@ -13,16 +13,16 @@ import fastapi.params
 import jwt
 from docstring_parser import Docstring, DocstringStyle, compose, parse
 from pydantic.fields import FieldInfo
-from typing_extensions import _AnnotatedAlias
+from typing_extensions import Annotated
 
 ParamsT = ParamSpec("ParamsT")
 ReturnT = TypeVar("ReturnT")
 RoutableT = TypeVar("RoutableT", fastapi.FastAPI, fastapi.APIRouter)
 
 
-def get_underlying_type(annotation: type | UnionType | _AnnotatedAlias) -> tuple[type, ...]:
+def get_underlying_type(annotation: type | UnionType | Annotated) -> tuple[type, ...]:
     """Get the underlying type union of an annotation."""
-    while isinstance(annotation, _AnnotatedAlias):
+    while isinstance(annotation, Annotated):
         annotation = get_args(annotation)[0]
     return get_args(annotation) if isinstance(annotation, UnionType) else (annotation,)
 
