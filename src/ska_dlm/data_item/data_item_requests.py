@@ -3,6 +3,9 @@
 import logging
 
 from fastapi import APIRouter
+from sqlalchemy import create_engine, MetaData, Table, select
+from sqlalchemy.engine import RowMapping
+from typing import Any, Dict, List
 
 from ska_dlm import CONFIG
 from ska_dlm.dlm_db.db_access import DB
@@ -16,6 +19,39 @@ logger = logging.getLogger(__name__)
 cli = ExceptionHandlingTyper()
 
 rest = fastapi_auto_annotate(APIRouter())
+
+
+# Trial code until SQLAlchemy is understood.
+
+
+
+def select_filtered_table(table_name: str, params: dict, engine) -> List[RowMapping]:
+    metadata = MetaData()
+    table = Table(table_name, metadata, autoload_with=engine)
+
+    stmt = select(table)
+    for column, value in params.items():
+        if column in table.c:
+            stmt = stmt.where(table.c[column] == value)
+        else:
+            raise ValueError(f"Invalid column '{column}' in params")
+
+    with engine.connect() as conn:
+        return conn.execute(stmt).fetchall()
+
+def select_filtered_table_dict(table_name: str, params: dict, engine) -> List[Dict[str, Any]]:
+    metadata = MetaData()
+    table = Table(table_name, metadata, autoload_with=engine)
+
+    stmt = select(table)
+    for column, value in params.items():
+        if column in table.c:
+            stmt = stmt.where(table.c[column] == value)
+        else:
+            raise ValueError(f"Invalid column '{column}' in params")
+
+    with engine.connect() as conn:
+        return conn.execute(stmt).mappings().all()
 
 
 @cli.command()
@@ -63,7 +99,33 @@ def query_data_item(
     if storage_id:
         params["storage_id"] = f"eq.{storage_id}"
 
-    return DB.select(CONFIG.DLM.dlm_table, params=params)
+#    return DB.select(CONFIG.DLM.dlm_table, params=params)
+
+    # Example setup (adjust to your actual DB connection string)
+    engine = create_engine("postgresql://user:password@localhost/dbname")
+    metadata = MetaData()
+
+    # Reflect the table by name
+    dlm_table = Table(CONFIG.DLM.dlm_table, metadata, autoload_with=engine)
+
+    # Start with a SELECT *
+    stmt = select(dlm_table)
+
+    # Apply filters from params
+    for column, value in params.items():
+        if column in dlm_table.c:
+            stmt = stmt.where(dlm_table.c[column] == value)
+        else:
+            raise ValueError(f"Column '{column}' not found in table '{CONFIG.DLM.dlm_table}'")
+
+    # Execute the query
+    with engine.connect() as conn:
+        result = conn.execute(stmt)
+        rows = result.fetchall()
+
+    return rows
+
+
 
 
 @cli.command()
