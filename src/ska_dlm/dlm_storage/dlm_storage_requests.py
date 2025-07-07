@@ -538,7 +538,7 @@ def delete_data_item_payload(uid: str) -> bool:
     if not rclone_delete(volume_name, delete_path):
         logger.warning("rclone unable to delete data item payload: %s", uid)
         return False
-    set_state(uid, "deleted")
+    set_state(uid, "DELETED")
     logger.info("Deleted %s from %s", uid, volume_name)
     return True
 
