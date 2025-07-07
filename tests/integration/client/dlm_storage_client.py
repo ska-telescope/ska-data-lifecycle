@@ -17,7 +17,7 @@ def init_location(
     location_city: str = "",
     location_facility: str = "",
 ) -> str:
-    """Initialize a new location for a storage by specifying the location_name or location_id."""
+    """Initialise a new location for a storage by specifying the location_name or location_id."""
     params = {k: v for k, v in locals().items() if v}
     headers = {"Authorization": f"Bearer {TOKEN}"}
     response = requests.post(
@@ -40,7 +40,7 @@ def init_storage(
     json_data: dict | None = None,
 ) -> str:
     """
-    Initialize a new storage.
+    Initialise a new storage.
 
     location_name or location_id is required.
 

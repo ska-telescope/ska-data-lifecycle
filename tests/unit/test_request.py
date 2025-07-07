@@ -45,7 +45,7 @@ def mock_data_items_fixture(mock_db):
 def test_query_expired(mock_data_items):
     """Test the query expired returning records."""
     uid = dlm_request.query_data_item()[0]["uid"]
-    data_item.set_state(uid=uid, state="ready")
+    data_item.set_state(uid=uid, state="READY")
     assert len(dlm_request.query_expired(offset=timedelta(0))) == 0
     assert len(dlm_request.query_expired(offset=timedelta(days=1))) == 1
 

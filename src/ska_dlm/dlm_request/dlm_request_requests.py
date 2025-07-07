@@ -63,7 +63,7 @@ def query_expired(offset: timedelta | None = None) -> list[dict]:
     params = {
         "select": "uid,uid_expiration",
         "uid_expiration": f"lt.{iso_now}",
-        "item_state": "eq.ready",
+        "item_state": "eq.READY",
     }
     return query_data_item(params=params)
 
@@ -83,7 +83,7 @@ def query_deleted(uid: str = "") -> list[dict]:
     list[dict]
         list of dictionaries with UIDs of deleted items.
     """
-    params = {"item_state": "eq.deleted", "select": "uid"}
+    params = {"item_state": "eq.DELETED", "select": "uid"}
     if uid:
         params["uid"] = f"eq.{uid}"
     return query_data_item(params=params)
@@ -109,7 +109,7 @@ def query_new(check_date: str, uid: str = "") -> list[dict]:
     params = {
         "uid_creation": f"gt.{check_date}",
         "uid_phase": "eq.GAS",
-        "item_state": "eq.ready",
+        "item_state": "eq.READY",
         "select": "uid,item_name,uid_creation,storage_id",
     }
     if uid:
@@ -131,7 +131,7 @@ def query_exists(item_name: str = "", oid: str = "", uid: str = "", ready: bool 
     uid
         this returns only one storage_id
     ready
-        whether the item must be in ready state.
+        whether the item must be in READY state.
 
     Returns
     -------
@@ -148,7 +148,7 @@ def query_exists(item_name: str = "", oid: str = "", uid: str = "", ready: bool 
     elif uid:
         params["uid"] = f"eq.{uid}"
     if ready:
-        params["item_state"] = "eq.ready"
+        params["item_state"] = "eq.READY"
     # TODO: select COUNT(*) only instead of all data columns
     return bool(query_data_item(params=params))
 
@@ -156,7 +156,7 @@ def query_exists(item_name: str = "", oid: str = "", uid: str = "", ready: bool 
 @cli.command()
 @rest.get("/request/query_exist_and_ready", response_model=bool)
 def query_exists_and_ready(item_name: str = "", oid: str = "", uid: str = "") -> bool:
-    """Check whether a data_item exists and is in ready state.
+    """Check whether a data_item exists and is in READY state.
 
     Parameters
     ----------
@@ -170,7 +170,7 @@ def query_exists_and_ready(item_name: str = "", oid: str = "", uid: str = "") ->
     Returns
     -------
     bool
-        True if the item exists and is in ready state
+        True if the item exists and is in READY state
     """
     return query_exists(item_name, oid, uid, ready=True)
 
@@ -200,7 +200,7 @@ def query_item_storage(item_name: str = "", oid: str = "", uid: str = "") -> lis
     if not query_exists_and_ready(item_name, oid, uid):
         logger.warning("data_item does not exists or is not ready!")
         return []
-    params = {"select": "oid,uid,item_name,storage_id,uri", "item_state": "eq.ready"}
+    params = {"select": "oid,uid,item_name,storage_id,uri", "item_state": "eq.READY"}
     if not item_name and not oid and not uid:
         raise InvalidQueryParameters("Either an item_name or an OID or an UID have to be provided")
     if item_name:

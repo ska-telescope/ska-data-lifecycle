@@ -102,7 +102,7 @@ def init_storage(
     rclone_config: JsonObjectOption = None,
 ) -> str:
     """
-    Initialize a new storage.
+    Initialise a new storage.
 
     Parameters
     ----------
@@ -397,7 +397,7 @@ def init_location(
     location_city: str = "",
     location_facility: str = "",
 ) -> str:
-    """Initialize a new storage location.
+    """Initialise a new storage location.
 
     Parameters
     ----------

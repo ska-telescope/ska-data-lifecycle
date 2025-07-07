@@ -22,7 +22,7 @@ def test_location_init():
     assert location["location_type"] == "low-itf"
 
 
-def test_initialize_storage_config():
+def test_initialise_storage_config():
     """Add a new location, storage and configuration to the rclone server."""
     location = dlm_storage.query_location("MyHost")
     if location:

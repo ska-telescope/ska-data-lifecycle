@@ -27,7 +27,7 @@ class ItemType(str, Enum):
 
 # pylint: disable=unused-argument
 def init_data_item(item_name: str | None = None, phase: str = "GAS", json_data: str = "") -> str:
-    """Initialize a new data_item.
+    """Initialise a new data_item.
 
     item_name or json_data is required.
 
@@ -72,15 +72,15 @@ def register_data_item(
 ) -> str:
     """Ingest a data_item (register function is an alias).
 
-    This high level function is a combination of init_data_item, set_uri and set_state(ready).
+    This high level function is a combination of init_data_item, set_uri and set_state(READY).
     It also checks whether a data_item is already registered on the requested storage.
 
     (1) check whether requested storage is known and accessible
     (2) check, if required, whether item is accessible/exists on that storage
     (3) check whether item is already registered on that storage
-    (4) initialize the item on the storage
+    (4) initialise the item on the storage
     (5) set the access path to the payload
-    (6) set state to 'ready'
+    (6) set state to READY
     (7) save metadata in the data_item table
 
     Parameters

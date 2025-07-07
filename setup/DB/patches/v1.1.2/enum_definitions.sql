@@ -8,7 +8,7 @@ BEGIN
   CREATE TYPE storage_type AS ENUM ('filesystem', 'objectstore', 'tape');
   CREATE TYPE storage_interface AS ENUM ('posix', 's3', 'sftp', 'https');
   CREATE TYPE phase_type AS ENUM ('GAS', 'LIQUID', 'SOLID', 'PLASMA');
-  CREATE TYPE item_state AS ENUM ('initialized', 'ready', 'corrupted', 'expired', 'deleted');
+  CREATE TYPE item_state AS ENUM ('INITIALISED', 'READY', 'CORRUPTED', 'EXPIRED', 'DELETED');
   CREATE TYPE checksum_method AS ENUM (
     'none', 'adler32', 'blake2b', 'blake2s', 'crc32', 'crc32c', 'fletcher32', 'highwayhash', 'jenkinslookup3', 'md5', 'metrohash128',
     'sha1', 'sha224', 'sha256', 'sha384', 'sha3_224', 'sha3_256', 'sha3_384', 'sha3_512', 'sha512', 'shake_128', 'shake_256',

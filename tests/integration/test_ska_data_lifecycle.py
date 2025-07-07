@@ -46,7 +46,7 @@ def _clear_database():
 
 @pytest.fixture(name="auth", scope="session", autouse=True)
 def setup_auth(env, request):
-    """Initialize Auth per session."""
+    """Initialise Auth per session."""
     # this should only run once per test suite
     if request.config.getoption("--auth"):
         token = get_token("admin", "admin", env.get_gateway_url())
@@ -60,7 +60,7 @@ def setup_auth(env, request):
 
 @pytest.fixture(scope="function", autouse=True)
 def setup(env):
-    """Initialize test storage and rclone configuration."""
+    """Initialise test storage and rclone configuration."""
     _clear_database()
 
     env.write_rclone_file_content(RCLONE_TEST_FILE_PATH, RCLONE_TEST_FILE_CONTENT)
@@ -84,7 +84,7 @@ def setup(env):
     env.clear_rclone_data(ROOT)
 
 
-def __initialize_data_item(env):
+def __initialise_data_item(env):
     """Test data_item init."""
     engine = inflect.engine()
     success = True
@@ -138,10 +138,10 @@ def test_query_expired(env):
     if not isinstance(env, DlmTestClientLocal):
         pytest.skip("Unprocessable Entity")
 
-    __initialize_data_item(env)
+    __initialise_data_item(env)
     uid = env.data_item_requests.query_data_item()[0]["uid"]
     offset = datetime.timedelta(days=1)
-    data_item.set_state(uid=uid, state="ready")
+    data_item.set_state(uid=uid, state="READY")
     result = env.request_requests.query_expired(offset)
     assert len(result) != 0
 
@@ -161,11 +161,11 @@ def test_set_uri_state_phase(env):
     storage_id = env.storage_requests.query_storage(storage_name="MyDisk")[0]["storage_id"]
     data_item.set_uri(uid, TEST_URI, storage_id)
     assert env.data_item_requests.query_data_item(uid=uid)[0]["uri"] == TEST_URI
-    data_item.set_state(uid, "ready")
+    data_item.set_state(uid, "READY")
     data_item.set_phase(uid, "PLASMA")
     items = env.data_item_requests.query_data_item(uid=uid)
     assert len(items) == 1
-    assert items[0]["item_state"] == "ready"
+    assert items[0]["item_state"] == "READY"
     assert items[0]["uid_phase"] == "PLASMA"
 
 
@@ -176,7 +176,7 @@ def test_delete_item_payload(env):
     fpath = TEST_URI
     storage_id = env.storage_requests.query_storage(storage_name="MyDisk")[0]["storage_id"]
     uid = env.ingest_requests.register_data_item(item_name=fpath, uri=fpath, storage_name="MyDisk")
-    data_item.set_state(uid, "ready")
+    data_item.set_state(uid, "READY")
     data_item.set_uri(uid, fpath, storage_id)
     queried_uid = env.data_item_requests.query_data_item(item_name=fpath)[0]["uid"]
     assert uid == queried_uid
@@ -187,10 +187,10 @@ def test_delete_item_payload(env):
 
     delete_data_item_payload(uid)
     assert env.data_item_requests.query_data_item(item_name=fpath)[0]["uri"] == fpath
-    assert env.data_item_requests.query_data_item(item_name=fpath)[0]["item_state"] == "deleted"
+    assert env.data_item_requests.query_data_item(item_name=fpath)[0]["item_state"] == "DELETED"
 
 
-def __initialize_storage_config(env):
+def __initialise_storage_config(env):
     """Add a new location, storage and configuration to the rclone server."""
     env.create_rclone_directory(ROOT_DIRECTORY2)
     location = env.storage_requests.query_location("MyHost")
@@ -223,7 +223,7 @@ def test_copy(env: DlmTestClient):
     if isinstance(env, DlmTestClientLocal):
         pytest.skip("Unprocessable Entity")
 
-    __initialize_storage_config(env)
+    __initialise_storage_config(env)
     dest_id = env.storage_requests.query_storage("MyDisk2")[0]["storage_id"]
     uid = env.ingest_requests.register_data_item(
         item_name="/my/ingest/test/item2", uri=TEST_URI, storage_name="MyDisk"
@@ -262,7 +262,7 @@ def test_copy_container(env):
     if isinstance(env, DlmTestClientLocal):
         pytest.skip("Unprocessable Entity")
 
-    __initialize_storage_config(env)
+    __initialise_storage_config(env)
 
     file1_data = "Some data"
     file2_data = "More data"
@@ -373,7 +373,7 @@ def test_expired_by_storage_daemon(env):
 
     # add an item, and expire immediately
     uid = env.ingest_requests.register_data_item(item_name=fname, uri=fname, storage_name="MyDisk")
-    data_item.set_state(uid=uid, state="ready")
+    data_item.set_state(uid=uid, state="READY")
     data_item.set_uid_expiration(uid, "2000-01-01")
 
     # check the expired item was found
@@ -415,7 +415,7 @@ def test_persist_new_data_items(env):
     assert result == {"/my/ingest/test/item": False}
 
     # configure additional storage volume
-    __initialize_storage_config(env)
+    __initialise_storage_config(env)
     # and run again...
     result = persist_new_data_items(check_time)
     assert result == {"/my/ingest/test/item": True}

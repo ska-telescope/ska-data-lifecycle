@@ -87,7 +87,7 @@ CREATE TABLE IF NOT EXISTS data_item (
     item_level smallint DEFAULT -1,
     uid_phase phase_type DEFAULT 'GAS',
     oid_phase phase_type DEFAULT 'GAS',
-    item_state item_state DEFAULT 'initialized',
+    item_state item_state DEFAULT 'INITIALISED',
     UID_creation timestamp without time zone DEFAULT now(),
     OID_creation timestamp without time zone DEFAULT NULL,
     UID_expiration timestamp without time zone DEFAULT now() + time '24:00',
