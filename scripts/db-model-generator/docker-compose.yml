@@ -1,0 +1,13 @@
+services:
+  db:
+    image: postgres:17
+    container_name: ddl_temp_pg
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: tempdb
+    ports:
+      - "5433:5432"  # Use 5433 to avoid conflicts with host PostgreSQL
+    volumes:
+      - ./create-tables.sql:/docker-entrypoint-initdb.d/schema.sql:ro
