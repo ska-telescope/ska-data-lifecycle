@@ -45,6 +45,7 @@ msal = "1.31.0"
 ska-sdp-dataproduct-metadata = "^0.7.0"
 locust = "^2.37.11"
 sqlalchemy = "^2.0.41"
+psycopg2 = "^2.9.10"
 
 [tool.poetry.group.test.dependencies]
 black = "^23.3.0"

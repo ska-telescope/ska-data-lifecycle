@@ -1,5 +1,6 @@
 """Unit tests for dlm_request."""
 
+import logging
 from datetime import timedelta
 
 import inflect
@@ -9,6 +10,7 @@ import ska_dlm.dlm_request.dlm_request_requests as dlm_request
 from ska_dlm import CONFIG, data_item, dlm_ingest
 from ska_dlm.dlm_db.db_access import DB
 
+logger = logging.getLogger(__name__)
 
 def _clear_database():
     DB.delete(CONFIG.DLM.dlm_table)
@@ -45,7 +47,10 @@ def mock_data_items_fixture(mock_db):
 def test_query_expired(mock_data_items):
     """Test the query expired returning records."""
     uid = dlm_request.query_data_item()[0]["uid"]
-    data_item.set_state(uid=uid, state="READY")
+    logger.info(f"uid: {uid}, uidtype: {type(uid)}")
+    ret = data_item.set_state(uid=uid, state="READY")
+    logger.info(f"ret: {ret}, rettype: {type(ret)}")
+    logger.info(f"timedelta: {timedelta(0)}")
     assert len(dlm_request.query_expired(offset=timedelta(0))) == 0
     assert len(dlm_request.query_expired(offset=timedelta(days=1))) == 1
 

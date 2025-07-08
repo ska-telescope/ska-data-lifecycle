@@ -3,9 +3,8 @@
 import logging
 
 from fastapi import APIRouter
-from sqlalchemy import create_engine, MetaData, Table, select
-from sqlalchemy.engine import RowMapping
-from typing import Any, Dict, List
+from sqlalchemy import select
+from sqlalchemy.orm import sessionmaker
 
 from ska_dlm import CONFIG
 from ska_dlm.dlm_db.db_access import DB
@@ -13,6 +12,8 @@ from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
 from ska_dlm.exceptions import InvalidQueryParameters
 from ska_dlm.fastapi_utils import fastapi_auto_annotate
 from ska_dlm.typer_types import JsonObjectOption
+from ska_dlm.dlm_db.dlm_models import DataItem
+from ska_dlm.dlm_db.db_direct_access import DB_DIRECT_SESSION, db_direct_engine
 
 logger = logging.getLogger(__name__)
 
@@ -20,39 +21,48 @@ cli = ExceptionHandlingTyper()
 
 rest = fastapi_auto_annotate(APIRouter())
 
-
-# Trial code until SQLAlchemy is understood.
-
-
-
-def select_filtered_table(table_name: str, params: dict, engine) -> List[RowMapping]:
-    metadata = MetaData()
-    table = Table(table_name, metadata, autoload_with=engine)
-
-    stmt = select(table)
-    for column, value in params.items():
-        if column in table.c:
-            stmt = stmt.where(table.c[column] == value)
-        else:
-            raise ValueError(f"Invalid column '{column}' in params")
-
-    with engine.connect() as conn:
-        return conn.execute(stmt).fetchall()
-
-def select_filtered_table_dict(table_name: str, params: dict, engine) -> List[Dict[str, Any]]:
-    metadata = MetaData()
-    table = Table(table_name, metadata, autoload_with=engine)
-
-    stmt = select(table)
-    for column, value in params.items():
-        if column in table.c:
-            stmt = stmt.where(table.c[column] == value)
-        else:
-            raise ValueError(f"Invalid column '{column}' in params")
-
-    with engine.connect() as conn:
-        return conn.execute(stmt).mappings().all()
-
+def serialise_data_item(item: DataItem) -> dict:
+    """Serialise data item then return as dict."""
+    return {
+        "uid": str(item.uid),
+        "oid": str(item.oid) if item.oid else None,
+        "item_name": item.item_name,
+        "item_version": item.item_version,
+        "item_tags": item.item_tags,
+        "storage_id": str(item.storage_id) if item.storage_id else None,
+        "uri": item.uri,
+        "item_value": item.item_value,
+        "item_type": item.item_type,
+        "item_format": item.item_format,
+        "item_encoding": item.item_encoding,
+        "item_mime_type": item.item_mime_type,
+        "item_level": item.item_level,
+        "uid_phase": item.uid_phase,
+        "oid_phase": item.oid_phase,
+        "item_state": item.item_state,
+        "uid_creation": item.uid_creation.isoformat() if item.uid_creation else None,
+        "oid_creation": item.oid_creation.isoformat() if item.oid_creation else None,
+        "uid_expiration": item.uid_expiration.isoformat() if item.uid_expiration else None,
+        "oid_expiration": item.oid_expiration.isoformat() if item.oid_expiration else None,
+        "uid_deletion": item.uid_deletion.isoformat() if item.uid_deletion else None,
+        "oid_deletion": item.oid_deletion.isoformat() if item.oid_deletion else None,
+        "expired": item.expired,
+        "deleted": item.deleted,
+        "last_access": item.last_access.isoformat() if item.last_access else None,
+        "item_checksum": item.item_checksum,
+        "checksum_method": item.checksum_method,
+        "last_check": item.last_check.isoformat() if item.last_check else None,
+        "item_owner": item.item_owner,
+        "item_group": item.item_group,
+        "acl": item.acl,
+        "activate_method": item.activate_method,
+        "item_size": item.item_size,
+        "decompressed_size": item.decompressed_size,
+        "compression_method": item.compression_method,
+        "parents": str(item.parents) if item.parents else None,
+        "children": str(item.children) if item.children else None,
+        "metadata": item.metadata_,
+    }
 
 @cli.command()
 @rest.get("/request/query_data_item", response_model=list[dict])
@@ -99,34 +109,30 @@ def query_data_item(
     if storage_id:
         params["storage_id"] = f"eq.{storage_id}"
 
-#    return DB.select(CONFIG.DLM.dlm_table, params=params)
+    logger.info(f"query_data_item.params: {params}")
 
-    # Example setup (adjust to your actual DB connection string)
-    engine = create_engine("postgresql://user:password@localhost/dbname")
-    metadata = MetaData()
+    db_select = DB.select(CONFIG.DLM.dlm_table, params=params)
+    logger.info(f"query_data_item.db_select: {len(db_select)}")
+    if len(db_select) >= 1:
+        logger.info(f"query_data_item.db_select: {db_select[0]}")
+    #logger.info(f"*****************************************************************************")
+    #logger.info(f"db_select: {db_select}")
+    #logger.info(f"*****************************************************************************")
+    #logger.info(f"")
+    #logger.info(f"*****************************************************************************")
 
-    # Reflect the table by name
-    dlm_table = Table(CONFIG.DLM.dlm_table, metadata, autoload_with=engine)
+    session = sessionmaker(bind=db_direct_engine)()
+    stmt = select(DataItem).params(params=params)
+    results = session.execute(stmt).scalars().all()
+    #logger.info(f"select on params data_item_result: {results}")
+    list_dict_result = [serialise_data_item(row) for row in results]
+    logger.info(f"select on params data_item_result: {len(list_dict_result)}")
+    if len(db_select) >= 1:
+        logger.info(f"select on params data_item_result: {list_dict_result[0]}")
+    #logger.info(f"*****************************************************************************")
 
-    # Start with a SELECT *
-    stmt = select(dlm_table)
-
-    # Apply filters from params
-    for column, value in params.items():
-        if column in dlm_table.c:
-            stmt = stmt.where(dlm_table.c[column] == value)
-        else:
-            raise ValueError(f"Column '{column}' not found in table '{CONFIG.DLM.dlm_table}'")
-
-    # Execute the query
-    with engine.connect() as conn:
-        result = conn.execute(stmt)
-        rows = result.fetchall()
-
-    return rows
-
-
-
+    session.close()
+    return list_dict_result
 
 @cli.command()
 @rest.patch("/request/update_data_item", response_model=dict)
