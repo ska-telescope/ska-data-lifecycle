@@ -64,6 +64,86 @@ def serialise_data_item(item: DataItem) -> dict:
         "metadata": item.metadata_,
     }
 
+# Possbile new code for SQLAlchemy
+# The generality for params here needs to be removed but this is for initial porting
+
+from sqlalchemy.orm import Session
+from sqlalchemy.inspection import inspect
+from datetime import datetime
+from typing import Type, Any
+import operator as py_operator
+
+# Mapping PostgREST operators to functions
+OPERATOR_MAP = {
+    'eq': py_operator.eq,
+    'neq': py_operator.ne,
+    'lt': py_operator.lt,
+    'lte': py_operator.le,
+    'gt': py_operator.gt,
+    'gte': py_operator.ge,
+    'like': lambda col, val: col.like(val),
+    'ilike': lambda col, val: col.ilike(val),
+    'in': lambda col, val: col.in_(val.split(',')),
+    'is': lambda col, val: col.is_(None) if val.lower() == 'null' else col == val,
+}
+
+def parse_value(value: str) -> Any:
+    try:
+        return datetime.fromisoformat(value)
+    except ValueError:
+        return value
+
+def select_from_model(
+        session: Session,
+        model: Type,
+        params: dict
+) -> list[dict]:
+    params = params.copy()  # avoid mutating input
+
+    # Handle optional 'select'
+    if 'select' in params:
+        select_fields = params.pop('select').split(',')
+        columns = [getattr(model, field.strip()) for field in select_fields]
+    else:
+        # Select all columns
+        mapper = inspect(model)
+        select_fields = [column.key for column in mapper.attrs]
+        columns = [getattr(model, field) for field in select_fields]
+
+    # Optional limit
+    limit = int(params.pop('limit', 0))
+
+    query = session.query(*columns)
+
+    # Apply filters
+    for key, expression in params.items():
+        if '.' not in expression:
+            raise ValueError(f"Invalid filter expression: '{expression}'")
+
+        op_key, value = expression.split('.', 1)
+        column = getattr(model, key, None)
+        if column is None:
+            raise AttributeError(f"Model has no attribute '{key}'")
+
+        op_func = OPERATOR_MAP.get(op_key)
+        if not op_func:
+            raise ValueError(f"Unsupported operator: '{op_key}'")
+
+        query = query.filter(op_func(column, parse_value(value)))
+
+    #if limit > 0:
+    #    query = query.limit(limit)
+
+    logger.info("query result: %s", query)
+    logger.info("")
+    results = query.all()
+    return [dict(zip(select_fields, row)) for row in results]
+
+
+# End of possbile new code
+
+
+
 @cli.command()
 @rest.get("/request/query_data_item", response_model=list[dict])
 def query_data_item(
@@ -115,6 +195,7 @@ def query_data_item(
     logger.info(f"query_data_item.db_select: {len(db_select)}")
     if len(db_select) >= 1:
         logger.info(f"query_data_item.db_select: {db_select[0]}")
+
     #logger.info(f"*****************************************************************************")
     #logger.info(f"db_select: {db_select}")
     #logger.info(f"*****************************************************************************")
@@ -122,12 +203,16 @@ def query_data_item(
     #logger.info(f"*****************************************************************************")
 
     session = sessionmaker(bind=db_direct_engine)()
-    stmt = select(DataItem).params(params=params)
-    results = session.execute(stmt).scalars().all()
+    logger.info("sessionmaker done")
+    results = select_from_model(session=session, model=DataItem, params=params)
+    logger.info("results done")
+    #stmt = select(DataItem).params(params=params)
+    #results = session.execute(stmt).scalars().all()
+    list_dict_result = results
     #logger.info(f"select on params data_item_result: {results}")
-    list_dict_result = [serialise_data_item(row) for row in results]
+    #list_dict_result = [serialise_data_item(row) for row in results]
     logger.info(f"select on params data_item_result: {len(list_dict_result)}")
-    if len(db_select) >= 1:
+    if len(list_dict_result) >= 1:
         logger.info(f"select on params data_item_result: {list_dict_result[0]}")
     #logger.info(f"*****************************************************************************")
 

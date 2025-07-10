@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 # engine = create_engine("postgresql+psycopg2://user:password@localhost/dbname")
-db_direct_engine = create_engine("postgresql+psycopg2://ska_dlm_admin:password@dlm_db:5432/ska_dlm")
+#db_direct_engine = create_engine("postgresql+psycopg2://ska_dlm_admin:password@dlm_db:5432/ska_dlm")
+db_direct_engine = create_engine("postgresql+psycopg2://ska_dlm_admin:password@localhost:5432/ska_dlm")
 Session = sessionmaker(bind=db_direct_engine)
 DB_DIRECT_SESSION = Session()
