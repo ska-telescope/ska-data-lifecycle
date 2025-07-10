@@ -25,9 +25,9 @@ import ska_dlm.data_item as data_item
 
 
 
-uid = dlm_request.query_data_item()[0]["uid"]
+#uid = dlm_request.query_data_item()[0]["uid"]
 #logger.info(f"uid: {uid}, uidtype: {type(uid)}")
-ret = data_item.set_state(uid=uid, state="READY")
+#ret = data_item.set_state(uid=uid, state="READY")
 #logger.info(f"ret: {ret}, rettype: {type(ret)}")
 #logger.info(f"timedelta: {timedelta(0)}")
 

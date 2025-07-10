@@ -73,7 +73,7 @@ from datetime import datetime
 from typing import Type, Any
 import operator as py_operator
 
-# Mapping PostgREST operators to functions
+# Mapping PostgREST operators to Python/SQLAlchemy logic
 OPERATOR_MAP = {
     'eq': py_operator.eq,
     'neq': py_operator.ne,
@@ -88,54 +88,79 @@ OPERATOR_MAP = {
 }
 
 def parse_value(value: str) -> Any:
+    """Try to parse as datetime, otherwise return string."""
     try:
         return datetime.fromisoformat(value)
     except ValueError:
         return value
+
+def resolve_column(model, field_path: str, query_obj, joins: dict):
+    """Resolve dotted field paths (e.g. 'storage.name') and apply joins as needed."""
+    parts = field_path.split(".")
+    current_model = model
+    attr = None
+
+    for i, part in enumerate(parts):
+        attr = getattr(current_model, part)
+        # Detect if this is a relationship (needs join)
+        if hasattr(attr, "property") and hasattr(attr.property, "mapper"):
+            rel_model = attr.property.mapper.class_
+            join_key = ".".join(parts[:i + 1])
+            if join_key not in joins:
+                query_obj = query_obj.join(attr)
+                joins[join_key] = rel_model
+            current_model = rel_model
+        else:
+            # We've reached a column (not a relationship)
+            return attr, query_obj
+
+    return attr, query_obj
 
 def select_from_model(
         session: Session,
         model: Type,
         params: dict
 ) -> list[dict]:
-    params = params.copy()  # avoid mutating input
+    params = params.copy()  # Avoid mutating original dict
+    joins = {}
+    query = session.query()
 
-    # Handle optional 'select'
+    # Handle 'select' (optional)
     if 'select' in params:
-        select_fields = params.pop('select').split(',')
-        columns = [getattr(model, field.strip()) for field in select_fields]
+        select_fields = [field.strip() for field in params.pop('select').split(',')]
     else:
-        # Select all columns
+        # Select all columns from base model
         mapper = inspect(model)
-        select_fields = [column.key for column in mapper.attrs]
-        columns = [getattr(model, field) for field in select_fields]
+        select_fields = [attr.key for attr in mapper.column_attrs]
 
-    # Optional limit
+    # Handle limit (optional)
     limit = int(params.pop('limit', 0))
 
-    query = session.query(*columns)
+    # Build query with correct joins and column paths
+    columns = []
+    for field in select_fields:
+        col, query = resolve_column(model, field, query, joins)
+        columns.append(col)
+    query = query.with_entities(*columns)
 
     # Apply filters
     for key, expression in params.items():
         if '.' not in expression:
             raise ValueError(f"Invalid filter expression: '{expression}'")
-
         op_key, value = expression.split('.', 1)
-        column = getattr(model, key, None)
-        if column is None:
-            raise AttributeError(f"Model has no attribute '{key}'")
+
+        # Resolve column (with join if needed)
+        col, query = resolve_column(model, key, query, joins)
 
         op_func = OPERATOR_MAP.get(op_key)
         if not op_func:
             raise ValueError(f"Unsupported operator: '{op_key}'")
 
-        query = query.filter(op_func(column, parse_value(value)))
+        query = query.filter(op_func(col, parse_value(value)))
 
-    #if limit > 0:
-    #    query = query.limit(limit)
+    if limit > 0:
+        query = query.limit(limit)
 
-    logger.info("query result: %s", query)
-    logger.info("")
     results = query.all()
     return [dict(zip(select_fields, row)) for row in results]
 
