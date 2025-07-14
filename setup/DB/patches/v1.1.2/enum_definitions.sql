@@ -74,12 +74,17 @@ BEGIN
       RAISE NOTICE 'Enum type already applied on public.storage_config';
   END;
 
-  -- Update public.data_item
+-- Update public.data_item
   BEGIN
     ALTER TABLE public.data_item
       ALTER COLUMN uid_phase TYPE phase_type USING uid_phase::phase_type,
       ALTER COLUMN oid_phase TYPE phase_type USING oid_phase::phase_type,
-      ALTER COLUMN item_state TYPE item_state USING item_state::item_state,
+      ALTER COLUMN item_state TYPE item_state USING (
+        CASE item_state
+          WHEN 'INITIALIZED' THEN 'INITIALISED'
+          ELSE item_state
+        END
+      )::item_state,
       ALTER COLUMN item_mime_type TYPE mime_type USING item_mime_type::mime_type;
   EXCEPTION
     WHEN undefined_column THEN
