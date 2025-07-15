@@ -181,7 +181,7 @@ def create_storage_config(
     storage_name
         the name of the storage for which the config is provided.
     config_type
-        default is 'rclone'. Alternatives are 'ssh', 'aws', 'gcs'.
+        default is 'rclone'. Alternative enums from ConfigType.
 
     Returns
     -------

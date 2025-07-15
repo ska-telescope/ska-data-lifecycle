@@ -198,7 +198,7 @@ def query_item_storage(item_name: str = "", oid: str = "", uid: str = "") -> lis
         list of storage_ids
     """
     if not query_exists_and_ready(item_name, oid, uid):
-        logger.warning("data_item does not exists or is not ready!")
+        logger.warning("data_item does not exists or is not READY.")
         return []
     params = {"select": "oid,uid,item_name,storage_id,uri", "item_state": "eq.READY"}
     if not item_name and not oid and not uid:
