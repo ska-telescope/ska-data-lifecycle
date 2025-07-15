@@ -102,14 +102,14 @@ def init_storage(
     rclone_config: JsonObjectOption = None,
 ) -> str:
     """
-    Initialize a new storage.
+    Initialise a new storage.
 
     Parameters
     ----------
     storage_name
         An organisation or owner name for the storage.
     storage_type
-        high level type of the storage, e.g. "disk", "s3"
+        high level type of the storage: 'filesystem', 'objectstore' or 'tape'
     storage_interface
         storage interface for rclone access, e.g. "posix", "s3"
     root_directory
@@ -181,7 +181,7 @@ def create_storage_config(
     storage_name
         the name of the storage for which the config is provided.
     config_type
-        default is rclone, but could be something else in the future.
+        default is 'rclone'. Alternative enums from ConfigType.
 
     Returns
     -------
@@ -397,16 +397,16 @@ def init_location(
     location_city: str = "",
     location_facility: str = "",
 ) -> str:
-    """Initialize a new storage location.
+    """Initialise a new storage location.
 
     Parameters
     ----------
     location_name
         the orgization or owner's name managing the storage location.
     location_type
-        the location type, e.g. "server"
+        the location type, e.g. "low-operational"
     location_country
-        the location country name
+        the location country name (AU, ZA or UK)
     location_city
         the location city name
     location_facility

@@ -1,5 +1,5 @@
 --
--- ska_dlm_adminQL DDL for SKA Data Lifecycle Management DB setup
+-- ska_dlm_admin QL DDL for SKA Data Lifecycle Management DB setup
 --
 
 --
@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS location (
     location_id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     location_name varchar NOT NULL UNIQUE,
     location_type varchar NOT NULL,
-    location_country varchar DEFAULT NULL,
+    location_country location_country DEFAULT NULL,
     location_city varchar DEFAULT NULL,
     location_facility varchar DEFAULT NULL,
     location_check_url varchar DEFAULT NULL,
@@ -27,9 +27,9 @@ CREATE TABLE IF NOT EXISTS storage (
     location_id uuid NOT NULL,
     storage_name varchar NOT NULL UNIQUE,
     root_directory varchar DEFAULT NULL,
-    storage_type varchar NOT NULL,
-    storage_interface varchar NOT NULL,
-    storage_phase varchar DEFAULT 'GAS',
+    storage_type storage_type NOT NULL,
+    storage_interface storage_interface NOT NULL,
+    storage_phase phase_type DEFAULT 'GAS',
     storage_capacity BIGINT DEFAULT -1,
     storage_use_pct NUMERIC(3,1) DEFAULT 0.0,
     storage_permissions varchar DEFAULT 'RW',
@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS storage (
 CREATE TABLE IF NOT EXISTS storage_config (
     config_id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     storage_id uuid NOT NULL,
-    config_type varchar DEFAULT 'rclone',
+    config_type config_type DEFAULT 'rclone',
     config json NOT NULL,
     config_date timestamp without time zone DEFAULT now(),
     CONSTRAINT fk_cfg_storage_id
@@ -83,11 +83,11 @@ CREATE TABLE IF NOT EXISTS data_item (
     item_type varchar DEFAULT 'file',
     item_format varchar DEFAULT 'unknown',
     item_encoding varchar DEFAULT 'unknown',
-    item_mime_type varchar DEFAULT 'application/octet-stream',
+    item_mime_type mime_type DEFAULT 'application/octet-stream',
     item_level smallint DEFAULT -1,
-    uid_phase varchar DEFAULT 'GAS',
-    oid_phase varchar DEFAULT 'GAS',
-    item_state varchar DEFAULT 'INITIALIZED',
+    uid_phase phase_type DEFAULT 'GAS',
+    oid_phase phase_type DEFAULT 'GAS',
+    item_state item_state DEFAULT 'INITIALISED',
     UID_creation timestamp without time zone DEFAULT now(),
     OID_creation timestamp without time zone DEFAULT NULL,
     UID_expiration timestamp without time zone DEFAULT now() + time '24:00',
@@ -98,7 +98,7 @@ CREATE TABLE IF NOT EXISTS data_item (
     deleted boolean DEFAULT false,
     last_access timestamp without time zone,
     item_checksum varchar,
-    checksum_method varchar DEFAULT 'none',
+    checksum_method checksum_method DEFAULT 'none',
     last_check timestamp without time zone,
     item_owner varchar DEFAULT 'SKA',
     item_group varchar DEFAULT 'SKA',
@@ -152,7 +152,7 @@ FOR EACH ROW EXECUTE PROCEDURE
 CREATE TABLE IF NOT EXISTS phase_change (
     phase_change_ID bigint GENERATED always as IDENTITY PRIMARY KEY,
     OID uuid NOT NULL,
-    requested_phase varchar DEFAULT 'GAS',
+    requested_phase phase_type DEFAULT 'GAS',
     request_creation timestamp without time zone DEFAULT now()
 );
 

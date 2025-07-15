@@ -46,7 +46,7 @@ def _clear_database():
 
 @pytest.fixture(name="auth", scope="session", autouse=True)
 def setup_auth(env, request):
-    """Initialize Auth per session."""
+    """Initialise Auth per session."""
     # this should only run once per test suite
     if request.config.getoption("--auth"):
         token = get_token("admin", "admin", env.get_gateway_url())
@@ -60,18 +60,18 @@ def setup_auth(env, request):
 
 @pytest.fixture(scope="function", autouse=True)
 def setup(env):
-    """Initialize test storage and rclone configuration."""
+    """Initialise test storage and rclone configuration."""
     _clear_database()
 
     env.write_rclone_file_content(RCLONE_TEST_FILE_PATH, RCLONE_TEST_FILE_CONTENT)
 
     # we need a location to register the storage
-    location_id = env.storage_requests.init_location("MyOwnStorage", "Server")
+    location_id = env.storage_requests.init_location("MyOwnStorage", "external")
     uuid = env.storage_requests.init_storage(
         storage_name="MyDisk",
         root_directory=ROOT_DIRECTORY1,
         location_id=location_id,
-        storage_type="disk",
+        storage_type="filesystem",
         storage_interface="posix",
         storage_capacity=100000000,
     )
@@ -84,7 +84,7 @@ def setup(env):
     env.clear_rclone_data(ROOT)
 
 
-def __initialize_data_item(env):
+def __initialise_data_item(env):
     """Test data_item init."""
     engine = inflect.engine()
     success = True
@@ -138,7 +138,7 @@ def test_query_expired(env):
     if not isinstance(env, DlmTestClientLocal):
         pytest.skip("Unprocessable Entity")
 
-    __initialize_data_item(env)
+    __initialise_data_item(env)
     uid = env.data_item_requests.query_data_item()[0]["uid"]
     offset = datetime.timedelta(days=1)
     data_item.set_state(uid=uid, state="READY")
@@ -149,9 +149,9 @@ def test_query_expired(env):
 @pytest.mark.integration_test
 def test_location_init(env):
     """Test initialisation on a location."""
-    env.storage_requests.init_location("TestLocation", "SKAO Data Centre")
+    env.storage_requests.init_location("TestLocation", "low-itf")
     location = env.storage_requests.query_location(location_name="TestLocation")[0]
-    assert location["location_type"] == "SKAO Data Centre"
+    assert location["location_type"] == "low-itf"
 
 
 @pytest.mark.integration_test
@@ -190,21 +190,21 @@ def test_delete_item_payload(env):
     assert env.data_item_requests.query_data_item(item_name=fpath)[0]["item_state"] == "DELETED"
 
 
-def __initialize_storage_config(env):
+def __initialise_storage_config(env):
     """Add a new location, storage and configuration to the rclone server."""
     env.create_rclone_directory(ROOT_DIRECTORY2)
     location = env.storage_requests.query_location("MyHost")
     if location:
         location_id = location[0]["location_id"]
     else:
-        location_id = env.storage_requests.init_location("MyHost", "Server")
+        location_id = env.storage_requests.init_location("MyHost", "external")
     assert len(location_id) == 36
     config = {"name": "MyDisk2", "type": "alias", "parameters": {"remote": "/"}}
     uuid = env.storage_requests.init_storage(
         storage_name="MyDisk2",
         root_directory=ROOT_DIRECTORY2,
         location_id=location_id,
-        storage_type="disk",
+        storage_type="filesystem",
         storage_interface="posix",
         storage_capacity=100000000,
     )
@@ -223,7 +223,7 @@ def test_copy(env: DlmTestClient):
     if isinstance(env, DlmTestClientLocal):
         pytest.skip("Unprocessable Entity")
 
-    __initialize_storage_config(env)
+    __initialise_storage_config(env)
     dest_id = env.storage_requests.query_storage("MyDisk2")[0]["storage_id"]
     uid = env.ingest_requests.register_data_item(
         item_name="/my/ingest/test/item2", uri=TEST_URI, storage_name="MyDisk"
@@ -262,7 +262,7 @@ def test_copy_container(env):
     if isinstance(env, DlmTestClientLocal):
         pytest.skip("Unprocessable Entity")
 
-    __initialize_storage_config(env)
+    __initialise_storage_config(env)
 
     file1_data = "Some data"
     file2_data = "More data"
@@ -415,7 +415,7 @@ def test_persist_new_data_items(env):
     assert result == {"/my/ingest/test/item": False}
 
     # configure additional storage volume
-    __initialize_storage_config(env)
+    __initialise_storage_config(env)
     # and run again...
     result = persist_new_data_items(check_time)
     assert result == {"/my/ingest/test/item": True}
