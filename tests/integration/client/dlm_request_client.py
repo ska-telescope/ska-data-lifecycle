@@ -89,7 +89,7 @@ def query_exists(item_name: str = "", oid: str = "", uid: str = "", ready: bool 
     uid
         this returns only one storage_id
     ready
-        whether the item must be in ready state.
+        whether the item must be in READY state.
 
     Returns
     -------
@@ -107,7 +107,7 @@ def query_exists(item_name: str = "", oid: str = "", uid: str = "", ready: bool 
 
 # pylint: disable=unused-argument
 def query_exists_and_ready(item_name: str = "", oid: str = "", uid: str = "") -> bool:
-    """Check whether a data_item exists and is in ready state.
+    """Check whether a data_item exists and is in READY state.
 
     Parameters
     ----------
@@ -121,7 +121,7 @@ def query_exists_and_ready(item_name: str = "", oid: str = "", uid: str = "") ->
     Returns
     -------
     bool
-        True if the item exists and is in ready state
+        True if the item exists and is in READY state
     """
     params = {k: v for k, v in locals().items() if v}
     headers = {"Authorization": f"Bearer {TOKEN}"}

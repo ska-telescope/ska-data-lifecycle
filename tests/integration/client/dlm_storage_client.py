@@ -17,7 +17,7 @@ def init_location(
     location_city: str = "",
     location_facility: str = "",
 ) -> str:
-    """Initialize a new location for a storage by specifying the location_name or location_id."""
+    """Initialise a new location for a storage by specifying the location_name or location_id."""
     params = {k: v for k, v in locals().items() if v}
     headers = {"Authorization": f"Bearer {TOKEN}"}
     response = requests.post(
@@ -40,7 +40,7 @@ def init_storage(
     json_data: dict | None = None,
 ) -> str:
     """
-    Initialize a new storage.
+    Initialise a new storage.
 
     location_name or location_id is required.
 
@@ -57,7 +57,7 @@ def init_storage(
     location_id
         a dlm registered location id
     storage_type
-        high level type of the storage, e.g. "disk", "s3"
+        high level type of the storage: 'filesystem', 'objectstore' or 'tape'
     storage_capacity
         reserved storage capacity in bytes
     storage_phase
@@ -126,7 +126,7 @@ def create_storage_config(
     storage_name
         the name of the storage for which the config is provided.
     config_type
-        default is rclone, but could be something else in the future.
+        default is 'rclone'. Alternative enums from ConfigType.
 
     Returns
     -------

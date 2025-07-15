@@ -58,7 +58,7 @@ Steps 1 and 2 are interchangeable since the writing is totally independent from 
 
 Functions exposed:
   - ingest_data_item, given an item_name, a path to a payload and a storage_id register a new data_item and transition to READY state.
-  - init_data_item, given an item_name and optionally additional meta-data items initialize a new data_item.
+  - init_data_item, given an item_name and optionally additional meta-data items initialise a new data_item.
 
 The DLM Storage Manager Module
 ------------------------------

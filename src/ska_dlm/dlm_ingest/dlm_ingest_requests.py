@@ -85,7 +85,7 @@ def init_data_item(
     json_data: JsonObjectOption = None,
     authorization: Annotated[str | None, Header()] = None,
 ) -> str:
-    """Initialize a new data_item.
+    """Initialise a new data_item.
 
     item_name or json_data is required.
 
@@ -147,7 +147,7 @@ def register_data_item(  # noqa: C901
     (1) check whether requested storage is known and accessible
     (2) check, if required, whether item is accessible/exists on that storage
     (3) check whether item is already registered on that storage
-    (4) initialize the item on the storage
+    (4) initialise the item on the storage
     (5) set the access path to the payload
     (6) set state to READY
     (7) save metadata in the data_item table

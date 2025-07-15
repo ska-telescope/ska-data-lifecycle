@@ -27,7 +27,6 @@ The source code below demonstrates how to register a data item that exists on an
 from requests import Session
 
 # this URL is for DLM deployment in the 'dp-dm' namespace on the DP integration cluster
-# other known locations are shown below
 DLM_URL = "https://sdhp.stfc.skao.int/dp-dm/dlm"
 token = <your token>
 headers = {"Authorization": f"Bearer {token}"}

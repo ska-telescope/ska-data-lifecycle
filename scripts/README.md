@@ -4,7 +4,7 @@
 
 [Locust](https://docs.locust.io/en/stable/what-is-locust.html) utilities that test the performance of the various DLM subsystems.
 
-* `migration.py`: performs end-to-end data migration tests with performance metrics. 
+* `migration.py`: performs end-to-end data migration tests with performance metrics.
 * `register.py`: performs parallel `register_data_item()` API requests to stress the DLM backend.
 
 ## `migration.py` Utility
@@ -13,8 +13,8 @@ A configuration file is required for the migration tests.
 
 Within a configuration, a user can:
 * Setup multiple storage end points.
-* Register multiple data items per storage end point. 
-* Perform multiple data item migrations to storage end points.  
+* Register multiple data items per storage end point.
+* Perform multiple data item migrations to storage end points.
 
 ### Migration Configuration File
 
@@ -260,7 +260,7 @@ token = <access API token>
 ### Usage Steps
 
 1) Create the necessary config file(s) (as above).
-2) Manually obtain access token from the DLM auth provider (e.g. https://sdhp.stfc.skao.int/dp-dm/dlm/token_by_auth_flow) and place it in the migration config file under `dlm.token`.
+2) Manually obtain access token from the DLM auth provider (e.g. https://sdhp.stfc.skao.int/dp-dm/dlm/token_by_auth_flow) and place it in the register config file under `dlm.token`.
 3) Run
 
 ```
