@@ -74,15 +74,16 @@ BEGIN
 
 -- Update public.data_item
   BEGIN
+    -- Fix known invalid legacy values
+    UPDATE public.data_item
+    SET item_state = "INITIALISED"
+    WHERE item_state = "INITIALIZED";
+
+    -- Introduce enums
     ALTER TABLE public.data_item
       ALTER COLUMN uid_phase TYPE phase_type USING uid_phase::phase_type,
       ALTER COLUMN oid_phase TYPE phase_type USING oid_phase::phase_type,
-      ALTER COLUMN item_state TYPE item_state USING (
-        CASE item_state
-          WHEN 'INITIALIZED' THEN 'INITIALISED'
-          ELSE item_state
-        END
-      )::item_state,
+      ALTER COLUMN item_state TYPE item_state USING item_state::item_state,
       ALTER COLUMN item_mime_type TYPE mime_type USING item_mime_type::mime_type;
   EXCEPTION
     WHEN undefined_column THEN

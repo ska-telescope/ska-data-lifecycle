@@ -3,13 +3,27 @@
 --
 
 --
+-- lookup tables
+--
+
+CREATE TABLE location_type (
+    id TEXT PRIMARY KEY
+);
+
+INSERT INTO location_type (id)
+SELECT unnest(ARRAY[
+  'src', 'aws', 'gcs', 'low-operational', 'low-itf', 'mid-itf', 'dp', 'external'
+])
+ON CONFLICT DO NOTHING;
+
+--
 -- Table location
 --
 
 CREATE TABLE IF NOT EXISTS location (
     location_id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     location_name varchar NOT NULL UNIQUE,
-    location_type varchar NOT NULL,
+    location_type TEXT NOT NULL REFERENCES location_type(id),
     location_country location_country DEFAULT NULL,
     location_city varchar DEFAULT NULL,
     location_facility varchar DEFAULT NULL,
