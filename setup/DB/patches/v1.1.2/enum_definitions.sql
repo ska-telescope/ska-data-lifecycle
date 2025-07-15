@@ -33,7 +33,7 @@ EXCEPTION
 END;
 $$;
 
--- This patch continues with updates table columns to use new enum types. Safe to re-run.
+-- This patch continues by updating table columns to use new enum types. Safe to re-run.
 
 DO $$
 BEGIN
