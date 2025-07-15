@@ -9,7 +9,7 @@
 CREATE TABLE IF NOT EXISTS location (
     location_id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     location_name varchar NOT NULL UNIQUE,
-    location_type location_type NOT NULL,
+    location_type varchar NOT NULL,
     location_country location_country DEFAULT NULL,
     location_city varchar DEFAULT NULL,
     location_facility varchar DEFAULT NULL,

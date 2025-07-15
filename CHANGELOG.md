@@ -5,10 +5,12 @@
 ### Changed
 
 * Changed data_item.metadata column type from json to jsonb.
-* Remove ALTER TABLE ownership statements. 
+* Remove ALTER TABLE ownership statements.
 * Added a patch SQL script for v1.1.2
+
 ### Added
 
+* ENUM definitions for location_country, config_type, storage_type, storage_interface, phase_type, item_state, checksum_method and mime_type.
 * Set up the Helm chart infrastructure to support database patch releases via versioned SQL files.
 
 ## 1.1.2

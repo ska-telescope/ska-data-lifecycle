@@ -2,7 +2,6 @@
 
 DO $$
 BEGIN
-  CREATE TYPE location_type AS ENUM ('src', 'aws', 'gcs', 'low-operational', 'low-itf', 'mid-itf', 'dp', 'external');
   CREATE TYPE location_country AS ENUM ('AU', 'ZA', 'UK');
   CREATE TYPE config_type AS ENUM ('rclone', 'ssh', 'aws', 'gcs');
   CREATE TYPE storage_type AS ENUM ('filesystem', 'objectstore', 'tape');
@@ -41,7 +40,6 @@ BEGIN
   -- Update public.location
   BEGIN
     ALTER TABLE public.location
-      ALTER COLUMN location_type TYPE location_type USING location_type::location_type,
       ALTER COLUMN location_country TYPE location_country USING location_country::location_country;
   EXCEPTION
     WHEN undefined_column THEN
