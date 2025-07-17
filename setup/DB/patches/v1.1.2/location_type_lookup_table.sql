@@ -13,6 +13,7 @@ SELECT unnest(ARRAY[
 ])
 ON CONFLICT DO NOTHING;
 
+-- Add foreign key constraint
 DO $$
 BEGIN
   ALTER TABLE location

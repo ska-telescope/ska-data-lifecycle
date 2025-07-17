@@ -1,4 +1,4 @@
--- This patch defines enum types. Safe to re-run.
+-- This patch defines enum types.
 
 DO $$
 BEGIN
@@ -33,63 +33,391 @@ EXCEPTION
 END;
 $$;
 
--- This patch continues by updating table columns to use new enum types. Safe to re-run.
+------------------------------------------------------------------------------------------
+-- This patch continues by updating columns to use the new enum types.
+------------------------------------------------------------------------------------------
 
+------------------------------------------------------------------------------------------
+-- Convert data_item.item_state to enum item_state
 DO $$
+DECLARE
+  invalid_values TEXT[];
 BEGIN
-  -- Update public.location
-  BEGIN
-    ALTER TABLE public.location
-      ALTER COLUMN location_country TYPE location_country USING location_country::location_country;
-  EXCEPTION
-    WHEN undefined_column THEN
-      RAISE NOTICE 'One or more columns in public.location do not exist';
-    WHEN invalid_parameter_value THEN
-      RAISE NOTICE 'Enum type already applied on public.location';
-  END;
+  -- Drop default before conversion
+  ALTER TABLE data_item
+    ALTER COLUMN item_state DROP DEFAULT;
 
-  -- Update public.storage
-  BEGIN
-    ALTER TABLE public.storage
-      ALTER COLUMN storage_type TYPE storage_type USING storage_type::storage_type,
-      ALTER COLUMN storage_interface TYPE storage_interface USING storage_interface::storage_interface,
-      ALTER COLUMN storage_phase TYPE phase_type USING storage_phase::phase_type;
-  EXCEPTION
-    WHEN undefined_column THEN
-      RAISE NOTICE 'One or more columns in public.storage do not exist';
-    WHEN invalid_parameter_value THEN
-      RAISE NOTICE 'Enum type already applied on public.storage';
-  END;
+  -- Fix legacy enum values
+  UPDATE data_item
+  SET item_state = 'INITIALISED'
+  WHERE item_state::TEXT = 'INITIALIZED';
 
-  -- Update public.storage_config
-  BEGIN
-    ALTER TABLE public.storage_config
-      ALTER COLUMN config_type TYPE config_type USING config_type::config_type;
-  EXCEPTION
-    WHEN undefined_column THEN
-      RAISE NOTICE 'Column config_type in public.storage_config does not exist';
-    WHEN invalid_parameter_value THEN
-      RAISE NOTICE 'Enum type already applied on public.storage_config';
-  END;
+  -- Identify invalid values
+  SELECT ARRAY_AGG(DISTINCT item_state)
+  INTO invalid_values
+  FROM data_item
+  WHERE item_state IS NOT NULL
+    AND item_state::TEXT NOT IN (
+      SELECT enumlabel
+      FROM pg_enum
+      JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
+      WHERE pg_type.typname = 'item_state'
+    );
 
--- Update public.data_item
-  BEGIN
-    -- Fix known invalid legacy values
-    UPDATE public.data_item
-    SET item_state = "INITIALISED"
-    WHERE item_state = "INITIALIZED";
+  IF invalid_values IS NOT NULL THEN
+    RAISE NOTICE 'Invalid values found in item_state: %', invalid_values;
+    UPDATE data_item
+    SET item_state = NULL
+    WHERE item_state = ANY(invalid_values);
+  ELSE
+    RAISE NOTICE 'No invalid values found in item_state.';
+  END IF;
 
-    -- Introduce enums
-    ALTER TABLE public.data_item
-      ALTER COLUMN uid_phase TYPE phase_type USING uid_phase::phase_type,
-      ALTER COLUMN oid_phase TYPE phase_type USING oid_phase::phase_type,
-      ALTER COLUMN item_state TYPE item_state USING item_state::item_state,
-      ALTER COLUMN item_mime_type TYPE mime_type USING item_mime_type::mime_type;
-  EXCEPTION
-    WHEN undefined_column THEN
-      RAISE NOTICE 'One or more columns in public.data_item do not exist';
-    WHEN invalid_parameter_value THEN
-      RAISE NOTICE 'Enum type already applied on public.data_item';
-  END;
+  -- Convert column to enum
+  ALTER TABLE data_item
+    ALTER COLUMN item_state TYPE item_state USING item_state::item_state;
+
+  -- Restore default
+  ALTER TABLE data_item
+    ALTER COLUMN item_state SET DEFAULT 'INITIALISED';
+
+EXCEPTION
+  WHEN undefined_column THEN
+    RAISE NOTICE 'Column data_item.item_state does not exist';
+  WHEN invalid_parameter_value THEN
+    RAISE NOTICE 'Enum type item_state already applied on data_item.item_state';
+END;
+$$;
+
+------------------------------------------------------------------------------------------
+-- Convert location.location_country to enum location_country
+DO $$
+DECLARE
+  invalid_values TEXT[];
+BEGIN
+  SELECT ARRAY_AGG(DISTINCT location_country)
+  INTO invalid_values
+  FROM location
+  WHERE location_country IS NOT NULL
+    AND location_country::TEXT NOT IN (
+      SELECT enumlabel
+      FROM pg_enum
+      JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
+      WHERE pg_type.typname = 'location_country'
+    );
+
+  IF invalid_values IS NOT NULL THEN
+    RAISE NOTICE 'Invalid values found in location_country: %', invalid_values;
+    UPDATE location
+    SET location_country = NULL
+    WHERE location_country = ANY(invalid_values);
+  ELSE
+    RAISE NOTICE 'No invalid values found in location_country.';
+  END IF;
+
+  ALTER TABLE location
+    ALTER COLUMN location_country TYPE location_country USING location_country::location_country;
+
+EXCEPTION
+  WHEN undefined_column THEN
+    RAISE NOTICE 'Column location.location_country does not exist';
+  WHEN invalid_parameter_value THEN
+    RAISE NOTICE 'Enum type location_country already applied on location.location_country';
+END;
+$$;
+
+------------------------------------------------------------------------------------------
+-- Convert storage_config.config_type to enum config_type
+DO $$
+DECLARE
+  invalid_values TEXT[];
+BEGIN
+  SELECT ARRAY_AGG(DISTINCT config_type)
+  INTO invalid_values
+  FROM storage_config
+  WHERE config_type IS NOT NULL
+    AND config_type::TEXT NOT IN (
+      SELECT enumlabel
+      FROM pg_enum
+      JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
+      WHERE pg_type.typname = 'config_type'
+    );
+
+  IF invalid_values IS NOT NULL THEN
+    RAISE NOTICE 'Invalid values found in config_type: %', invalid_values;
+    UPDATE storage_config
+    SET config_type = NULL
+    WHERE config_type = ANY(invalid_values);
+  ELSE
+    RAISE NOTICE 'No invalid values found in config_type.';
+  END IF;
+
+  ALTER TABLE storage_config
+    ALTER COLUMN config_type TYPE config_type USING config_type::config_type;
+
+EXCEPTION
+  WHEN undefined_column THEN
+    RAISE NOTICE 'Column storage_config.config_type does not exist';
+  WHEN invalid_parameter_value THEN
+    RAISE NOTICE 'Enum type config_type already applied on storage_config.config_type';
+END;
+$$;
+
+------------------------------------------------------------------------------------------
+-- Convert storage.storage_type to enum storage_type
+DO $$
+DECLARE
+  invalid_values TEXT[];
+BEGIN
+  SELECT ARRAY_AGG(DISTINCT storage_type)
+  INTO invalid_values
+  FROM storage
+  WHERE storage_type IS NOT NULL
+    AND storage_type::TEXT NOT IN (
+      SELECT enumlabel
+      FROM pg_enum
+      JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
+      WHERE pg_type.typname = 'storage_type'
+    );
+
+  IF invalid_values IS NOT NULL THEN
+    RAISE NOTICE 'Invalid values found in storage_type: %', invalid_values;
+    UPDATE storage
+    SET storage_type = NULL
+    WHERE storage_type = ANY(invalid_values);
+  ELSE
+    RAISE NOTICE 'No invalid values found in storage_type.';
+  END IF;
+
+  ALTER TABLE storage
+    ALTER COLUMN storage_type TYPE storage_type USING storage_type::storage_type;
+
+EXCEPTION
+  WHEN undefined_column THEN
+    RAISE NOTICE 'Column storage.storage_type does not exist';
+  WHEN invalid_parameter_value THEN
+    RAISE NOTICE 'Enum type storage_type already applied on storage.storage_type';
+END;
+$$;
+
+------------------------------------------------------------------------------------------
+-- Convert storage.storage_interface to enum storage_interface
+DO $$
+DECLARE
+  invalid_values TEXT[];
+BEGIN
+  SELECT ARRAY_AGG(DISTINCT storage_interface)
+  INTO invalid_values
+  FROM storage
+  WHERE storage_interface IS NOT NULL
+    AND storage_interface::TEXT NOT IN (
+      SELECT enumlabel
+      FROM pg_enum
+      JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
+      WHERE pg_type.typname = 'storage_interface'
+    );
+
+  IF invalid_values IS NOT NULL THEN
+    RAISE NOTICE 'Invalid values found in storage_interface: %', invalid_values;
+    UPDATE storage
+    SET storage_interface = NULL
+    WHERE storage_interface = ANY(invalid_values);
+  ELSE
+    RAISE NOTICE 'No invalid values found in storage_interface.';
+  END IF;
+
+  ALTER TABLE storage
+    ALTER COLUMN storage_interface TYPE storage_interface USING storage_interface::storage_interface;
+
+EXCEPTION
+  WHEN undefined_column THEN
+    RAISE NOTICE 'Column storage.storage_interface does not exist';
+  WHEN invalid_parameter_value THEN
+    RAISE NOTICE 'Enum type storage_interface already applied on storage.storage_interface';
+END;
+$$;
+
+------------------------------------------------------------------------------------------
+-- Convert storage.storage_phase to enum phase_type
+DO $$
+DECLARE
+  invalid_values TEXT[];
+BEGIN
+  SELECT ARRAY_AGG(DISTINCT storage_phase)
+  INTO invalid_values
+  FROM storage
+  WHERE storage_phase IS NOT NULL
+    AND storage_phase::TEXT NOT IN (
+      SELECT enumlabel
+      FROM pg_enum
+      JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
+      WHERE pg_type.typname = 'phase_type'
+    );
+
+  IF invalid_values IS NOT NULL THEN
+    RAISE NOTICE 'Invalid values found in storage_phase: %', invalid_values;
+    UPDATE storage
+    SET storage_phase = NULL
+    WHERE storage_phase = ANY(invalid_values);
+  ELSE
+    RAISE NOTICE 'No invalid values found in storage_phase.';
+  END IF;
+
+  ALTER TABLE storage
+    ALTER COLUMN storage_phase TYPE phase_type USING storage_phase::phase_type;
+
+EXCEPTION
+  WHEN undefined_column THEN
+    RAISE NOTICE 'Column storage.storage_phase does not exist';
+  WHEN invalid_parameter_value THEN
+    RAISE NOTICE 'Enum type phase_type already applied on storage.storage_phase';
+END;
+$$;
+
+------------------------------------------------------------------------------------------
+-- Convert data_item.uid_phase to enum phase_type
+DO $$
+DECLARE
+  invalid_values TEXT[];
+BEGIN
+  SELECT ARRAY_AGG(DISTINCT uid_phase)
+  INTO invalid_values
+  FROM data_item
+  WHERE uid_phase IS NOT NULL
+    AND uid_phase::TEXT NOT IN (
+      SELECT enumlabel
+      FROM pg_enum
+      JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
+      WHERE pg_type.typname = 'phase_type'
+    );
+
+  IF invalid_values IS NOT NULL THEN
+    RAISE NOTICE 'Invalid values found in uid_phase: %', invalid_values;
+    UPDATE data_item
+    SET uid_phase = NULL
+    WHERE uid_phase = ANY(invalid_values);
+  ELSE
+    RAISE NOTICE 'No invalid values found in uid_phase.';
+  END IF;
+
+  ALTER TABLE data_item
+    ALTER COLUMN uid_phase TYPE phase_type USING uid_phase::phase_type;
+
+EXCEPTION
+  WHEN undefined_column THEN
+    RAISE NOTICE 'Column data_item.uid_phase does not exist';
+  WHEN invalid_parameter_value THEN
+    RAISE NOTICE 'Enum type phase_type already applied on data_item.uid_phase';
+END;
+$$;
+
+------------------------------------------------------------------------------------------
+-- Convert data_item.oid_phase to enum phase_type
+DO $$
+DECLARE
+  invalid_values TEXT[];
+BEGIN
+  SELECT ARRAY_AGG(DISTINCT oid_phase)
+  INTO invalid_values
+  FROM data_item
+  WHERE oid_phase IS NOT NULL
+    AND oid_phase::TEXT NOT IN (
+      SELECT enumlabel
+      FROM pg_enum
+      JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
+      WHERE pg_type.typname = 'phase_type'
+    );
+
+  IF invalid_values IS NOT NULL THEN
+    RAISE NOTICE 'Invalid values found in oid_phase: %', invalid_values;
+    UPDATE data_item
+    SET oid_phase = NULL
+    WHERE oid_phase = ANY(invalid_values);
+  ELSE
+    RAISE NOTICE 'No invalid values found in oid_phase.';
+  END IF;
+
+  ALTER TABLE data_item
+    ALTER COLUMN oid_phase TYPE phase_type USING oid_phase::phase_type;
+
+EXCEPTION
+  WHEN undefined_column THEN
+    RAISE NOTICE 'Column data_item.oid_phase does not exist';
+  WHEN invalid_parameter_value THEN
+    RAISE NOTICE 'Enum type phase_type already applied on data_item.oid_phase';
+END;
+$$;
+
+------------------------------------------------------------------------------------------
+-- Convert data_item.checksum_method to enum checksum_method
+DO $$
+DECLARE
+  invalid_values TEXT[];
+BEGIN
+  SELECT ARRAY_AGG(DISTINCT checksum_method)
+  INTO invalid_values
+  FROM data_item
+  WHERE checksum_method IS NOT NULL
+    AND checksum_method::TEXT NOT IN (
+      SELECT enumlabel
+      FROM pg_enum
+      JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
+      WHERE pg_type.typname = 'checksum_method'
+    );
+
+  IF invalid_values IS NOT NULL THEN
+    RAISE NOTICE 'Invalid values found in checksum_method: %', invalid_values;
+    UPDATE data_item
+    SET checksum_method = NULL
+    WHERE checksum_method = ANY(invalid_values);
+  ELSE
+    RAISE NOTICE 'No invalid values found in checksum_method.';
+  END IF;
+
+  ALTER TABLE data_item
+    ALTER COLUMN checksum_method TYPE checksum_method USING checksum_method::checksum_method;
+
+EXCEPTION
+  WHEN undefined_column THEN
+    RAISE NOTICE 'Column data_item.checksum_method does not exist';
+  WHEN invalid_parameter_value THEN
+    RAISE NOTICE 'Enum type checksum_method already applied on data_item.checksum_method';
+END;
+$$;
+
+------------------------------------------------------------------------------------------
+-- Convert data_item.item_mime_type to enum mime_type
+DO $$
+DECLARE
+  invalid_values TEXT[];
+BEGIN
+  SELECT ARRAY_AGG(DISTINCT item_mime_type)
+  INTO invalid_values
+  FROM data_item
+  WHERE item_mime_type IS NOT NULL
+    AND item_mime_type::TEXT NOT IN (
+      SELECT enumlabel
+      FROM pg_enum
+      JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
+      WHERE pg_type.typname = 'mime_type'
+    );
+
+  IF invalid_values IS NOT NULL THEN
+    RAISE NOTICE 'Invalid values found in item_mime_type: %', invalid_values;
+    UPDATE data_item
+    SET item_mime_type = NULL
+    WHERE item_mime_type = ANY(invalid_values);
+  ELSE
+    RAISE NOTICE 'No invalid values found in item_mime_type.';
+  END IF;
+
+  ALTER TABLE data_item
+    ALTER COLUMN item_mime_type TYPE mime_type USING item_mime_type::mime_type;
+
+EXCEPTION
+  WHEN undefined_column THEN
+    RAISE NOTICE 'Column data_item.item_mime_type does not exist';
+  WHEN invalid_parameter_value THEN
+    RAISE NOTICE 'Enum type mime_type already applied on data_item.item_mime_type';
 END;
 $$;
