@@ -29,7 +29,7 @@ BEGIN
   );
 EXCEPTION
   WHEN duplicate_object THEN
-    RAISE NOTICE 'One or more enum types already exist. Skipping creation.';
+    RAISE WARNING 'One or more enum types already exist. Skipping creation.';
 END;
 $$;
 
@@ -65,12 +65,10 @@ BEGIN
     );
 
   IF invalid_values IS NOT NULL THEN
-    RAISE NOTICE 'Invalid values found in item_state: %', invalid_values;
+    RAISE WARNING 'Invalid values found in item_state: %', invalid_values;
     UPDATE data_item
     SET item_state = NULL
     WHERE item_state = ANY(invalid_values);
-  ELSE
-    RAISE NOTICE 'No invalid values found in item_state.';
   END IF;
 
   -- Convert column to enum
@@ -83,9 +81,9 @@ BEGIN
 
 EXCEPTION
   WHEN undefined_column THEN
-    RAISE NOTICE 'Column data_item.item_state does not exist';
+    RAISE WARNING 'Column data_item.item_state does not exist';
   WHEN invalid_parameter_value THEN
-    RAISE NOTICE 'Enum type item_state already applied on data_item.item_state';
+    RAISE WARNING 'Enum type item_state already applied on data_item.item_state';
 END;
 $$;
 
@@ -107,12 +105,10 @@ BEGIN
     );
 
   IF invalid_values IS NOT NULL THEN
-    RAISE NOTICE 'Invalid values found in location_country: %', invalid_values;
+    RAISE WARNING 'Invalid values found in location_country: %', invalid_values;
     UPDATE location
     SET location_country = NULL
     WHERE location_country = ANY(invalid_values);
-  ELSE
-    RAISE NOTICE 'No invalid values found in location_country.';
   END IF;
 
   ALTER TABLE location
@@ -120,9 +116,9 @@ BEGIN
 
 EXCEPTION
   WHEN undefined_column THEN
-    RAISE NOTICE 'Column location.location_country does not exist';
+    RAISE WARNING 'Column location.location_country does not exist';
   WHEN invalid_parameter_value THEN
-    RAISE NOTICE 'Enum type location_country already applied on location.location_country';
+    RAISE WARNING 'Enum type location_country already applied on location.location_country';
 END;
 $$;
 
@@ -132,6 +128,10 @@ DO $$
 DECLARE
   invalid_values TEXT[];
 BEGIN
+  -- Drop default before conversion
+  ALTER TABLE storage_config
+    ALTER COLUMN config_type DROP DEFAULT;
+
   SELECT ARRAY_AGG(DISTINCT config_type)
   INTO invalid_values
   FROM storage_config
@@ -144,22 +144,24 @@ BEGIN
     );
 
   IF invalid_values IS NOT NULL THEN
-    RAISE NOTICE 'Invalid values found in config_type: %', invalid_values;
+    RAISE WARNING 'Invalid values found in config_type: %', invalid_values;
     UPDATE storage_config
     SET config_type = NULL
     WHERE config_type = ANY(invalid_values);
-  ELSE
-    RAISE NOTICE 'No invalid values found in config_type.';
   END IF;
 
   ALTER TABLE storage_config
     ALTER COLUMN config_type TYPE config_type USING config_type::config_type;
 
+  -- Restore default
+  ALTER TABLE storage_config
+    ALTER COLUMN config_type SET DEFAULT 'rclone';
+
 EXCEPTION
   WHEN undefined_column THEN
-    RAISE NOTICE 'Column storage_config.config_type does not exist';
+    RAISE WARNING 'Column storage_config.config_type does not exist';
   WHEN invalid_parameter_value THEN
-    RAISE NOTICE 'Enum type config_type already applied on storage_config.config_type';
+    RAISE WARNING 'Enum type config_type already applied on storage_config.config_type';
 END;
 $$;
 
@@ -169,6 +171,7 @@ DO $$
 DECLARE
   invalid_values TEXT[];
 BEGIN
+
   SELECT ARRAY_AGG(DISTINCT storage_type)
   INTO invalid_values
   FROM storage
@@ -181,12 +184,10 @@ BEGIN
     );
 
   IF invalid_values IS NOT NULL THEN
-    RAISE NOTICE 'Invalid values found in storage_type: %', invalid_values;
+    RAISE WARNING 'Invalid values found in storage_type: %', invalid_values;
     UPDATE storage
     SET storage_type = NULL
     WHERE storage_type = ANY(invalid_values);
-  ELSE
-    RAISE NOTICE 'No invalid values found in storage_type.';
   END IF;
 
   ALTER TABLE storage
@@ -194,9 +195,9 @@ BEGIN
 
 EXCEPTION
   WHEN undefined_column THEN
-    RAISE NOTICE 'Column storage.storage_type does not exist';
+    RAISE WARNING 'Column storage.storage_type does not exist';
   WHEN invalid_parameter_value THEN
-    RAISE NOTICE 'Enum type storage_type already applied on storage.storage_type';
+    RAISE WARNING 'Enum type storage_type already applied on storage.storage_type';
 END;
 $$;
 
@@ -218,12 +219,10 @@ BEGIN
     );
 
   IF invalid_values IS NOT NULL THEN
-    RAISE NOTICE 'Invalid values found in storage_interface: %', invalid_values;
+    RAISE WARNING 'Invalid values found in storage_interface: %', invalid_values;
     UPDATE storage
     SET storage_interface = NULL
     WHERE storage_interface = ANY(invalid_values);
-  ELSE
-    RAISE NOTICE 'No invalid values found in storage_interface.';
   END IF;
 
   ALTER TABLE storage
@@ -231,9 +230,9 @@ BEGIN
 
 EXCEPTION
   WHEN undefined_column THEN
-    RAISE NOTICE 'Column storage.storage_interface does not exist';
+    RAISE WARNING 'Column storage.storage_interface does not exist';
   WHEN invalid_parameter_value THEN
-    RAISE NOTICE 'Enum type storage_interface already applied on storage.storage_interface';
+    RAISE WARNING 'Enum type storage_interface already applied on storage.storage_interface';
 END;
 $$;
 
@@ -243,6 +242,10 @@ DO $$
 DECLARE
   invalid_values TEXT[];
 BEGIN
+  -- Drop default before conversion
+  ALTER TABLE storage
+    ALTER COLUMN storage_phase DROP DEFAULT;
+
   SELECT ARRAY_AGG(DISTINCT storage_phase)
   INTO invalid_values
   FROM storage
@@ -255,22 +258,24 @@ BEGIN
     );
 
   IF invalid_values IS NOT NULL THEN
-    RAISE NOTICE 'Invalid values found in storage_phase: %', invalid_values;
+    RAISE WARNING 'Invalid values found in storage_phase: %', invalid_values;
     UPDATE storage
     SET storage_phase = NULL
     WHERE storage_phase = ANY(invalid_values);
-  ELSE
-    RAISE NOTICE 'No invalid values found in storage_phase.';
   END IF;
 
   ALTER TABLE storage
     ALTER COLUMN storage_phase TYPE phase_type USING storage_phase::phase_type;
 
+  -- Restore default
+  ALTER TABLE storage
+    ALTER COLUMN storage_phase SET DEFAULT 'GAS';
+
 EXCEPTION
   WHEN undefined_column THEN
-    RAISE NOTICE 'Column storage.storage_phase does not exist';
+    RAISE WARNING 'Column storage.storage_phase does not exist';
   WHEN invalid_parameter_value THEN
-    RAISE NOTICE 'Enum type phase_type already applied on storage.storage_phase';
+    RAISE WARNING 'Enum type phase_type already applied on storage.storage_phase';
 END;
 $$;
 
@@ -280,6 +285,10 @@ DO $$
 DECLARE
   invalid_values TEXT[];
 BEGIN
+  -- Drop default before conversion
+  ALTER TABLE data_item
+    ALTER COLUMN uid_phase DROP DEFAULT;
+
   SELECT ARRAY_AGG(DISTINCT uid_phase)
   INTO invalid_values
   FROM data_item
@@ -292,22 +301,24 @@ BEGIN
     );
 
   IF invalid_values IS NOT NULL THEN
-    RAISE NOTICE 'Invalid values found in uid_phase: %', invalid_values;
+    RAISE WARNING 'Invalid values found in uid_phase: %', invalid_values;
     UPDATE data_item
     SET uid_phase = NULL
     WHERE uid_phase = ANY(invalid_values);
-  ELSE
-    RAISE NOTICE 'No invalid values found in uid_phase.';
   END IF;
 
   ALTER TABLE data_item
     ALTER COLUMN uid_phase TYPE phase_type USING uid_phase::phase_type;
 
+  -- Restore default
+  ALTER TABLE data_item
+    ALTER COLUMN uid_phase SET DEFAULT 'GAS';
+
 EXCEPTION
   WHEN undefined_column THEN
-    RAISE NOTICE 'Column data_item.uid_phase does not exist';
+    RAISE WARNING 'Column data_item.uid_phase does not exist';
   WHEN invalid_parameter_value THEN
-    RAISE NOTICE 'Enum type phase_type already applied on data_item.uid_phase';
+    RAISE WARNING 'Enum type phase_type already applied on data_item.uid_phase';
 END;
 $$;
 
@@ -317,6 +328,10 @@ DO $$
 DECLARE
   invalid_values TEXT[];
 BEGIN
+  -- Drop default before conversion
+  ALTER TABLE data_item
+    ALTER COLUMN oid_phase DROP DEFAULT;
+
   SELECT ARRAY_AGG(DISTINCT oid_phase)
   INTO invalid_values
   FROM data_item
@@ -329,22 +344,24 @@ BEGIN
     );
 
   IF invalid_values IS NOT NULL THEN
-    RAISE NOTICE 'Invalid values found in oid_phase: %', invalid_values;
+    RAISE WARNING 'Invalid values found in oid_phase: %', invalid_values;
     UPDATE data_item
     SET oid_phase = NULL
     WHERE oid_phase = ANY(invalid_values);
-  ELSE
-    RAISE NOTICE 'No invalid values found in oid_phase.';
   END IF;
 
   ALTER TABLE data_item
     ALTER COLUMN oid_phase TYPE phase_type USING oid_phase::phase_type;
 
+  -- Restore default
+  ALTER TABLE data_item
+    ALTER COLUMN oid_phase SET DEFAULT 'GAS';
+
 EXCEPTION
   WHEN undefined_column THEN
-    RAISE NOTICE 'Column data_item.oid_phase does not exist';
+    RAISE WARNING 'Column data_item.oid_phase does not exist';
   WHEN invalid_parameter_value THEN
-    RAISE NOTICE 'Enum type phase_type already applied on data_item.oid_phase';
+    RAISE WARNING 'Enum type phase_type already applied on data_item.oid_phase';
 END;
 $$;
 
@@ -354,6 +371,10 @@ DO $$
 DECLARE
   invalid_values TEXT[];
 BEGIN
+  -- Drop default before conversion
+  ALTER TABLE data_item
+    ALTER COLUMN checksum_method DROP DEFAULT;
+
   SELECT ARRAY_AGG(DISTINCT checksum_method)
   INTO invalid_values
   FROM data_item
@@ -366,22 +387,24 @@ BEGIN
     );
 
   IF invalid_values IS NOT NULL THEN
-    RAISE NOTICE 'Invalid values found in checksum_method: %', invalid_values;
+    RAISE WARNING 'Invalid values found in checksum_method: %', invalid_values;
     UPDATE data_item
     SET checksum_method = NULL
     WHERE checksum_method = ANY(invalid_values);
-  ELSE
-    RAISE NOTICE 'No invalid values found in checksum_method.';
   END IF;
 
   ALTER TABLE data_item
     ALTER COLUMN checksum_method TYPE checksum_method USING checksum_method::checksum_method;
 
+  -- Restore default
+  ALTER TABLE data_item
+    ALTER COLUMN checksum_method SET DEFAULT 'none';
+
 EXCEPTION
   WHEN undefined_column THEN
-    RAISE NOTICE 'Column data_item.checksum_method does not exist';
+    RAISE WARNING 'Column data_item.checksum_method does not exist';
   WHEN invalid_parameter_value THEN
-    RAISE NOTICE 'Enum type checksum_method already applied on data_item.checksum_method';
+    RAISE WARNING 'Enum type checksum_method already applied on data_item.checksum_method';
 END;
 $$;
 
@@ -391,6 +414,10 @@ DO $$
 DECLARE
   invalid_values TEXT[];
 BEGIN
+  -- Drop default before conversion
+  ALTER TABLE data_item
+    ALTER COLUMN item_mime_type DROP DEFAULT;
+
   SELECT ARRAY_AGG(DISTINCT item_mime_type)
   INTO invalid_values
   FROM data_item
@@ -403,21 +430,23 @@ BEGIN
     );
 
   IF invalid_values IS NOT NULL THEN
-    RAISE NOTICE 'Invalid values found in item_mime_type: %', invalid_values;
+    RAISE WARNING 'Invalid values found in item_mime_type: %', invalid_values;
     UPDATE data_item
     SET item_mime_type = NULL
     WHERE item_mime_type = ANY(invalid_values);
-  ELSE
-    RAISE NOTICE 'No invalid values found in item_mime_type.';
   END IF;
 
   ALTER TABLE data_item
     ALTER COLUMN item_mime_type TYPE mime_type USING item_mime_type::mime_type;
 
+  -- Restore default
+  ALTER TABLE data_item
+    ALTER COLUMN item_mime_type SET DEFAULT 'application/octet-stream';
+
 EXCEPTION
   WHEN undefined_column THEN
-    RAISE NOTICE 'Column data_item.item_mime_type does not exist';
+    RAISE WARNING 'Column data_item.item_mime_type does not exist';
   WHEN invalid_parameter_value THEN
-    RAISE NOTICE 'Enum type mime_type already applied on data_item.item_mime_type';
+    RAISE WARNING 'Enum type mime_type already applied on data_item.item_mime_type';
 END;
 $$;
