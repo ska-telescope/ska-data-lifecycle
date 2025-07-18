@@ -28,8 +28,10 @@ docker-compose down --volumes
 
 echo show diff between generated and current models file....
 diff $DLM_MODELS_FILE $DLM_MODELS_DIR/$DLM_MODELS_FILE
+echo waiting 5 seconds in case user wants to break out before copying over destingation file
+sleep 5
 mv -f $DLM_MODELS_FILE $DLM_MODELS_DIR/$DLM_MODELS_FILE
 
-echo "✅ $DLM_MODELS_FILE generated from create-tables.sql"
+echo "✅ $DLM_MODELS_FILE generated from create-enum-types.sql and create-tables.sql"
 
 
