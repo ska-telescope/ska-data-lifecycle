@@ -58,6 +58,8 @@ BEGIN
   FROM data_item
   WHERE item_state IS NOT NULL
     AND item_state::TEXT NOT IN (
+    -- pg_enum is a PostgreSQL system catalog that stores labels for all enum types
+    -- enumlabel is a built-in column in pg_enum containing the enum's string values
       SELECT enumlabel
       FROM pg_enum
       JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
