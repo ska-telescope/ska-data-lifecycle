@@ -1,9 +1,9 @@
-# DP Cluster
+# External Storage
 
 (dp-cluster)=
 ## Ingest and Migrate a Data Item
 
-This section outlines the steps required to ingest and migrate data within the DLM system using the **ska-dlm REST API interface**.
+This section outlines the steps required to ingest and migrate data using the **ska-dlm REST API interface**.
 
 1. Obtain an API token, authorizing use of DLM by a specific user
 2. Determine the location of the file(s) you wish to register, and register this location with DLM
@@ -14,7 +14,7 @@ This section outlines the steps required to ingest and migrate data within the D
 7. Query the location of all copies of the item
 
 
-The source code below demonstrates how to register a data item that exists on an external storage (e.g., Acacia).
+The source code below demonstrates how to register a data item that resides on external storage (Acacia, located at the Pawsey Centre) while working from the DP platform.
 
 
 **1. Prepare token to be placed in the header of your REST calls**
@@ -26,18 +26,18 @@ The source code below demonstrates how to register a data item that exists on an
 ```python
 from requests import Session
 
-# this URL is for DLM deployment in the 'dp-dm' namespace on the DP integration cluster
+# this URL is for DLM deployment in the 'dp-dm' namespace on the DP test platform
 DLM_URL = "https://sdhp.stfc.skao.int/dp-dm/dlm"
 token = <your token>
 headers = {"Authorization": f"Bearer {token}"}
 session = Session()
 ```
 
-**2. Check if the desired location (e.g., STFC) is already known to DLM**
+**2. Check if the desired location (e.g., Pawsey) is already known to DLM**
 ```python
 # create location details
-location_name = "STFC"
-location_type = "dp"
+location_name = "Pawsey"
+location_type = "HPC centre"
 
 location = session.get(
     f"{DLM_URL}/storage/query_location",
