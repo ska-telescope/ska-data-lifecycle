@@ -18,12 +18,12 @@ The following sections describe how to perform a data item registration and migr
 # check if the location MyHost already exists
 ska-dlm storage query-location --location-name MyHost
 # initialise location (if it doesn't already exist)
-ska-dlm storage init-location MyHost server
+ska-dlm storage init-location MyHost external
 
 # check if the storage MyDisk already exists
 ska-dlm storage query-storage --storage-name MyDisk
 # initialise storage with root directory "/" (if it doesn't already exist)
-ska-dlm storage init-storage MyDisk disk posix / --location-name MyHost
+ska-dlm storage init-storage MyDisk filesystem posix / --location-name MyHost
 
 # check if a storage config for MyDisk is already known to DLM
 ska-dlm storage get-storage-config --storage-name MyDisk
@@ -40,7 +40,7 @@ ska-dlm data-item query-data-item --item-name test_item_name
 
 # migrate an item from one storage to another
 # register a second storage
-ska-dlm storage init-storage MyDisk2 disk posix / --location-name MyHost
+ska-dlm storage init-storage MyDisk2 filesystem posix / --location-name MyHost
 
 # supply an rclone config
 ska-dlm storage create-storage-config '{"name":"MyDisk2", "type":"alias", "parameters":{"remote": "/"}}' \
@@ -60,10 +60,10 @@ ska-dlm --help
 ```python
 from ska_dlm import dlm_storage, dlm_ingest, dlm_migration, dlm_request
 
-location_name = "ThisLocationName"
-location_type = "ThisLocationType"
+location_name = "MyLocation"
+location_type = "external"
 
-# check if the location 'ThisLocationName' is already known to DLM
+# check if the location 'MyLocation' is already known to DLM
 dlm_storage.query_location(location_name=location_name)
 # initialise the location (if it doesn't already exist)
 location_id = dlm_storage.init_location(location_name, location_type)
@@ -75,7 +75,7 @@ storage_id = dlm_storage.init_storage(
     storage_name="MyDisk",
     root_directory="/",
     location_id=location_id,
-    storage_type="disk",
+    storage_type="filesystem",
     storage_interface="posix",
     storage_capacity=100000000,
 )
@@ -88,7 +88,7 @@ config_id = dlm_storage.create_storage_config(storage_id=storage_id, config=conf
 
 # register a data item
 uid = dlm_ingest.register_data_item(
-    "test_item",
+    item_name="test_item",
     uri="/etc/os-release",
     storage_name="MyDisk",
     item_type="file",
@@ -101,7 +101,7 @@ storage_id = dlm_storage.init_storage(
     storage_name="MyDisk2",
     root_directory="/",
     location_id=location_id,
-    storage_type="disk",
+    storage_type="filesystem",
     storage_interface="posix",
     storage_capacity=100000000,
 )

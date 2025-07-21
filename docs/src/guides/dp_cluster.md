@@ -33,11 +33,11 @@ headers = {"Authorization": f"Bearer {token}"}
 session = Session()
 ```
 
-**2. Check if the desired location (e.g., Pawsey) is already known to DLM**
+**2. Check if the desired location (e.g., STFC) is already known to DLM**
 ```python
 # create location details
-location_name = "Pawsey"
-location_type = "HPC centre"
+location_name = "STFC"
+location_type = "dp"
 
 location = session.get(
     f"{DLM_URL}/storage/query_location",
@@ -81,7 +81,7 @@ storage_params = {
     "storage_name": "Acacia",
     "root_directory": "rascil", # example of an existing directory
     "location_id": location_id,
-    "storage_type": "object store",
+    "storage_type": "objectstore",
     "storage_interface": "s3",  # rclone config type
     "storage_capacity": 100000000,
 }
