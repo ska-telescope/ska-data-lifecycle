@@ -1,19 +1,17 @@
 --
--- ska_dlm_admin QL DDL for SKA Data Lifecycle Management DB setup
+-- SQL DDL for SKA Data Lifecycle Management DB setup
 --
 
 --
 -- lookup tables
 --
 
-CREATE TABLE location_type (
+CREATE TABLE location_facility (
     id TEXT PRIMARY KEY
 );
 
-INSERT INTO location_type (id)
-SELECT unnest(ARRAY[
-  'src', 'aws', 'gcs', 'low-operational', 'low-itf', 'mid-itf', 'dp', 'external'
-])
+INSERT INTO location_facility (id)
+SELECT unnest(ARRAY['SRC', 'STFC', 'AWS', 'Google', 'Pawsey Centre', 'external', 'local'])
 ON CONFLICT DO NOTHING;
 
 --

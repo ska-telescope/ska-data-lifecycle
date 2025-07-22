@@ -1,7 +1,8 @@
--- This patch defines enum types.
+-- This section defines enum types (rerunnable)
 
 DO $$
 BEGIN
+  CREATE TYPE location_type AS ENUM ('local dev', 'low-integration', 'mid-integration', 'low-operations', 'mid-operations');
   CREATE TYPE location_country AS ENUM ('AU', 'ZA', 'UK');
   CREATE TYPE config_type AS ENUM ('rclone', 'ssh', 'aws', 'gcs');
   CREATE TYPE storage_type AS ENUM ('filesystem', 'objectstore', 'tape');
@@ -28,14 +29,50 @@ BEGIN
     'text/x-java-source', 'text/x-python', 'video/mp4'
   );
 EXCEPTION
+  -- this exception allows the script to be rerunnable
   WHEN duplicate_object THEN
     RAISE WARNING 'One or more enum types already exist. Skipping creation.';
 END;
 $$;
 
 ------------------------------------------------------------------------------------------
--- This patch continues by updating columns to use the new enum types.
+-- This section updates columns to use the new enum types (all-or-nothing)
 ------------------------------------------------------------------------------------------
+BEGIN;
+
+-- Convert location.location_type to enum location_type
+DO $$
+DECLARE
+  invalid_values TEXT[];
+BEGIN
+  SELECT ARRAY_AGG(DISTINCT location_type)
+  INTO invalid_values
+  FROM location
+  WHERE location_type IS NOT NULL
+    AND location_type::TEXT NOT IN (
+      SELECT enumlabel
+      FROM pg_enum
+      JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
+      WHERE pg_type.typname = 'location_type'
+    );
+
+  IF invalid_values IS NOT NULL THEN
+    RAISE WARNING 'Invalid values found in location_type: %', invalid_values;
+    UPDATE location
+    SET location_type = NULL
+    WHERE location_type = ANY(invalid_values);
+  END IF;
+
+  ALTER TABLE location
+    ALTER COLUMN location_type TYPE location_type USING location_type::location_type;
+
+EXCEPTION
+  WHEN undefined_column THEN
+    RAISE WARNING 'Column location.location_type does not exist';
+  WHEN invalid_parameter_value THEN
+    RAISE WARNING 'Enum type location_type already applied on location.location_type';
+END;
+$$;
 
 ------------------------------------------------------------------------------------------
 -- Convert data_item.item_state to enum item_state
@@ -452,3 +489,5 @@ EXCEPTION
     RAISE WARNING 'Enum type mime_type already applied on data_item.item_mime_type';
 END;
 $$;
+------------------------------------------------------------------------------------------
+COMMIT;

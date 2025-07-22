@@ -10,7 +10,8 @@
 
 ### Added
 
-* ENUM definitions for location_country, config_type, storage_type, storage_interface, phase_type, item_state, checksum_method and mime_type.
+* List of location facilities, as a lookup table
+* ENUM definitions for location_type, location_country, config_type, storage_type, storage_interface, phase_type, item_state, checksum_method and mime_type.
 * Set up the Helm chart infrastructure to support database patch releases via versioned SQL files.
 
 ## 1.1.2
