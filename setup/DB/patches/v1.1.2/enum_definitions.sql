@@ -48,8 +48,7 @@ BEGIN
   SELECT ARRAY_AGG(DISTINCT location_type)
   INTO invalid_values
   FROM location
-  WHERE location_type IS NOT NULL
-    AND location_type::TEXT NOT IN (
+  WHERE location_type::TEXT NOT IN (
       SELECT enumlabel
       FROM pg_enum
       JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
@@ -57,10 +56,7 @@ BEGIN
     );
 
   IF invalid_values IS NOT NULL THEN
-    RAISE WARNING 'Invalid values found in location_type: %', invalid_values;
-    UPDATE location
-    SET location_type = NULL
-    WHERE location_type = ANY(invalid_values);
+    RAISE EXCEPTION 'Invalid values found in location_type: %. Aborting.', invalid_values;
   END IF;
 
   ALTER TABLE location
