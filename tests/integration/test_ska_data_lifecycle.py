@@ -66,7 +66,7 @@ def setup(env):
     env.write_rclone_file_content(RCLONE_TEST_FILE_PATH, RCLONE_TEST_FILE_CONTENT)
 
     # we need a location to register the storage
-    location_id = env.storage_requests.init_location("MyOwnStorage", "external")
+    location_id = env.storage_requests.init_location("MyOwnStorage", "local dev")
     uuid = env.storage_requests.init_storage(
         storage_name="MyDisk",
         root_directory=ROOT_DIRECTORY1,
@@ -149,9 +149,9 @@ def test_query_expired(env):
 @pytest.mark.integration_test
 def test_location_init(env):
     """Test initialisation on a location."""
-    env.storage_requests.init_location("TestLocation", "low-itf")
+    env.storage_requests.init_location("TestLocation", "low-integration")
     location = env.storage_requests.query_location(location_name="TestLocation")[0]
-    assert location["location_type"] == "low-itf"
+    assert location["location_type"] == "low-integration"
 
 
 @pytest.mark.integration_test
@@ -197,7 +197,7 @@ def __initialise_storage_config(env):
     if location:
         location_id = location[0]["location_id"]
     else:
-        location_id = env.storage_requests.init_location("MyHost", "external")
+        location_id = env.storage_requests.init_location("MyHost", "low-integration")
     assert len(location_id) == 36
     config = {"name": "MyDisk2", "type": "alias", "parameters": {"remote": "/"}}
     uuid = env.storage_requests.init_storage(

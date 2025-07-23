@@ -17,9 +17,9 @@ def test_location_init():
     with pytest.raises(InvalidQueryParameters):
         dlm_storage.init_location(location_name="", location_type="type")
 
-    dlm_storage.init_location("TestLocation", "low-itf")
+    dlm_storage.init_location("TestLocation", "low-integration")
     location = dlm_storage.query_location(location_name="TestLocation")[0]
-    assert location["location_type"] == "low-itf"
+    assert location["location_type"] == "low-integration"
 
 
 def test_initialise_storage_config():
@@ -28,7 +28,7 @@ def test_initialise_storage_config():
     if location:
         location_id = location[0]["location_id"]
     else:
-        location_id = dlm_storage.init_location("MyHost", "external")
+        location_id = dlm_storage.init_location("MyHost", "low-integration")
     assert len(location_id) == 36
     config = {"name": "MyDisk2", "type": "local", "parameters": {}}
     uuid = dlm_storage.init_storage(
