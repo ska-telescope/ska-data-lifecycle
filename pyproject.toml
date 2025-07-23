@@ -44,6 +44,7 @@ pyjwt = "2.9.0"
 msal = "1.31.0"
 ska-sdp-dataproduct-metadata = "^0.7.0"
 locust = "^2.37.11"
+click = "<=8.1.7"
 
 [tool.poetry.group.test.dependencies]
 black = "^23.3.0"
