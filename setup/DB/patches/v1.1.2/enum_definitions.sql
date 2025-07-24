@@ -49,24 +49,21 @@ BEGIN
   INTO invalid_values
   FROM location
   WHERE location_type::TEXT NOT IN (
-      SELECT enumlabel
-      FROM pg_enum
-      JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
-      WHERE pg_type.typname = 'location_type'
+    -- pg_enum is a PostgreSQL system catalog that stores labels for all enum types
+    -- enumlabel is a built-in column in pg_enum containing the enum's string values
+    SELECT enumlabel
+    FROM pg_enum
+    JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
+    WHERE pg_type.typname = 'location_type'
     );
 
   IF invalid_values IS NOT NULL THEN
-    RAISE EXCEPTION 'Invalid values found in location_type: %. Aborting.', invalid_values;
+    RAISE EXCEPTION 'Invalid enum values found in location_type: %. Not nullable. Transaction aborted and rolled back.', invalid_values;
   END IF;
 
   ALTER TABLE location
     ALTER COLUMN location_type TYPE location_type USING location_type::location_type;
 
-EXCEPTION
-  WHEN undefined_column THEN
-    RAISE WARNING 'Column location.location_type does not exist';
-  WHEN invalid_parameter_value THEN
-    RAISE WARNING 'Enum type location_type already applied on location.location_type';
 END;
 $$;
 
@@ -100,7 +97,7 @@ BEGIN
     );
 
   IF invalid_values IS NOT NULL THEN
-    RAISE WARNING 'Invalid values found in item_state: %', invalid_values;
+    RAISE WARNING 'Invalid enum values found in item_state changed to NULL: %', invalid_values;
     UPDATE data_item
     SET item_state = NULL
     WHERE item_state = ANY(invalid_values);
@@ -114,11 +111,6 @@ BEGIN
   ALTER TABLE data_item
     ALTER COLUMN item_state SET DEFAULT 'INITIALISED';
 
-EXCEPTION
-  WHEN undefined_column THEN
-    RAISE WARNING 'Column data_item.item_state does not exist';
-  WHEN invalid_parameter_value THEN
-    RAISE WARNING 'Enum type item_state already applied on data_item.item_state';
 END;
 $$;
 
@@ -140,7 +132,7 @@ BEGIN
     );
 
   IF invalid_values IS NOT NULL THEN
-    RAISE WARNING 'Invalid values found in location_country: %', invalid_values;
+    RAISE WARNING 'Invalid enum values found in location_country changed to NULL: %', invalid_values;
     UPDATE location
     SET location_country = NULL
     WHERE location_country = ANY(invalid_values);
@@ -149,11 +141,6 @@ BEGIN
   ALTER TABLE location
     ALTER COLUMN location_country TYPE location_country USING location_country::location_country;
 
-EXCEPTION
-  WHEN undefined_column THEN
-    RAISE WARNING 'Column location.location_country does not exist';
-  WHEN invalid_parameter_value THEN
-    RAISE WARNING 'Enum type location_country already applied on location.location_country';
 END;
 $$;
 
@@ -179,7 +166,7 @@ BEGIN
     );
 
   IF invalid_values IS NOT NULL THEN
-    RAISE WARNING 'Invalid values found in config_type: %', invalid_values;
+    RAISE WARNING 'Invalid enum values found in config_type changed to NULL: %', invalid_values;
     UPDATE storage_config
     SET config_type = NULL
     WHERE config_type = ANY(invalid_values);
@@ -192,11 +179,6 @@ BEGIN
   ALTER TABLE storage_config
     ALTER COLUMN config_type SET DEFAULT 'rclone';
 
-EXCEPTION
-  WHEN undefined_column THEN
-    RAISE WARNING 'Column storage_config.config_type does not exist';
-  WHEN invalid_parameter_value THEN
-    RAISE WARNING 'Enum type config_type already applied on storage_config.config_type';
 END;
 $$;
 
@@ -210,29 +192,20 @@ BEGIN
   SELECT ARRAY_AGG(DISTINCT storage_type)
   INTO invalid_values
   FROM storage
-  WHERE storage_type IS NOT NULL
-    AND storage_type::TEXT NOT IN (
-      SELECT enumlabel
-      FROM pg_enum
-      JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
-      WHERE pg_type.typname = 'storage_type'
+  WHERE storage_type::TEXT NOT IN (
+    SELECT enumlabel
+    FROM pg_enum
+    JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
+    WHERE pg_type.typname = 'storage_type'
     );
 
   IF invalid_values IS NOT NULL THEN
-    RAISE WARNING 'Invalid values found in storage_type: %', invalid_values;
-    UPDATE storage
-    SET storage_type = NULL
-    WHERE storage_type = ANY(invalid_values);
+    RAISE EXCEPTION 'Invalid enum values found in storage_type: %. Not nullable. Transaction aborted and rolled back.', invalid_values;
   END IF;
 
   ALTER TABLE storage
     ALTER COLUMN storage_type TYPE storage_type USING storage_type::storage_type;
 
-EXCEPTION
-  WHEN undefined_column THEN
-    RAISE WARNING 'Column storage.storage_type does not exist';
-  WHEN invalid_parameter_value THEN
-    RAISE WARNING 'Enum type storage_type already applied on storage.storage_type';
 END;
 $$;
 
@@ -245,29 +218,20 @@ BEGIN
   SELECT ARRAY_AGG(DISTINCT storage_interface)
   INTO invalid_values
   FROM storage
-  WHERE storage_interface IS NOT NULL
-    AND storage_interface::TEXT NOT IN (
-      SELECT enumlabel
-      FROM pg_enum
-      JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
-      WHERE pg_type.typname = 'storage_interface'
+  WHERE storage_interface::TEXT NOT IN (
+    SELECT enumlabel
+    FROM pg_enum
+    JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
+    WHERE pg_type.typname = 'storage_interface'
     );
 
   IF invalid_values IS NOT NULL THEN
-    RAISE WARNING 'Invalid values found in storage_interface: %', invalid_values;
-    UPDATE storage
-    SET storage_interface = NULL
-    WHERE storage_interface = ANY(invalid_values);
+    RAISE EXCEPTION 'Invalid enum values found in storage_interface: %. Not nullable. Transaction aborted and rolled back.', invalid_values;
   END IF;
 
   ALTER TABLE storage
     ALTER COLUMN storage_interface TYPE storage_interface USING storage_interface::storage_interface;
 
-EXCEPTION
-  WHEN undefined_column THEN
-    RAISE WARNING 'Column storage.storage_interface does not exist';
-  WHEN invalid_parameter_value THEN
-    RAISE WARNING 'Enum type storage_interface already applied on storage.storage_interface';
 END;
 $$;
 
@@ -293,7 +257,7 @@ BEGIN
     );
 
   IF invalid_values IS NOT NULL THEN
-    RAISE WARNING 'Invalid values found in storage_phase: %', invalid_values;
+    RAISE WARNING 'Invalid enum values found in storage_phase changed to NULL: %', invalid_values;
     UPDATE storage
     SET storage_phase = NULL
     WHERE storage_phase = ANY(invalid_values);
@@ -306,11 +270,6 @@ BEGIN
   ALTER TABLE storage
     ALTER COLUMN storage_phase SET DEFAULT 'GAS';
 
-EXCEPTION
-  WHEN undefined_column THEN
-    RAISE WARNING 'Column storage.storage_phase does not exist';
-  WHEN invalid_parameter_value THEN
-    RAISE WARNING 'Enum type phase_type already applied on storage.storage_phase';
 END;
 $$;
 
@@ -336,7 +295,7 @@ BEGIN
     );
 
   IF invalid_values IS NOT NULL THEN
-    RAISE WARNING 'Invalid values found in uid_phase: %', invalid_values;
+    RAISE WARNING 'Invalid enum values found in uid_phase changed to NULL: %', invalid_values;
     UPDATE data_item
     SET uid_phase = NULL
     WHERE uid_phase = ANY(invalid_values);
@@ -349,11 +308,6 @@ BEGIN
   ALTER TABLE data_item
     ALTER COLUMN uid_phase SET DEFAULT 'GAS';
 
-EXCEPTION
-  WHEN undefined_column THEN
-    RAISE WARNING 'Column data_item.uid_phase does not exist';
-  WHEN invalid_parameter_value THEN
-    RAISE WARNING 'Enum type phase_type already applied on data_item.uid_phase';
 END;
 $$;
 
@@ -379,7 +333,7 @@ BEGIN
     );
 
   IF invalid_values IS NOT NULL THEN
-    RAISE WARNING 'Invalid values found in oid_phase: %', invalid_values;
+    RAISE WARNING 'Invalid enum values found in oid_phase changed to NULL: %', invalid_values;
     UPDATE data_item
     SET oid_phase = NULL
     WHERE oid_phase = ANY(invalid_values);
@@ -392,11 +346,6 @@ BEGIN
   ALTER TABLE data_item
     ALTER COLUMN oid_phase SET DEFAULT 'GAS';
 
-EXCEPTION
-  WHEN undefined_column THEN
-    RAISE WARNING 'Column data_item.oid_phase does not exist';
-  WHEN invalid_parameter_value THEN
-    RAISE WARNING 'Enum type phase_type already applied on data_item.oid_phase';
 END;
 $$;
 
@@ -422,7 +371,7 @@ BEGIN
     );
 
   IF invalid_values IS NOT NULL THEN
-    RAISE WARNING 'Invalid values found in checksum_method: %', invalid_values;
+    RAISE WARNING 'Invalid enum values found in checksum_method changed to NULL: %', invalid_values;
     UPDATE data_item
     SET checksum_method = NULL
     WHERE checksum_method = ANY(invalid_values);
@@ -435,11 +384,6 @@ BEGIN
   ALTER TABLE data_item
     ALTER COLUMN checksum_method SET DEFAULT 'none';
 
-EXCEPTION
-  WHEN undefined_column THEN
-    RAISE WARNING 'Column data_item.checksum_method does not exist';
-  WHEN invalid_parameter_value THEN
-    RAISE WARNING 'Enum type checksum_method already applied on data_item.checksum_method';
 END;
 $$;
 
@@ -465,7 +409,7 @@ BEGIN
     );
 
   IF invalid_values IS NOT NULL THEN
-    RAISE WARNING 'Invalid values found in item_mime_type: %', invalid_values;
+    RAISE WARNING 'Invalid enum values found in item_mime_type changed to NULL: %', invalid_values;
     UPDATE data_item
     SET item_mime_type = NULL
     WHERE item_mime_type = ANY(invalid_values);
@@ -478,11 +422,6 @@ BEGIN
   ALTER TABLE data_item
     ALTER COLUMN item_mime_type SET DEFAULT 'application/octet-stream';
 
-EXCEPTION
-  WHEN undefined_column THEN
-    RAISE WARNING 'Column data_item.item_mime_type does not exist';
-  WHEN invalid_parameter_value THEN
-    RAISE WARNING 'Enum type mime_type already applied on data_item.item_mime_type';
 END;
 $$;
 ------------------------------------------------------------------------------------------

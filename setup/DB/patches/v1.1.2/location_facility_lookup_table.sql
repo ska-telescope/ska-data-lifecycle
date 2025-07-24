@@ -1,4 +1,4 @@
--- Convert location_facility column to foreign key via lookup table
+-- Convert location_facility column to foreign key via lookup table. Safe to re-run.
 BEGIN;
 
 -- Create the location_facility lookup table
@@ -25,7 +25,7 @@ BEGIN
     );
 
   IF invalid_values IS NOT NULL THEN
-    RAISE WARNING 'Invalid location_facility values found: %', invalid_values;
+    RAISE WARNING 'Invalid location_facility values found and changed to NULL: %', invalid_values;
     UPDATE location
     SET location_facility = NULL
     WHERE location_facility = ANY (invalid_values);
