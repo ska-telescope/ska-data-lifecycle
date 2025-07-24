@@ -45,12 +45,15 @@ DO $$
 DECLARE
   invalid_values TEXT[];
 BEGIN
+  -- Identify invalid location_type values that don't match the enum definition
   SELECT ARRAY_AGG(DISTINCT location_type)
   INTO invalid_values
   FROM location
   WHERE location_type::TEXT NOT IN (
-    -- pg_enum is a PostgreSQL system catalog that stores labels for all enum types
-    -- enumlabel is a built-in column in pg_enum containing the enum's string values
+    -- enumlabel is the text value of each enum option (from pg_enum),
+    -- pg_enum stores all enum labels and their associated type IDs (enumtypid),
+    -- pg_type maps enumtypid to the actual enum type name (typname),
+    -- all of these are built-in PostgreSQL system catalogs for managing enum types.
     SELECT enumlabel
     FROM pg_enum
     JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
@@ -88,8 +91,6 @@ BEGIN
   FROM data_item
   WHERE item_state IS NOT NULL
     AND item_state::TEXT NOT IN (
-    -- pg_enum is a PostgreSQL system catalog that stores labels for all enum types
-    -- enumlabel is a built-in column in pg_enum containing the enum's string values
       SELECT enumlabel
       FROM pg_enum
       JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
