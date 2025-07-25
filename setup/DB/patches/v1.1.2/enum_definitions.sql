@@ -121,6 +121,12 @@ DO $$
 DECLARE
   invalid_values TEXT[];
 BEGIN
+
+  -- Fix legacy enum values
+  UPDATE location
+  SET location_country = 'AU'
+  WHERE location_country::TEXT = 'Australia';
+
   SELECT ARRAY_AGG(DISTINCT location_country)
   INTO invalid_values
   FROM location
