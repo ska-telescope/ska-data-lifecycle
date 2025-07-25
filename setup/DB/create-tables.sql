@@ -6,7 +6,7 @@
 -- lookup tables
 --
 
-CREATE TABLE location_facility (
+CREATE TABLE IF NOT EXISTS location_facility (
     id TEXT PRIMARY KEY
 );
 
