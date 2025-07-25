@@ -66,7 +66,7 @@ def setup(env):
     env.write_rclone_file_content(RCLONE_TEST_FILE_PATH, RCLONE_TEST_FILE_CONTENT)
 
     # we need a location to register the storage
-    location_id = env.storage_requests.init_location("MyOwnStorage", "local dev")
+    location_id = env.storage_requests.init_location("MyOwnStorage", "local-dev")
     uuid = env.storage_requests.init_storage(
         storage_name="MyDisk",
         root_directory=ROOT_DIRECTORY1,

@@ -1,5 +1,5 @@
 -- DLM enum definitions
-CREATE TYPE location_type AS ENUM ('local dev', 'low-integration', 'mid-integration', 'low-operations', 'mid-operations');
+CREATE TYPE location_type AS ENUM ('local-dev', 'low-integration', 'mid-integration', 'low-operations', 'mid-operations');
 CREATE TYPE location_country AS ENUM ('AU', 'ZA', 'UK');
 CREATE TYPE config_type AS ENUM ('rclone', 'ssh', 'aws', 'gcs');
 CREATE TYPE storage_type AS ENUM ('filesystem', 'objectstore', 'tape');
