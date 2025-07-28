@@ -36,7 +36,8 @@ class Register(HttpUser):
         storage_config = {
             "location": "test_location",
             "name": "test_source",
-            "type": "disk",
+            "location_type": "local-dev",
+            "storage_type": "filesystem",
             "interface": "posix",
             "root_directory": "/",
             "config": {

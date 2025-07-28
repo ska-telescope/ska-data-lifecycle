@@ -78,7 +78,8 @@ storage:
   storage1:
     location: test_location
     name: test_source
-    type: disk
+    location_type: local-dev
+    storage_type: filesystem
     interface: posix
     root_directory: /
     config:
@@ -89,7 +90,8 @@ storage:
   storage2:
     location: test_location
     name: test_destination
-    type: disk
+    location_type: local-dev
+    storage_type: filesystem
     interface: posix
     root_directory: /
     config:
@@ -100,7 +102,8 @@ storage:
   storage3:
     location: test_location
     name: s3_destination
-    type: disk
+    location_type: local-dev
+    storage_type: objectstore
     interface: s3
     root_directory: /
     config:
