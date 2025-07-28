@@ -1,6 +1,7 @@
 """Locust migration test script."""
 
 import os
+import re
 import sys
 import git
 
@@ -36,7 +37,7 @@ class Migrate(HttpUser):
         """Migration callback service."""
         data_item = get_data_item(record["oid"], record["destination_storage_id"])
         dt = datetime.fromisoformat(
-            record["job_status"]["startTime"].replace("Z", "+00:00")
+            re.sub(r'\.(\d{1,6})\d*', r'.\1', record["job_status"]["startTime"].replace("Z", "+00:00"))
         )  # Handle ISO format
         request_meta = {
             "request_type": "migration",
