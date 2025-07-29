@@ -1,5 +1,7 @@
 """dlm_storage REST client."""
 
+from enum import Enum
+
 import requests
 
 from ska_dlm.typer_types import JsonObjectArg
@@ -9,15 +11,67 @@ STORAGE_URL = ""
 TOKEN: str = None
 
 
+class LocationType(str, Enum):
+    """Location type."""
+
+    LOCAL_DEV = "local-dev"
+    LOW_INTEGRATION = "low-integration"
+    MID_INTEGRATION = "mid-integration"
+    LOW_OPERATIONS = "low-operations"
+    MID_OPERATIONS = "mid-operations"
+
+
+class LocationCountry(str, Enum):
+    """Location country."""
+
+    AU = "AU"
+    ZA = "ZA"
+    UK = "UK"
+
+
+class StorageType(str, Enum):
+    """Storage type."""
+
+    FILESYSTEM = "filesystem"
+    OBJECTSTORE = "objectstore"
+    TAPE = "tape"
+
+
+class StorageInterface(str, Enum):
+    """Storage interface."""
+
+    POSIX = "posix"
+    S3 = "s3"
+    SFTP = "sftp"
+    HTTPS = "https"
+
+
+class ConfigType(str, Enum):
+    """Config type."""
+
+    RCLONE = "rclone"
+    SSH = "ssh"
+    AWS = "aws"
+    GCS = "gcs"
+
+
+class PhaseType(str, Enum):
+    """Phase type / resilience level."""
+
+    GAS = "GAS"
+    LIQUID = "LIQUID"
+    SOLID = "SOLID"
+
+
 # pylint: disable=unused-argument
 def init_location(
-    location_name: str = "",
-    location_type: str = "",
-    location_country: str = "",
+    location_name: str,
+    location_type: LocationType,
+    location_country: LocationCountry | None = None,
     location_city: str = "",
     location_facility: str = "",
 ) -> str:
-    """Initialise a new location for a storage by specifying the location_name or location_id."""
+    """Initialise a new location for a storage by specifying the location_name & location_type."""
     params = {k: v for k, v in locals().items() if v}
     headers = {"Authorization": f"Bearer {TOKEN}"}
     response = requests.post(
@@ -29,18 +83,18 @@ def init_location(
 
 # pylint: disable=unused-argument,too-many-arguments,too-many-positional-arguments
 def init_storage(
-    storage_name: str = "",
-    location_name: str = "",
-    storage_interface: str = "",
-    root_directory: str = "",
-    location_id: str = "",
-    storage_type: str = "",
+    storage_name: str,
+    storage_type: StorageType,
+    root_directory: str,
+    storage_interface: StorageInterface,
+    location_id: str | None = None,
+    location_name: str | None = None,
     storage_capacity: int = -1,
-    storage_phase: str = "GAS",
-    json_data: dict | None = None,
+    storage_phase: PhaseType = PhaseType.GAS,
+    rclone_config: dict | None = None,
 ) -> str:
     """
-    Initialise a new storage.
+    Initialise a new storage. Either location_id or location_name is required.
 
     location_name or location_id is required.
 
@@ -62,20 +116,20 @@ def init_storage(
         reserved storage capacity in bytes
     storage_phase
         one of "GAS", "LIQUID", "SOLID"
-    json_data
+    rclone_config
         extra rclone values such as secrets required for connection
 
     Returns
     -------
     str
-        Either a storage_ID or an empty string
+        Either a storage_id or an empty string
     """
     params = {k: v for k, v in locals().items() if v}
     headers = {"Authorization": f"Bearer {TOKEN}"}
     response = requests.post(
         f"{STORAGE_URL}/storage/init_storage",
         params=params,
-        json=json_data,
+        json=rclone_config,
         headers=headers,
         timeout=60,
     )
@@ -112,7 +166,10 @@ def query_location(location_name: str = "", location_id: str = "") -> list:
 
 # pylint: disable=unused-argument
 def create_storage_config(
-    config: dict, storage_id: str = "", storage_name: str = "", config_type: str = "rclone"
+    config: dict,
+    storage_id: str = "",
+    storage_name: str = "",
+    config_type: ConfigType = ConfigType.RCLONE,
 ) -> str:
     """
     Create a new record in the storage_config table for a storage with the given id.

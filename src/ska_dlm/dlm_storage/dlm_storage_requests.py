@@ -2,6 +2,7 @@
 
 import logging
 import random
+from enum import Enum
 
 import requests
 from fastapi import FastAPI, Request
@@ -29,6 +30,58 @@ rest = fastapi_auto_annotate(
         license_info={"name": "BSD-3-Clause", "identifier": "BSD-3-Clause"},
     )
 )
+
+
+class LocationType(str, Enum):
+    """Location type."""
+
+    LOCAL_DEV = "local-dev"
+    LOW_INTEGRATION = "low-integration"
+    MID_INTEGRATION = "mid-integration"
+    LOW_OPERATIONS = "low-operations"
+    MID_OPERATIONS = "mid-operations"
+
+
+class LocationCountry(str, Enum):
+    """Location country."""
+
+    AU = "AU"
+    ZA = "ZA"
+    UK = "UK"
+
+
+class StorageType(str, Enum):
+    """Storage type."""
+
+    FILESYSTEM = "filesystem"
+    OBJECTSTORE = "objectstore"
+    TAPE = "tape"
+
+
+class StorageInterface(str, Enum):
+    """Storage interface."""
+
+    POSIX = "posix"
+    S3 = "s3"
+    SFTP = "sftp"
+    HTTPS = "https"
+
+
+class ConfigType(str, Enum):
+    """Config type."""
+
+    RCLONE = "rclone"
+    SSH = "ssh"
+    AWS = "aws"
+    GCS = "gcs"
+
+
+class PhaseType(str, Enum):
+    """Phase type / resilience level."""
+
+    GAS = "GAS"
+    LIQUID = "LIQUID"
+    SOLID = "SOLID"
 
 
 # pylint: disable=unused-argument
@@ -92,26 +145,26 @@ def query_location(location_name: str = "", location_id: str = "") -> list[dict]
 # pylint: disable=too-many-arguments,unused-argument,too-many-positional-arguments
 def init_storage(
     storage_name: str,
-    storage_type: str,
-    storage_interface: str,
+    storage_type: StorageType,
     root_directory: str,
+    storage_interface: StorageInterface,
     location_id: str | None = None,
     location_name: str | None = None,
     storage_capacity: int = -1,
-    storage_phase: str = "GAS",
+    storage_phase: PhaseType = PhaseType.GAS,
     rclone_config: JsonObjectOption = None,
 ) -> str:
     """
-    Initialise a new storage.
+    Initialise a new storage. Either location_id or location_name is required.
 
     Parameters
     ----------
     storage_name
         An organisation or owner name for the storage.
     storage_type
-        high level type of the storage: 'filesystem', 'objectstore' or 'tape'
+        high level type of the storage, from enum StorageType
     storage_interface
-        storage interface for rclone access, e.g. "posix", "s3"
+        storage interface for rclone access, from enum StorageInterface
     root_directory
         data directory as an absolute path on the remote storage endpoint
     location_id
@@ -121,14 +174,14 @@ def init_storage(
     storage_capacity
         reserved storage capacity in bytes
     storage_phase
-        one of "GAS", "LIQUID", "SOLID"
+        from the enum PhaseType
     rclone_config
         extra rclone values such as secrets required for connection
 
     Returns
     -------
     str
-        Either a storage_ID or an empty string
+        Either a storage_id or an empty string
     """
     provided_args = dict(locals())
     mandatory_keys = [
@@ -168,7 +221,7 @@ def create_storage_config(
     config: JsonObjectArg,
     storage_id: str = "",
     storage_name: str = "",
-    config_type: str = "rclone",
+    config_type: ConfigType = ConfigType.RCLONE,
 ) -> str:
     """Create a new record in the storage_config table for a given storage_id.
 
@@ -193,6 +246,11 @@ def create_storage_config(
     UnmetPreconditionForOperation
         Neither storage_id nor storage_name is specified.
     """
+    if config_type not in set(ConfigType):
+        raise ValueError(
+            f"Invalid item type {config_type}.
+        )
+
     if not storage_name and not storage_id:
         raise UnmetPreconditionForOperation("Neither storage_id nor storage_name is specified.")
     if storage_name:
@@ -210,7 +268,7 @@ def create_storage_config(
 @cli.command()
 @rest.get("/storage/get_storage_config", response_model=list[dict])
 def get_storage_config(
-    storage_id: str = "", storage_name: str = "", config_type: str = "rclone"
+    storage_id: str = "", storage_name: str = "", config_type: ConfigType = ConfigType.RCLONE
 ) -> list[dict]:
     """Get the storage configuration entry for a particular storage backend.
 
@@ -221,7 +279,7 @@ def get_storage_config(
     storage_name
         the name of the storage volume, by default ""
     config_type
-        query only the specified type, by default "rclone"
+        query only the specified config_type, by default "rclone"
 
     Returns
     -------
@@ -247,7 +305,7 @@ def get_storage_config(
         params = {
             "limit": 1000,
             "storage_id": f"eq.{storage_id}",
-            "config_type": f"eq.{config_type}",
+            "config_type": f"eq.{config_type.value}",
         }
     result = DB.select(CONFIG.DLM.storage_config_table, params=params)
     return [entry["config"] for entry in result] if result else []
@@ -310,7 +368,8 @@ def check_storage_access(
     storage_id = storages[0]["storage_id"]
     storage_name = storages[0]["storage_name"]
     config = get_storage_config(
-        storage_id=storage_id, storage_name=storage_name, config_type="rclone"
+        storage_id=storage_id,
+        storage_name=storage_name,  # config_type="rclone"
     )
     if not config:
         raise UnmetPreconditionForOperation(
@@ -392,21 +451,21 @@ def rclone_delete(volume: str, fpath: str) -> bool:
 @rest.post("/storage/init_location", response_model=str)
 def init_location(
     location_name: str,
-    location_type: str,
-    location_country: str = "",
+    location_type: LocationType,
+    location_country: LocationCountry | None = None,
     location_city: str = "",
     location_facility: str = "",
 ) -> str:
-    """Initialise a new storage location.
+    """Initialise a new location for a storage by specifying the location_name and location_type.
 
     Parameters
     ----------
     location_name
         the orgization or owner's name managing the storage location.
     location_type
-        the location type, e.g. "low-operational"
+        the location type, from the enum LocationType
     location_country
-        the location country name (AU, ZA or UK)
+        the location country, from the enum LocationCountry
     location_city
         the location city name
     location_facility
