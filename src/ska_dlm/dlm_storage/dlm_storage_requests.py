@@ -248,7 +248,7 @@ def create_storage_config(
     """
     if config_type not in set(ConfigType):
         raise ValueError(
-            f"Invalid item type {config_type}.
+            f"Invalid item type {config_type}."
         )
 
     if not storage_name and not storage_id:

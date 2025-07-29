@@ -71,7 +71,21 @@ def init_location(
     location_city: str = "",
     location_facility: str = "",
 ) -> str:
-    """Initialise a new location for a storage by specifying the location_name & location_type."""
+    """Initialise a new location for a storage by specifying the location_name and location_type.
+
+    Parameters
+    ----------
+    location_name
+        the orgization or owner's name managing the storage location.
+    location_type
+        the location type, from the enum LocationType
+    location_country
+        the location country, from the enum LocationCountry
+    location_city
+        the location city name
+    location_facility
+        the location facility name
+    """
     params = {k: v for k, v in locals().items() if v}
     headers = {"Authorization": f"Bearer {TOKEN}"}
     response = requests.post(
