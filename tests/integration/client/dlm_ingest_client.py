@@ -25,8 +25,21 @@ class ItemType(str, Enum):
     """A directory superset with parents."""
 
 
+class PhaseType(str, Enum):
+    """Phase type / resilience level."""
+
+    GAS = "GAS"
+    LIQUID = "LIQUID"
+    SOLID = "SOLID"
+    PLASMA = "PLASMA"
+
+
 # pylint: disable=unused-argument
-def init_data_item(item_name: str | None = None, phase: str = "GAS", json_data: str = "") -> str:
+def init_data_item(
+    item_name: str | None = None,
+    uid_phase: PhaseType = PhaseType.GAS,  # TODO: add logic for oid_phase
+    json_data: JsonObjectOption = None,
+) -> str:
     """Initialise a new data_item.
 
     item_name or json_data is required.
@@ -35,8 +48,8 @@ def init_data_item(item_name: str | None = None, phase: str = "GAS", json_data: 
     ----------
     item_name
         the item_name, can be empty, but then json_data has to be specified.
-    phase
-        the phase this item is set to (usually inherited from the storage)
+    uid_phase
+        the phase type of this item (usually inherited from the storage).
     json_data
         data item table values.
 

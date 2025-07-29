@@ -61,6 +61,7 @@ class PhaseType(str, Enum):
     GAS = "GAS"
     LIQUID = "LIQUID"
     SOLID = "SOLID"
+    PLASMA = "PLASMA"
 
 
 # pylint: disable=unused-argument

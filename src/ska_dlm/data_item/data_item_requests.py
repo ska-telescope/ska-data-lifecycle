@@ -1,6 +1,7 @@
 """Convenience functions to update data_item records."""
 
 import logging
+from enum import Enum
 
 from fastapi import APIRouter
 
@@ -16,6 +17,16 @@ logger = logging.getLogger(__name__)
 cli = ExceptionHandlingTyper()
 
 rest = fastapi_auto_annotate(APIRouter())
+
+
+class ItemState(str, Enum):
+    """Item state."""
+
+    INITIALISED = "INITIALISED"
+    READY = "READY"
+    CORRUPTED = "CORRUPTED"
+    EXPIRED = "EXPIRED"
+    DELETED = "DELETED"
 
 
 @cli.command()
@@ -156,7 +167,7 @@ def set_metadata(uid: str, metadata_post: JsonObjectOption = None) -> dict:
 
 @cli.command()
 @rest.patch("/request/set_state", response_model=dict)
-def set_state(uid: str, state: str) -> dict:
+def set_state(uid: str, state: ItemState) -> dict:
     """Set the state field of the uid data_item.
 
     Parameters
@@ -171,6 +182,12 @@ def set_state(uid: str, state: str) -> dict:
     dict
         the updated data item entry
     """
+
+    if state not in set(ItemState):
+        raise ValueError(
+            f"Invalid item state {state}. Must be one of {[e.value for e in ItemState]}"
+        )
+
     return update_data_item(uid=uid, post_data={"item_state": state})
 
 

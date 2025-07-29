@@ -82,6 +82,7 @@ class PhaseType(str, Enum):
     GAS = "GAS"
     LIQUID = "LIQUID"
     SOLID = "SOLID"
+    PLASMA = "PLASMA"
 
 
 # pylint: disable=unused-argument
@@ -194,6 +195,7 @@ def init_storage(
         "root_directory",
     ]
     # TODO remove keys none values
+
     post_data = {}
     if rclone_config:
         json_dict = rclone_config
@@ -212,6 +214,23 @@ def init_storage(
                 post_data.update({k: provided_args[k]})
             else:
                 raise InvalidQueryParameters(f"Argument {k} is mandatory!")
+
+    if storage_type not in set(StorageType):
+        raise ValueError(
+            f"Invalid storage type {storage_type}. Must be one of {[e.value for e in StorageType]}"
+        )
+
+    if storage_interface not in set(StorageInterface):
+        raise ValueError(
+            f"Invalid storage interface {storage_interface}. "
+            f"Must be one of {[e.value for e in StorageInterface]}"
+        )
+
+    if storage_phase not in set(PhaseType):
+        raise ValueError(
+            f"Invalid storage phase {storage_phase}. Must be one of {[e.value for e in PhaseType]}"
+        )
+
     return DB.insert(CONFIG.DLM.storage_table, json=post_data)[0]["storage_id"]
 
 
@@ -246,15 +265,16 @@ def create_storage_config(
     UnmetPreconditionForOperation
         Neither storage_id nor storage_name is specified.
     """
-    if config_type not in set(ConfigType):
-        raise ValueError(
-            f"Invalid item type {config_type}."
-        )
 
     if not storage_name and not storage_id:
         raise UnmetPreconditionForOperation("Neither storage_id nor storage_name is specified.")
     if storage_name:
         storage_id = query_storage(storage_name=storage_name)[0]["storage_id"]
+    if config_type not in set(ConfigType):
+        raise ValueError(
+            f"Invalid item type {config_type}. Must be one of {[e.value for e in ConfigType]}"
+        )
+
     post_data = {
         "storage_id": storage_id,
         "config": config,
@@ -301,6 +321,11 @@ def get_storage_config(
             storage_id = storage[0]["storage_id"]
         else:
             raise UnmetPreconditionForOperation(f"Can't get storage_id for {storage_name}")
+
+    if config_type not in set(ConfigType):
+        raise ValueError(
+            f"Invalid item type {config_type}. Must be one of {[e.value for e in ConfigType]}"
+        )
     if not params:
         params = {
             "limit": 1000,
@@ -488,12 +513,19 @@ def init_location(
     if query_location(location_name):
         raise ValueAlreadyInDB(f"A location with this name exists already: {location_name}")
     post_data = {"location_name": location_name, "location_type": location_type}
+
     if location_country:
+        if location_country not in set(LocationCountry):
+            raise ValueError(
+                f"Invalid location country {location_country}. "
+                f"Must be one of {[e.value for e in LocationCountry]}"
+            )
         post_data["location_country"] = location_country
     if location_city:
         post_data["location_city"] = location_city
     if location_facility:
         post_data["location_facility"] = location_facility
+
     return DB.insert(CONFIG.DLM.location_table, json=post_data)[0]["location_id"]
 
 

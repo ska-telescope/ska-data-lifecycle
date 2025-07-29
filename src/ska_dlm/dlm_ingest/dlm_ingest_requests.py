@@ -43,6 +43,15 @@ class ItemType(str, Enum):
     """A directory superset with parents."""
 
 
+class PhaseType(str, Enum):
+    """Phase type / resilience level."""
+
+    GAS = "GAS"
+    LIQUID = "LIQUID"
+    SOLID = "SOLID"
+    PLASMA = "PLASMA"
+
+
 # pylint: disable=unused-argument
 @rest.exception_handler(ValueAlreadyInDB)
 def valuealreadyindb_exception_handler(request: Request, exc: ValueAlreadyInDB):
@@ -81,7 +90,7 @@ cli.exception_handler(ValueAlreadyInDB)(dump_short_stacktrace)
 @rest.post("/ingest/init_data_item", response_model=str)
 def init_data_item(
     item_name: str | None = None,
-    phase: str = "GAS",
+    uid_phase: PhaseType = PhaseType.GAS,  # TODO: add logic for oid_phase
     json_data: JsonObjectOption = None,
     authorization: Annotated[str | None, Header()] = None,
 ) -> str:
@@ -93,8 +102,8 @@ def init_data_item(
     ----------
     item_name
         the item_name, can be empty, but then json_data has to be specified.
-    phase
-        the phase this item is set to (usually inherited from the storage)
+    uid_phase
+        the phase type of this item (usually inherited from the storage).
     json_data
         data item table values.
     authorization
@@ -117,7 +126,7 @@ def init_data_item(
             raise ValueError("Username not found in profile")
 
     if item_name:
-        post_data = {"item_name": item_name, "uid_phase": phase, "item_owner": username}
+        post_data = {"item_name": item_name, "uid_phase": uid_phase, "item_owner": username}
     elif json_data:
         post_data = json_data
     else:
@@ -234,7 +243,7 @@ def register_data_item(  # noqa: C901
 
     # (7) Populate the metadata column in the database
     if metadata is None:
-        logger.warning("No metadata provided. Initializing metadata with uid and item_name.")
+        logger.warning("No metadata provided. Initialising metadata with uid and item_name.")
         metadata = {}
 
     metadata["uid"] = uid
