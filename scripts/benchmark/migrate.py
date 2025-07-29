@@ -21,8 +21,13 @@ from locust.exception import StopUser
 @events.init_command_line_parser.add_listener
 def init_parser(parser):
     """Add custom configuration option."""
-    parser.add_argument("--migration_config", help="Migration Config")
-    parser.add_argument("--output_file", help="Statistics output", default="./bench.json")
+    parser.add_argument("--migration_config",
+                        env_var="LOCUST_MIGRATION_CONFIG",
+                        help="Migration Config")
+    parser.add_argument("--output_file",
+                        env_var="LOCUST_MIGRATION_OUTPUT",
+                        help="Statistics output",
+                        default="./bench.json")
 
 
 class Migrate(HttpUser):
