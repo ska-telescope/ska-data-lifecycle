@@ -1,0 +1,90 @@
+{{- if .Values.benchmark.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ska-dlm.fullname" . }}-benchmark
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ska-dlm.benchmark.labels" . | indent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8089
+      targetPort: 8089
+      protocol: TCP
+  selector:
+    component: {{ .Values.benchmark.component }}
+    subsystem: {{ .Values.benchmark.subsystem }}
+---
+{{- if eq .Values.benchmark.name "migrate" }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ska-dlm.fullname" . }}-migrate-benchmark-config
+  namespace: {{ .Release.Namespace }}
+data:
+  {{ .Values.benchmark.config.sourceFile}}: |-
+{{ .Files.Get (printf "benchmark/%s" .Values.benchmark.config.sourceFile) | indent 4 }}
+{{- end }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ska-dlm.fullname" . }}-benchmark
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ska-dlm.benchmark.labels" . | indent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: {{ .Values.benchmark.component }}
+      subsystem: {{ .Values.benchmark.subsystem }}
+  template:
+    metadata:
+      labels:
+        {{- include "ska-dlm.benchmark.labels" . | indent 8 }}
+    spec:
+      containers:
+      - name: benchmark
+        image: {{ .Values.benchmark.image }}:{{ .Values.benchmark.version }}
+        imagePullPolicy: {{ .Values.benchmark.imagePullPolicy }}
+        {{- if eq .Values.benchmark.name "migrate" }}
+        volumeMounts:
+        - name: migrate-benchmark-configmap
+          mountPath: {{ .Values.benchmark.config.mountPath | quote}}
+          subPath: {{ .Values.benchmark.config.sourceFile }}
+        {{- end }}
+        command:
+        {{- if eq .Values.benchmark.name "register" }}
+        - locust 
+        - -f 
+        - /app/scripts/benchmark/register.py
+        {{- else if eq .Values.benchmark.name "migrate" }}
+        - locust 
+        - -f 
+        - /app/scripts/benchmark/migrate.py
+        {{- end }}
+        {{- if eq .Values.benchmark.name "register" }}
+        env:
+        - name: LOCUST_HOST
+          value: {{ .Values.benchmark.config.host }}
+        - name: LOCUST_TOKEN
+          value: {{ .Values.benchmark.config.token }}
+        {{- else if eq .Values.benchmark.name "migrate" }}
+        env:
+        - name: LOCUST_HOST
+          value: {{ .Values.benchmark.config.host }}
+        - name: LOCUST_TOKEN
+          value: {{ .Values.benchmark.config.token }}
+        - name: LOCUST_MIGRATION_CONFIG
+          value: {{ .Values.benchmark.config.mountPath }}
+        {{- end }}
+      {{- if eq .Values.benchmark.name "migrate" }}
+      volumes:
+      - name: migrate-benchmark-configmap
+        configMap:
+          name: {{ include "ska-dlm.fullname" . }}-migrate-benchmark-config
+      {{- end }}
+{{- end }}
