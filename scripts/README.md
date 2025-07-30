@@ -29,8 +29,6 @@ Within a configuration, a user can:
         - destination_storage: name of destination storage endpoint
 
 - dlm:
-    - url: url of gateway
-    - token: access API token
     - migration_polltime: number of seconds delay before checking migration job state
 
 - storage:
@@ -70,8 +68,6 @@ benchmarks:
     destination_path: aussrc/object.bin
 
 dlm:
-  url: http://localhost:8000/
-  token: <token>
   migration_polltime: 5
 
 storage:
@@ -121,6 +117,7 @@ Create a locust configuration file: `migrate.conf`
 
 ```
 host = <url of gateway>
+token = <auth token>
 migration_config = <path to the migration config yaml file>
 output_file = <output file path of stats>
 ```
