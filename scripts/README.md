@@ -35,8 +35,9 @@ Within a configuration, a user can:
     - storage<integer>: can define 1 or many
       - location: name of storage location
       - name: storage name
-      - type: type of storage endpoint
-      - interface: posix, s3 etc
+      - location_type: location type ('local-dev', 'low-integration', 'mid-integration', 'low-operations', 'mid-operations')
+      - storage_type: type of storage endpoint ('filesystem', 'objectstore', 'tape')
+      - interface: storage interface ('posix', 's3', 'sftp', 'https')
       - root_directory: root directory of mount point.
       - config: RClone config
 
