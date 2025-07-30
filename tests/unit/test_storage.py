@@ -44,3 +44,20 @@ def test_initialise_storage_config():
     assert len(config_id) == 36
     # configure rclone
     assert dlm_storage.create_rclone_config(config) is True
+
+
+def test_invalid_storage_type():
+    """Test that an invalid storage_type raises a ValueError."""
+    location_id = dlm_storage.init_location("MyHostInvalid", "low-integration")
+
+    with pytest.raises(ValueError) as exc_info:
+        dlm_storage.init_storage(
+            storage_name="MyDiskInvalid",
+            location_id=location_id,
+            root_directory="/data/",
+            storage_type="disk",  # Invalid enum
+            storage_interface="posix",
+            storage_capacity=100000000,
+        )
+    assert "Invalid storage type disk" in str(exc_info.value)
+    assert "filesystem" in str(exc_info.value)

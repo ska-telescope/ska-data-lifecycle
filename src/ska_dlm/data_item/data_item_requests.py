@@ -182,7 +182,6 @@ def set_state(uid: str, state: ItemState) -> dict:
     dict
         the updated data item entry
     """
-
     if state not in set(ItemState):
         raise ValueError(
             f"Invalid item state {state}. Must be one of {[e.value for e in ItemState]}"
