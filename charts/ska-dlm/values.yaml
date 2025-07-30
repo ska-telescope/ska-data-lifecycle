@@ -102,7 +102,7 @@ rclone:
   component: rclone
   subsystem: data-lifecycle-management
   image: rclone/rclone
-  version: "1.65"
+  version: "1.70.3"
   imagePullPolicy: Always
   replicas: 1
 
