@@ -265,7 +265,6 @@ def create_storage_config(
     UnmetPreconditionForOperation
         Neither storage_id nor storage_name is specified.
     """
-
     if not storage_name and not storage_id:
         raise UnmetPreconditionForOperation("Neither storage_id nor storage_name is specified.")
     if storage_name:
