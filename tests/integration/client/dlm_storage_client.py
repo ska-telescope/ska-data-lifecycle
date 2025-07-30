@@ -85,7 +85,7 @@ def init_location(
     location_city
         the location city name
     location_facility
-        the location facility name
+        the location facility name, from table location_facility
     """
     params = {k: v for k, v in locals().items() if v}
     headers = {"Authorization": f"Bearer {TOKEN}"}

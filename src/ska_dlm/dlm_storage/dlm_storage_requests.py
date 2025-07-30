@@ -32,6 +32,38 @@ rest = fastapi_auto_annotate(
 )
 
 
+@rest.get("/storage/query_location_facility", response_model=list[str])
+def query_location_facility() -> list[str]:
+    """Query the location_facility table for valid facilities."""
+    params = {"select": "id"}
+    rows = DB.select("location_facility", params=params)
+    return [row["id"] for row in rows]
+
+
+class LocationFacility:
+    """Gets allowed location facility values from the database."""
+
+    _valid_values: set[str] = set()
+    _loaded = False
+
+    @classmethod
+    def _load(cls):
+        cls._valid_values = set(query_location_facility())
+        cls._loaded = True
+
+    @classmethod
+    def is_valid(cls, value: str) -> bool:
+        """Return True if the given value is a valid location facility."""
+        cls._load()
+        return value in cls._valid_values
+
+    @classmethod
+    def all(cls) -> set[str]:
+        """Return all valid location facility values."""
+        cls._load()
+        return cls._valid_values.copy()
+
+
 class LocationType(str, Enum):
     """Location type."""
 
@@ -493,7 +525,7 @@ def init_location(
     location_city
         the location city name
     location_facility
-        the location facility name
+        the location facility name, from table location_facility
 
     Returns
     -------
@@ -523,6 +555,11 @@ def init_location(
     if location_city:
         post_data["location_city"] = location_city
     if location_facility:
+        if not LocationFacility.is_valid(location_facility):
+            raise ValueError(
+                f"Invalid location facility: {location_facility}. "
+                f"Must be one of {LocationFacility.all()}"
+            )
         post_data["location_facility"] = location_facility
 
     return DB.insert(CONFIG.DLM.location_table, json=post_data)[0]["location_id"]

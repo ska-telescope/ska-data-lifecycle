@@ -11,15 +11,24 @@ from ska_dlm.exceptions import InvalidQueryParameters
 
 def test_location_init():
     """Test initialisation on a location."""
-    # This returns an empty string if unsuccessful
-    with pytest.raises(InvalidQueryParameters):
-        dlm_storage.init_location(location_name="name", location_type="")
-    with pytest.raises(InvalidQueryParameters):
-        dlm_storage.init_location(location_name="", location_type="type")
-
-    dlm_storage.init_location("TestLocation", "low-integration")
-    location = dlm_storage.query_location(location_name="TestLocation")[0]
+    # Successful initialisation
+    dlm_storage.init_location("TestLocation1", "low-integration")
+    location = dlm_storage.query_location(location_name="TestLocation1")[0]
     assert location["location_type"] == "low-integration"
+
+    # Unsuccessful initialisations
+    with pytest.raises(InvalidQueryParameters):
+        dlm_storage.init_location(location_name="TestLocation2", location_type="")
+
+    with pytest.raises(InvalidQueryParameters):
+        dlm_storage.init_location(location_name="", location_type="low-integration")
+
+    with pytest.raises(ValueError, match="Invalid location facility"):
+        dlm_storage.init_location(
+            location_name="InvalidFacility",
+            location_type="low-integration",
+            location_facility="InvalidLocationFacility",
+        )
 
 
 def test_initialise_storage_config():
