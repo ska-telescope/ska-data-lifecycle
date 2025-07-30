@@ -21,6 +21,9 @@ from locust.exception import StopUser
 @events.init_command_line_parser.add_listener
 def init_parser(parser):
     """Add custom configuration option."""
+    parser.add_argument("--token",
+                        env_var="LOCUST_TOKEN",
+                        help="Bearer token")
     parser.add_argument("--migration_config",
                         env_var="LOCUST_MIGRATION_CONFIG",
                         help="Migration Config")
@@ -36,7 +39,8 @@ class Migrate(HttpUser):
     def on_start(self):
         """Startup function called once when a Locust user starts."""
         self.bench_config = load_yaml(self.environment.parsed_options.migration_config)
-        setup_clients(self.bench_config["dlm"]["url"], self.bench_config["dlm"]["token"])
+        setup_clients(self.environment.parsed_options.host,
+                      self.environment.parsed_options.token)
 
     def migration_status(self, record):
         """Migration callback service."""
