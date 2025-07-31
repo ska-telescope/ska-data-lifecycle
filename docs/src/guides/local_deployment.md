@@ -18,7 +18,7 @@ The following sections describe how to perform a data item registration and migr
 # check if the location MyHost already exists
 ska-dlm storage query-location --location-name MyHost
 # initialise location (if it doesn't already exist)
-ska-dlm storage init-location MyHost local
+ska-dlm storage init-location MyHost local-dev
 
 # check if the storage MyDisk already exists
 ska-dlm storage query-storage --storage-name MyDisk
@@ -61,7 +61,7 @@ ska-dlm --help
 from ska_dlm import dlm_storage, dlm_ingest, dlm_migration, dlm_request
 
 location_name = "MyLocation"
-location_type = "local"
+location_type = "local-dev"
 
 # check if the location 'MyLocation' is already known to DLM
 dlm_storage.query_location(location_name=location_name)

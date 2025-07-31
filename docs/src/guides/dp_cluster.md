@@ -37,7 +37,7 @@ session = Session()
 ```python
 # create location details
 location_name = "Pawsey"
-location_type = "HPC centre"
+location_type = "low-integration"
 
 location = session.get(
     f"{DLM_URL}/storage/query_location",
