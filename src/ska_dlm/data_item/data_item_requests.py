@@ -174,10 +174,10 @@ def set_state(uid: str, state: ItemState) -> dict:
     """
     try:
         ItemState(state)  # Check that the input is a valid enum
-    except ValueError:
+    except ValueError as exc:
         raise ValueError(
             f"Invalid item state {state}. Must be one of {[e.value for e in ItemState]}"
-        )
+        ) from exc
 
     return update_data_item(uid=uid, post_data={"item_state": state})
 

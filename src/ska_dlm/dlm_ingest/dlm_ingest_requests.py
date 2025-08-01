@@ -179,10 +179,10 @@ def register_data_item(  # noqa: C901
             raise ValueError("Username not found in profile")
     try:
         ItemType(item_type)  # Check that the input is a valid enum
-    except ValueError:
+    except ValueError as exc:
         raise ValueError(
             f"Invalid item type {item_type}. Must be one of {[e.value for e in ItemType]}"
-        )
+        ) from exc
 
     # (1)
     storages = query_storage(storage_name=storage_name, storage_id=storage_id)

@@ -98,7 +98,7 @@ def query_location(location_name: str = "", location_id: str = "") -> list[dict]
 
 @cli.command()
 @rest.post("/storage/init_storage", response_model=str)
-# pylint: disable=too-many-arguments,unused-argument,too-many-positional-arguments
+# pylint: disable=too-many-arguments,unused-argument,too-many-positional-arguments, too-many-locals
 def init_storage(
     storage_name: str,
     storage_type: StorageType,
@@ -172,24 +172,25 @@ def init_storage(
 
     try:
         StorageType(storage_type)  # Check that the input is a valid enum
-    except ValueError:
+    except ValueError as exc:
         raise ValueError(
             f"Invalid storage type {storage_type}. Must be one of {[e.value for e in StorageType]}"
-        )
+        ) from exc
 
     try:
         StorageInterface(storage_interface)  # Check that the input is a valid enum
-    except ValueError:
+    except ValueError as exc:
         raise ValueError(
-            f"Invalid storage interface {storage_interface}. Must be one of {[e.value for e in StorageInterface]}"
-        )
+            f"Invalid storage interface {storage_interface}. "
+            f"Must be one of {[e.value for e in StorageInterface]}"
+        ) from exc
 
     try:
         PhaseType(storage_phase)  # Check that the input is a valid enum
-    except ValueError:
+    except ValueError as exc:
         raise ValueError(
             f"Invalid storage phase {storage_phase}. Must be one of {[e.value for e in PhaseType]}"
-        )
+        ) from exc
 
     return DB.insert(CONFIG.DLM.storage_table, json=post_data)[0]["storage_id"]
 
@@ -231,10 +232,10 @@ def create_storage_config(
         storage_id = query_storage(storage_name=storage_name)[0]["storage_id"]
     try:
         ConfigType(config_type)  # Check that the input is a valid enum
-    except ValueError:
+    except ValueError as exc:
         raise ValueError(
             f"Invalid config type {config_type}. Must be one of {[e.value for e in ConfigType]}"
-        )
+        ) from exc
 
     post_data = {
         "storage_id": storage_id,
@@ -285,10 +286,10 @@ def get_storage_config(
 
     try:
         ConfigType(config_type)  # Check that the input is a valid enum
-    except ValueError:
+    except ValueError as exc:
         raise ValueError(
             f"Invalid config type {config_type}. Must be one of {[e.value for e in ConfigType]}"
-        )
+        ) from exc
     if not params:
         params = {
             "limit": 1000,
@@ -480,11 +481,11 @@ def init_location(
     if location_country:
         try:
             LocationCountry(location_country)  # Check that the input is a valid enum
-        except ValueError:
+        except ValueError as exc:
             raise ValueError(
                 f"Invalid location country {location_country}. "
                 f"Must be one of {[e.value for e in LocationCountry]}"
-            )
+            ) from exc
         post_data["location_country"] = location_country
     if location_city:
         post_data["location_city"] = location_city
