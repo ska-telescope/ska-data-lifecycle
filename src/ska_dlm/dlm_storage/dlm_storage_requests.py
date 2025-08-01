@@ -9,13 +9,13 @@ from fastapi.responses import JSONResponse
 
 import ska_dlm
 from ska_dlm.common_types import (
+    ConfigType,
+    LocationCountry,
     LocationFacility,
+    LocationType,
     PhaseType,
     StorageInterface,
     StorageType,
-    ConfigType,
-    LocationType,
-    LocationCountry,
 )
 from ska_dlm.dlm_db.db_access import DB
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper

@@ -10,7 +10,6 @@ from ska_dlm.dlm_db.db_access import DB
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
 from ska_dlm.fastapi_utils import fastapi_auto_annotate
 
-
 logger = logging.getLogger(__name__)
 
 cli = ExceptionHandlingTyper()
