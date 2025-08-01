@@ -2,13 +2,13 @@
 
 import logging
 from datetime import datetime, timedelta, timezone
-from enum import Enum
 
 import ska_ser_logging
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 import ska_dlm
+from ska_dlm.common_types import ItemState, PhaseType
 from ska_dlm.data_item.data_item_requests import query_data_item
 from ska_dlm.data_item.data_item_requests import rest as data_item_requests
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
@@ -30,25 +30,6 @@ rest = fastapi_auto_annotate(
     )
 )
 rest.include_router(data_item_requests)
-
-
-class ItemState(str, Enum):
-    """Item state."""
-
-    INITIALISED = "INITIALISED"
-    READY = "READY"
-    CORRUPTED = "CORRUPTED"
-    EXPIRED = "EXPIRED"
-    DELETED = "DELETED"
-
-
-class PhaseType(str, Enum):
-    """Phase type / resilience level."""
-
-    GAS = "GAS"
-    LIQUID = "LIQUID"
-    SOLID = "SOLID"
-    PLASMA = "PLASMA"
 
 
 # pylint: disable=unused-argument

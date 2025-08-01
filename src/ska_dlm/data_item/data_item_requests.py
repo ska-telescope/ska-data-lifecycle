@@ -1,11 +1,11 @@
 """Convenience functions to update data_item records."""
 
 import logging
-from enum import Enum
 
 from fastapi import APIRouter
 
 from ska_dlm import CONFIG
+from ska_dlm.common_types import ItemState
 from ska_dlm.dlm_db.db_access import DB
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
 from ska_dlm.exceptions import InvalidQueryParameters
@@ -17,16 +17,6 @@ logger = logging.getLogger(__name__)
 cli = ExceptionHandlingTyper()
 
 rest = fastapi_auto_annotate(APIRouter())
-
-
-class ItemState(str, Enum):
-    """Item state."""
-
-    INITIALISED = "INITIALISED"
-    READY = "READY"
-    CORRUPTED = "CORRUPTED"
-    EXPIRED = "EXPIRED"
-    DELETED = "DELETED"
 
 
 @cli.command()
@@ -182,7 +172,9 @@ def set_state(uid: str, state: ItemState) -> dict:
     dict
         the updated data item entry
     """
-    if state not in set(ItemState):
+    try:
+        ItemState(state)  # Check that the input is a valid enum
+    except ValueError:
         raise ValueError(
             f"Invalid item state {state}. Must be one of {[e.value for e in ItemState]}"
         )

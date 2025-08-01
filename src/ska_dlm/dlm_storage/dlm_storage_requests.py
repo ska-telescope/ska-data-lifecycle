@@ -2,13 +2,21 @@
 
 import logging
 import random
-from enum import Enum
 
 import requests
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 import ska_dlm
+from ska_dlm.common_types import (
+    LocationFacility,
+    PhaseType,
+    StorageInterface,
+    StorageType,
+    ConfigType,
+    LocationType,
+    LocationCountry,
+)
 from ska_dlm.dlm_db.db_access import DB
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
 from ska_dlm.fastapi_utils import fastapi_auto_annotate
@@ -30,91 +38,6 @@ rest = fastapi_auto_annotate(
         license_info={"name": "BSD-3-Clause", "identifier": "BSD-3-Clause"},
     )
 )
-
-
-@rest.get("/storage/query_location_facility", response_model=list[str])
-def query_location_facility() -> list[str]:
-    """Query the location_facility table for valid facilities."""
-    params = {"select": "id"}
-    rows = DB.select("location_facility", params=params)
-    return [row["id"] for row in rows]
-
-
-class LocationFacility:
-    """Gets allowed location facility values from the database."""
-
-    _valid_values: set[str] = set()
-    _loaded = False
-
-    @classmethod
-    def _load(cls):
-        cls._valid_values = set(query_location_facility())
-        cls._loaded = True
-
-    @classmethod
-    def is_valid(cls, value: str) -> bool:
-        """Return True if the given value is a valid location facility."""
-        cls._load()
-        return value in cls._valid_values
-
-    @classmethod
-    def all(cls) -> set[str]:
-        """Return all valid location facility values."""
-        cls._load()
-        return cls._valid_values.copy()
-
-
-class LocationType(str, Enum):
-    """Location type."""
-
-    LOCAL_DEV = "local-dev"
-    LOW_INTEGRATION = "low-integration"
-    MID_INTEGRATION = "mid-integration"
-    LOW_OPERATIONS = "low-operations"
-    MID_OPERATIONS = "mid-operations"
-
-
-class LocationCountry(str, Enum):
-    """Location country."""
-
-    AU = "AU"
-    ZA = "ZA"
-    UK = "UK"
-
-
-class StorageType(str, Enum):
-    """Storage type."""
-
-    FILESYSTEM = "filesystem"
-    OBJECTSTORE = "objectstore"
-    TAPE = "tape"
-
-
-class StorageInterface(str, Enum):
-    """Storage interface."""
-
-    POSIX = "posix"
-    S3 = "s3"
-    SFTP = "sftp"
-    HTTPS = "https"
-
-
-class ConfigType(str, Enum):
-    """Config type."""
-
-    RCLONE = "rclone"
-    SSH = "ssh"
-    AWS = "aws"
-    GCS = "gcs"
-
-
-class PhaseType(str, Enum):
-    """Phase type / resilience level."""
-
-    GAS = "GAS"
-    LIQUID = "LIQUID"
-    SOLID = "SOLID"
-    PLASMA = "PLASMA"
 
 
 # pylint: disable=unused-argument
@@ -247,18 +170,23 @@ def init_storage(
             else:
                 raise InvalidQueryParameters(f"Argument {k} is mandatory!")
 
-    if storage_type not in set(StorageType):
+    try:
+        StorageType(storage_type)  # Check that the input is a valid enum
+    except ValueError:
         raise ValueError(
             f"Invalid storage type {storage_type}. Must be one of {[e.value for e in StorageType]}"
         )
 
-    if storage_interface not in set(StorageInterface):
+    try:
+        StorageInterface(storage_interface)  # Check that the input is a valid enum
+    except ValueError:
         raise ValueError(
-            f"Invalid storage interface {storage_interface}. "
-            f"Must be one of {[e.value for e in StorageInterface]}"
+            f"Invalid storage interface {storage_interface}. Must be one of {[e.value for e in StorageInterface]}"
         )
 
-    if storage_phase not in set(PhaseType):
+    try:
+        PhaseType(storage_phase)  # Check that the input is a valid enum
+    except ValueError:
         raise ValueError(
             f"Invalid storage phase {storage_phase}. Must be one of {[e.value for e in PhaseType]}"
         )
@@ -301,9 +229,11 @@ def create_storage_config(
         raise UnmetPreconditionForOperation("Neither storage_id nor storage_name is specified.")
     if storage_name:
         storage_id = query_storage(storage_name=storage_name)[0]["storage_id"]
-    if config_type not in set(ConfigType):
+    try:
+        ConfigType(config_type)  # Check that the input is a valid enum
+    except ValueError:
         raise ValueError(
-            f"Invalid item type {config_type}. Must be one of {[e.value for e in ConfigType]}"
+            f"Invalid config type {config_type}. Must be one of {[e.value for e in ConfigType]}"
         )
 
     post_data = {
@@ -353,9 +283,11 @@ def get_storage_config(
         else:
             raise UnmetPreconditionForOperation(f"Can't get storage_id for {storage_name}")
 
-    if config_type not in set(ConfigType):
+    try:
+        ConfigType(config_type)  # Check that the input is a valid enum
+    except ValueError:
         raise ValueError(
-            f"Invalid item type {config_type}. Must be one of {[e.value for e in ConfigType]}"
+            f"Invalid config type {config_type}. Must be one of {[e.value for e in ConfigType]}"
         )
     if not params:
         params = {
@@ -546,7 +478,9 @@ def init_location(
     post_data = {"location_name": location_name, "location_type": location_type}
 
     if location_country:
-        if location_country not in set(LocationCountry):
+        try:
+            LocationCountry(location_country)  # Check that the input is a valid enum
+        except ValueError:
             raise ValueError(
                 f"Invalid location country {location_country}. "
                 f"Must be one of {[e.value for e in LocationCountry]}"

@@ -1,10 +1,10 @@
 """dlm_ingest REST client."""
 
-from enum import Enum
 from typing import Any, Union
 
 import requests
 
+from ska_dlm.common_types import ItemType, PhaseType
 from ska_dlm.typer_types import JsonObjectOption
 from tests.integration.client.exception_handler import dlm_raise_for_status
 
@@ -12,26 +12,6 @@ INGEST_URL = ""
 TOKEN: str = None
 
 JsonType = Union[dict[str, Any], list[Any], str, int, float, bool, None]
-
-
-class ItemType(str, Enum):
-    """Data Item on the filesystem."""
-
-    UNKNOWN = "unknown"
-    """A single file."""
-    FILE = "file"
-    """A single file."""
-    CONTAINER = "container"
-    """A directory superset with parents."""
-
-
-class PhaseType(str, Enum):
-    """Phase type / resilience level."""
-
-    GAS = "GAS"
-    LIQUID = "LIQUID"
-    SOLID = "SOLID"
-    PLASMA = "PLASMA"
 
 
 # pylint: disable=unused-argument
