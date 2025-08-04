@@ -14,13 +14,14 @@ This section outlines the steps required to ingest and migrate data using the **
 7. Query for all copies of the data item
 
 
-The source code below demonstrates how to register a data item that resides on external storage (Acacia, located at the Pawsey Centre) while working from the DP platform.
-
+In the Python code below, we register an arbitrarily chosen file residing on an external storage, Acacia, located at the Pawsey Centre.
+We make use of the DLM deployment on the DP platform, in the dp-dm namespace.
 
 **1. Prepare token to be placed in the header of your REST calls**
 
-* Open a browser and go to the `/token_by_auth_flow` endpoint on the DLM server URL. For example: `https://sdhp.stfc.skao.int/dp-dm/dlm/token_by_auth_flow`.
-* Login with your SKAO credentials
+* Open a browser and go to the `/token_by_auth_flow` endpoint on the DLM server URL.
+* For example, for the DLM deployment on the DP cluster: `https://sdhp.stfc.skao.int/dp-dm/dlm/token_by_auth_flow`.
+* Login with your credentials
 * If successful, a token will be returned. Copy the token.
 
 ```python
@@ -33,7 +34,7 @@ headers = {"Authorization": f"Bearer {token}"}
 session = Session()
 ```
 
-**2. Check if your desired location (e.g., STFC) is already known to DLM**
+**2. Check if your desired location (e.g., Pawsey) is already known to DLM**
 ```python
 # create location details
 location_name = "Pawsey"
