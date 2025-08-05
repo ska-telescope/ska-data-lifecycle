@@ -2,6 +2,11 @@
 
 ## Development
 
+## 1.1.3
+
+* Add optional `root_path` to rclone config and rc commands
+
+
 ## 1.1.2
 
 ### Deprecated
