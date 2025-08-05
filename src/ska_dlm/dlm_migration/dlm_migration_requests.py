@@ -352,7 +352,7 @@ def _create_migration_record(
 @cli.command()
 @rest.post("/migration/copy_data_item", response_model=dict)
 def copy_data_item(  # noqa: C901
-    # pylint: disable=too-many-arguments,too-many-locals,too-many-positional-arguments,too-many-branches
+    # pylint: disable=too-many-arguments,too-many-locals,too-many-positional-arguments,too-many-branches,too-many-statements
     item_name: str = "",
     oid: str = "",
     uid: str = "",
