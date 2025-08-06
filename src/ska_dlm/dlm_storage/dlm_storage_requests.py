@@ -11,7 +11,6 @@ import ska_dlm
 from ska_dlm.common_types import (
     ConfigType,
     LocationCountry,
-    LocationFacility,
     LocationType,
     PhaseType,
     StorageInterface,
@@ -28,6 +27,7 @@ from ..dlm_request import query_expired, query_item_storage
 from ..exceptions import InvalidQueryParameters, UnmetPreconditionForOperation, ValueAlreadyInDB
 
 logger = logging.getLogger(__name__)
+
 
 cli = ExceptionHandlingTyper()
 rest = fastapi_auto_annotate(
@@ -70,6 +70,47 @@ def invalidquery_exception_handler(request: Request, exc: InvalidQueryParameters
     )
 
 
+class LocationFacility:
+    """Gets allowed location facility values from the database."""
+
+    _valid_values: set[str] = set()
+    _loaded = False
+
+    @classmethod
+    def _load(cls):
+        cls._valid_values = set(query_location_facility())
+        cls._loaded = True
+
+    @classmethod
+    def is_valid(cls, value: str) -> bool:
+        """Return True if the given value is a valid location facility."""
+        cls._load()
+        return value in cls._valid_values
+
+    @classmethod
+    def validate(cls, value: str) -> str:
+        """Validate the location facility."""
+        if not cls.is_valid(value):
+            raise ValueError(
+                f"Invalid location facility: {value}. " f"Must be one of {LocationFacility._all()}"
+            )
+        return value
+
+    @classmethod
+    def _all(cls) -> set[str]:
+        """Return all valid location facility values."""
+        cls._load()
+        return cls._valid_values.copy()
+
+
+@rest.get("/storage/query_location_facility", response_model=list[str])
+def query_location_facility() -> list[str]:
+    """Query the location_facility table for valid facilities."""
+    params = {"select": "id"}
+    rows = DB.select("location_facility", params=params)
+    return [row["id"] for row in rows]
+
+
 @cli.command()
 @rest.get("/storage/query_location", response_model=list[dict])
 def query_location(location_name: str = "", location_id: str = "") -> list[dict]:
@@ -98,7 +139,7 @@ def query_location(location_name: str = "", location_id: str = "") -> list[dict]
 
 @cli.command()
 @rest.post("/storage/init_storage", response_model=str)
-# pylint: disable=too-many-arguments,unused-argument,too-many-positional-arguments, too-many-locals
+# pylint: disable=too-many-arguments,unused-argument,too-many-locals,too-many-positional-arguments
 def init_storage(
     storage_name: str,
     storage_type: StorageType,
@@ -490,12 +531,7 @@ def init_location(
     if location_city:
         post_data["location_city"] = location_city
     if location_facility:
-        if not LocationFacility.is_valid(location_facility):
-            raise ValueError(
-                f"Invalid location facility: {location_facility}. "
-                f"Must be one of {LocationFacility.all()}"
-            )
-        post_data["location_facility"] = location_facility
+        post_data["location_facility"] = LocationFacility.validate(location_facility)
 
     return DB.insert(CONFIG.DLM.location_table, json=post_data)[0]["location_id"]
 
