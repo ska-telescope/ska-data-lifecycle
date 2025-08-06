@@ -139,7 +139,7 @@ def query_location(location_name: str = "", location_id: str = "") -> list[dict]
 
 @cli.command()
 @rest.post("/storage/init_storage", response_model=str)
-# pylint: disable=too-many-arguments,unused-argument,too-many-locals,too-many-positional-arguments
+# pylint: disable=too-many-arguments,too-many-locals,too-many-positional-arguments
 def init_storage(
     storage_name: str,
     storage_type: StorageType,
@@ -397,10 +397,7 @@ def check_storage_access(
         return False
     storage_id = storages[0]["storage_id"]
     storage_name = storages[0]["storage_name"]
-    config = get_storage_config(
-        storage_id=storage_id,
-        storage_name=storage_name,  # config_type="rclone"
-    )
+    config = get_storage_config(storage_id=storage_id, storage_name=storage_name)
     if not config:
         raise UnmetPreconditionForOperation(
             "No valid configuration for storage found!", storage_name
