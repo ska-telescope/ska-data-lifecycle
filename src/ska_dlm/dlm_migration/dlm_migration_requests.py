@@ -352,7 +352,7 @@ def _create_migration_record(
 @cli.command()
 @rest.post("/migration/copy_data_item", response_model=dict)
 def copy_data_item(  # noqa: C901
-    # pylint: disable=too-many-arguments,too-many-locals,too-many-positional-arguments,too-many-branches
+    # pylint: disable=too-many-arguments,too-many-locals,too-many-positional-arguments,too-many-branches,too-many-statements
     item_name: str = "",
     oid: str = "",
     uid: str = "",
@@ -424,7 +424,8 @@ def copy_data_item(  # noqa: C901
         raise UnmetPreconditionForOperation("No configuration for source storage found!")
 
     s_config = s_config[0]
-    source = {"backend": f"{s_config['name']}:", "path": storage["uri"]}
+    source_root_path = s_config.get("root_path", "")
+    source = {"backend": f"{s_config['name']}:{source_root_path}", "path": storage["uri"]}
     if not path:
         path = storage["uri"]
 
@@ -444,7 +445,8 @@ def copy_data_item(  # noqa: C901
     if not d_config:
         raise UnmetPreconditionForOperation("Unable to get configuration for destination storage!")
     d_config = d_config[0]
-    dest = {"backend": f"{d_config['name']}:", "path": path}
+    dest_root_path = s_config.get("root_path", "")
+    dest = {"backend": f"{d_config['name']}:{dest_root_path}", "path": path}
 
     source_storage = query_storage(storage_id=storage["storage_id"])
     if not source_storage:
@@ -459,6 +461,7 @@ def copy_data_item(  # noqa: C901
         "storage_id": destination_id,
         "item_type": orig_item["item_type"],
     }
+    # Initalising with default INITIALISED
     new_item_uid = init_data_item(json_data=init_item)
     # (4)
     # TODO(yan-xxx) abstract the actual function called away to allow for different

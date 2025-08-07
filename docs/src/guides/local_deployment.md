@@ -28,7 +28,7 @@ ska-dlm storage init-storage MyDisk disk posix / --location-name MyHost
 # check if a storage config for MyDisk is already known to DLM
 ska-dlm storage get-storage-config --storage-name MyDisk
 # create a storage config for MyDisk (if it doesn't already exist)
-ska-dlm storage create-storage-config '{"name":"MyDisk", "type":"alias", "parameters":{"remote": "/"}}' \
+ska-dlm storage create-storage-config '{"name":"MyDisk", "root_path": "/", type":"alias", "parameters":{"remote": "/"}}' \
 --storage-id '<the storage id received above>'
 
 # register a data item inside the Docker container (e.g., /etc/os-release)
@@ -43,7 +43,7 @@ ska-dlm data-item query-data-item --item-name test_item_name
 ska-dlm storage init-storage MyDisk2 disk posix / --location-name MyHost
 
 # supply an rclone config
-ska-dlm storage create-storage-config '{"name":"MyDisk2", "type":"alias", "parameters":{"remote": "/"}}' \
+ska-dlm storage create-storage-config '{"name":"MyDisk2", "root_path": "/", "type":"alias", "parameters":{"remote": "/"}}' \
 --storage-id '<the storage id received above>'
 
 # copy your data item from MyDisk to MyDisk2
@@ -83,7 +83,7 @@ storage_id = dlm_storage.init_storage(
 # check if an rclone config for 'MyDisk' already exists
 dlm_storage.get_storage_config(storage_name="MyDisk")
 # supply an rclone config (if it doesn't already exist)
-config = {"name": "MyDisk", "type": "alias", "parameters": {"remote": "/"}}
+config = {"name": "MyDisk", "type": "alias", "root_path": "/", "parameters": {"remote": "/"}}
 config_id = dlm_storage.create_storage_config(storage_id=storage_id, config=config)
 
 # register a data item
@@ -106,7 +106,7 @@ storage_id = dlm_storage.init_storage(
     storage_capacity=100000000,
 )
 # supply an rclone config
-config = {"name": "MyDisk2", "type": "alias", "parameters": {"remote": "/"}}
+config = {"name": "MyDisk2", "type": "alias", "root_path": "/", "parameters": {"remote": "/"}}
 config_id = dlm_storage.create_storage_config(storage_id=storage_id, config=config)
 
 # copy "test_item" from MyDisk to MyDisk2
