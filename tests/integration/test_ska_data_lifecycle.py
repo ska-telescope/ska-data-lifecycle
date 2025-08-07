@@ -75,7 +75,7 @@ def setup(env):
         storage_interface="posix",
         storage_capacity=100000000,
     )
-    config = {"name": "MyDisk", "type": "alias", "parameters": {"remote": "/"}}
+    config = {"name": "MyDisk", "root_path": "/", "type": "alias", "parameters": {"remote": "/"}}
     env.storage_requests.create_storage_config(storage_id=uuid, config=config)
     # configure rclone
     env.storage_requests.create_rclone_config(config)
@@ -209,7 +209,7 @@ def __initialise_storage_config(env):
     else:
         location_id = env.storage_requests.init_location("MyHost", "low-integration")
     assert len(location_id) == 36
-    config = {"name": "MyDisk2", "type": "alias", "parameters": {"remote": "/"}}
+    config = {"name": "MyDisk2", "root_path": "/", "type": "alias", "parameters": {"remote": "/"}}
     uuid = env.storage_requests.init_storage(
         storage_name="MyDisk2",
         root_directory=ROOT_DIRECTORY2,
