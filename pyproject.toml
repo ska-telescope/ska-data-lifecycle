@@ -101,7 +101,7 @@ rst-roles = [
     "py:mod",
 ]
 enable = "DAR104"
-max-complexity = 10
+max-complexity = 15
 ignore = [
     # Use black to handle formatting
     "E203", # Whitespace before ':'

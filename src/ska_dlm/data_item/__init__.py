@@ -1,4 +1,4 @@
-"""DLMmigration module for ska-data-lifecycle."""
+"""DLM migration module for ska-data-lifecycle."""
 
 from .data_item_requests import (
     set_acl,

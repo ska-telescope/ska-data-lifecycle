@@ -11,15 +11,17 @@ from ska_dlm.exceptions import InvalidQueryParameters
 
 def test_location_init():
     """Test initialisation on a location."""
-    # This returns an empty string if unsuccessful
-    with pytest.raises(InvalidQueryParameters):
-        dlm_storage.init_location(location_name="name", location_type="")
-    with pytest.raises(InvalidQueryParameters):
-        dlm_storage.init_location(location_name="", location_type="type")
-
-    dlm_storage.init_location("TestLocation", "low-integration")
-    location = dlm_storage.query_location(location_name="TestLocation")[0]
+    # Successful initialisation
+    dlm_storage.init_location("TestLocation1", "low-integration")
+    location = dlm_storage.query_location(location_name="TestLocation1")[0]
     assert location["location_type"] == "low-integration"
+
+    # Unsuccessful initialisations
+    with pytest.raises(InvalidQueryParameters):
+        dlm_storage.init_location(location_name="TestLocation2", location_type="")
+
+    with pytest.raises(InvalidQueryParameters):
+        dlm_storage.init_location(location_name="", location_type="low-integration")
 
 
 def test_initialise_storage_config():
@@ -44,3 +46,20 @@ def test_initialise_storage_config():
     assert len(config_id) == 36
     # configure rclone
     assert dlm_storage.create_rclone_config(config) is True
+
+
+def test_invalid_storage_type():
+    """Test that an invalid storage_type raises a ValueError."""
+    location_id = dlm_storage.init_location("MyHostInvalid", "low-integration")
+
+    with pytest.raises(ValueError) as exc_info:
+        dlm_storage.init_storage(
+            storage_name="MyDiskInvalid",
+            location_id=location_id,
+            root_directory="/data/",
+            storage_type="disk",  # Invalid enum
+            storage_interface="posix",
+            storage_capacity=100000000,
+        )
+    assert "Invalid storage type disk" in str(exc_info.value)
+    assert "filesystem" in str(exc_info.value)
