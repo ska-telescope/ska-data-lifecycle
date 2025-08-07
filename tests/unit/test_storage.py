@@ -23,13 +23,6 @@ def test_location_init():
     with pytest.raises(InvalidQueryParameters):
         dlm_storage.init_location(location_name="", location_type="low-integration")
 
-    with pytest.raises(ValueError, match="Invalid location facility"):
-        dlm_storage.init_location(
-            location_name="InvalidFacility",
-            location_type="low-integration",
-            location_facility="InvalidLocationFacility",
-        )
-
 
 def test_initialise_storage_config():
     """Add a new location, storage and configuration to the rclone server."""

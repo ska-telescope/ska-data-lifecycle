@@ -24,7 +24,12 @@ from ska_dlm.typer_types import JsonObjectArg, JsonObjectOption
 from .. import CONFIG
 from ..data_item import set_state
 from ..dlm_request import query_expired, query_item_storage
-from ..exceptions import InvalidQueryParameters, UnmetPreconditionForOperation, ValueAlreadyInDB
+from ..exceptions import (
+    DatabaseOperationError,
+    InvalidQueryParameters,
+    UnmetPreconditionForOperation,
+    ValueAlreadyInDB,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -70,37 +75,14 @@ def invalidquery_exception_handler(request: Request, exc: InvalidQueryParameters
     )
 
 
-class LocationFacility:
-    """Gets allowed location facility values from the database."""
-
-    _valid_values: set[str] = set()
-    _loaded = False
-
-    @classmethod
-    def _load(cls):
-        cls._valid_values = set(query_location_facility())
-        cls._loaded = True
-
-    @classmethod
-    def is_valid(cls, value: str) -> bool:
-        """Return True if the given value is a valid location facility."""
-        cls._load()
-        return value in cls._valid_values
-
-    @classmethod
-    def validate(cls, value: str) -> str:
-        """Validate the location facility."""
-        if not cls.is_valid(value):
-            raise ValueError(
-                f"Invalid location facility: {value}. " f"Must be one of {LocationFacility._all()}"
-            )
-        return value
-
-    @classmethod
-    def _all(cls) -> set[str]:
-        """Return all valid location facility values."""
-        cls._load()
-        return cls._valid_values.copy()
+# pylint: disable=unused-argument
+@rest.exception_handler(DatabaseOperationError)
+def database_error_handler(request: Request, exc: DatabaseOperationError):
+    """Catch DatabaseOperationError and send a JSONResponse."""
+    return JSONResponse(
+        status_code=409,  # status code for DB constraint violations
+        content={"exec": "DatabaseOperationError", "message": str(exc)},
+    )
 
 
 @rest.get("/storage/query_location_facility", response_model=list[str])
@@ -528,7 +510,7 @@ def init_location(
     if location_city:
         post_data["location_city"] = location_city
     if location_facility:
-        post_data["location_facility"] = LocationFacility.validate(location_facility)
+        post_data["location_facility"] = location_facility
 
     return DB.insert(CONFIG.DLM.location_table, json=post_data)[0]["location_id"]
 

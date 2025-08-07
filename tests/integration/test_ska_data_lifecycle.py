@@ -16,7 +16,7 @@ from ska_dlm.dlm_migration.dlm_migration_requests import (
     update_migration_statuses,
 )
 from ska_dlm.dlm_storage.main import persist_new_data_items
-from ska_dlm.exceptions import InvalidQueryParameters, ValueAlreadyInDB
+from ska_dlm.exceptions import DatabaseOperationError, InvalidQueryParameters, ValueAlreadyInDB
 from tests.common_local import DlmTestClientLocal
 from tests.integration.client.dlm_gateway_client import get_token
 from tests.test_env import DlmTestClient
@@ -152,6 +152,16 @@ def test_location_init(env):
     env.storage_requests.init_location("TestLocation", "low-integration")
     location = env.storage_requests.query_location(location_name="TestLocation")[0]
     assert location["location_type"] == "low-integration"
+
+
+@pytest.mark.integration_test
+def test_location_init_with_invalid_facility(env):
+    """Test that invalid location_facility raises a DatabaseOperationError."""
+    with pytest.raises(DatabaseOperationError) as exc_info:
+        env.storage_requests.init_location(
+            "TestLocationFailure", "low-integration", location_facility="InvalidFacility"
+        )
+    assert "foreign key" in str(exc_info.value).lower()
 
 
 @pytest.mark.integration_test
