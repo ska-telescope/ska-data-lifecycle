@@ -17,7 +17,7 @@ def init_location(
     location_city: str = "",
     location_facility: str = "",
 ) -> str:
-    """Initialize a new location for a storage by specifying the location_name or location_id."""
+    """Initialise a new location for a storage by specifying the location_name or location_id."""
     params = {k: v for k, v in locals().items() if v}
     headers = {"Authorization": f"Bearer {TOKEN}"}
     response = requests.post(
@@ -36,11 +36,11 @@ def init_storage(
     location_id: str = "",
     storage_type: str = "",
     storage_capacity: int = -1,
-    storage_phase_level: str = "GAS",
+    storage_phase: str = "GAS",
     json_data: dict | None = None,
 ) -> str:
     """
-    Initialize a new storage.
+    Initialise a new storage.
 
     location_name or location_id is required.
 
@@ -57,10 +57,10 @@ def init_storage(
     location_id
         a dlm registered location id
     storage_type
-        high level type of the storage, e.g. "disk", "s3"
+        high level type of the storage: 'filesystem', 'objectstore' or 'tape'
     storage_capacity
         reserved storage capacity in bytes
-    storage_phase_level
+    storage_phase
         one of "GAS", "LIQUID", "SOLID"
     json_data
         extra rclone values such as secrets required for connection
@@ -126,7 +126,7 @@ def create_storage_config(
     storage_name
         the name of the storage for which the config is provided.
     config_type
-        default is rclone, but could be something else in the future.
+        default is 'rclone'. Alternative enums from ConfigType.
 
     Returns
     -------
@@ -196,7 +196,7 @@ def query_storage(storage_name: str = "", storage_id: str = "") -> list[dict]:
 
 def get_storage_config(
     storage_id: str = "", storage_name: str = "", config_type: str = "rclone"
-) -> list[str]:
+) -> list[dict]:
     """Get the storage configuration entry for a particular storage backend.
 
     Parameters
@@ -210,7 +210,7 @@ def get_storage_config(
 
     Returns
     -------
-    list[str]
+    list[dict]
         list of json configs
 
     Raises

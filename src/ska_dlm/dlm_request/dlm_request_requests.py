@@ -108,7 +108,7 @@ def query_new(check_date: str, uid: str = "") -> list[dict]:
     """
     params = {
         "uid_creation": f"gt.{check_date}",
-        "item_phase": "eq.GAS",
+        "uid_phase": "eq.GAS",
         "item_state": "eq.READY",
         "select": "uid,item_name,uid_creation,storage_id",
     }
@@ -131,7 +131,7 @@ def query_exists(item_name: str = "", oid: str = "", uid: str = "", ready: bool 
     uid
         this returns only one storage_id
     ready
-        whether the item must be in ready state.
+        whether the item must be in READY state.
 
     Returns
     -------
@@ -156,7 +156,7 @@ def query_exists(item_name: str = "", oid: str = "", uid: str = "", ready: bool 
 @cli.command()
 @rest.get("/request/query_exist_and_ready", response_model=bool)
 def query_exists_and_ready(item_name: str = "", oid: str = "", uid: str = "") -> bool:
-    """Check whether a data_item exists and is in ready state.
+    """Check whether a data_item exists and is in READY state.
 
     Parameters
     ----------
@@ -170,7 +170,7 @@ def query_exists_and_ready(item_name: str = "", oid: str = "", uid: str = "") ->
     Returns
     -------
     bool
-        True if the item exists and is in ready state
+        True if the item exists and is in READY state
     """
     return query_exists(item_name, oid, uid, ready=True)
 
@@ -198,7 +198,7 @@ def query_item_storage(item_name: str = "", oid: str = "", uid: str = "") -> lis
         list of storage_ids
     """
     if not query_exists_and_ready(item_name, oid, uid):
-        logger.warning("data_item does not exists or is not READY!")
+        logger.warning("data_item does not exists or is not READY.")
         return []
     params = {"select": "oid,uid,item_name,storage_id,uri", "item_state": "eq.READY"}
     if not item_name and not oid and not uid:

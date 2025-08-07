@@ -58,7 +58,7 @@ Steps 1 and 2 are interchangeable since the writing is totally independent from 
 
 Functions exposed:
   - ingest_data_item, given an item_name, a path to a payload and a storage_id register a new data_item and transition to READY state.
-  - init_data_item, given an item_name and optionally additional meta-data items initialize a new data_item.
+  - init_data_item, given an item_name and optionally additional meta-data items initialise a new data_item.
 
 The DLM Storage Manager Module
 ------------------------------
@@ -92,7 +92,7 @@ Interfaces
 ----------
 The SKA-DLM provides four different ways of interacting with it, which can be used in different scenarios.
 
+    - An independent `ska-dlm-client package <https://gitlab.com/ska-telescope/ska-dlm-client/>`_, which provides the most transparent way of registering data with the DLM.
     - A python library, exposing plain python functions (see :ref:`python api`).
     - A Command Line Interface (CLI) (see :ref:`cli api`).
     - REST interfaces to each of the managers (see :ref:`rest api`).
-    - An independent ska-dlm-client package, which provides the most transparent way of registering data with the SKA-DLM.

@@ -17,25 +17,25 @@ def test_location_init():
     with pytest.raises(InvalidQueryParameters):
         dlm_storage.init_location(location_name="", location_type="type")
 
-    dlm_storage.init_location("TestLocation", "SKAO Data Centre")
+    dlm_storage.init_location("TestLocation", "low-integration")
     location = dlm_storage.query_location(location_name="TestLocation")[0]
-    assert location["location_type"] == "SKAO Data Centre"
+    assert location["location_type"] == "low-integration"
 
 
-def test_initialize_storage_config():
+def test_initialise_storage_config():
     """Add a new location, storage and configuration to the rclone server."""
     location = dlm_storage.query_location("MyHost")
     if location:
         location_id = location[0]["location_id"]
     else:
-        location_id = dlm_storage.init_location("MyHost", "Server")
+        location_id = dlm_storage.init_location("MyHost", "low-integration")
     assert len(location_id) == 36
     config = {"name": "MyDisk2", "type": "local", "parameters": {}}
     uuid = dlm_storage.init_storage(
         storage_name="MyDisk2",
         location_id=location_id,
         root_directory="/data/MyDisk2/",
-        storage_type="disk",
+        storage_type="filesystem",
         storage_interface="posix",
         storage_capacity=100000000,
     )

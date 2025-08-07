@@ -326,7 +326,7 @@ def _create_migration_record(
     url,
     source_storage_id,
     destination_storage_id,
-    authorization
+    authorization,
     # pylint: disable=too-many-arguments,too-many-positional-arguments
 ):
     # decode the username from the authorization
@@ -366,7 +366,7 @@ def copy_data_item(  # noqa: C901
     Steps
     (1) get the current storage_id(s) of the item
     (2) convert one (first) storage_id to a configured rclone backend
-    (3) initialize the new item with the same OID on the new storage
+    (3) initialise the new item with the same OID on the new storage
     (4) use the rclone copy command to copy it to the new location
     (5) set the access path to the payload
     (6) set state to READY

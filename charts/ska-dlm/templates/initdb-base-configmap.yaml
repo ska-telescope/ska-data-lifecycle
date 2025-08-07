@@ -2,11 +2,11 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ska-dlm-postgresql-initdb-scripts
+  name: ska-dlm-postgresql-initdb-base-scripts
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "ska-dlm.postgrest.labels" . | indent 4 }}
+{{- if and .Values.database.migration.enabled .Values.database.migration.base.baseInstall }}
 data:
-{{- if .Values.database.migration.enabled }}
 {{ (.Files.Glob "initdb-scripts/*.sql").AsConfig | indent 2 }}
 {{- end }}

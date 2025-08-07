@@ -62,6 +62,12 @@ spec:
         command:
           - rclone
           - rcd
+        {{ with .Values.rclone.secret }}
+        {{- if and .enabled (not (empty .ssl_cert_name)) (not (empty .ssl_key_name)) }}
+          - --rc-cert={{ .mountPoint }}/{{ .ssl_cert_name }}
+          - --rc-key={{ .mountPoint }}/{{ .ssl_key_name }}
+        {{- end }}
+        {{- end }}
           - --rc-serve
           - --rc-addr
           - :5572
@@ -70,6 +76,13 @@ spec:
           httpGet:
             path: /
             port: 5572
+          {{ with .Values.rclone.secret }}
+          {{- if and .enabled (not (empty .ssl_cert_name)) (not (empty .ssl_key_name)) }}
+            scheme: HTTPS
+          insecureSkipVerify: true # Skip certificate verification
+          {{- end }}
+          {{- end }}
+
           periodSeconds: 5
         volumeMounts:
         {{ with .Values.rclone.secret }}

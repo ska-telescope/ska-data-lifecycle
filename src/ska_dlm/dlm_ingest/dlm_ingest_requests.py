@@ -85,7 +85,7 @@ def init_data_item(
     json_data: JsonObjectOption = None,
     authorization: Annotated[str | None, Header()] = None,
 ) -> str:
-    """Initialize a new data_item.
+    """Initialise a new data_item.
 
     item_name or json_data is required.
 
@@ -117,7 +117,7 @@ def init_data_item(
             raise ValueError("Username not found in profile")
 
     if item_name:
-        post_data = {"item_name": item_name, "item_phase": phase, "item_owner": username}
+        post_data = {"item_name": item_name, "uid_phase": phase, "item_owner": username}
     elif json_data:
         post_data = json_data
     else:
@@ -147,7 +147,7 @@ def register_data_item(  # noqa: C901
     (1) check whether requested storage is known and accessible
     (2) check, if required, whether item is accessible/exists on that storage
     (3) check whether item is already registered on that storage
-    (4) initialize the item on the storage
+    (4) initialise the item on the storage
     (5) set the access path to the payload
     (6) set state to READY
     (7) save metadata in the data_item table
@@ -219,7 +219,7 @@ def register_data_item(  # noqa: C901
     init_item = {
         "item_name": item_name,
         "storage_id": storage_id,
-        "item_phase": storages[0]["storage_phase_level"],
+        "uid_phase": storages[0]["storage_phase"],
         "item_type": item_type,
         "item_owner": username,
         "parents": parents,
