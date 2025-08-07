@@ -161,6 +161,15 @@ def init_storage(
     -------
     str
         Either a storage_id or an empty string
+
+    Raises
+    ------
+    InvalidQueryParameters
+        if a mandatory argument is missing
+    ValueError
+        if storage_type is not a valid enum value from StorageType
+        if storage_interface is not a valid enum value from StorageInterface
+        if storage_phase is not a valid enum value from PhaseType
     """
     provided_args = dict(locals())
     mandatory_keys = [
@@ -248,6 +257,9 @@ def create_storage_config(
     ------
     UnmetPreconditionForOperation
         Neither storage_id nor storage_name is specified.
+        Configuring the rclone server failed.
+    ValueError
+        if config_type is not a valid enum value from ConfigType
     """
     if not storage_name and not storage_id:
         raise UnmetPreconditionForOperation("Neither storage_id nor storage_name is specified.")
@@ -295,6 +307,8 @@ def get_storage_config(
     ------
     UnmetPreconditionForOperation
         storage_name does not exist in database
+    ValueError
+        if config_type is not a valid enum value from ConfigType
     """
     params = {}
     if not storage_name and not storage_id:
@@ -491,6 +505,8 @@ def init_location(
         either location_name or location_type is empty
     ValueAlreadyInDB
         location_name aleady exists in database
+    ValueError
+        if location_country is not a valid enum value from LocationCountry
     """
     if not (location_name and location_type):
         raise InvalidQueryParameters("location_name and location_type cannot be empty")
