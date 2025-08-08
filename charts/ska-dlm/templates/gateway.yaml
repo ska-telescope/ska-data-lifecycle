@@ -88,6 +88,10 @@ spec:
               optional: false
         {{ end -}}
         envFrom:
+        - configMapRef:
+            name: "{{ include "ska-dlm.fullname" . }}-sqlalchemy-configmap"
+        - secretRef:
+            name: "{{ include "ska-dlm.fullname" . }}-sqlalchemy-secret"
         {{- if $.Values.keycloak.enabled }}
         - configMapRef:
             name: "{{ include "ska-dlm.fullname" . }}-keycloak-gateway-configmap"

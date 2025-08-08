@@ -42,29 +42,41 @@ def persist_new_data_items(last_check_time: str) -> dict:
 
         # TODO: check phase?
 
-        new_storage = [s for s in storages if s["storage_id"] != new_data_item["storage_id"]]
-        if new_storage == []:
-            logger.error("Unable to identify a suitable new storage volume!")
-
-            logger.info("Storage volumes found: %s", storages)
-            continue
+        # Check if the data item has a storage_id
+        if "storage_id" not in new_data_item or not new_data_item["storage_id"]:
+            logger.warning("Data item %s has no storage_id", new_data_item["item_name"])
+            # Use the first available storage
+            if storages:
+                new_storage = [storages[0]]
+            else:
+                logger.error("No storage volumes available!")
+                continue
+        else:
+            # Filter out the current storage to find a different one
+            new_storage = [s for s in storages if s["storage_id"] != new_data_item["storage_id"]]
+            if not new_storage:
+                logger.error("Unable to identify a suitable new storage volume!")
+                logger.info("Current storage_id: %s", new_data_item["storage_id"])
+                logger.info("Storage volumes found: %s", storages)
+                continue
         new_storage = new_storage[0]
         dest_id = new_storage["storage_id"]
+        copy_uid = None
         try:
             copy_uid = dlm_migration.copy_data_item(
                 uid=new_data_item["uid"],
                 destination_id=dest_id,
             )
+            logger.info(
+                "Persisted %s to volume %s",
+                new_data_item["item_name"],
+                new_storage["storage_name"],
+            )
+            data_item.set_phase(uid=new_data_item["uid"], phase="LIQUID")
+            data_item.set_phase(uid=copy_uid["uid"], phase="LIQUID")
+            stat[new_data_item["item_name"]] = True
         except DataLifecycleError:
             logger.exception("Copy of data_item %s unsuccessful!", new_data_item["item_name"])
-        logger.info(
-            "Persisted %s to volume %s",
-            new_data_item["item_name"],
-            new_storage["storage_name"],
-        )
-        data_item.set_phase(uid=new_data_item["uid"], phase="LIQUID")
-        data_item.set_phase(uid=copy_uid["uid"], phase="LIQUID")
-        stat[new_data_item["item_name"]] = True
     return stat
 
 

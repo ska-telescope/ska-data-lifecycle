@@ -7,7 +7,7 @@ import pytest
 
 import ska_dlm.dlm_request.dlm_request_requests as dlm_request
 from ska_dlm import CONFIG, data_item, dlm_ingest
-from ska_dlm.dlm_db.db_access import DB
+from ska_dlm.dlm_db.db_access_sqlalchemy import DB
 
 
 def _clear_database():

@@ -1,15 +1,17 @@
 """Convenience functions to update data_item records."""
 
+import json
 import logging
 
 from fastapi import APIRouter
 
 from ska_dlm import CONFIG
 from ska_dlm.common_types import ItemState
-from ska_dlm.dlm_db.db_access import DB
+from ska_dlm.dlm_db.db_access_sqlalchemy import DB
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
 from ska_dlm.exceptions import InvalidQueryParameters
 from ska_dlm.fastapi_utils import fastapi_auto_annotate
+from ska_dlm.json_utils import UUIDEncoder
 from ska_dlm.typer_types import JsonObjectOption
 
 logger = logging.getLogger(__name__)
@@ -64,7 +66,28 @@ def query_data_item(
     if storage_id:
         params["storage_id"] = f"eq.{storage_id}"
 
-    return DB.select(CONFIG.DLM.dlm_table, params=params)
+    # Get the data from the database
+    results = DB.select(CONFIG.DLM.dlm_table, params=params)
+    
+    # Parse JSON strings back to Python dictionaries for metadata and item_tags
+    for result in results:
+        # Handle metadata field
+        if "metadata" in result and isinstance(result["metadata"], str):
+            try:
+                result["metadata"] = json.loads(result["metadata"])
+            except (json.JSONDecodeError, TypeError):
+                # If the metadata is not a valid JSON string, leave it as is
+                pass
+        
+        # Handle item_tags field
+        if "item_tags" in result and isinstance(result["item_tags"], str):
+            try:
+                result["item_tags"] = json.loads(result["item_tags"])
+            except (json.JSONDecodeError, TypeError):
+                # If the item_tags is not a valid JSON string, leave it as is
+                pass
+    
+    return results
 
 
 @cli.command()
@@ -110,6 +133,22 @@ def update_data_item(
         params["oid"] = f"eq.{oid}"
     elif uid:
         params["uid"] = f"eq.{uid}"
+    
+    # Convert dictionary values to JSON strings for PostgreSQL JSON columns
+    if post_data:
+        # Create a copy of post_data to avoid modifying the original
+        post_data_copy = post_data.copy()
+        
+        # Convert metadata dictionary to JSON string if present
+        if "metadata" in post_data and isinstance(post_data["metadata"], dict):
+            post_data_copy["metadata"] = json.dumps(post_data["metadata"], cls=UUIDEncoder)
+            
+        # Convert item_tags dictionary to JSON string if present
+        if "item_tags" in post_data and isinstance(post_data["item_tags"], dict):
+            post_data_copy["item_tags"] = json.dumps(post_data["item_tags"], cls=UUIDEncoder)
+            
+        return DB.update(CONFIG.DLM.dlm_table, params=params, json=post_data_copy)[0]
+    
     return DB.update(CONFIG.DLM.dlm_table, params=params, json=post_data)[0]
 
 

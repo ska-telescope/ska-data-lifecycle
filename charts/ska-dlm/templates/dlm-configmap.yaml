@@ -21,3 +21,24 @@ data:
       base_url: "http://{{ include "ska-dlm.fullname" . }}-postgrest.{{ .Release.Namespace }}"
     RCLONE:
       - "http://{{ include "ska-dlm.fullname" . }}-rclone.{{ .Release.Namespace }}"
+  config_sqlalchemy.yaml: |-
+    DLM:
+      dlm_db: "ska_dlm_meta"
+      dlm_table: "data_item"
+      storage_table: "storage"
+      storage_config_table: "storage_config"
+      location_table: "location"
+      migration_table: "migration"
+      storage_manager:
+        storage_warning_percentage: 80.0
+        polling_interval: 10 # seconds
+      migration_manager:
+        polling_interval: 10 # seconds
+    DB:
+      host: "{{ .Values.postgresql.host | default "postgresql" }}"
+      user: "{{ .Values.postgresql.auth.username }}"
+      password: "{{ .Values.postgresql.auth.password }}"
+      database: "{{ .Values.postgresql.auth.database }}"
+      schema: "{{ .Values.postgresql.schema | default "public" }}"
+    RCLONE:
+      - "http://{{ include "ska-dlm.fullname" . }}-rclone.{{ .Release.Namespace }}"

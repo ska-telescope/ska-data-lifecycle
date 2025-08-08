@@ -12,7 +12,7 @@ import tests.integration.client.dlm_migration_client as dlm_migration_requests
 import tests.integration.client.dlm_request_client as dlm_request_requests
 import tests.integration.client.dlm_storage_client as dlm_storage_requests
 from ska_dlm import CONFIG
-from ska_dlm.dlm_db.db_access import DB
+from ska_dlm.dlm_db.db_access_sqlalchemy import DB
 from tests.test_env import DlmTestClient
 
 logger = logging.getLogger(__name__)

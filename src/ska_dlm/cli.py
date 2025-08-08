@@ -17,7 +17,7 @@ import logging
 import ska_ser_logging
 from requests import HTTPError
 
-from ska_dlm.dlm_db.db_access import DBQueryError
+from ska_dlm.dlm_db.db_access_sqlalchemy import DBQueryError
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
 from ska_dlm.exceptions import UnmetPreconditionForOperation
 from ska_dlm.typer_utils import dump_short_stacktrace

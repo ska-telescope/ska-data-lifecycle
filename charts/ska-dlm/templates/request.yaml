@@ -58,6 +58,11 @@ spec:
             port: http-port
           periodSeconds: 5
           initialDelaySeconds: 5
+        envFrom:
+        - configMapRef:
+            name: "{{ include "ska-dlm.fullname" . }}-sqlalchemy-configmap"
+        - secretRef:
+            name: "{{ include "ska-dlm.fullname" . }}-sqlalchemy-secret"
         volumeMounts:
         - name: dlm-configmap
           mountPath: "/home/ska-dlm/.dlm"

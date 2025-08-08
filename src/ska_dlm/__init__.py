@@ -23,13 +23,13 @@ DLM_HOME = Path.home() / ".dlm/"
 """The configuration path of dlm."""
 
 
-def read_config(user_config_file: Path = DLM_HOME / "config.yaml") -> benedict:
+def read_config(user_config_file: Path = DLM_HOME / "config_sqlalchemy.yaml") -> benedict:
     """Read the config file and return the config dictionary."""
     if not user_config_file.exists():
         # create the default user config in DLM_HOME if it does not already exist
         print(f"DLM config file {user_config_file} not found - creating and using default")
         user_config_file.parent.mkdir(exist_ok=True)
-        default_user_config_file = DLM_LIB_DIR / "config.yaml"
+        default_user_config_file = DLM_LIB_DIR / "config_sqlalchemy.yaml"
         shutil.copy(default_user_config_file, user_config_file)
 
     with open(user_config_file, encoding="utf-8") as file:
