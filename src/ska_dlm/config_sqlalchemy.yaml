@@ -1,0 +1,34 @@
+# Default values for the SKA Data Lifecycle Management system.
+# This is a YAML-formatted file.
+
+DLM:
+  dlm_db: "ska_dlm_meta"
+  dlm_table: "data_item"
+  storage_table: "storage"
+  storage_config_table: "storage_config"
+  location_table: "location"
+  migration_table: "migration"
+  storage_manager:
+    storage_warning_percentage: 80.0
+    polling_interval: 10 # seconds
+  migration_manager:
+    polling_interval: 10 # seconds
+
+# Database connection parameters for SQLAlchemy
+DB:
+  # These values can be overridden by environment variables:
+  # PGHOST, PGUSER, PGPASSWORD, PGDATABASE, PGSCHEMA
+  host: "localhost"
+  user: "postgres"
+  password: "postgres"
+  database: "ska_dlm_meta"
+  schema: "public"
+  # Optional: direct database URI (overrides individual parameters if provided)
+  # uri: "postgresql://user:password@host/database"
+
+# Keep REST configuration for backward compatibility during migration
+REST:
+  base_url: "http://localhost:3000"
+
+RCLONE:
+  - "https://localhost:5572"
