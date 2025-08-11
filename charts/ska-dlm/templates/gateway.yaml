@@ -86,6 +86,12 @@ spec:
               name: {{ include "ska-dlm.gateway.secret.name" $ }}
               key: {{ $envvar_name }}
               optional: false
+        - name: SCOPES
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "ska-dlm.gateway.secret.name" $ }}
+              key: SCOPES
+              optional: true
         {{ end -}}
         envFrom:
         {{- if $.Values.keycloak.enabled }}
