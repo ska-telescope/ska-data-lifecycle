@@ -45,7 +45,8 @@ Within a configuration, a user can:
 
 ### Example Configuration
 
-Create a migration configuration file: `migrate.yaml`
+* Create the directory: `charts/ska-dlm/benchmark`
+* Create a migration configuration file: `charts/ska-dlm/benchmark/migrate_config.yaml`
 
 ```yaml
 benchmarks:
@@ -113,13 +114,13 @@ storage:
                   "endpoint": "https://projects.pawsey.org.au"}
 ```
 
-### Locust Configuration
+### Migration Locust Configuration
 Create a locust configuration file: `migrate.conf`
 
 ```
 host = <url of gateway>
 token = <auth token>
-migration_config = <path to the migration config yaml file>
+migration_config = <name of the migration config yaml file in directory charts/ska-dlm/benchmark e.g. migrate_config.yaml>
 output_file = <output file path of stats>
 ```
 
@@ -250,7 +251,7 @@ Example of the JSON output.
 
 ## `register.py` Utility
 
-### Locust Configuration
+### Register Locust Configuration
 Create a locust configuration file: `register.conf`
 
 ```
