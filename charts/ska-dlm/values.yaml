@@ -81,7 +81,7 @@ postgrest:
   db_auth_secret:
     create: true
     vault:
-      enabled: true
+      enabled: false
       path: ""
       mount: ""
       type: "kv-v2"
@@ -102,7 +102,7 @@ rclone:
   component: rclone
   subsystem: data-lifecycle-management
   image: rclone/rclone
-  version: "1.65"
+  version: "1.70.3"
   imagePullPolicy: Always
   replicas: 1
 
@@ -185,3 +185,18 @@ pgweb:  # see https://github.com/ectobit/charts/tree/main/pgweb
     - paths:
       - path: /pgweb(/|$)(.*)
         pathType: ImplementationSpecific
+
+benchmark:
+  enabled: false
+  component: benchmark
+  subsystem: data-lifecycle-management
+  image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-benchmark
+  version: "1.1.2"
+  imagePullPolicy: Always
+
+  name: register
+  config:
+    host:
+    token:
+    sourceFile:
+    mountPath:

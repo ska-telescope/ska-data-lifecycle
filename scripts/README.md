@@ -29,16 +29,15 @@ Within a configuration, a user can:
         - destination_storage: name of destination storage endpoint
 
 - dlm:
-    - url: url of gateway
-    - token: access API token
     - migration_polltime: number of seconds delay before checking migration job state
 
 - storage:
     - storage<integer>: can define 1 or many
       - location: name of storage location
       - name: storage name
-      - type: type of storage endpoint
-      - interface: posix, s3 etc
+      - location_type: location type ('local-dev', 'low-integration', 'mid-integration', 'low-operations', 'mid-operations')
+      - storage_type: type of storage endpoint ('filesystem', 'objectstore', 'tape')
+      - interface: storage interface ('posix', 's3', 'sftp', 'https')
       - root_directory: root directory of mount point.
       - config: RClone config
 
@@ -46,7 +45,7 @@ Within a configuration, a user can:
 
 ### Example Configuration
 
-Create a migration configuration file: `migrate.yaml`
+* Create a migration configuration file: `migrate_config.yaml`
 
 ```yaml
 benchmarks:
@@ -70,15 +69,14 @@ benchmarks:
     destination_path: aussrc/object.bin
 
 dlm:
-  url: http://localhost:8000/
-  token: <token>
   migration_polltime: 5
 
 storage:
   storage1:
     location: test_location
     name: test_source
-    type: disk
+    location_type: local-dev
+    storage_type: filesystem
     interface: posix
     root_directory: /
     config:
@@ -89,7 +87,8 @@ storage:
   storage2:
     location: test_location
     name: test_destination
-    type: disk
+    location_type: local-dev
+    storage_type: filesystem
     interface: posix
     root_directory: /
     config:
@@ -100,7 +99,8 @@ storage:
   storage3:
     location: test_location
     name: s3_destination
-    type: disk
+    location_type: local-dev
+    storage_type: objectstore
     interface: s3
     root_directory: /
     config:
@@ -113,12 +113,13 @@ storage:
                   "endpoint": "https://projects.pawsey.org.au"}
 ```
 
-### Locust Configuration
+### Migration Locust Configuration
 Create a locust configuration file: `migrate.conf`
 
 ```
 host = <url of gateway>
-migration_config = <path to the migration config yaml file>
+token = <auth token>
+migration_config = <path of the migration config yaml file>
 output_file = <output file path of stats>
 ```
 
@@ -249,7 +250,7 @@ Example of the JSON output.
 
 ## `register.py` Utility
 
-### Locust Configuration
+### Register Locust Configuration
 Create a locust configuration file: `register.conf`
 
 ```

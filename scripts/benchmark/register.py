@@ -22,7 +22,9 @@ from tests.integration.client.exception_handler import dlm_raise_for_status
 @events.init_command_line_parser.add_listener
 def init_parser(parser):
     """Add token configuration option."""
-    parser.add_argument("--token", help="Bearer token")
+    parser.add_argument("--token",
+                        env_var="LOCUST_TOKEN",
+                        help="Bearer token")
 
 
 class Register(HttpUser):
@@ -36,7 +38,8 @@ class Register(HttpUser):
         storage_config = {
             "location": "test_location",
             "name": "test_source",
-            "type": "disk",
+            "location_type": "local-dev",
+            "storage_type": "filesystem",
             "interface": "posix",
             "root_directory": "/",
             "config": {
