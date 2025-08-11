@@ -45,8 +45,7 @@ Within a configuration, a user can:
 
 ### Example Configuration
 
-* Create the directory: `charts/ska-dlm/benchmark`
-* Create a migration configuration file: `charts/ska-dlm/benchmark/migrate_config.yaml`
+* Create a migration configuration file: `migrate_config.yaml`
 
 ```yaml
 benchmarks:
@@ -120,7 +119,7 @@ Create a locust configuration file: `migrate.conf`
 ```
 host = <url of gateway>
 token = <auth token>
-migration_config = <name of the migration config yaml file in directory charts/ska-dlm/benchmark e.g. migrate_config.yaml>
+migration_config = <path of the migration config yaml file>
 output_file = <output file path of stats>
 ```
 
