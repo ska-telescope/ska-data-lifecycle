@@ -79,7 +79,6 @@ storage_id = dlm_storage.init_storage(
     root_directory="/",
     location_id=location_id, # the location ID retrieved in the previous step
     storage_type="filesystem",
-    storage_type="filesystem",
     storage_interface="posix",
     storage_capacity=100000000,
 )
@@ -93,7 +92,6 @@ config_id = dlm_storage.create_storage_config(storage_id=storage_id, config=conf
 # register an existing data item inside the rclone container (e.g., /etc/os-release)
 uid = dlm_ingest.register_data_item(
     item_name="test_item",
-    item_name="test_item",
     uri="/etc/os-release",
     storage_name="MyDisk",
     item_type="file",
@@ -106,7 +104,6 @@ storage_id = dlm_storage.init_storage(
     storage_name="MyDisk2",
     root_directory="/",
     location_id=location_id, # can be the same location_id or a new location
-    storage_type="filesystem",
     storage_type="filesystem",
     storage_interface="posix",
     storage_capacity=100000000,
