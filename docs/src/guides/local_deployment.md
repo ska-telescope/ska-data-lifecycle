@@ -47,8 +47,8 @@ ska-dlm storage create-storage-config '{"name":"MyDisk2", "root_path": "/", "typ
 --storage-id '<the storage id received above>'
 
 # copy your data item from MyDisk to MyDisk2
-ska-dlm migration copy-data-item --item-name test_item_name --destination-name "MyDisk2" \
---path "/data/test_item"
+ska-dlm migration copy-data-item --item-name test_item_name --destination-name MyDisk2 \
+--path /data/test_item
 
 # query for all instances of "test_item_name"
 ska-dlm data-item query-data-item --item-name test_item_name
