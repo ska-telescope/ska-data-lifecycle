@@ -5,6 +5,7 @@ import logging
 from fastapi import APIRouter
 
 from ska_dlm import CONFIG
+from ska_dlm.common_types import ItemState
 from ska_dlm.dlm_db.db_access import DB
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
 from ska_dlm.exceptions import InvalidQueryParameters
@@ -156,7 +157,7 @@ def set_metadata(uid: str, metadata_post: JsonObjectOption = None) -> dict:
 
 @cli.command()
 @rest.patch("/request/set_state", response_model=dict)
-def set_state(uid: str, state: str) -> dict:
+def set_state(uid: str, state: ItemState) -> dict:
     """Set the state field of the uid data_item.
 
     Parameters
@@ -171,6 +172,13 @@ def set_state(uid: str, state: str) -> dict:
     dict
         the updated data item entry
     """
+    try:
+        ItemState(state)  # Check that the input is a valid enum
+    except ValueError as exc:
+        raise ValueError(
+            f"Invalid item state {state}. Must be one of {[e.value for e in ItemState]}"
+        ) from exc
+
     return update_data_item(uid=uid, post_data={"item_state": state})
 
 

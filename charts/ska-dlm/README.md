@@ -75,6 +75,25 @@ Create a k8 secret with the following Entra configuration items obtained by SKAO
   * `CLIENT_ID` = `<Client ID>`
   * `CLIENT_CRED` = `<Client credential>`
 
+
+## Benchmark
+
+To run the benchmarking pod:
+
+  * Set `benchmark.enabled` = `true`
+  * Set `benchmark.name` = `register` or `migrate`
+  * Set `benchmark.config.host` = hostname of the DLM gateway
+  * Set `benchmark.config.token` = auth token
+  * If `benchmark.name` = `migrate`:
+    * `benchmark.config.sourceFile` = name of the migration yaml config file (must be created in the directory `charts/ska-dlm/benchmark`)
+    * `benchmark.config.mountPath` = location in the pod the migration yaml config file will be copied
+
+1) Setup port forwarding on the benchmark pod to port: `8089`
+2) In a browser, navigate to `http://localhost:8089`
+3) Click START
+
+For details on the benchmark configuration, see the [documentation](../../scripts/README.md).
+
 ## Schema changes by release
 
 ### Working version

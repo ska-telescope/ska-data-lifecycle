@@ -1,10 +1,10 @@
 """dlm_ingest REST client."""
 
-from enum import Enum
 from typing import Any, Union
 
 import requests
 
+from ska_dlm.common_types import ItemType, PhaseType
 from ska_dlm.typer_types import JsonObjectOption
 from tests.integration.client.exception_handler import dlm_raise_for_status
 
@@ -14,19 +14,12 @@ TOKEN: str = None
 JsonType = Union[dict[str, Any], list[Any], str, int, float, bool, None]
 
 
-class ItemType(str, Enum):
-    """Data Item on the filesystem."""
-
-    UNKNOWN = "unknown"
-    """A single file."""
-    FILE = "file"
-    """A single file."""
-    CONTAINER = "container"
-    """A directory superset with parents."""
-
-
 # pylint: disable=unused-argument
-def init_data_item(item_name: str | None = None, phase: str = "GAS", json_data: str = "") -> str:
+def init_data_item(
+    item_name: str | None = None,
+    uid_phase: PhaseType = PhaseType.GAS,  # TODO: add logic for oid_phase
+    json_data: JsonObjectOption = None,
+) -> str:
     """Initialise a new data_item.
 
     item_name or json_data is required.
@@ -35,8 +28,8 @@ def init_data_item(item_name: str | None = None, phase: str = "GAS", json_data: 
     ----------
     item_name
         the item_name, can be empty, but then json_data has to be specified.
-    phase
-        the phase this item is set to (usually inherited from the storage)
+    uid_phase
+        the phase type of this item (usually inherited from the storage).
     json_data
         data item table values.
 

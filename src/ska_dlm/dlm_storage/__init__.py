@@ -1,4 +1,4 @@
-"""DLMstorage module for ska-data-lifecycle."""
+"""DLM storage module for ska-data-lifecycle."""
 
 from .dlm_storage_requests import (
     check_item_on_storage,

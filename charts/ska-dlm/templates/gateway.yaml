@@ -79,6 +79,12 @@ spec:
           value: "http://{{ include "ska-dlm.fullname" . }}-storage.{{ .Release.Namespace }}:80"
         - name: MIGRATION_CLIENT
           value: "http://{{ include "ska-dlm.fullname" . }}-migration.{{ .Release.Namespace }}:80"
+        - name: SCOPES
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "ska-dlm.gateway.secret.name" $ }}
+              key: SCOPES
+              optional: true
         {{ range $envvar_name := tuple "PROVIDER" "TENANT_ID" "CLIENT_ID" "CLIENT_CRED" -}}
         - name: {{ $envvar_name }}
           valueFrom:

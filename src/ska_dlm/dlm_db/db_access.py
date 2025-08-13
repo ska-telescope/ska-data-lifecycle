@@ -6,7 +6,7 @@ import logging
 import requests
 
 from .. import CONFIG
-from ..exceptions import DataLifecycleError
+from ..exceptions import DatabaseOperationError, DataLifecycleError
 
 logger = logging.getLogger(__name__)
 
@@ -111,6 +111,14 @@ class PostgRESTAccess(contextlib.AbstractContextManager):
                 case 400:
                     json = ex.response.json()
                     raise DBQueryError(url=url, method=method, params=params, json=json) from ex
+                case 409:
+                    try:
+                        message = ex.response.json().get("message", str(ex))
+                    except (ValueError, json.JSONDecodeError, AttributeError):
+                        message = str(ex)
+                    raise DatabaseOperationError(
+                        f"Database conflict on {method} {url}", message
+                    ) from ex
                 case _:
                     raise
         return response.json()

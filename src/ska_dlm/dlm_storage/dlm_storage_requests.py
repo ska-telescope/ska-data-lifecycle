@@ -8,6 +8,14 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 import ska_dlm
+from ska_dlm.common_types import (
+    ConfigType,
+    LocationCountry,
+    LocationType,
+    PhaseType,
+    StorageInterface,
+    StorageType,
+)
 from ska_dlm.dlm_db.db_access import DB
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
 from ska_dlm.fastapi_utils import fastapi_auto_annotate
@@ -16,9 +24,15 @@ from ska_dlm.typer_types import JsonObjectArg, JsonObjectOption
 from .. import CONFIG
 from ..data_item import set_state
 from ..dlm_request import query_expired, query_item_storage
-from ..exceptions import InvalidQueryParameters, UnmetPreconditionForOperation, ValueAlreadyInDB
+from ..exceptions import (
+    DatabaseOperationError,
+    InvalidQueryParameters,
+    UnmetPreconditionForOperation,
+    ValueAlreadyInDB,
+)
 
 logger = logging.getLogger(__name__)
+
 
 cli = ExceptionHandlingTyper()
 rest = fastapi_auto_annotate(
@@ -61,6 +75,24 @@ def invalidquery_exception_handler(request: Request, exc: InvalidQueryParameters
     )
 
 
+# pylint: disable=unused-argument
+@rest.exception_handler(DatabaseOperationError)
+def database_error_handler(request: Request, exc: DatabaseOperationError):
+    """Catch DatabaseOperationError and send a JSONResponse."""
+    return JSONResponse(
+        status_code=409,  # status code for DB constraint violations
+        content={"exec": "DatabaseOperationError", "message": str(exc)},
+    )
+
+
+@rest.get("/storage/query_location_facility", response_model=list[str])
+def query_location_facility() -> list[str]:
+    """Query the location_facility table for valid facilities."""
+    params = {"select": "id"}
+    rows = DB.select("location_facility", params=params)
+    return [row["id"] for row in rows]
+
+
 @cli.command()
 @rest.get("/storage/query_location", response_model=list[dict])
 def query_location(location_name: str = "", location_id: str = "") -> list[dict]:
@@ -89,29 +121,29 @@ def query_location(location_name: str = "", location_id: str = "") -> list[dict]
 
 @cli.command()
 @rest.post("/storage/init_storage", response_model=str)
-# pylint: disable=too-many-arguments,unused-argument,too-many-positional-arguments
+# pylint: disable=too-many-arguments,too-many-locals,too-many-positional-arguments
 def init_storage(
     storage_name: str,
-    storage_type: str,
-    storage_interface: str,
+    storage_type: StorageType,
     root_directory: str,
+    storage_interface: StorageInterface,
     location_id: str | None = None,
     location_name: str | None = None,
     storage_capacity: int = -1,
-    storage_phase: str = "GAS",
+    storage_phase: PhaseType = PhaseType.GAS,
     rclone_config: JsonObjectOption = None,
 ) -> str:
     """
-    Initialise a new storage.
+    Initialise a new storage. Either location_id or location_name is required.
 
     Parameters
     ----------
     storage_name
         An organisation or owner name for the storage.
     storage_type
-        high level type of the storage: 'filesystem', 'objectstore' or 'tape'
+        high level type of the storage, from enum StorageType
     storage_interface
-        storage interface for rclone access, e.g. "posix", "s3"
+        storage interface for rclone access, from enum StorageInterface
     root_directory
         data directory as an absolute path on the remote storage endpoint
     location_id
@@ -121,14 +153,23 @@ def init_storage(
     storage_capacity
         reserved storage capacity in bytes
     storage_phase
-        one of "GAS", "LIQUID", "SOLID"
+        from the enum PhaseType
     rclone_config
         extra rclone values such as secrets required for connection
 
     Returns
     -------
     str
-        Either a storage_ID or an empty string
+        Either a storage_id or an empty string
+
+    Raises
+    ------
+    InvalidQueryParameters
+        if a mandatory argument is missing
+    ValueError
+        if storage_type is not a valid enum value from StorageType
+        if storage_interface is not a valid enum value from StorageInterface
+        if storage_phase is not a valid enum value from PhaseType
     """
     provided_args = dict(locals())
     mandatory_keys = [
@@ -141,6 +182,7 @@ def init_storage(
         "root_directory",
     ]
     # TODO remove keys none values
+
     post_data = {}
     if rclone_config:
         json_dict = rclone_config
@@ -159,6 +201,29 @@ def init_storage(
                 post_data.update({k: provided_args[k]})
             else:
                 raise InvalidQueryParameters(f"Argument {k} is mandatory!")
+
+    try:
+        StorageType(storage_type)  # Check that the input is a valid enum
+    except ValueError as exc:
+        raise ValueError(
+            f"Invalid storage type {storage_type}. Must be one of {[e.value for e in StorageType]}"
+        ) from exc
+
+    try:
+        StorageInterface(storage_interface)  # Check that the input is a valid enum
+    except ValueError as exc:
+        raise ValueError(
+            f"Invalid storage interface {storage_interface}. "
+            f"Must be one of {[e.value for e in StorageInterface]}"
+        ) from exc
+
+    try:
+        PhaseType(storage_phase)  # Check that the input is a valid enum
+    except ValueError as exc:
+        raise ValueError(
+            f"Invalid storage phase {storage_phase}. Must be one of {[e.value for e in PhaseType]}"
+        ) from exc
+
     return DB.insert(CONFIG.DLM.storage_table, json=post_data)[0]["storage_id"]
 
 
@@ -168,7 +233,7 @@ def create_storage_config(
     config: JsonObjectArg,
     storage_id: str = "",
     storage_name: str = "",
-    config_type: str = "rclone",
+    config_type: ConfigType = ConfigType.RCLONE,
 ) -> str:
     """Create a new record in the storage_config table for a given storage_id.
 
@@ -192,11 +257,21 @@ def create_storage_config(
     ------
     UnmetPreconditionForOperation
         Neither storage_id nor storage_name is specified.
+        Configuring the rclone server failed.
+    ValueError
+        if config_type is not a valid enum value from ConfigType
     """
     if not storage_name and not storage_id:
         raise UnmetPreconditionForOperation("Neither storage_id nor storage_name is specified.")
     if storage_name:
         storage_id = query_storage(storage_name=storage_name)[0]["storage_id"]
+    try:
+        ConfigType(config_type)  # Check that the input is a valid enum
+    except ValueError as exc:
+        raise ValueError(
+            f"Invalid config type {config_type}. Must be one of {[e.value for e in ConfigType]}"
+        ) from exc
+
     post_data = {
         "storage_id": storage_id,
         "config": config,
@@ -210,7 +285,7 @@ def create_storage_config(
 @cli.command()
 @rest.get("/storage/get_storage_config", response_model=list[dict])
 def get_storage_config(
-    storage_id: str = "", storage_name: str = "", config_type: str = "rclone"
+    storage_id: str = "", storage_name: str = "", config_type: ConfigType = ConfigType.RCLONE
 ) -> list[dict]:
     """Get the storage configuration entry for a particular storage backend.
 
@@ -221,7 +296,7 @@ def get_storage_config(
     storage_name
         the name of the storage volume, by default ""
     config_type
-        query only the specified type, by default "rclone"
+        query only the specified config_type, by default "rclone"
 
     Returns
     -------
@@ -232,6 +307,8 @@ def get_storage_config(
     ------
     UnmetPreconditionForOperation
         storage_name does not exist in database
+    ValueError
+        if config_type is not a valid enum value from ConfigType
     """
     params = {}
     if not storage_name and not storage_id:
@@ -243,11 +320,18 @@ def get_storage_config(
             storage_id = storage[0]["storage_id"]
         else:
             raise UnmetPreconditionForOperation(f"Can't get storage_id for {storage_name}")
+
+    try:
+        ConfigType(config_type)  # Check that the input is a valid enum
+    except ValueError as exc:
+        raise ValueError(
+            f"Invalid config type {config_type}. Must be one of {[e.value for e in ConfigType]}"
+        ) from exc
     if not params:
         params = {
             "limit": 1000,
             "storage_id": f"eq.{storage_id}",
-            "config_type": f"eq.{config_type}",
+            "config_type": f"eq.{config_type.value}",
         }
     result = DB.select(CONFIG.DLM.storage_config_table, params=params)
     return [entry["config"] for entry in result] if result else []
@@ -309,14 +393,12 @@ def check_storage_access(
         return False
     storage_id = storages[0]["storage_id"]
     storage_name = storages[0]["storage_name"]
-    config = get_storage_config(
-        storage_id=storage_id, storage_name=storage_name, config_type="rclone"
-    )
+    config = get_storage_config(storage_id=storage_id, storage_name=storage_name)
     if not config:
         raise UnmetPreconditionForOperation(
             "No valid configuration for storage found!", storage_name
         )
-    volume_name = config[0]["name"]
+    volume_name = f"{config[0]['name']}:{config[0].get('root_path', '')}"
     return rclone_access(volume_name, remote_file_path)
 
 
@@ -342,9 +424,8 @@ def rclone_access(volume: str, remote_file_path: str = "", config: dict | None =
     if config:
         post_data = config
     else:
-        volume_name = f"{volume}:" if volume[-1] != ":" else volume
         post_data = {
-            "fs": volume_name,
+            "fs": volume,
             "remote": remote_file_path,
         }
     logger.info("rclone access check: %s, %s", request_url, post_data)
@@ -370,14 +451,13 @@ def rclone_delete(volume: str, fpath: str) -> bool:
     bool
         True if successful
     """
-    volume_name = f"{volume}:" if volume[-1] != ":" else volume
-    if not rclone_access(volume_name, fpath):
-        logger.error("Can't access %s on %s!", fpath, volume_name)
+    if not rclone_access(volume, fpath):
+        logger.error("Can't access %s on %s!", fpath, volume)
         return False
     url = random.choice(CONFIG.RCLONE)
     request_url = f"{url}/operations/deletefile"
     post_data = {
-        "fs": volume_name,
+        "fs": volume,
         "remote": fpath,
     }
     logger.info("rclone deletion: %s, %s", request_url, post_data)
@@ -392,25 +472,25 @@ def rclone_delete(volume: str, fpath: str) -> bool:
 @rest.post("/storage/init_location", response_model=str)
 def init_location(
     location_name: str,
-    location_type: str,
-    location_country: str = "",
+    location_type: LocationType,
+    location_country: LocationCountry | None = None,
     location_city: str = "",
     location_facility: str = "",
 ) -> str:
-    """Initialise a new storage location.
+    """Initialise a new location for a storage by specifying the location_name and location_type.
 
     Parameters
     ----------
     location_name
         the orgization or owner's name managing the storage location.
     location_type
-        the location type, e.g. "low-operational"
+        the location type, from the enum LocationType
     location_country
-        the location country name (AU, ZA or UK)
+        the location country, from the enum LocationCountry
     location_city
         the location city name
     location_facility
-        the location facility name
+        the location facility name, from table location_facility
 
     Returns
     -------
@@ -423,18 +503,29 @@ def init_location(
         either location_name or location_type is empty
     ValueAlreadyInDB
         location_name aleady exists in database
+    ValueError
+        if location_country is not a valid enum value from LocationCountry
     """
     if not (location_name and location_type):
         raise InvalidQueryParameters("location_name and location_type cannot be empty")
     if query_location(location_name):
         raise ValueAlreadyInDB(f"A location with this name exists already: {location_name}")
     post_data = {"location_name": location_name, "location_type": location_type}
+
     if location_country:
+        try:
+            LocationCountry(location_country)  # Check that the input is a valid enum
+        except ValueError as exc:
+            raise ValueError(
+                f"Invalid location country {location_country}. "
+                f"Must be one of {[e.value for e in LocationCountry]}"
+            ) from exc
         post_data["location_country"] = location_country
     if location_city:
         post_data["location_city"] = location_city
     if location_facility:
         post_data["location_facility"] = location_facility
+
     return DB.insert(CONFIG.DLM.location_table, json=post_data)[0]["location_id"]
 
 
@@ -526,7 +617,7 @@ def delete_data_item_payload(uid: str) -> bool:
         logger.error("More than one storage volume keeping this UID: %s", uid)
     storage = storages[0]
     config = get_storage_config(storage["storage_id"])[0]
-    volume_name = config["name"]
+    volume_name = f"{config['name']}:{config.get('root_path', '')}"
     if not rclone_access(volume_name):
         return False
     source_storage = query_storage(storage_id=storage["storage_id"])

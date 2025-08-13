@@ -1,0 +1,17 @@
+
+services:
+  dlm_benchmark:
+    platform: linux/amd64
+    image: dlm_benchmark
+    container_name: dlm_benchmark
+    build:
+       context: ..
+       dockerfile: scripts/Dockerfile-benchmark
+    ports:
+      - 8089:8089
+    networks:
+      - dlm_network
+
+networks:
+  dlm_network:
+    name: dlm_network

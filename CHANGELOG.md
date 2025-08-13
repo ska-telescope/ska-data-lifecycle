@@ -2,6 +2,7 @@
 
 ## Development
 
+=======
 ### Changed
 
 * Changed data_item.metadata column type from json to jsonb.
@@ -10,9 +11,14 @@
 
 ### Added
 
+* Created common_types.py file for centralised type management.
 * List of location facilities, as a lookup table
 * ENUM definitions for location_type, location_country, config_type, storage_type, storage_interface, phase_type, item_state, checksum_method and mime_type.
 * Set up the Helm chart infrastructure to support database patch releases via versioned SQL files.
+
+## 1.1.3
+
+* Add optional `root_path` to rclone config and rc commands
 
 ## 1.1.2
 

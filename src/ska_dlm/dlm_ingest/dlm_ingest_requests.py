@@ -1,13 +1,13 @@
 """DLM ingest API module."""
 
 import logging
-from enum import Enum
 from typing import Annotated
 
 from fastapi import FastAPI, Header, Request
 from fastapi.responses import JSONResponse
 
 import ska_dlm
+from ska_dlm.common_types import ItemType, PhaseType
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
 from ska_dlm.fastapi_utils import decode_bearer, fastapi_auto_annotate
 from ska_dlm.typer_types import JsonObjectOption
@@ -30,17 +30,6 @@ rest = fastapi_auto_annotate(
         license_info={"name": "BSD-3-Clause", "identifier": "BSD-3-Clause"},
     )
 )
-
-
-class ItemType(str, Enum):
-    """Data Item on the filesystem."""
-
-    UNKNOWN = "unknown"
-    """A single file."""
-    FILE = "file"
-    """A single file."""
-    CONTAINER = "container"
-    """A directory superset with parents."""
 
 
 # pylint: disable=unused-argument
@@ -81,7 +70,7 @@ cli.exception_handler(ValueAlreadyInDB)(dump_short_stacktrace)
 @rest.post("/ingest/init_data_item", response_model=str)
 def init_data_item(
     item_name: str | None = None,
-    phase: str = "GAS",
+    uid_phase: PhaseType = PhaseType.GAS,  # TODO: add logic for oid_phase
     json_data: JsonObjectOption = None,
     authorization: Annotated[str | None, Header()] = None,
 ) -> str:
@@ -93,8 +82,8 @@ def init_data_item(
     ----------
     item_name
         the item_name, can be empty, but then json_data has to be specified.
-    phase
-        the phase this item is set to (usually inherited from the storage)
+    uid_phase
+        the phase type of this item (usually inherited from the storage).
     json_data
         data item table values.
     authorization
@@ -117,7 +106,7 @@ def init_data_item(
             raise ValueError("Username not found in profile")
 
     if item_name:
-        post_data = {"item_name": item_name, "uid_phase": phase, "item_owner": username}
+        post_data = {"item_name": item_name, "uid_phase": uid_phase, "item_owner": username}
     elif json_data:
         post_data = json_data
     else:
@@ -188,9 +177,12 @@ def register_data_item(  # noqa: C901
         username = user_info.get("preferred_username", None)
         if username is None:
             raise ValueError("Username not found in profile")
-
-    if item_type not in set(ItemType):
-        raise ValueError(f"Invalid item type {item_type}")
+    try:
+        ItemType(item_type)  # Check that the input is a valid enum
+    except ValueError as exc:
+        raise ValueError(
+            f"Invalid item type {item_type}. Must be one of {[e.value for e in ItemType]}"
+        ) from exc
 
     # (1)
     storages = query_storage(storage_name=storage_name, storage_id=storage_id)
@@ -234,7 +226,7 @@ def register_data_item(  # noqa: C901
 
     # (7) Populate the metadata column in the database
     if metadata is None:
-        logger.warning("No metadata provided. Initializing metadata with uid and item_name.")
+        logger.warning("No metadata provided. Initialising metadata with uid and item_name.")
         metadata = {}
 
     metadata["uid"] = uid
