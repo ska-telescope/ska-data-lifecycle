@@ -1,4 +1,4 @@
-"""DLMrequest module for ska-data-lifecycle."""
+"""DLM request module for ska-data-lifecycle."""
 
 from .dlm_request_requests import (
     query_data_item,

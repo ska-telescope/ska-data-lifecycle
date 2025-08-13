@@ -15,3 +15,7 @@ class ValueAlreadyInDB(DataLifecycleError, ValueError):
 
 class UnmetPreconditionForOperation(DataLifecycleError, RuntimeError):
     """A pre-condition for a certain operation is not met."""
+
+
+class DatabaseOperationError(DataLifecycleError, RuntimeError):
+    """A general database error, such as constraint violations."""

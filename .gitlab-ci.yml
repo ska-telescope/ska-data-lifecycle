@@ -82,6 +82,16 @@ oci-image-build-gateway:
   script:
     make oci-build-gateway CAR_OCI_REGISTRY_HOST=${CI_REGISTRY}/${CI_PROJECT_NAMESPACE}/${CI_PROJECT_NAME}
 
+oci-image-build-benchmark:
+  extends:
+    - .image_builder_template
+  stage: build
+  variables:
+    OCI_IMAGE: ska-data-lifecycle-benchmark
+    OCI_IMAGE_FILE_PATH: scripts/Dockerfile-benchmark
+  script:
+    make oci-build-benchmark CAR_OCI_REGISTRY_HOST=${CI_REGISTRY}/${CI_PROJECT_NAMESPACE}/${CI_PROJECT_NAME}
+
 python-test:
   image: docker:27.0.2
   services:

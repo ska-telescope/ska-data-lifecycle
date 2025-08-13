@@ -139,6 +139,16 @@ intent: production
 {{- end }}
 
 {{/*
+Benchmark labels
+*/}}
+{{- define "ska-dlm.benchmark.labels" }}
+{{- include "ska-dlm.labels" . }}
+component: {{ .Values.benchmark.component }}
+subsystem: {{ .Values.benchmark.subsystem }}
+intent: production
+{{- end }}
+
+{{/*
 Keycloak labels
 */}}
 {{- define "ska-dlm.keycloak.labels" }}

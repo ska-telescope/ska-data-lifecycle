@@ -5,6 +5,7 @@ import json
 import requests
 
 from ska_dlm.exceptions import (
+    DatabaseOperationError,
     InvalidQueryParameters,
     UnmetPreconditionForOperation,
     ValueAlreadyInDB,
@@ -29,4 +30,13 @@ def dlm_raise_for_status(response: requests.Response):
                         raise InvalidQueryParameters(obj["message"]) from exc
                     case "UnmetPreconditionForOperation":
                         raise UnmetPreconditionForOperation(obj["message"]) from exc
-        raise
+
+        elif exc.response.status_code == 409:  # Conflict
+            try:
+                obj = json.loads(response.text)
+            except json.JSONDecodeError as dexc:
+                raise dexc from exc
+            if "exec" in obj and obj["exec"] == "DatabaseOperationError":
+                raise DatabaseOperationError(obj["message"]) from exc
+
+        raise  # fallback to original HTTPError if not recognised

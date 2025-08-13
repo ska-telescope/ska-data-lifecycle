@@ -1,19 +1,17 @@
 --
--- ska_dlm_admin QL DDL for SKA Data Lifecycle Management DB setup
+-- SQL DDL for SKA Data Lifecycle Management DB setup
 --
 
 --
 -- lookup tables
 --
 
-CREATE TABLE location_type (
+CREATE TABLE IF NOT EXISTS location_facility (
     id TEXT PRIMARY KEY
 );
 
-INSERT INTO location_type (id)
-SELECT unnest(ARRAY[
-  'src', 'aws', 'gcs', 'low-operational', 'low-itf', 'mid-itf', 'dp', 'external'
-])
+INSERT INTO location_facility (id)
+SELECT unnest(ARRAY['SRC', 'STFC', 'AWS', 'Google', 'Pawsey Centre', 'external', 'local'])
 ON CONFLICT DO NOTHING;
 
 --
@@ -23,10 +21,10 @@ ON CONFLICT DO NOTHING;
 CREATE TABLE IF NOT EXISTS location (
     location_id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     location_name varchar NOT NULL UNIQUE,
-    location_type TEXT NOT NULL REFERENCES location_type(id),
+    location_type location_type NOT NULL,
     location_country location_country DEFAULT NULL,
     location_city varchar DEFAULT NULL,
-    location_facility varchar DEFAULT NULL,
+    location_facility TEXT DEFAULT NULL REFERENCES location_facility(id),
     location_check_url varchar DEFAULT NULL,
     location_last_check TIMESTAMP without time zone DEFAULT NULL,
     location_date timestamp without time zone DEFAULT now()

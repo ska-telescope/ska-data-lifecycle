@@ -8,6 +8,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 import ska_dlm
+from ska_dlm.common_types import ItemState, PhaseType
 from ska_dlm.data_item.data_item_requests import query_data_item
 from ska_dlm.data_item.data_item_requests import rest as data_item_requests
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
@@ -63,7 +64,7 @@ def query_expired(offset: timedelta | None = None) -> list[dict]:
     params = {
         "select": "uid,uid_expiration",
         "uid_expiration": f"lt.{iso_now}",
-        "item_state": "eq.READY",
+        "item_state": f"eq.{ItemState.READY.value}",
     }
     return query_data_item(params=params)
 
@@ -83,7 +84,10 @@ def query_deleted(uid: str = "") -> list[dict]:
     list[dict]
         list of dictionaries with UIDs of deleted items.
     """
-    params = {"item_state": "eq.DELETED", "select": "uid"}
+    params = {
+        "item_state": f"eq.{ItemState.DELETED.value}",
+        "select": "uid",
+    }
     if uid:
         params["uid"] = f"eq.{uid}"
     return query_data_item(params=params)
@@ -108,8 +112,8 @@ def query_new(check_date: str, uid: str = "") -> list[dict]:
     """
     params = {
         "uid_creation": f"gt.{check_date}",
-        "uid_phase": "eq.GAS",
-        "item_state": "eq.READY",
+        "uid_phase": f"eq.{PhaseType.GAS.value}",
+        "item_state": f"eq.{ItemState.READY.value}",
         "select": "uid,item_name,uid_creation,storage_id",
     }
     if uid:
@@ -148,7 +152,7 @@ def query_exists(item_name: str = "", oid: str = "", uid: str = "", ready: bool 
     elif uid:
         params["uid"] = f"eq.{uid}"
     if ready:
-        params["item_state"] = "eq.READY"
+        params["item_state"] = f"eq.{ItemState.READY.value}"
     # TODO: select COUNT(*) only instead of all data columns
     return bool(query_data_item(params=params))
 
@@ -200,7 +204,10 @@ def query_item_storage(item_name: str = "", oid: str = "", uid: str = "") -> lis
     if not query_exists_and_ready(item_name, oid, uid):
         logger.warning("data_item does not exists or is not READY.")
         return []
-    params = {"select": "oid,uid,item_name,storage_id,uri", "item_state": "eq.READY"}
+    params = {
+        "select": "oid,uid,item_name,storage_id,uri",
+        "item_state": f"eq.{ItemState.READY.value}",
+    }
     if not item_name and not oid and not uid:
         raise InvalidQueryParameters("Either an item_name or an OID or an UID have to be provided")
     if item_name:

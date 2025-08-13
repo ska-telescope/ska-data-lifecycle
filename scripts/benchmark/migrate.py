@@ -1,6 +1,7 @@
 """Locust migration test script."""
 
 import os
+import re
 import sys
 import git
 
@@ -20,8 +21,16 @@ from locust.exception import StopUser
 @events.init_command_line_parser.add_listener
 def init_parser(parser):
     """Add custom configuration option."""
-    parser.add_argument("--migration_config", help="Migration Config")
-    parser.add_argument("--output_file", help="Statistics output", default="./bench.json")
+    parser.add_argument("--token",
+                        env_var="LOCUST_TOKEN",
+                        help="Bearer token")
+    parser.add_argument("--migration_config",
+                        env_var="LOCUST_MIGRATION_CONFIG",
+                        help="Migration Config")
+    parser.add_argument("--output_file",
+                        env_var="LOCUST_MIGRATION_OUTPUT",
+                        help="Statistics output",
+                        default="./bench.json")
 
 
 class Migrate(HttpUser):
@@ -30,13 +39,14 @@ class Migrate(HttpUser):
     def on_start(self):
         """Startup function called once when a Locust user starts."""
         self.bench_config = load_yaml(self.environment.parsed_options.migration_config)
-        setup_clients(self.bench_config["dlm"]["url"], self.bench_config["dlm"]["token"])
+        setup_clients(self.environment.parsed_options.host,
+                      self.environment.parsed_options.token)
 
     def migration_status(self, record):
         """Migration callback service."""
         data_item = get_data_item(record["oid"], record["destination_storage_id"])
         dt = datetime.fromisoformat(
-            record["job_status"]["startTime"].replace("Z", "+00:00")
+            re.sub(r'\.(\d{1,6})\d*', r'.\1', record["job_status"]["startTime"].replace("Z", "+00:00"))
         )  # Handle ISO format
         request_meta = {
             "request_type": "migration",
