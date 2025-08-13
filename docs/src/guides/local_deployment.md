@@ -18,17 +18,17 @@ The following sections describe how to perform a data item registration and migr
 # check if the location MyLocation already exists
 ska-dlm storage query-location --location-name MyLocation
 # initialise location (if it doesn't already exist)
-ska-dlm storage init-location MyLocation external
+ska-dlm storage init-location MyLocation local-dev
 
 # check if the storage MyDisk already exists
 ska-dlm storage query-storage --storage-name MyDisk
 # initialise storage with root directory "/" (if it doesn't already exist)
-ska-dlm storage init-storage MyDisk filesystem posix / --location-name MyLocation
+ska-dlm storage init-storage MyDisk filesystem "/" posix --location-name MyLocation
 
 # check if a storage config for MyDisk is already known to DLM
 ska-dlm storage get-storage-config --storage-name MyDisk
 # create a storage config for MyDisk (if one doesn't already exist). The default `config_type` is rclone.
-ska-dlm storage create-storage-config '{"name":"MyDisk", "root_path": "/", type":"alias", "parameters":{"remote": "/"}}' \
+ska-dlm storage create-storage-config '{"name": "MyDisk2", "type": "alias", "root_path": "/", "parameters": {"remote": "/"}}' \
 --storage-id '<the storage id received above>'
 
 # register an existing data item inside the rclone container (e.g., /etc/os-release)
@@ -40,18 +40,18 @@ ska-dlm data-item query-data-item --item-name test_item_name
 
 # migrate an item from one storage to another
 # register a second storage (same or different location)
-ska-dlm storage init-storage MyDisk2 filesystem posix / --location-name MyLocation # put the / in quotes?
+ska-dlm storage init-storage MyDisk2 filesystem "/" posix --location-name MyLocation
 
 # supply a storage configuration
 ska-dlm storage create-storage-config '{"name":"MyDisk2", "root_path": "/", "type":"alias", "parameters":{"remote": "/"}}' \
 --storage-id '<the storage id received above>'
 
 # copy your data item from MyDisk to MyDisk2
-ska-dlm migration copy-data-item --item-name "test_item_name" --destination-name "MyDisk2" \
+ska-dlm migration copy-data-item --item-name test_item_name --destination-name "MyDisk2" \
 --path "/data/test_item"
 
 # query for all instances of "test_item_name"
-ska-dlm data-item query-data-item --item-name "test_item_name"
+ska-dlm data-item query-data-item --item-name test_item_name
 
 # if you can't find the command you need, follow the help prompts
 ska-dlm --help
@@ -64,7 +64,7 @@ ska-dlm --help
 from ska_dlm import dlm_storage, dlm_ingest, dlm_migration, dlm_request
 
 location_name = "MyLocation"
-location_type = "external"
+location_type = "local-dev"
 
 # check if the location 'MyLocation' is already known to DLM
 dlm_storage.query_location(location_name=location_name)
@@ -77,7 +77,7 @@ dlm_storage.query_storage(storage_name="MyDisk")
 storage_id = dlm_storage.init_storage(
     storage_name="MyDisk",
     root_directory="/",
-    location_id=location_id, # the location ID from the previous step
+    location_id=location_id, # the location ID retrieved in the previous step
     storage_type="filesystem",
     storage_interface="posix",
     storage_capacity=100000000,

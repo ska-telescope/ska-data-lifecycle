@@ -1,9 +1,9 @@
-# DP Cluster
+# External Storage
 
 (dp-cluster)=
 ## Ingest and Migrate a Data Item
 
-This section outlines the steps required to ingest and migrate data within the DLM system using the **ska-dlm REST API interface**.
+This section outlines the steps required to ingest and migrate data using the **ska-dlm REST API interface**.
 
 1. Obtain an API token, authorizing use of DLM by a specific user
 2. Determine the location of the file(s) you wish to register, and register this location with DLM
@@ -14,19 +14,22 @@ This section outlines the steps required to ingest and migrate data within the D
 7. Query for all copies of the data item
 
 
-The source code below demonstrates how to register a data item that exists on an external storage (e.g., Acacia).
+In the Python code below, we register an arbitrarily chosen file residing on an external storage, Acacia, located at the Pawsey Centre.
+We make use of the DLM deployment on the DP platform, in the dp-dm namespace.
 
 
 **1. Prepare token to be placed in the header of your REST calls**
 
-* Open a browser and go to the `/token_by_auth_flow` endpoint on the DLM server URL. For example: `https://sdhp.stfc.skao.int/dp-dm/dlm/token_by_auth_flow`.
-* Login with your SKAO credentials
+
+* Open a browser and go to the `/token_by_auth_flow` endpoint on the DLM server URL.
+* For example, for the DLM deployment on the DP cluster: `https://sdhp.stfc.skao.int/dp-dm/dlm/token_by_auth_flow`.
+* Login with your credentials
 * If successful, a token will be returned. Copy the token.
 
 ```python
 from requests import Session
 
-# this URL is for DLM deployment in the 'dp-dm' namespace on the DP integration cluster
+# this URL is for DLM deployment in the 'dp-dm' namespace on the DP test platform
 DLM_URL = "https://sdhp.stfc.skao.int/dp-dm/dlm"
 token = <your token>
 headers = {"Authorization": f"Bearer {token}"}
@@ -37,7 +40,7 @@ session = Session()
 ```python
 # create location details
 location_name = "STFC"
-location_type = "dp"
+location_type = "low-integration"
 
 location = session.get(
     f"{DLM_URL}/storage/query_location",
