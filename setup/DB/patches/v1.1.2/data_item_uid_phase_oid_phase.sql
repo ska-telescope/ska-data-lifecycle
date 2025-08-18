@@ -6,10 +6,12 @@ ALTER TABLE data_item
 
 -- Rename column if it exists
 DO $$
+DECLARE
+  sch text := current_schema();
 BEGIN
   IF EXISTS (
     SELECT 1 FROM information_schema.columns
-    WHERE table_schema = 'public' --
+    WHERE table_schema = sch
       AND table_name = 'data_item'
       AND column_name = 'item_phase'
   ) THEN
@@ -21,10 +23,12 @@ $$;
 
 -- Rename column if it exists
 DO $$
+DECLARE
+  sch text := current_schema();
 BEGIN
   IF EXISTS (
     SELECT 1 FROM information_schema.columns
-    WHERE table_schema = 'public' --
+    WHERE table_schema = sch
       AND table_name = 'storage'
       AND column_name = 'storage_phase_level'
   ) THEN

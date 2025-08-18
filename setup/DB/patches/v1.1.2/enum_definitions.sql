@@ -1,4 +1,5 @@
 -- This section defines enum types (rerunnable)
+SET search_path = dlm, public;
 
 DO $$
 BEGIN
