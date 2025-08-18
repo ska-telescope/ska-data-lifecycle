@@ -1,3 +1,5 @@
+SET search_path = dlm, public;
+
 BEGIN;
 
 -- Add column (safe to re-run)
