@@ -63,7 +63,7 @@ postgrest:
   imagePullPolicy: Always
 
   replicas: 1
-  db_schema: public # what should we call this instead?
+  db_schema: dlm
   db_anon_role: ska_dlm_admin
   db_pool: 10
   server_host: '*4'
