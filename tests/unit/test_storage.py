@@ -31,7 +31,7 @@ def test_initialise_storage_config():
         location_id = location[0]["location_id"]
     else:
         location_id = dlm_storage.init_location("MyHost", "low-integration")
-    assert len(location_id) == 36
+    assert len(str(location_id)) == 36
     config = {"name": "MyDisk2", "type": "local", "parameters": {}}
     uuid = dlm_storage.init_storage(
         storage_name="MyDisk2",
@@ -41,9 +41,9 @@ def test_initialise_storage_config():
         storage_interface="posix",
         storage_capacity=100000000,
     )
-    assert len(uuid) == 36
+    assert len(str(uuid)) == 36
     config_id = dlm_storage.create_storage_config(storage_id=uuid, config=config)
-    assert len(config_id) == 36
+    assert len(str(config_id)) == 36
     # configure rclone
     assert dlm_storage.create_rclone_config(config) is True
 

@@ -103,7 +103,7 @@ def test_ingest_data_item(env):
     uid = env.ingest_requests.register_data_item(
         item_name="/my/ingest/test/item", uri=TEST_URI, storage_name="MyDisk", metadata=None
     )
-    assert len(uid) == 36
+    assert len(str(uid)) == 36
 
 
 @pytest.mark.integration_test
@@ -115,7 +115,7 @@ def test_register_data_item_with_metadata(env):
         storage_name="MyDisk",
         metadata=METADATA_RECEIVED,
     )
-    assert len(uid) == 36
+    assert len(str(uid)) == 36
     with pytest.raises(ValueAlreadyInDB, match="Item is already registered"):
         env.ingest_requests.register_data_item(
             item_name="/my/ingest/test/item2",
@@ -208,7 +208,7 @@ def __initialise_storage_config(env):
         location_id = location[0]["location_id"]
     else:
         location_id = env.storage_requests.init_location("MyHost", "low-integration")
-    assert len(location_id) == 36
+    assert len(str(location_id)) == 36
     config = {"name": "MyDisk2", "root_path": "/", "type": "alias", "parameters": {"remote": "/"}}
     uuid = env.storage_requests.init_storage(
         storage_name="MyDisk2",
@@ -218,9 +218,9 @@ def __initialise_storage_config(env):
         storage_interface="posix",
         storage_capacity=100000000,
     )
-    assert len(uuid) == 36
+    assert len(str(uuid)) == 36
     config_id = env.storage_requests.create_storage_config(storage_id=uuid, config=config)
-    assert len(config_id) == 36
+    assert len(str(config_id)) == 36
     # configure rclone
     assert env.storage_requests.create_rclone_config(config) is True
 
@@ -238,7 +238,7 @@ def test_copy(env: DlmTestClient):
     uid = env.ingest_requests.register_data_item(
         item_name="/my/ingest/test/item2", uri=TEST_URI, storage_name="MyDisk"
     )
-    assert len(uid) == 36
+    assert len(str(uid)) == 36
     dest = "testfile_copy"
     results = env.migration_requests.copy_data_item(uid=uid, destination_id=dest_id, path=dest)
     assert RCLONE_TEST_FILE_CONTENT == env.get_rclone_local_file_content(RCLONE_TEST_FILE_PATH)
@@ -290,7 +290,7 @@ def test_copy_container(env):
         storage_name="MyDisk",
         parents=None,
     )
-    assert len(uid_root) == 36
+    assert len(str(uid_root)) == 36
 
     dir1_uid = env.ingest_requests.register_data_item(
         item_name="container/dir1",
@@ -299,7 +299,7 @@ def test_copy_container(env):
         storage_name="MyDisk",
         parents=uid_root,
     )
-    assert len(dir1_uid) == 36
+    assert len(str(dir1_uid)) == 36
 
     file1_uid = env.ingest_requests.register_data_item(
         item_name="container/file1",
@@ -308,7 +308,7 @@ def test_copy_container(env):
         storage_name="MyDisk",
         parents=uid_root,
     )
-    assert len(file1_uid) == 36
+    assert len(str(file1_uid)) == 36
 
     file2_uid = env.ingest_requests.register_data_item(
         item_name="container/dir1/file2",
@@ -317,7 +317,7 @@ def test_copy_container(env):
         storage_name="MyDisk",
         parents=dir1_uid,
     )
-    assert len(file2_uid) == 36
+    assert len(str(file2_uid)) == 36
 
     dest = "container"
     result = env.migration_requests.copy_data_item(uid=uid_root, destination_id=dest_id, path=dest)
