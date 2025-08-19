@@ -295,6 +295,15 @@ class SQLAlchemyAccess(contextlib.AbstractContextManager):
             # Get the table object
             table_obj = self._get_table(table)
             
+            # Convert any dictionary values to JSON strings
+            import json as json_module
+            processed_json = {}
+            for key, value in json.items():
+                if isinstance(value, dict):
+                    processed_json[key] = json_module.dumps(value)
+                else:
+                    processed_json[key] = value
+            
             # Insert the data
             with self._session_factory() as session:
                 # Construct the INSERT statement
@@ -303,7 +312,7 @@ class SQLAlchemyAccess(contextlib.AbstractContextManager):
                 query = f"INSERT INTO {self.schema}.{table} ({columns}) VALUES ({placeholders}) RETURNING *"
                 
                 # Execute the query
-                result = session.execute(text(query), json)
+                result = session.execute(text(query), processed_json)
                 rows = [dict(row._mapping) for row in result]
                 session.commit()
                 
@@ -358,8 +367,17 @@ class SQLAlchemyAccess(contextlib.AbstractContextManager):
                 query += f" {where_clause}"
             query += " RETURNING *"
             
+            # Convert any dictionary values to JSON strings
+            import json as json_module
+            processed_json = {}
+            for key, value in json.items():
+                if isinstance(value, dict):
+                    processed_json[key] = json_module.dumps(value)
+                else:
+                    processed_json[key] = value
+            
             # Combine parameters
-            combined_params = {**json, **where_params}
+            combined_params = {**processed_json, **where_params}
             
             # Execute the query
             with self._session_factory() as session:
