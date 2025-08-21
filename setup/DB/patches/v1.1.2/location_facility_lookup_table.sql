@@ -1,5 +1,3 @@
-SET search_path = dlm, public;
-
 -- Convert location_facility column to foreign key via lookup table. Safe to re-run.
 BEGIN;
 

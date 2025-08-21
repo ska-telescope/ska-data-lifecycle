@@ -28,9 +28,13 @@ spec:
               sleep 2;
             done;
 
+            {{- if not .Values.postgrest.db_schema }}
+            echo "WARNING: No postgrest.db_schema provided, defaulting to 'public'";
+            {{- end }}
+
             for f in /etc/sql/base/*.sql; do
               echo "Running $f";
-              psql -f "$f";
+              psql -v ON_ERROR_STOP=1 -f "$f" 2>&1 || exit 1
             done
         env:
         {{- range $envvar_name := tuple "PGUSER" "PGPASSWORD" "PGHOST" "PGDATABASE" }}
@@ -46,6 +50,9 @@ spec:
               name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
               key: PGPORT
               optional: true
+        - name: PGOPTIONS
+          value: >-
+            -c search_path={{- if .Values.postgrest.db_schema }}{{ .Values.postgrest.db_schema }},public{{- else }}public{{- end }}
         volumeMounts:
         - name: base-volume
           mountPath: /etc/sql/base/
@@ -85,13 +92,17 @@ spec:
               sleep 2;
             done;
 
+            {{- if not .Values.postgrest.db_schema }}
+            echo "WARNING: No postgrest.db_schema provided, defaulting to 'public'";
+            {{- end }}
+
             echo "Looking for patch files in /etc/sql/patch/";
             if ls /etc/sql/patch/*.sql 1> /dev/null 2>&1; then
               for f in /etc/sql/patch/*.sql; do
                 echo "Running $f";
                 psql -v ON_ERROR_STOP=1 -f "$f" 2>&1 || exit 1
               done;
-              echo "Please check the logs in Postgres and migration pods for any warnings."
+              echo "Please check the logs in Postgres and migration pods for any warnings.";
             else
               echo "No patch files found";
             fi
@@ -109,6 +120,9 @@ spec:
               name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
               key: PGPORT
               optional: true
+        - name: PGOPTIONS
+          value: >-
+            -c search_path={{- if .Values.postgrest.db_schema }}{{ .Values.postgrest.db_schema }},public{{- else }}public{{- end }}
         volumeMounts:
         - name: patch-volume
           mountPath: /etc/sql/patch/
