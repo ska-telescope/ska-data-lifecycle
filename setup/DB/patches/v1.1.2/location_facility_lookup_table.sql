@@ -1,17 +1,21 @@
 -- Convert location_facility column to foreign key via lookup table. Safe to re-run.
+
+-- Canonical lookup lives in dlm; clients' tables can be in a configurable schema via search_path
+CREATE SCHEMA IF NOT EXISTS dlm;
+
 BEGIN;
 
--- Create the location_facility lookup table
-CREATE TABLE IF NOT EXISTS location_facility (
-    id TEXT PRIMARY KEY
+-- 1) Ensure the lookup table exists in dlm
+CREATE TABLE IF NOT EXISTS dlm.location_facility (
+  id TEXT PRIMARY KEY
 );
 
--- Insert allowed values into lookup table
-INSERT INTO location_facility (id)
+-- 2) Insert allowed values into lookup table
+INSERT INTO dlm.location_facility (id)
 SELECT unnest(ARRAY['SRC', 'STFC', 'AWS', 'Google', 'Pawsey Centre', 'external', 'local'])
 ON CONFLICT DO NOTHING;
 
--- Identify and nullify invalid location_facility values in existing data
+-- 3) Identify and nullify invalid location_facility values in existing data
 DO $$
 DECLARE
   invalid_values TEXT[];
@@ -21,7 +25,7 @@ BEGIN
   FROM location
   WHERE location_facility IS NOT NULL
     AND location_facility NOT IN (
-      SELECT id FROM location_facility
+      SELECT id FROM dlm.location_facility
     );
 
   IF invalid_values IS NOT NULL THEN
@@ -33,13 +37,13 @@ BEGIN
 END
 $$;
 
--- Add foreign key constraint
+-- 4) Add foreign key constraint
 DO $$
 BEGIN
   ALTER TABLE location
     ADD CONSTRAINT location_location_facility_fkey
     FOREIGN KEY (location_facility)
-    REFERENCES location_facility(id);
+    REFERENCES dlm.location_facility(id);
 EXCEPTION
   WHEN duplicate_object THEN
     RAISE NOTICE 'Constraint location_location_facility_fkey already exists. Skipping.';

@@ -9,11 +9,11 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA public;
 --
 -- Lookup tables
 --
-CREATE TABLE IF NOT EXISTS location_facility (
+CREATE TABLE IF NOT EXISTS dlm.location_facility (
     id TEXT PRIMARY KEY
-);
+); -- set permissions for the lookup tables?
 
-INSERT INTO location_facility (id)
+INSERT INTO dlm.location_facility (id)
 SELECT unnest(ARRAY['SRC', 'STFC', 'AWS', 'Google', 'Pawsey Centre', 'external', 'local'])
 ON CONFLICT DO NOTHING;
 
@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS storage (
     storage_date         timestamp without time zone DEFAULT now(),
     CONSTRAINT fk_location
       FOREIGN KEY (location_id)
-      REFERENCES dlm.location(location_id)
+      REFERENCES location(location_id)
       ON DELETE SET NULL
 );
 
@@ -75,7 +75,7 @@ CREATE TABLE IF NOT EXISTS storage_config (
     config_date timestamp without time zone DEFAULT now(),
     CONSTRAINT fk_cfg_storage_id
       FOREIGN KEY (storage_id)
-      REFERENCES dlm.storage(storage_id)
+      REFERENCES storage(storage_id)
       ON DELETE SET NULL
 );
 
@@ -123,17 +123,17 @@ CREATE TABLE IF NOT EXISTS data_item (
     metadata          jsonb DEFAULT NULL,
     CONSTRAINT fk_storage
       FOREIGN KEY (storage_id)
-      REFERENCES dlm.storage(storage_id)
+      REFERENCES storage(storage_id)
       ON DELETE SET NULL
 );
 
 -- Indexes
-CREATE INDEX IF NOT EXISTS idx_fk_storage_id ON dlm.data_item USING btree (storage_id);
+CREATE INDEX IF NOT EXISTS idx_fk_storage_id ON data_item USING btree (storage_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_unq_OID_UID_item_version
-    ON dlm.data_item USING btree (OID, UID, item_version);
+    ON data_item USING btree (OID, UID, item_version);
 
 -- Trigger function to sync OID/UID fields
-CREATE OR REPLACE FUNCTION dlm.sync_oid_uid() RETURNS trigger AS $$
+CREATE OR REPLACE FUNCTION sync_oid_uid() RETURNS trigger AS $$
   DECLARE oidc RECORD;
   DECLARE tnow timestamp DEFAULT now();
   BEGIN
@@ -152,10 +152,10 @@ CREATE OR REPLACE FUNCTION dlm.sync_oid_uid() RETURNS trigger AS $$
 $$ LANGUAGE plpgsql;
 
 -- Trigger (note: trigger names are not schema-qualified)
-DROP TRIGGER IF EXISTS sync_oid_uid ON dlm.data_item;
+DROP TRIGGER IF EXISTS sync_oid_uid ON data_item;
 CREATE TRIGGER sync_oid_uid
-BEFORE INSERT ON dlm.data_item
-FOR EACH ROW EXECUTE FUNCTION dlm.sync_oid_uid();
+BEFORE INSERT ON data_item
+FOR EACH ROW EXECUTE FUNCTION sync_oid_uid();
 
 --
 -- Table: phase_change
@@ -186,11 +186,11 @@ CREATE TABLE IF NOT EXISTS migration (
     completion_date         timestamp without time zone DEFAULT NULL,
     CONSTRAINT fk_source_storage
       FOREIGN KEY (source_storage_id)
-      REFERENCES dlm.storage(storage_id)
+      REFERENCES storage(storage_id)
       ON DELETE SET NULL,
     CONSTRAINT fk_destination_storage
       FOREIGN KEY (destination_storage_id)
-      REFERENCES dlm.storage(storage_id)
+      REFERENCES storage(storage_id)
       ON DELETE SET NULL
 );
 
