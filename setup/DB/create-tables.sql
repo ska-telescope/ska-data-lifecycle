@@ -2,8 +2,9 @@
 -- SQL DDL for SKA Data Lifecycle Management DB setup
 --
 
--- Use dlm first for unqualified names in this session
-SET search_path = dlm, public;
+-- Ensure schema + required extension exist
+CREATE SCHEMA IF NOT EXISTS dlm;
+CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA public;
 
 --
 -- Lookup tables
