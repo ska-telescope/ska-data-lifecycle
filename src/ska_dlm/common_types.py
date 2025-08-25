@@ -60,12 +60,12 @@ class PhaseType(str, Enum):
 class ItemType(str, Enum):
     """Data Item on the filesystem."""
 
-    UNKNOWN = "unknown"
     """Undetermined type."""
-    FILE = "file"
+    UNKNOWN = "unknown"
     """A single file."""
-    CONTAINER = "container"
+    FILE = "file"
     """A directory superset with parents."""
+    CONTAINER = "container"
 
 
 class ItemState(str, Enum):
