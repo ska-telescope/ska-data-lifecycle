@@ -65,7 +65,7 @@ services:
       PGRST_DB_URI: postgres://ska_dlm_admin:password@dlm_db:5432/ska_dlm
       PGRST_OPENAPI_SERVER_PROXY_URI: http://0.0.0.0:3000
       PGRST_DB_ANON_ROLE: ska_dlm_admin
-      PGRST_DB_SCHEMAS: public
+      PGRST_DB_SCHEMAS: dlm
     depends_on:
       dlm_db:
         condition: service_healthy
@@ -87,6 +87,7 @@ services:
       - POSTGRES_DB=ska_dlm
       - POSTGRES_USER=ska_dlm_admin
       - POSTGRES_PASSWORD=password
+      - PGOPTIONS=-c search_path=dlm,public
     networks:
       - dlm_network
     healthcheck:
