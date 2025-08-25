@@ -61,7 +61,7 @@ class ItemType(str, Enum):
     """Data Item on the filesystem."""
 
     UNKNOWN = "unknown"
-    """A single file."""
+    """Undetermined type."""
     FILE = "file"
     """A single file."""
     CONTAINER = "container"
