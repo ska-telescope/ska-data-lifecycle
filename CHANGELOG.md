@@ -1,8 +1,6 @@
 # Version History
 
-## Development
-
-=======
+## 1.2.0
 
 ### Removed
 
