@@ -137,7 +137,7 @@ postgresql:  # see https://github.com/bitnami/charts/tree/main/bitnami/postgresq
   image:
     repository: postgres # docker.io has a pull limit of 100 per 6 hours per IP, 200 for authenticated users
     tag: "17-bookworm"
-    pullPolicy: Always  # Or Always for fresh pulls
+    pullPolicy: Always  # Always for fresh pulls
     debug: true
 
   primary:
