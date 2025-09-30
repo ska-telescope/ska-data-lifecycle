@@ -18,7 +18,7 @@ maintainers:
   email: rtobar@icrar.org
 dependencies:
 - name: postgresql
-  version: 14.0.1
+  version: 16.7.27
   repository: https://charts.bitnami.com/bitnami
   condition: postgresql.enabled
 - name: pgweb

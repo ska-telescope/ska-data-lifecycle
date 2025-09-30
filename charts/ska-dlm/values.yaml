@@ -59,7 +59,7 @@ postgrest:
   subsystem: data-lifecycle-management
 
   image: postgrest/postgrest
-  version: v12.0.2
+  version: "v13.0.7"
   imagePullPolicy: Always
 
   replicas: 1
@@ -119,8 +119,8 @@ rclone:
       path: ""
 
 kubectl:
-  image: bitnami/kubectl
-  version: 1.28.6
+  image: rancher/kubectl
+  version: "v1.28.15-amd64"
   imagePullPolicy: Always
 
 # Test Database
@@ -135,11 +135,15 @@ postgresql:  # see https://github.com/bitnami/charts/tree/main/bitnami/postgresq
     database: ska_dlm
 
   image:
+    repository: postgres # docker.io has a pull limit of 100 per 6 hours per IP, 200 for authenticated users
+    tag: "17-bookworm"
+    pullPolicy: Always  # Always for fresh pulls
     debug: true
 
   primary:
-    # matches auth.database
     name: ska_dlm
+    containerSecurityContext:
+      readOnlyRootFilesystem: false
     persistence:
       enabled: false
     initdb:
