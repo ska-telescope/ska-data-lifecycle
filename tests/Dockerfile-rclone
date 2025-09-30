@@ -3,7 +3,7 @@ FROM rclone/rclone
 RUN apk update && \
     apk add openssl && \
     openssl req -x509 -nodes -days 365 \
-        -subj "/C=CA/ST=QC/O=SKAO, Inc./CN=skao.int" \
+        -subj "/C=AU/ST=WA/O=SKAO, Inc./CN=skao.int" \
         -addext "subjectAltName=DNS:skao.int" \
         -newkey rsa:2048 \
         -keyout /etc/ssl/private/selfsigned.key \
