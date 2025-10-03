@@ -1,5 +1,9 @@
 # Version History
 
+# 1.2.1
+
+* fixed the error 'bearer_token' referenced before assignment
+
 ## 1.2.0
 
 ### Removed

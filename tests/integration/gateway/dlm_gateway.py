@@ -365,6 +365,7 @@ async def _reverse_proxy(request: Request):
     url = httpx.URL(path=request.url.path, query=request.url.query.encode("utf-8"))
 
     auth = None
+    bearer_token = None
     if AUTH is True:
         auth = request.headers.get("authorization", None)
         if not auth:
