@@ -45,6 +45,9 @@ storage:
   imagePullPolicy: Always
   replicas: 1
 
+  endpointSecretName: ""
+  endpoints:
+
 ingest:
   component: ingest
   subsystem: data-lifecycle-management

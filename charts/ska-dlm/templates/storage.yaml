@@ -45,6 +45,9 @@ spec:
         - "0.0.0.0"
         - --port
         - "8003"
+        env:
+          - name: CONFIG
+            value: "/etc/storage-config.json"
         ports:
         - containerPort: 8003
           name: http-port
@@ -62,7 +65,14 @@ spec:
         - name: dlm-configmap
           mountPath: "/home/ska-dlm/.dlm"
           readOnly: true
+        - name: storage-configmap
+          mountPath: "/etc/storage-config.json"
+          subPath: storage-config.json
+          readOnly: true
       volumes:
       - name: dlm-configmap
         configMap:
           name: {{ include "ska-dlm.fullname" . }}-configmap
+      - name: storage-configmap
+        configMap:
+          name: {{ include "ska-dlm.fullname" . }}-storage-configmap
