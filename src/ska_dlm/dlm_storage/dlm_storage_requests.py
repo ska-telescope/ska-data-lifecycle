@@ -139,7 +139,7 @@ def _setup_storage(storage: dict):
         store = store[0]["storage_id"]
 
     # Allow the operator to enable or disable storage
-    available = storage.get("storage_availability", None)
+    available = storage.get("storage_available", None)
     if available is not None:
         set_storage_availability(storage["name"], available)
 
