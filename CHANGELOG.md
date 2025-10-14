@@ -3,6 +3,7 @@
 # 1.2.1
 
 * fixed the error 'bearer_token' referenced before assignment
+* Add ability to add storage endpoint configuration to storage manager on startup
 
 ## 1.2.0
 
