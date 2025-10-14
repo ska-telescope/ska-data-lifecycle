@@ -211,6 +211,11 @@ def _setup_storage(storage: dict):
     else:
         store = store[0]["storage_id"]
 
+    # Allow the operator to enable or disable storage
+    available = storage.get("storage_available", None)
+    if available is not None:
+        set_storage_availability(storage["name"], available)
+
     store_config = get_storage_config(storage_id=store)
     if not store_config:
         create_storage_config(storage_id=store, config=storage["config"])
