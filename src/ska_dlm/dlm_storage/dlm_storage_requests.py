@@ -1,7 +1,10 @@
 """DLM Storage API module."""
 
+import json
 import logging
+import os
 import random
+from contextlib import asynccontextmanager
 
 import requests
 from fastapi import FastAPI, Request
@@ -34,6 +37,20 @@ from ..exceptions import (
 logger = logging.getLogger(__name__)
 
 
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    """Startup function."""
+    config_path = os.getenv("CONFIG", None)
+    if config_path:
+        with open(config_path, "r", encoding="utf-8") as json_file:
+            json_config = json.loads(json_file.read())
+
+        for storage in json_config:
+            _setup_storage(storage)
+
+    yield  # Application runs here
+
+
 cli = ExceptionHandlingTyper()
 rest = fastapi_auto_annotate(
     FastAPI(
@@ -41,6 +58,7 @@ rest = fastapi_auto_annotate(
         description="REST interface of the SKA-DLM Storage Manager",
         version=ska_dlm.__version__,
         license_info={"name": "BSD-3-Clause", "identifier": "BSD-3-Clause"},
+        lifespan=lifespan,
     )
 )
 
@@ -91,6 +109,45 @@ def query_location_facility() -> list[str]:
     params = {"select": "id"}
     rows = DB.select("location_facility", params=params)
     return [row["id"] for row in rows]
+
+
+def _setup_storage(storage: dict):
+    """
+    Setup a storage endpoint.
+
+    Parameters
+    ----------
+    storage
+        json object containing storage configuration.
+    """
+    store = query_storage(storage["name"])
+    if not store:
+        location = query_location(location_name=storage["location"])
+        if not location:
+            init_location(
+                location_name=storage["location"], location_type=storage["location_type"]
+            )
+
+        store = init_storage(
+            storage_name=storage["name"],
+            location_name=storage["location"],
+            storage_interface=storage["interface"],
+            root_directory=storage["root_directory"],
+            storage_type=storage["storage_type"],
+        )
+    else:
+        store = store[0]["storage_id"]
+
+    # Allow the operator to enable or disable storage
+    available = storage.get("storage_availability", None)
+    if available is not None:
+        set_storage_availability(storage["name"], available)
+
+    store_config = get_storage_config(storage_id=store)
+    if not store_config:
+        create_storage_config(storage_id=store, config=storage["config"])
+
+    create_rclone_config(config=storage["config"])
 
 
 @cli.command()
@@ -225,6 +282,27 @@ def init_storage(
         ) from exc
 
     return DB.insert(CONFIG.DLM.storage_table, json=post_data)[0]["storage_id"]
+
+
+def set_storage_availability(storage_name: str, available: bool):
+    """
+    Set if storage is available.
+
+    Parameters
+    ----------
+    storage_name
+        name of the storage.
+    available
+        set storage availability.
+
+    Returns
+    -------
+    dict
+        the updated data item entry
+    """
+    params = {"storage_name": f"eq.{storage_name}"}
+    json_data = {"storage_available": available}
+    return DB.update(CONFIG.DLM.storage_table, params=params, json=json_data)[0]
 
 
 @cli.command()
