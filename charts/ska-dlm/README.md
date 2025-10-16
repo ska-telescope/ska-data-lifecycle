@@ -68,7 +68,7 @@ endpoints:
   - name: storage name
   - location: name of storage location
   - location_type: location type ('local-dev', 'low-integration', 'mid-integration', 'low-operations', 'mid-operations')
-  - storage_available: to enable to disable the storage endpoint (true or false respectively)
+  - storage_available: to enable or disable the storage endpoint (true or false respectively)
   - storage_type: type of storage endpoint ('filesystem', 'objectstore', 'tape')
   - interface: storage interface ('posix', 's3', 'sftp', 'https')
   - root_directory: root directory of mount point.
@@ -82,7 +82,7 @@ endpoints:
   - location_type: ...
 ```
 
-* Set `storage.endpointSecretName` to the name of predefined k8 secret. The secret can contain the rclone secrets for a named storage endpoint. The `config.parameters` value for an endpoint will be replced by the secret value if the secret key matches the name of the storage endpoint.
+* Set `storage.endpointSecretName` to the name of predefined k8 secret. The secret can contain the rclone secrets for a named storage endpoint. The `config.parameters` value for an endpoint will be replaced by the secret value if the secret key matches the name of the storage endpoint.
 If `storage.endpointSecretName` is empty then the `config.parameters` will remained unchanged.
 
 
