@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ska-dlm.fullname" . }}-storage-configmap
+data:
+  storage-config.json: |-
+    {{- $secret := lookup "v1" "Secret" .Release.Namespace .Values.storage.endpointSecretName }}
+    [
+      {{- $first := true -}}
+      {{- range .Values.storage.endpoints -}}
+        {{- if not $first -}},{{- end -}}
+        {
+          "name": {{ .name | quote }},
+          "location": {{ .location | quote }},
+          "location_type": {{ .location_type | quote }},
+          "storage_type": {{ .storage_type | quote }},
+          "interface": {{ .interface | quote }},
+          "root_directory": {{ .root_directory | quote }},
+          "config": {
+            "name": {{ .config.name | quote }},
+            "type": {{ .config.type | quote }},
+            "parameters":
+              {{- $parameters := .config.parameters | toJson -}}
+              {{- if $secret.data -}}
+                {{- if hasKey $secret.data .name -}}
+                  {{- $secretValue := index $secret.data .name -}}
+                  {{- $parsed :=  $secretValue | b64dec -}}
+                  {{- if $parsed -}}
+                    {{- $parameters = $parsed -}}
+                  {{- end -}}
+                {{- end -}}
+              {{- end -}}
+              {{ $parameters }}
+          }
+        }
+        {{- $first = false -}}
+      {{- end -}}
+    ]
