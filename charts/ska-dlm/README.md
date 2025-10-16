@@ -85,7 +85,9 @@ There is an option to create multiple storage endpoints when the storage manager
 ```
 endpoints:
   - name: storage name
-  - location: name of existing storage location
+  - location: name of storage location
+  - location_type: location type ('local-dev', 'low-integration', 'mid-integration', 'low-operations', 'mid-operations')
+  - storage_available: to enable or disable the storage endpoint (true or false respectively)
   - storage_type: type of storage endpoint ('filesystem', 'objectstore', 'tape')
   - interface: storage interface ('posix', 's3', 'sftp', 'https')
   - root_directory: root directory of mount point.
