@@ -61,14 +61,25 @@ Note: `database.migration.base.baseInstall` and `database.migration.patch.patchI
 
 ## Storage Manager
 
+There is an option to create multiple locations when the storage manager starts by adding the following list of named values:
+```
+locations:
+    - name: name of the location
+      type: type of storage ("local-dev", "low-integration", "mid-integration", "low-operations", "mid-operations")
+      country: country where storage is located ("AU", "AZ", "UK")
+      city: city where the storage is located
+      facility: specific location ("SRC", "STFC", "AWS", "Google", "Pawsey Centre", "external", "local")
+
+    - name: ...
+      type: ...
+```
+
 There is an option to create multiple storage endpoints when the storage manager starts by adding the following list of named values:
 
 ```
 endpoints:
   - name: storage name
-  - location: name of storage location
-  - location_type: location type ('local-dev', 'low-integration', 'mid-integration', 'low-operations', 'mid-operations')
-  - storage_available: to enable or disable the storage endpoint (true or false respectively)
+  - location: name of existing storage location
   - storage_type: type of storage endpoint ('filesystem', 'objectstore', 'tape')
   - interface: storage interface ('posix', 's3', 'sftp', 'https')
   - root_directory: root directory of mount point.
@@ -79,7 +90,6 @@ endpoints:
 
   - name: ...
   - location: ...
-  - location_type: ...
 ```
 
 * Set `storage.endpointSecretName` to the name of predefined k8 secret. The secret can contain the rclone secrets for a named storage endpoint. The `config.parameters` value for an endpoint will be replaced by the secret value if the secret key matches the name of the storage endpoint.
