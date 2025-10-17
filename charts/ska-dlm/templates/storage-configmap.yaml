@@ -12,11 +12,9 @@ data:
         {
           "name": {{ .name | quote }},
           "location": {{ .location | quote }},
-          "location_type": {{ .location_type | quote }},
           "storage_type": {{ .storage_type | quote }},
           "interface": {{ .interface | quote }},
           "root_directory": {{ .root_directory | quote }},
-          "storage_available": {{ .storage_available }},
           "config": {
             "name": {{ .config.name | quote }},
             "type": {{ .config.type | quote }},
