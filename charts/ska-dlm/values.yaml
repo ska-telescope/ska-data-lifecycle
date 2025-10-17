@@ -45,6 +45,8 @@ storage:
   imagePullPolicy: Always
   replicas: 1
 
+  locations:
+
   endpointSecretName: ""
   endpoints:
 
