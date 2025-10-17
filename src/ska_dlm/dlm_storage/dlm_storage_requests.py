@@ -40,12 +40,20 @@ logger = logging.getLogger(__name__)
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     """Startup function."""
-    config_path = os.getenv("CONFIG", None)
-    if config_path:
-        with open(config_path, "r", encoding="utf-8") as json_file:
-            json_config = json.loads(json_file.read())
+    location_config_path = os.getenv("LOCATION_CONFIG", None)
+    if location_config_path:
+        with open(location_config_path, "r", encoding="utf-8") as json_file:
+            location_json_config = json.loads(json_file.read())
 
-        for storage in json_config:
+        for location in location_json_config:
+            _setup_location(location)
+
+    storage_config_path = os.getenv("STORAGE_CONFIG", None)
+    if storage_config_path:
+        with open(storage_config_path, "r", encoding="utf-8") as json_file:
+            storage_json_config = json.loads(json_file.read())
+
+        for storage in storage_json_config:
             _setup_storage(storage)
 
     yield  # Application runs here
@@ -111,41 +119,102 @@ def query_location_facility() -> list[str]:
     return [row["id"] for row in rows]
 
 
-def _setup_storage(storage: dict):
+def _setup_location(location: dict):
+    """# noqa
+    Setup a location.
+
+    Parameters
+    ----------
+    location:
+        json object containing location configuration.
+            Example:
+                [{
+                    "name": "test_location",
+                    "type": "low-integration",
+                    "country": "AU",
+                    "city": "Perth",
+                    "facility": "local"
+                },{
+                    "name": "test_location2",
+                    "type": "local-dev",
+                    "country": "UK",
+                    "city": "Manchester",
+                    "facility": "local"
+                }]
     """
+    location_query = query_location(location_name=location["name"])
+    if not location_query:
+        init_location(
+            location_name=location["name"],
+            location_type=location["type"],
+            location_country=location["country"],
+            location_city=location["city"],
+            location_facility=location["facility"],
+        )
+
+        logging.info("Location %s created.", {location["name"]})
+
+
+def _setup_storage(storage: dict):
+    """# noqa
     Setup a storage endpoint.
 
     Parameters
     ----------
-    storage
+    storage:
         json object containing storage configuration.
+            Example:
+                [{
+                    "name": "test_source",
+                    "location": "test_location",
+                    "storage_type": "filesystem",
+                    "interface": "posix",
+                    "root_directory": "/",
+                    "config": {
+                        "name": "test_source",
+                        "type": "alias",
+                        "parameters":{"remote":"/"}
+                    }
+                },{
+                    "name": "s3_destination",
+                    "location": "test_location",
+                    "storage_type": "objectstore",
+                    "interface": "s3",
+                    "root_directory": "/",
+                        "config": {
+                        "name": "s3",
+                        "type": "s3",
+                        "parameters":{"access_key_id": "",
+                                      "provider": "Ceph",
+                                      "secret_access_key": "",
+                                      "endpoint": ""}
+                    }
+                }]
+
+    Raises:
+        ValueError: If the storage location is not defined.
     """
     store = query_storage(storage["name"])
     if not store:
-        location = query_location(location_name=storage["location"])
-        if not location:
-            init_location(
-                location_name=storage["location"], location_type=storage["location_type"]
-            )
+        location_query = query_location(location_name=storage["location"])
+        if not location_query:
+            raise ValueError(f"Location {storage['location']} not defined")
 
         store = init_storage(
             storage_name=storage["name"],
-            location_name=storage["location"],
+            location_id=location_query[0]["location_id"],
             storage_interface=storage["interface"],
             root_directory=storage["root_directory"],
             storage_type=storage["storage_type"],
         )
+        logging.info("Storage %s created.", {storage["name"]})
     else:
         store = store[0]["storage_id"]
-
-    # Allow the operator to enable or disable storage
-    available = storage.get("storage_available", None)
-    if available is not None:
-        set_storage_availability(storage["name"], available)
 
     store_config = get_storage_config(storage_id=store)
     if not store_config:
         create_storage_config(storage_id=store, config=storage["config"])
+        logging.info("Storage configuration for %s created.", {storage["name"]})
 
     create_rclone_config(config=storage["config"])
 
