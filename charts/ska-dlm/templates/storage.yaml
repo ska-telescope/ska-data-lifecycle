@@ -34,6 +34,24 @@ spec:
       labels:
         {{- include "ska-dlm.storage.labels" . | indent 8 }}
     spec:
+      initContainers:
+        - name: wait-for-pod
+          image: curlimages/curl
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              MAX_RETRIES=40
+              RETRY_COUNT=0
+              DELAY=3
+
+              until [ $RETRY_COUNT -ge $MAX_RETRIES ]; do
+                curl --fail http://{{ include "ska-dlm.fullname" . }}-postgrest/data_item && exit 0
+                RETRY_COUNT=$((RETRY_COUNT + 1))
+                echo "Attempt $RETRY_COUNT of $MAX_RETRIES failed. Retrying in $DELAY seconds..."
+                sleep $DELAY
+              done
+              echo "Failed after $MAX_RETRIES attempts."
+              exit 1
       containers:
       - name: storage
         image: {{ .Values.storage.image}}:{{ .Values.storage.version }}
@@ -45,6 +63,11 @@ spec:
         - "0.0.0.0"
         - --port
         - "8003"
+        env:
+          - name: STORAGE_CONFIG
+            value: "/etc/storage-config.json"
+          - name: LOCATION_CONFIG
+            value: "/etc/location-config.json"
         ports:
         - containerPort: 8003
           name: http-port
@@ -62,7 +85,21 @@ spec:
         - name: dlm-configmap
           mountPath: "/home/ska-dlm/.dlm"
           readOnly: true
+        - name: storage-configmap
+          mountPath: "/etc/storage-config.json"
+          subPath: storage-config.json
+          readOnly: true
+        - name: location-configmap
+          mountPath: "/etc/location-config.json"
+          subPath: location-config.json
+          readOnly: true
       volumes:
       - name: dlm-configmap
         configMap:
           name: {{ include "ska-dlm.fullname" . }}-configmap
+      - name: storage-configmap
+        configMap:
+          name: {{ include "ska-dlm.fullname" . }}-storage-configmap
+      - name: location-configmap
+        configMap:
+          name: {{ include "ska-dlm.fullname" . }}-location-configmap

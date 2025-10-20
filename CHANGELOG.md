@@ -1,8 +1,13 @@
 # Version History
 
-# 1.2.1
+## Development
+
+### Fixed
 
 * fixed the error 'bearer_token' referenced before assignment
+
+### Added
+* Add ability to add storage endpoint configuration to storage manager on startup
 
 ## 1.2.0
 

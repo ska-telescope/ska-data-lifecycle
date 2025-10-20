@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ska-dlm.fullname" . }}-location-configmap
+data:
+  location-config.json: |-
+    [
+      {{- $first := true -}}
+      {{- range .Values.storage.locations -}}
+        {{- if not $first -}},{{- end -}}
+        {
+          "name": {{ .name | quote }},
+          "type": {{ .type | quote }},
+          "country": {{ .country | quote }},
+          "city": {{ .city | quote }},
+          "facility": {{ .facility | quote }}
+        }
+        {{- $first = false -}}
+      {{- end -}}
+    ]
