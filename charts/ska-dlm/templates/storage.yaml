@@ -104,3 +104,9 @@ spec:
       - name: storage-configmap
         configMap:
           name: {{ include "ska-dlm.fullname" . }}-storage-configmap
+      - name: location-configmap
+        configMap:
+          name: {{ include "ska-dlm.fullname" . }}-location-configmap
+      - name: shared-storage
+        persistentVolumeClaim:
+          claimName: {{ .Values.global.sharedpvc.pvc.name }}
