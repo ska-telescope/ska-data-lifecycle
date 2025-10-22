@@ -22,6 +22,12 @@ Otherwise, the following Helm values under `postgrest.db_auth_secret` take effec
    * If set, the `Secret` is created from the Vault contents at `vault.{mount,path,type}`.
  * In both cases, the `Secret` should provide the following keys: `PGHOST`, `PGUSER`, `PGPASSWORD` and `PGDATABASE`.
 
+## Shared volume
+
+In order for data to be shared between pods, it's important to ensure that the PVC `global.sharedpvc` is instantiated.
+
+RClone generates an SSH key pair which it shares with the Storage Manager via `global.sharedpvc` so it can be distribured to storage end points via the REST endpoint `get_ssh_public_key`.
+
 ## Rclone Helm Chart `secret` values
 
  * `secret`:
