@@ -1,7 +1,7 @@
 FROM rclone/rclone
 
 RUN apk update && \
-    apk add openssl && \
+    apk add openssl openssh-client && \
     openssl req -x509 -nodes -days 365 \
         -subj "/C=AU/ST=WA/O=SKAO, Inc./CN=skao.int" \
         -addext "subjectAltName=DNS:skao.int" \
