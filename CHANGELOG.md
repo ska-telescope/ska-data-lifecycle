@@ -7,7 +7,9 @@
 * fixed the error 'bearer_token' referenced before assignment
 
 ### Added
+
 * Add ability to add storage endpoint configuration to storage manager on startup
+* Add ability to distribute rclone public key via REST endpoint get_ssh_public_key()
 
 ## 1.2.0
 
