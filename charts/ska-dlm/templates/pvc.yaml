@@ -1,14 +1,15 @@
-{{- if $.Values.global.dataProduct.pvc.create }}
+{{- if $.Values.global.sharedpvc.pvc.create }}
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {{ .Values.global.dataProduct.pvc.name }}
+  name: {{ .Values.global.sharedpvc.pvc.name }}
   namespace: {{ .Release.Namespace }}
 spec:
-  storageClassName: {{ $.Values.global.storageClass }}
+  volumeName: {{ .Values.global.sharedpvc.pv.name }}
+  storageClassName: "manual"
   accessModes:
     - ReadWriteMany
   resources:
     requests:
-      storage: {{ $.Values.global.dataProduct.pvc.storageSize }}
+      storage: {{ $.Values.global.sharedpvc.pvc.storageSize }}
 {{- end }}

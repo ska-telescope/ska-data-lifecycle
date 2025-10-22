@@ -3,7 +3,7 @@ global:
     enabled: true
     domainName: k8s.stfc.skao.int
   storageClass: nfss1
-  dataProduct:
+  sharedpvc:
     pvc:
       name: test-pvc
       create: true

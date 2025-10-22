@@ -3,7 +3,7 @@ global:
     enabled: true
     domainName: sdhp.stfc.skao.int
   storageClass: csi-manila-cephfs
-  dataProduct:
+  sharedpvc:
     pvc:
       name: shared
       create: false

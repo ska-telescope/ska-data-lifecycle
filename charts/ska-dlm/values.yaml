@@ -6,15 +6,15 @@ global:
     enabled: false
     domainName: "sdhp.stfc.skao.int"  # required for whitelisting redirects
   development: true
-  storageClass: ""  # existing storage class
-  dataProduct:
+  storageClass: "localdisk"  # existing storage class
+  sharedpvc: # shared pvc that can be mounted by multiple pods
     pv:
-      name: default-pv
-      create: false  # create or use existing pv
+      name: shared
+      create: true  # create or use existing pv
       storageSize: 2Gi
     pvc:
-      name: default-pvc
-      create: false  # create or use existing pvc
+      name: shared
+      create: true  # create or use existing pvc
       storageSize: 2Gi  # created claim size
 
 nameOverride: ""
@@ -106,8 +106,8 @@ database:
 rclone:
   component: rclone
   subsystem: data-lifecycle-management
-  image: rclone/rclone
-  version: "1.70.3"
+  image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-rclone
+  version: 1.2.0
   imagePullPolicy: Always
   replicas: 1
 

@@ -59,19 +59,7 @@ spec:
       - name: rclone
         image: {{ .Values.rclone.image}}:{{ .Values.rclone.version }}
         imagePullPolicy: {{ .Values.rclone.imagePullPolicy }}
-        command:
-          - rclone
-          - rcd
-        {{ with .Values.rclone.secret }}
-        {{- if and .enabled (not (empty .ssl_cert_name)) (not (empty .ssl_key_name)) }}
-          - --rc-cert={{ .mountPoint }}/{{ .ssl_cert_name }}
-          - --rc-key={{ .mountPoint }}/{{ .ssl_key_name }}
-        {{- end }}
-        {{- end }}
-          - --rc-serve
-          - --rc-addr
-          - :5572
-          - --rc-no-auth
+        command: ["/bin/sh", "/rclone-start.sh"]
         readinessProbe:
           httpGet:
             path: /
@@ -92,12 +80,23 @@ spec:
             readOnly: true
         {{- end }}
         {{- end }}
-
+          - name: shared-storage
+            mountPath: /shared-data
+          - name: rclone-configmap
+            mountPath: "/rclone-start.sh"
+            subPath: rclone-start.sh
+            readOnly: true
+      volumes:
+      - name: shared-storage
+        persistentVolumeClaim:
+          claimName: {{ .Values.global.sharedpvc.pvc.name }}
+      - name: rclone-configmap
+        configMap:
+          name: {{ include "ska-dlm.fullname" . }}-rclone-configmap
       {{ with .Values.rclone.secret }}
       {{- if .enabled }}
-      volumes:
       - name: {{ include "ska-dlm.rclone.secret.name" $ }}
         secret:
-            secretName: {{ include "ska-dlm.rclone.secret.name" $ }}
+          secretName: {{ include "ska-dlm.rclone.secret.name" $ }}
       {{- end }}
       {{- end }}
