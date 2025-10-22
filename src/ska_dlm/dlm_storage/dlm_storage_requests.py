@@ -220,6 +220,30 @@ def _setup_storage(storage: dict):
 
 
 @cli.command()
+@rest.get("/storage/get_ssh_public_key", response_model=str)
+def get_ssh_public_key() -> str:
+    """
+    Get the sftp ssh public key.
+
+    Returns
+    -------
+    str
+    """
+    ssh_key_path = os.getenv("SSH_PUBLIC_KEY_PATH", None)
+    if ssh_key_path is None:
+        logging.warning("SSH_PUBLIC_KEY_PATH is not set")
+        raise ValueError("SSH key not defined")
+
+    try:
+        with open(ssh_key_path, "r", encoding="utf-8") as f:
+            return f.read().strip()
+    except Exception as e:
+        logging.exception(e)
+        # pylint: disable=raise-missing-from
+        raise UnmetPreconditionForOperation("Unable to open SSH key")
+
+
+@cli.command()
 @rest.get("/storage/query_location", response_model=list[dict])
 def query_location(location_name: str = "", location_id: str = "") -> list[dict]:
     """
