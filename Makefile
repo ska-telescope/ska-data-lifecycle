@@ -62,6 +62,10 @@ oci-build-benchmark:
 	make oci-build OCI_IMAGE=ska-data-lifecycle-benchmark \
 	OCI_IMAGE_FILE_PATH=scripts/Dockerfile-benchmark
 
+oci-build-rclone:
+	make oci-build OCI_IMAGE=ska-data-lifecycle-rclone \
+	OCI_IMAGE_FILE_PATH=tests/Dockerfile-rclone
+
 k8s-recreate-namespace: k8s-delete-namespace k8s-namespace
 k8s-do-test:
 	$(PYTHON_VARS_BEFORE_PYTEST) $(PYTHON_RUNNER) pytest --env k8s $(PYTHON_VARS_AFTER_PYTEST) \
