@@ -68,6 +68,8 @@ spec:
             value: "/etc/storage-config.json"
           - name: LOCATION_CONFIG
             value: "/etc/location-config.json"
+          - name: SSH_PUBLIC_KEY_PATH
+            value: /shared-data/dlm/id_rsa.pub
         ports:
         - containerPort: 8003
           name: http-port
@@ -93,6 +95,8 @@ spec:
           mountPath: "/etc/location-config.json"
           subPath: location-config.json
           readOnly: true
+        - name: shared-storage
+          mountPath: /shared-data
       volumes:
       - name: dlm-configmap
         configMap:
@@ -103,3 +107,6 @@ spec:
       - name: location-configmap
         configMap:
           name: {{ include "ska-dlm.fullname" . }}-location-configmap
+      - name: shared-storage
+        persistentVolumeClaim:
+          claimName: {{ .Values.global.sharedpvc.pvc.name }}
