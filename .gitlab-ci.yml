@@ -82,6 +82,16 @@ oci-image-build-gateway:
   script:
     make oci-build-gateway CAR_OCI_REGISTRY_HOST=${CI_REGISTRY}/${CI_PROJECT_NAMESPACE}/${CI_PROJECT_NAME}
 
+oci-image-build-rclone:
+  extends:
+    - .image_builder_template
+  stage: build
+  variables:
+    OCI_IMAGE: ska-data-lifecycle-rclone
+    OCI_IMAGE_FILE_PATH: tests/Dockerfile-rclone
+  script:
+    make oci-build-rclone CAR_OCI_REGISTRY_HOST=${CI_REGISTRY}/${CI_PROJECT_NAMESPACE}/${CI_PROJECT_NAME}
+
 oci-image-build-benchmark:
   extends:
     - .image_builder_template
