@@ -11,6 +11,7 @@ data:
     cp /root/.ssh/id_rsa.pub /shared-data/dlm/ 2>/dev/null 
     rclone \
     rcd \
+    --rc-web-gui-no-open-browser \
     --rc-serve \
     --rc-addr \
     :5572 \
