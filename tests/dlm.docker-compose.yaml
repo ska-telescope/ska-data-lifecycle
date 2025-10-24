@@ -26,6 +26,8 @@ services:
     build:
        context: ..
        dockerfile: tests/Dockerfile-dlm-compose
+    environment:
+      SSH_PUBLIC_KEY_PATH: "/data/dlm/id_rsa.pub"
     entrypoint: uvicorn ska_dlm.dlm_storage.dlm_storage_requests:rest --host 0.0.0.0 --port 8003
     ports:
       - 8003:8003

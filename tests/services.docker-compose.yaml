@@ -41,16 +41,25 @@ services:
        dockerfile: tests/Dockerfile-rclone
     ports:
       - 5572:5572
+    entrypoint: ["/bin/sh","-c"]
     command:
-      - rcd
-      - --rc-serve
-      - --rc-addr
-      - :5572
-      - --rc-no-auth
-      - --rc-web-gui
-      - --rc-job-expire-duration=43200s
-      - --rc-key=/etc/ssl/private/selfsigned.key
-      - --rc-cert=/etc/ssl/certs/selfsigned.cert
+    - |
+        yes n | ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N '' || true
+        eval "$(ssh-agent -s)"
+        ssh-add /root/.ssh/id_rsa
+        mkdir -p /data/dlm/
+        cp /root/.ssh/id_rsa.pub /data/dlm/ 2>/dev/null
+        rclone rcd \
+        --rc-serve \
+        --rc-addr \
+        :5572 \
+        --rc-no-auth \
+        --rc-web-gui \
+        --rc-job-expire-duration=43200s \
+        --rc-web-gui-no-open-browser \
+        --rc-key=/etc/ssl/private/selfsigned.key \
+        --rc-cert=/etc/ssl/certs/selfsigned.cert \
+        /
     volumes:
       - shared-tmpfs:/data
     networks:
