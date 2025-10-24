@@ -26,7 +26,7 @@ Otherwise, the following Helm values under `postgrest.db_auth_secret` take effec
 
 In order for data to be shared between pods, it's important to ensure that the PVC `global.sharedpvc` is instantiated.
 
-RClone generates an SSH key pair which it shares with the Storage Manager via `global.sharedpvc` so it can be distribured to storage end points via the REST endpoint `get_ssh_public_key`.
+RClone generates an SSH key pair which it shares with the Storage Manager via `global.sharedpvc` so it can be distributed to storage end points via the REST endpoint `get_ssh_public_key`.
 
 ## Rclone Helm Chart `secret` values
 
