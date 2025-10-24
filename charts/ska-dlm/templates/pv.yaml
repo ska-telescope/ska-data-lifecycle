@@ -1,18 +1,15 @@
-{{- if .Values.global.dataProduct.pv.create }}
+{{- if .Values.global.sharedpvc.pv.create }}
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: {{ .Values.global.dataProduct.pv.name }}
-  namespace: {{ .Release.Namespace }}
+  name: {{ .Values.global.sharedpvc.pv.name }}
 spec:
-  storageClassName: standard
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: "manual"
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   capacity:
-    storage: {{ .Values.global.dataProduct.pv.storageSize }}
-  claimRef:
-    name: {{ .Values.global.dataProduct.pvc.name }}
-    namespace: {{ .Release.Namespace }}
+    storage: {{ .Values.global.sharedpvc.pv.storageSize }}
   hostPath:
-    path: "/tmp"
+    path: "/shared-data"
 {{- end }}

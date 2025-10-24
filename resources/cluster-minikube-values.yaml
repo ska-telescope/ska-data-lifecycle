@@ -1,6 +1,6 @@
 global:
   storageClass: standard
-  dataProduct:
+  sharedpvc:
     pv:
       name: test-pv
       create: true
