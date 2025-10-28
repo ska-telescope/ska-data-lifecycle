@@ -5,6 +5,7 @@ DLM:
   dlm_db: "ska_dlm_meta"
   dlm_table: "data_item"
   storage_table: "storage"
+  migration_table: "migration"
   storage_config_table: "storage_config"
   location_table: "location"
   storage_manager:
