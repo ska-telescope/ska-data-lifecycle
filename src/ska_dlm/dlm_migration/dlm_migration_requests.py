@@ -157,8 +157,8 @@ def rclone_copy(
     else:
         request_url = f"{url}/operations/copyfile"
         post_data = {
-            "srcFs": src_fs,
-            "srcRemote": src_abs_path,
+            "srcFs": f"{src_fs}{src_root_dir}",
+            "srcRemote": src_remote,
             "dstFs": dst_fs,
             "dstRemote": dest_abs_path,
             "_async": "true",
