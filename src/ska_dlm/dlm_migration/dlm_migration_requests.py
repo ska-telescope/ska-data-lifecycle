@@ -143,7 +143,6 @@ def rclone_copy(
     """Copy a file from one place to another."""
     # if the item is a measurement set then use the copy directory command
 
-    src_abs_path = f"{src_root_dir}/{src_remote}".replace("//", "/")
     dest_abs_path = f"{dest_root_dir}/{dst_remote}".replace("//", "/")
     if item_type == ItemType.CONTAINER:
         request_url = f"{url}/sync/copy"
@@ -160,7 +159,7 @@ def rclone_copy(
             "srcFs": f"{src_fs}{src_root_dir}",
             "srcRemote": src_remote,
             "dstFs": dst_fs,
-            "dstRemote": dest_abs_path,
+            "dstRemote": dst_remote,
             "_async": "true",
         }
 
