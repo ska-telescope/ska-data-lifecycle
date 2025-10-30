@@ -148,8 +148,8 @@ def rclone_copy(
     if item_type == ItemType.CONTAINER:
         request_url = f"{url}/sync/copy"
         post_data = {
-            "srcFs": f"{src_fs}{src_abs_path}",
-            "dstFs": f"{dst_fs}{dest_abs_path}",
+            "srcFs": f"{src_fs}{src_root_dir}/{src_remote}",
+            "dstFs": f"{dest_abs_path}",
             "no-check-dest": "true",
             "s3-no-check-bucket": "true",
             "_async": "true",
