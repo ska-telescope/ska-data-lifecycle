@@ -4,6 +4,7 @@
 
 import asyncio
 import datetime
+import time
 
 import inflect
 import pytest
@@ -225,6 +226,24 @@ def __initialise_storage_config(env):
     assert env.storage_requests.create_rclone_config(config) is True
 
 
+def __get_migration(record):
+    """Wait for migration to complete or timeout"""
+    count = 0
+    while True:
+        # check that a query for all migrations returns the details of this single migration
+        migration_record = _get_migration_record(record["migration_id"])
+        if not migration_record:
+            count += 1
+            time.sleep(0.1)
+        else:
+            break
+
+        if count == 10:
+            raise TimeoutError("Did not get migration record.")
+
+    return migration_record
+
+
 @pytest.mark.integration_test
 def test_copy(env: DlmTestClient):
     """Copy a test file from one storage to another."""
@@ -240,20 +259,27 @@ def test_copy(env: DlmTestClient):
     )
     assert len(uid) == 36
     dest = "testfile_copy"
-    results = env.migration_requests.copy_data_item(uid=uid, destination_id=dest_id, path=dest)
+    copy_item_record = env.migration_requests.copy_data_item(
+        uid=uid, destination_id=dest_id, path=dest
+    )
     assert RCLONE_TEST_FILE_CONTENT == env.get_rclone_local_file_content(RCLONE_TEST_FILE_PATH)
 
     # trigger manual update of migrations status
     asyncio.run(update_migration_statuses())
 
-    # check that a query for all migrations returns the details of this single migration
-    result = _get_migration_record(results["migration_id"])
+    migration_record = __get_migration(copy_item_record)
 
-    assert len(result) == 1
-    assert result[0]["destination_storage_id"] == dest_id
-    assert result[0]["complete"] is True
-    assert result[0]["job_status"]["finished"] is True
-    assert result[0]["job_stats"]["bytes"] == RCLONE_TEST_FILE_SIZE
+    assert len(migration_record) == 1
+    assert migration_record[0]["destination_storage_id"] == dest_id
+    assert migration_record[0]["complete"] is True
+    assert migration_record[0]["job_status"]["finished"] is True
+    assert migration_record[0]["job_stats"]["bytes"] == RCLONE_TEST_FILE_SIZE
+
+    # Check the data item has been set to READY
+    source_data_item = env.data_item_requests.query_data_item(
+        oid=migration_record[0]["oid"], storage_id=migration_record[0]["source_storage_id"]
+    )
+    assert source_data_item[0]["item_state"] == "READY"
 
     # test the query_migration function
     yesterday = (TODAY_DATE - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
@@ -326,7 +352,7 @@ def test_copy_container(env):
     asyncio.run(update_migration_statuses())
 
     # check that a query for all migrations returns the details of this single migration
-    result = _get_migration_record(result["migration_id"])
+    result = __get_migration(result)
 
     assert len(result) == 1
     assert result[0]["destination_storage_id"] == dest_id
