@@ -373,3 +373,17 @@ def update_item_tags(
     logging.info("Updating tags: %s with %s", tags, item_tags)
     tags.update(item_tags)  # merge existing with new ones
     return update_data_item(oid=oid, post_data={"item_tags": tags})
+
+
+@cli.command()
+def delete_data_item_entry(uid: str) -> None:
+    """
+    Delete data item form the data items table.
+
+    Parameters
+    ----------
+    uid
+        uid of the data_item
+    """
+    params = {"uid": f"eq.{uid}"}
+    DB.delete(CONFIG.DLM.dlm_table, params=params)
