@@ -227,7 +227,7 @@ def __initialise_storage_config(env):
 
 
 def __get_migration(record, count=100):
-    """Wait for migration to complete or timeout"""
+    """Wait for migration to complete or timeout."""
     total_count = 0
     while True:
         # check that a query for all migrations returns the details of this single migration
@@ -295,11 +295,11 @@ def test_copy(env: DlmTestClient):
 
 @pytest.mark.integration_test
 def test_copy_failed(env: DlmTestClient):
-    """Check the data item is removed from db on rclone failure"""
+    """Check the data item is removed from db on rclone failure."""
     # NOTE: this test will not work without requests being made via a gateway
 
-    #if isinstance(env, DlmTestClientLocal):
-    #    pytest.skip("Unprocessable Entity")
+    if isinstance(env, DlmTestClientLocal):
+        pytest.skip("Unprocessable Entity")
 
     __initialise_storage_config(env)
 
@@ -342,9 +342,9 @@ def test_copy_failed(env: DlmTestClient):
 
     __get_migration(copy_item_record)
 
-    data_item = env.data_item_requests.query_data_item(uid=copy_item_record["uid"])
+    data_item_record = env.data_item_requests.query_data_item(uid=copy_item_record["uid"])
     # check remote data item was removed on a failed copy
-    assert not data_item
+    assert not data_item_record
 
 
 @pytest.mark.integration_test
