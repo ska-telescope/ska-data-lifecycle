@@ -239,7 +239,7 @@ async def update_migration_statuses():
                     "complete": complete,
                 },
             )
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-except
             logging.exception(e)
 
 
