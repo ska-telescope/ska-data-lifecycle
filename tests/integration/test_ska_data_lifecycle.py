@@ -226,19 +226,22 @@ def __initialise_storage_config(env):
     assert env.storage_requests.create_rclone_config(config) is True
 
 
-def __get_migration(record):
+def __get_migration(record, count=100):
     """Wait for migration to complete or timeout"""
-    count = 0
+    total_count = 0
     while True:
         # check that a query for all migrations returns the details of this single migration
         migration_record = _get_migration_record(record["migration_id"])
-        if not migration_record:
-            count += 1
-            time.sleep(0.1)
+        if (
+            migration_record[0]["job_status"] is None
+            or migration_record[0]["job_status"]["finished"] is False
+        ):
+            total_count += 1
+            time.sleep(0.2)
         else:
             break
 
-        if count == 10:
+        if total_count == count:
             raise TimeoutError("Did not get migration record.")
 
     return migration_record
@@ -288,6 +291,60 @@ def test_copy(env: DlmTestClient):
     # a query for migrations made up until yesterday should return nothing
     query_result = env.migration_requests.query_migrations(end_date=yesterday)
     assert query_result == []
+
+
+@pytest.mark.integration_test
+def test_copy_failed(env: DlmTestClient):
+    """Check the data item is removed from db on rclone failure"""
+    # NOTE: this test will not work without requests being made via a gateway
+
+    #if isinstance(env, DlmTestClientLocal):
+    #    pytest.skip("Unprocessable Entity")
+
+    __initialise_storage_config(env)
+
+    location = env.storage_requests.query_location("MyHost")
+    if location:
+        location_id = location[0]["location_id"]
+    else:
+        location_id = env.storage_requests.init_location("MyHost", "low-integration")
+
+    # setup remote storage endpoint that does not exist so rclone can fail
+    config = {
+        "name": "MyDisk4",
+        "type": "sftp",
+        "parameters": {"type": "sftp", "host": "localhost"},
+    }
+    uuid = env.storage_requests.init_storage(
+        storage_name="MyDisk4",
+        root_directory=ROOT_DIRECTORY2,
+        location_id=location_id,
+        storage_type="filesystem",
+        storage_interface="posix",
+        storage_capacity=100000000,
+    )
+    env.storage_requests.create_storage_config(storage_id=uuid, config=config)
+
+    dest_id = env.storage_requests.query_storage("MyDisk4")[0]["storage_id"]
+
+    uid = env.ingest_requests.register_data_item(
+        item_name="/my/ingest/test/item2", uri=TEST_URI, storage_name="MyDisk"
+    )
+    assert len(uid) == 36
+    dest = "testfile_copy"
+    copy_item_record = env.migration_requests.copy_data_item(
+        uid=uid, destination_id=dest_id, path=dest
+    )
+    assert RCLONE_TEST_FILE_CONTENT == env.get_rclone_local_file_content(RCLONE_TEST_FILE_PATH)
+
+    # trigger manual update of migrations status
+    asyncio.run(update_migration_statuses())
+
+    __get_migration(copy_item_record)
+
+    data_item = env.data_item_requests.query_data_item(uid=copy_item_record["uid"])
+    # check remote data item was removed on a failed copy
+    assert not data_item
 
 
 @pytest.mark.integration_test
