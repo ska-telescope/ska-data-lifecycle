@@ -5,6 +5,7 @@
 ### Fixed
 
 * fixed the error 'bearer_token' referenced before assignment
+* Correctly handle the state of a data item after a failed or successful transfer
 
 ### Added
 
