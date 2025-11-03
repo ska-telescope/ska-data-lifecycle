@@ -387,3 +387,4 @@ def delete_data_item_entry(uid: str) -> None:
     """
     params = {"uid": f"eq.{uid}"}
     DB.delete(CONFIG.DLM.dlm_table, params=params)
+    logger.info("Deleted entry %s from data_item table", uid)
