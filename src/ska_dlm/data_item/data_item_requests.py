@@ -378,7 +378,7 @@ def update_item_tags(
 @cli.command()
 def delete_data_item_entry(uid: str) -> None:
     """
-    Delete data item form the data items table.
+    Delete data item from the data_item table.
 
     Parameters
     ----------
