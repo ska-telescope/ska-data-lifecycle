@@ -1,6 +1,7 @@
 """DLM migration module for ska-data-lifecycle."""
 
 from .data_item_requests import (
+    delete_data_item_entry,
     set_acl,
     set_group,
     set_metadata,
@@ -24,4 +25,5 @@ __all__ = [
     "set_uri",
     "set_user",
     "update_item_tags",
+    "delete_data_item_entry",
 ]

@@ -19,7 +19,7 @@ from ska_dlm.fastapi_utils import decode_bearer, fastapi_auto_annotate
 from ska_dlm.typer_utils import dump_short_stacktrace
 
 from .. import CONFIG
-from ..data_item import set_metadata, set_state, set_uri
+from ..data_item import delete_data_item_entry, set_state
 from ..dlm_db.db_access import DB
 from ..dlm_ingest import init_data_item
 from ..dlm_ingest.dlm_ingest_requests import ItemType
@@ -196,34 +196,52 @@ async def update_migration_statuses():
     logger.info("number of outstanding migrations: %s", len(migrations))
 
     for migration in migrations:
-        # get details for this migration
-        migration_id = migration["migration_id"]
-        job_id = migration["job_id"]
-        url = migration["url"]
-        logger.info("migration %s: %s", migration_id, job_id)
+        # Want to try block so we go through each migration record to the end of the list
+        try:
+            # get details for this migration
+            migration_id = migration["migration_id"]
+            job_id = migration["job_id"]
+            url = migration["url"]
+            logger.info("migration %s: %s", migration_id, job_id)
 
-        stats_json = ""
-        complete = False
-        # query rclone for job/status
-        status_json = await _query_job_status(url, job_id)
-        if not status_json["error"]:
-            # query rclone for core/stats
-            stats_json = await _query_core_stats(url, status_json["group"])
-            complete = status_json["success"]
-        else:
-            # if job is in error we dont want to query it again so mark it complete
-            complete = True
+            stats_json = ""
+            complete = False
+            # query rclone for job/status
+            status_json = await _query_job_status(url, job_id)
+            if status_json["finished"] is False:
+                continue
 
-        # update migration database
-        DB.update(
-            CONFIG.DLM.migration_table,
-            params={"migration_id": f"eq.{migration['migration_id']}"},
-            json={
-                "job_status": status_json,
-                "job_stats": stats_json,
-                "complete": complete,
-            },
-        )
+            if not status_json["error"]:
+                # query rclone for core/stats
+                stats_json = await _query_core_stats(url, status_json["group"])
+                complete = status_json["success"]
+            else:
+                # if job is in error we dont want to query it again so mark it complete
+                complete = True
+
+            # Get record for remote data item
+            source_data_item = query_data_item(
+                oid=migration["oid"], storage_id=migration["destination_storage_id"]
+            )
+            if source_data_item:
+                if status_json["success"] is True:
+                    set_state(uid=source_data_item[0]["uid"], state="READY")
+                else:
+                    # delete remote data item if there is a transfer problem
+                    delete_data_item_entry(uid=source_data_item[0]["uid"])
+
+            # update migration database
+            DB.update(
+                CONFIG.DLM.migration_table,
+                params={"migration_id": f"eq.{migration['migration_id']}"},
+                json={
+                    "job_status": status_json,
+                    "job_stats": stats_json,
+                    "complete": complete,
+                },
+            )
+        except Exception as e:  # pylint: disable=broad-except
+            logging.exception(e)
 
 
 @cli.command()
@@ -368,10 +386,6 @@ def copy_data_item(  # noqa: C901
     (2) convert one (first) storage_id to a configured rclone backend
     (3) initialise the new item with the same OID on the new storage
     (4) use the rclone copy command to copy it to the new location
-    (5) set the access path to the payload
-    (6) set state to READY
-    (7) save metadata in the data_item table
-
 
     Parameters
     ----------
@@ -460,51 +474,53 @@ def copy_data_item(  # noqa: C901
         "oid": orig_item["oid"],
         "storage_id": destination_id,
         "item_type": orig_item["item_type"],
+        "metadata": orig_item["metadata"],
+        "uri": path,
     }
+
     # Initalising with default INITIALISED
     new_item_uid = init_data_item(json_data=init_item)
-    # (4)
-    # TODO(yan-xxx) abstract the actual function called away to allow for different
-    # mechanisms to perform the copy. Also needs to be a non-blocking call
-    # scheduling a job for dlm_migration service.
-    logger.info("source: %s", source)
 
-    # get random Rclone instance to deal with copy
-    url = random.choice(CONFIG.RCLONE)
+    try:
+        # (4)
+        # TODO(yan-xxx) abstract the actual function called away to allow for different
+        # mechanisms to perform the copy. Also needs to be a non-blocking call
+        # scheduling a job for dlm_migration service.
+        logger.info("source: %s", source)
 
-    status_code, content = rclone_copy(
-        url,
-        source["backend"],
-        source["path"],
-        source_storage[0]["root_directory"],
-        dest["backend"],
-        dest["path"],
-        destination[0]["root_directory"],
-        orig_item["item_type"],
-    )
+        # get random Rclone instance to deal with copy
+        url = random.choice(CONFIG.RCLONE)
 
-    if status_code != 200:
-        logger.error("rclone_copy failed with status_code: %s, content: %s", status_code, content)
-        raise OSError("rclone copy failed")
+        status_code, content = rclone_copy(
+            url,
+            source["backend"],
+            source["path"],
+            source_storage[0]["root_directory"],
+            dest["backend"],
+            dest["path"],
+            destination[0]["root_directory"],
+            orig_item["item_type"],
+        )
 
-    # add row to migration table
-    # NOTE: temporarily use server_id='rclone0' until we actually have multiple rclone servers
-    record = _create_migration_record(
-        content["jobid"],
-        orig_item["oid"],
-        url,
-        source_storage[0]["storage_id"],
-        destination_id,
-        authorization,
-    )
-    # (5)
-    set_uri(new_item_uid, path, destination_id)
+        if status_code != 200:
+            logger.error(
+                "rclone_copy failed with status_code: %s, content: %s", status_code, content
+            )
+            raise OSError("rclone copy request failed.")
 
-    # (6) Set data_item state to READY
-    set_state(new_item_uid, "READY")
+        # add row to migration table
+        # NOTE: temporarily use server_id='rclone0' until we actually have multiple rclone servers
+        record = _create_migration_record(
+            content["jobid"],
+            orig_item["oid"],
+            url,
+            source_storage[0]["storage_id"],
+            destination_id,
+            authorization,
+        )
 
-    # (7) Populate the metadata column
-    metadata = orig_item["metadata"]
-    set_metadata(new_item_uid, metadata)
-
-    return {"uid": new_item_uid, "migration_id": record[0]["migration_id"]}
+        return {"uid": new_item_uid, "migration_id": record[0]["migration_id"]}
+    except Exception:
+        # if there is any error, delete data item and raise exception
+        delete_data_item_entry(uid=new_item_uid)
+        raise

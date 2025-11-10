@@ -4,6 +4,7 @@
 
 import asyncio
 import datetime
+import time
 
 import inflect
 import pytest
@@ -225,10 +226,33 @@ def __initialise_storage_config(env):
     assert env.storage_requests.create_rclone_config(config) is True
 
 
+def __get_migration(record, count=100):
+    """Wait for migration to complete or timeout."""
+    total_count = 0
+    while True:
+        # check that a query for all migrations returns the details of this single migration
+        migration_record = _get_migration_record(record["migration_id"])
+        if (
+            migration_record[0]["job_status"] is None
+            or migration_record[0]["job_status"]["finished"] is False
+        ):
+            total_count += 1
+            time.sleep(0.2)
+        else:
+            break
+
+        if total_count == count:
+            raise TimeoutError("Did not get migration record.")
+
+    return migration_record
+
+
 @pytest.mark.integration_test
 def test_copy(env: DlmTestClient):
     """Copy a test file from one storage to another."""
-    # NOTE: this test will not work without requests being made via a gateway
+    # Integration tests like test_copy relies on the DLM manager services running
+    # in the background and are therefore skipped when unit tests are executed.
+    # The unit tests directly imports the DLM python library and does not start the DLM managers.
 
     if isinstance(env, DlmTestClientLocal):
         pytest.skip("Unprocessable Entity")
@@ -240,20 +264,27 @@ def test_copy(env: DlmTestClient):
     )
     assert len(uid) == 36
     dest = "testfile_copy"
-    results = env.migration_requests.copy_data_item(uid=uid, destination_id=dest_id, path=dest)
+    copy_item_record = env.migration_requests.copy_data_item(
+        uid=uid, destination_id=dest_id, path=dest
+    )
     assert RCLONE_TEST_FILE_CONTENT == env.get_rclone_local_file_content(RCLONE_TEST_FILE_PATH)
 
     # trigger manual update of migrations status
     asyncio.run(update_migration_statuses())
 
-    # check that a query for all migrations returns the details of this single migration
-    result = _get_migration_record(results["migration_id"])
+    migration_record = __get_migration(copy_item_record)
 
-    assert len(result) == 1
-    assert result[0]["destination_storage_id"] == dest_id
-    assert result[0]["complete"] is True
-    assert result[0]["job_status"]["finished"] is True
-    assert result[0]["job_stats"]["bytes"] == RCLONE_TEST_FILE_SIZE
+    assert len(migration_record) == 1
+    assert migration_record[0]["destination_storage_id"] == dest_id
+    assert migration_record[0]["complete"] is True
+    assert migration_record[0]["job_status"]["finished"] is True
+    assert migration_record[0]["job_stats"]["bytes"] == RCLONE_TEST_FILE_SIZE
+
+    # Check the data item has been set to READY
+    source_data_item = env.data_item_requests.query_data_item(
+        oid=migration_record[0]["oid"], storage_id=migration_record[0]["source_storage_id"]
+    )
+    assert source_data_item[0]["item_state"] == "READY"
 
     # test the query_migration function
     yesterday = (TODAY_DATE - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
@@ -262,6 +293,60 @@ def test_copy(env: DlmTestClient):
     # a query for migrations made up until yesterday should return nothing
     query_result = env.migration_requests.query_migrations(end_date=yesterday)
     assert query_result == []
+
+
+@pytest.mark.integration_test
+def test_copy_failed(env: DlmTestClient):
+    """Check the data item is removed from db on rclone failure."""
+    # NOTE: this test will not work without requests being made via a gateway
+
+    if isinstance(env, DlmTestClientLocal):
+        pytest.skip("Unprocessable Entity")
+
+    __initialise_storage_config(env)
+
+    location = env.storage_requests.query_location("MyHost")
+    if location:
+        location_id = location[0]["location_id"]
+    else:
+        location_id = env.storage_requests.init_location("MyHost", "low-integration")
+
+    # setup remote storage endpoint that does not exist so rclone can fail
+    config = {
+        "name": "MyDisk4",
+        "type": "sftp",
+        "parameters": {"type": "sftp", "host": "localhost"},
+    }
+    uuid = env.storage_requests.init_storage(
+        storage_name="MyDisk4",
+        root_directory=ROOT_DIRECTORY2,
+        location_id=location_id,
+        storage_type="filesystem",
+        storage_interface="posix",
+        storage_capacity=100000000,
+    )
+    env.storage_requests.create_storage_config(storage_id=uuid, config=config)
+
+    dest_id = env.storage_requests.query_storage("MyDisk4")[0]["storage_id"]
+
+    uid = env.ingest_requests.register_data_item(
+        item_name="/my/ingest/test/item2", uri=TEST_URI, storage_name="MyDisk"
+    )
+    assert len(uid) == 36
+    dest = "testfile_copy"
+    copy_item_record = env.migration_requests.copy_data_item(
+        uid=uid, destination_id=dest_id, path=dest
+    )
+    assert RCLONE_TEST_FILE_CONTENT == env.get_rclone_local_file_content(RCLONE_TEST_FILE_PATH)
+
+    # trigger manual update of migrations status
+    asyncio.run(update_migration_statuses())
+
+    __get_migration(copy_item_record)
+
+    data_item_record = env.data_item_requests.query_data_item(uid=copy_item_record["uid"])
+    # check remote data item was removed on a failed copy
+    assert not data_item_record
 
 
 @pytest.mark.integration_test
@@ -326,7 +411,7 @@ def test_copy_container(env):
     asyncio.run(update_migration_statuses())
 
     # check that a query for all migrations returns the details of this single migration
-    result = _get_migration_record(result["migration_id"])
+    result = __get_migration(result)
 
     assert len(result) == 1
     assert result[0]["destination_storage_id"] == dest_id
