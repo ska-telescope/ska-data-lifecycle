@@ -250,7 +250,7 @@ def __get_migration(record, count=100):
 @pytest.mark.integration_test
 def test_copy(env: DlmTestClient):
     """Copy a test file from one storage to another."""
-    # Integration tests like test_copy relies on the DLM manager services running 
+    # Integration tests like test_copy relies on the DLM manager services running
     # in the background and are therefore skipped when unit tests are executed.
     # The unit tests directly imports the DLM python library and does not start the DLM managers.
 
