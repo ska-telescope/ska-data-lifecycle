@@ -33,14 +33,10 @@ spec:
               createdb --encoding=UTF8 --locale=en_US.utf8 --template=template0 "$PGDATABASE"
             fi
 
+            # schema should always be dlm
             {{- if not .Values.postgrest.db_schema }}
             echo "WARNING: No postgrest.db_schema provided, defaulting to 'public'";
             {{- end }}
-
-            echo "Target database (env var): $PGDATABASE"
-            echo "Target schema  (env var): ${PGOPTIONS#*-c search_path=}"
-            psql -tA -c "SELECT 'Target database (Postgres): ' || current_database();"
-            psql -tA -c "SELECT 'Target schema  (Postgres): ' || array_to_string(current_schemas(false), ',');"
 
             if ls /etc/sql/base/*.sql 1> /dev/null 2>&1; then
               for f in /etc/sql/base/*.sql; do
@@ -64,9 +60,6 @@ spec:
               name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
               key: PGPORT
               optional: true
-        - name: PGOPTIONS
-          value: >-
-            -c search_path={{- if .Values.postgrest.db_schema }}{{ .Values.postgrest.db_schema }},public{{- else }}public{{- end }}
         volumeMounts:
         - name: base-volume
           mountPath: /etc/sql/base/
@@ -110,11 +103,6 @@ spec:
             echo "WARNING: No postgrest.db_schema provided, defaulting to 'public'";
             {{- end }}
 
-            echo "Target database (env var): $PGDATABASE"
-            echo "Target schema  (env var): ${PGOPTIONS#*-c search_path=}"
-            psql -tA -c "SELECT 'Target database (Postgres): ' || current_database();"
-            psql -tA -c "SELECT 'Target schema  (Postgres): ' || array_to_string(current_schemas(false), ',');"
-
             echo "Looking for patch files in /etc/sql/patch/";
             if ls /etc/sql/patch/*.sql 1> /dev/null 2>&1; then
               for f in /etc/sql/patch/*.sql; do
@@ -139,9 +127,6 @@ spec:
               name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
               key: PGPORT
               optional: true
-        - name: PGOPTIONS
-          value: >-
-            -c search_path={{- if .Values.postgrest.db_schema }}{{ .Values.postgrest.db_schema }},public{{- else }}public{{- end }}
         volumeMounts:
         - name: patch-volume
           mountPath: /etc/sql/patch/
