@@ -1,16 +1,65 @@
 -- DLM enum definitions
+
+-- As this is the first script to run in the base deploy,
+-- its must ensure the schema exists and the search_path is set
+
+CREATE SCHEMA IF NOT EXISTS dlm;
+
+SET search_path TO dlm;
+
+DO $$ BEGIN
 CREATE TYPE location_type AS ENUM ('local-dev', 'low-integration', 'mid-integration', 'low-operations', 'mid-operations');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
 CREATE TYPE location_country AS ENUM ('AU', 'ZA', 'UK');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
 CREATE TYPE config_type AS ENUM ('rclone', 'ssh', 'aws', 'gcs');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
 CREATE TYPE storage_type AS ENUM ('filesystem', 'objectstore', 'tape');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
 CREATE TYPE storage_interface AS ENUM ('posix', 's3', 'sftp', 'https');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
 CREATE TYPE phase_type AS ENUM ('GAS', 'LIQUID', 'SOLID', 'PLASMA');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
 CREATE TYPE item_state AS ENUM ('INITIALISED', 'READY', 'CORRUPTED', 'EXPIRED', 'DELETED');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
 CREATE TYPE checksum_method AS ENUM (
   'none', 'adler32', 'blake2b', 'blake2s', 'crc32', 'crc32c', 'fletcher32', 'highwayhash', 'jenkinslookup3', 'md5', 'metrohash128',
   'sha1', 'sha224', 'sha256', 'sha384', 'sha3_224', 'sha3_256', 'sha3_384', 'sha3_512', 'sha512', 'shake_128', 'shake_256',
   'spookyhash', 'xxh3'
 );
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+DO $$ BEGIN
 CREATE TYPE mime_type AS ENUM (
   'application/fits', 'application/gzip', 'application/json', 'application/mp4', 'application/msword',
   'application/octet-stream', 'application/pdf', 'application/postscript', 'application/rtf',
@@ -25,3 +74,6 @@ CREATE TYPE mime_type AS ENUM (
   'text/javascript', 'text/markdown', 'text/plain', 'text/tab-separated-values', 'text/x-c', 'text/x-fortran',
   'text/x-java-source', 'text/x-python', 'video/mp4'
 );
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;

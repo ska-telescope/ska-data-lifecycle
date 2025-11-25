@@ -4,7 +4,8 @@
 
 -- Ensure schema + required extension exist
 CREATE SCHEMA IF NOT EXISTS dlm;
-CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA public;
+
+SET search_path TO dlm;
 
 --
 -- Lookup tables
