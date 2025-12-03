@@ -69,7 +69,7 @@ spec:
           - name: LOCATION_CONFIG
             value: "/etc/location-config.json"
           - name: SSH_PUBLIC_KEY_PATH
-            value: /shared-data/dlm/id_rsa.pub
+            value: /dlm/.ssh/id_rsa.pub # TODO: need to make shared_data a value
         ports:
         - containerPort: 8003
           name: http-port
@@ -96,7 +96,7 @@ spec:
           subPath: location-config.json
           readOnly: true
         - name: shared-storage
-          mountPath: /shared-data
+          mountPath: /dlm
       volumes:
       - name: dlm-configmap
         configMap:

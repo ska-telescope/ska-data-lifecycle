@@ -36,7 +36,7 @@ def test_initialise_storage_config():
     uuid = dlm_storage.init_storage(
         storage_name="MyDisk2",
         location_id=location_id,
-        root_directory="/data/MyDisk2/",
+        root_directory="/dlm/MyDisk2/",
         storage_type="filesystem",
         storage_interface="posix",
         storage_capacity=100000000,
@@ -56,7 +56,7 @@ def test_invalid_storage_type():
         dlm_storage.init_storage(
             storage_name="MyDiskInvalid",
             location_id=location_id,
-            root_directory="/data/",
+            root_directory="/dlm/",
             storage_type="disk",  # Invalid enum
             storage_interface="posix",
             storage_capacity=100000000,

@@ -11,5 +11,5 @@ spec:
   capacity:
     storage: {{ .Values.global.sharedpvc.pv.storageSize }}
   hostPath:
-    path: "/shared-data"
+    path: "/dlm"
 {{- end }}

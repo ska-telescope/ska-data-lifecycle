@@ -21,11 +21,11 @@ from tests.common_local import DlmTestClientLocal
 from tests.integration.client.dlm_gateway_client import get_token
 from tests.test_env import DlmTestClient
 
-ROOT = "/data/"
-RCLONE_TEST_FILE_PATH = "/data/MyDisk/testfile"
+ROOT = "/dlm/"
+RCLONE_TEST_FILE_PATH = "/dlm/MyDisk/testfile"
 TEST_URI = "testfile"
-ROOT_DIRECTORY1 = "/data/MyDisk/"
-ROOT_DIRECTORY2 = "/data/MyDisk2/"
+ROOT_DIRECTORY1 = "/dlm/MyDisk/"
+ROOT_DIRECTORY2 = "/dlm/MyDisk2/"
 
 """A file that is available locally in the rclone container"""
 RCLONE_TEST_FILE_CONTENT = "license content"

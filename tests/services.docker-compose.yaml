@@ -34,7 +34,7 @@ services:
       - dlm_network
 
   dlm_rclone:
-    image: rclone/rclone
+    image: dlm_rclone
     container_name: dlm_rclone
     build:
        context: ..
@@ -47,8 +47,8 @@ services:
         yes n | ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N '' || true
         eval "$(ssh-agent -s)"
         ssh-add /root/.ssh/id_rsa
-        mkdir -p /data/dlm/
-        cp /root/.ssh/id_rsa.pub /data/dlm/ 2>/dev/null
+        mkdir -p /dlm/.ssh/
+        cp /root/.ssh/id_rsa.pub /dlm/.ssh/ 2>/dev/null
         rclone rcd \
         --rc-serve \
         --rc-addr \
@@ -58,10 +58,9 @@ services:
         --rc-job-expire-duration=43200s \
         --rc-web-gui-no-open-browser \
         --rc-key=/etc/ssl/private/selfsigned.key \
-        --rc-cert=/etc/ssl/certs/selfsigned.cert \
-        /
+        --rc-cert=/etc/ssl/certs/selfsigned.cert
     volumes:
-      - shared-tmpfs:/data
+      - shared-tmpfs:/dlm
     networks:
       - dlm_network
 
