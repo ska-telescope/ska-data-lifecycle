@@ -1,4 +1,5 @@
 """DLM Storage API module."""
+
 # Refer to https://confluence.skatelescope.org/pages/viewpage.action?pageId=330648807
 # for additional details.
 from enum import Enum

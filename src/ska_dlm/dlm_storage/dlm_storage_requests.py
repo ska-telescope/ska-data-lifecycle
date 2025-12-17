@@ -523,7 +523,7 @@ def create_rclone_config(config: JsonObjectArg) -> bool:
     bool
         True if configuration is successful
     """
-    logger.info("Got config: %s",CONFIG)
+    logger.info("Got config: %s", CONFIG)
     for url in CONFIG.RCLONE:
         request_url = f"{url}/config/create"
         logger.info("Creating new rclone config: %s %s", request_url, config)

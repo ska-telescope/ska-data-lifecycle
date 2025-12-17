@@ -35,6 +35,7 @@ def read_config(user_config_file: Path = DLM_HOME / "config.yaml") -> benedict:
     with open(user_config_file, encoding="utf-8") as file:
         return benedict(yaml.safe_load(file))
 
+
 CONFIG = read_config()
 
 __all__ = [
