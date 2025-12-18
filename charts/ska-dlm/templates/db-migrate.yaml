@@ -64,9 +64,6 @@ spec:
               name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
               key: PGPORT
               optional: true
-        - name: PGOPTIONS
-          value: >-
-            -c search_path={{- if .Values.postgrest.db_schema }}{{ .Values.postgrest.db_schema }},public{{- else }}public{{- end }}
         volumeMounts:
         - name: base-volume
           mountPath: /etc/sql/base/
