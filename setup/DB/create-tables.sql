@@ -2,8 +2,7 @@
 -- SQL DDL for SKA Data Lifecycle Management DB setup
 --
 
--- Ensure required extension exist
-CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA public;
+SET search_path TO dlm;
 
 --
 -- Lookup tables
