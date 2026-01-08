@@ -176,8 +176,6 @@ keycloak:
   enabled: false
   component: keycloak
   subsystem: data-lifecycle-management
-  ##image: quay.io/keycloak/keycloak
-  # version: "25.0"
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-test-keycloak
   version: "1.2.0"
   imagePullPolicy: Always
