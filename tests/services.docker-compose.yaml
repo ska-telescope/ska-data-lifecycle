@@ -34,7 +34,7 @@ services:
       - dlm_network
 
   dlm_rclone:
-    image: rclone/rclone
+    image: dlm-rclone:dev
     container_name: dlm_rclone
     build:
        context: ..
