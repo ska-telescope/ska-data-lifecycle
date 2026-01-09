@@ -9,8 +9,8 @@ services:
     build:
        context: ..
        dockerfile: tests/Dockerfile-testrunner
-    volumes:
-      - shared-tmpfs:/data
+    # volumes:
+    #   - shared-tmpfs:/data
     environment:
       DO_AUTH: "1"
     networks:

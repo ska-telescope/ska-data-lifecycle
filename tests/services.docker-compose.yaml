@@ -60,8 +60,8 @@ services:
         --rc-key=/etc/ssl/private/selfsigned.key \
         --rc-cert=/etc/ssl/certs/selfsigned.cert \
         /
-    volumes:
-      - shared-tmpfs:/data
+    # volumes:
+    #   - shared-tmpfs:/data
     networks:
       - dlm_network
 
@@ -157,6 +157,6 @@ networks:
   dlm_network:
     name: dlm_network
 
-volumes:
-  shared-tmpfs:
-    name: shared-tmpfs
+# volumes:
+#   shared-tmpfs:
+#     name: shared-tmpfs
