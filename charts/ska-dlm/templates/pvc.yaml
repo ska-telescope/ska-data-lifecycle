@@ -5,8 +5,8 @@ metadata:
   name: {{ .Values.global.sharedpvc.pvc.name }}
   namespace: {{ .Release.Namespace }}
 spec:
-  # - Do not set volumeName here: it forces static binding and makes Helm upgrades fail if the PVC already exists.
-  # - storageClassName is optional: set it (e.g. "nfss1") for explicit dynamic provisioning, or omit to use the cluster default.
+  # Do not set volumeName here: it forces static binding and makes Helm upgrades fail if the PVC already exists.
+  # storageClassName is optional: set it (e.g. "nfss1") for explicit dynamic provisioning, or omit to use the cluster default.
   {{- if hasKey .Values.global.sharedpvc.pvc "storageClassName" }}
   storageClassName: {{ .Values.global.sharedpvc.pvc.storageClassName | quote }}
   {{- end }}

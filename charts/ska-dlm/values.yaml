@@ -13,8 +13,8 @@ global:
     # Default behaviour assumes the shared PVC is pre-provisioned (e.g. by CI/cluster tooling),
     # to avoid Helm upgrade failures due to immutable PVC fields.
     pv:
+      create: false  # PV is cluster-scoped; do not create via Helm by default
       name: shared
-      create: true  # dev-only: creates a hostPath PV (single-node clusters)
       storageSize: 2Gi
       storageClassName: ""  # empty string => no StorageClass (static PV)
 
