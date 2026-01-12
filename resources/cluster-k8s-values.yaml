@@ -7,4 +7,5 @@ global:
     pvc:
       name: test-pvc
       create: true
-      storage: 20Gi
+      storageSize: 20Gi
+      storageClassName: nfss1

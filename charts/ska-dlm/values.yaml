@@ -7,15 +7,25 @@ global:
     domainName: "sdhp.stfc.skao.int"  # required for whitelisting redirects
   development: true
   storageClass: "localdisk"  # existing storage class
-  sharedpvc: # shared pvc that can be mounted by multiple pods
+
+  sharedpvc:
+    # Shared PVC that can be mounted by multiple pods.
+    # Default behaviour assumes the shared PVC is pre-provisioned (e.g. by CI/cluster tooling),
+    # to avoid Helm upgrade failures due to immutable PVC fields.
     pv:
       name: shared
-      create: true  # create or use existing pv
+      create: true  # dev-only: creates a hostPath PV (single-node clusters)
       storageSize: 2Gi
+      storageClassName: ""  # empty string => no StorageClass (static PV)
+
     pvc:
       name: shared
-      create: true  # create or use existing pvc
-      storageSize: 2Gi  # created claim size
+      # Default false – assume the shared PVC is pre-created (e.g. by CI/cluster tooling).
+      # Set true only for first-time installs into a fresh namespace.
+      create: false
+      storageSize: 2Gi
+      storageClassName: ""  # empty string => no StorageClass (static PVC)
+
 
 nameOverride: ""
 fullnameOverride: ""
