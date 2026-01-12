@@ -34,11 +34,11 @@ services:
       - dlm_network
 
   dlm_rclone:
-    image: rclone/rclone
-    container_name: dlm_rclone
     build:
        context: ..
        dockerfile: tests/Dockerfile-rclone
+    image: dlm-rclone
+    container_name: dlm_rclone
     ports:
       - 5572:5572
     entrypoint: ["/bin/sh","-c"]
