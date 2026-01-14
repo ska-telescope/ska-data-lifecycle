@@ -2,9 +2,8 @@
 
 import sys
 from collections.abc import Callable
-from typing import Any
+from typing import Any, Optional
 
-from typing import Optional
 import typer
 from overrides import override
 from typer.core import TyperCommand

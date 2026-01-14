@@ -32,7 +32,7 @@ def test_initialise_storage_config():
     else:
         location_id = dlm_storage.init_location("MyHost", "low-integration")
     assert len(location_id) == 36
-    config = {"name": "MyDisk2", "type": "local", "parameters": {}}
+    config = {"name": "MyDisk2", "type": "local", "root_path":"","parameters": {}}
     uuid = dlm_storage.init_storage(
         storage_name="MyDisk2",
         location_id=location_id,
