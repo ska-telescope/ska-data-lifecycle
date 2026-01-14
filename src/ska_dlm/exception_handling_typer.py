@@ -4,6 +4,7 @@ import sys
 from collections.abc import Callable
 from typing import Any
 
+from git import Optional
 import typer
 from overrides import override
 from typer.core import TyperCommand
@@ -42,7 +43,7 @@ class ExceptionHandlingTyper(typer.Typer):
         help: str | None = None,  # pylint: disable=redefined-builtin
         epilog: str | None = None,
         short_help: str | None = None,
-        options_metavar: str = "[OPTIONS]",
+        options_metavar: Optional[str] = "[OPTIONS]",
         add_help_option: bool = True,
         no_args_is_help: bool = False,
         hidden: bool = False,
