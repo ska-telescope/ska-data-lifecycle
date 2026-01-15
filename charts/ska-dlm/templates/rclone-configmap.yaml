@@ -7,8 +7,8 @@ data:
     yes n | ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N '' || true
     eval "$(ssh-agent -s)"
     ssh-add /root/.ssh/id_rsa
-    mkdir -p /shared-data/dlm/
-    cp /root/.ssh/id_rsa.pub /shared-data/dlm/ 2>/dev/null 
+    mkdir -p /dlm/.ssh
+    cp /root/.ssh/id_rsa.pub /dlm/.ssh 2>/dev/null 
     rclone \
     rcd \
     --rc-web-gui-no-open-browser \

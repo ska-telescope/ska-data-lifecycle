@@ -143,13 +143,12 @@ def rclone_copy(
     """Copy a file from one place to another."""
     # if the item is a measurement set then use the copy directory command
 
-    src_abs_path = f"{src_root_dir}/{src_remote}".replace("//", "/")
     dest_abs_path = f"{dest_root_dir}/{dst_remote}".replace("//", "/")
     if item_type == ItemType.CONTAINER:
         request_url = f"{url}/sync/copy"
         post_data = {
-            "srcFs": f"{src_fs}{src_abs_path}",
-            "dstFs": f"{dst_fs}{dest_abs_path}",
+            "srcFs": f"{src_fs}{src_root_dir}/{src_remote}",
+            "dstFs": f"{dest_abs_path}",
             "no-check-dest": "true",
             "s3-no-check-bucket": "true",
             "_async": "true",
@@ -157,10 +156,10 @@ def rclone_copy(
     else:
         request_url = f"{url}/operations/copyfile"
         post_data = {
-            "srcFs": src_fs,
-            "srcRemote": src_abs_path,
+            "srcFs": f"{src_fs}{src_root_dir}",
+            "srcRemote": src_remote,
             "dstFs": dst_fs,
-            "dstRemote": dest_abs_path,
+            "dstRemote": dst_remote,
             "_async": "true",
         }
 
@@ -438,7 +437,7 @@ def copy_data_item(  # noqa: C901
         raise UnmetPreconditionForOperation("No configuration for source storage found!")
 
     s_config = s_config[0]
-    source_root_path = s_config.get("root_path", "")
+    source_root_path = s_config.get("root_path", "/")
     source = {"backend": f"{s_config['name']}:{source_root_path}", "path": storage["uri"]}
     if not path:
         path = storage["uri"]
@@ -459,7 +458,7 @@ def copy_data_item(  # noqa: C901
     if not d_config:
         raise UnmetPreconditionForOperation("Unable to get configuration for destination storage!")
     d_config = d_config[0]
-    dest_root_path = d_config.get("root_path", "")
+    dest_root_path = d_config.get("root_path", "/")
     dest = {"backend": f"{d_config['name']}:{dest_root_path}", "path": path}
 
     source_storage = query_storage(storage_id=storage["storage_id"])

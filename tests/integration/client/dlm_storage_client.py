@@ -1,6 +1,5 @@
 """dlm_storage REST client."""
 
-
 import requests
 
 from ska_dlm.common_types import (

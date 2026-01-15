@@ -5,11 +5,15 @@ metadata:
   name: {{ .Values.global.sharedpvc.pv.name }}
 spec:
   persistentVolumeReclaimPolicy: Retain
-  storageClassName: "manual"
+  {{- if hasKey .Values.global.sharedpvc.pv "storageClassName" }}
+  storageClassName: {{ .Values.global.sharedpvc.pv.storageClassName | quote }}
+  {{- else }}
+  storageClassName: ""
+  {{- end }}
   accessModes:
     - ReadWriteMany
   capacity:
-    storage: {{ .Values.global.sharedpvc.pv.storageSize }}
+    storage: {{ .Values.global.sharedpvc.pv.storageSize | quote }}
   hostPath:
-    path: "/shared-data"
+    path: "/dlm"
 {{- end }}

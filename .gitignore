@@ -13,6 +13,7 @@
 counter_*.txt
 **/_autosummary
 **/_openapi
+**/certs
 pytest-logs.txt
 
 # Python temp files

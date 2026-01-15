@@ -34,11 +34,11 @@ services:
       - dlm_network
 
   dlm_rclone:
+    image: dlm_rclone
+    container_name: dlm_rclone
     build:
        context: ..
        dockerfile: tests/Dockerfile-rclone
-    image: dlm-rclone
-    container_name: dlm_rclone
     ports:
       - 5572:5572
     entrypoint: ["/bin/sh","-c"]
@@ -47,8 +47,8 @@ services:
         yes n | ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N '' || true
         eval "$(ssh-agent -s)"
         ssh-add /root/.ssh/id_rsa
-        mkdir -p /data/dlm/
-        cp /root/.ssh/id_rsa.pub /data/dlm/ 2>/dev/null
+        mkdir -p /dlm/.ssh/
+        cp /root/.ssh/id_rsa.pub /dlm/.ssh/ 2>/dev/null
         rclone rcd \
         --rc-serve \
         --rc-addr \
@@ -61,7 +61,7 @@ services:
         --rc-cert=/etc/ssl/certs/selfsigned.cert \
         /
     volumes:
-      - shared-tmpfs:/data
+      - shared-tmpfs:/dlm
     networks:
       - dlm_network
 

@@ -45,6 +45,7 @@ def env_fixture(request: pytest.FixtureRequest) -> DlmTestClient:
             env = DlmTestClientDocker()
         case "k8s":
             env = DlmTestClientK8s()
+
         case _:
             raise ValueError("unknown test env configuration")
 

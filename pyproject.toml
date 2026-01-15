@@ -1,4 +1,5 @@
 [tool.poetry]
+include = ["MANIFEST.skao.int"]
 name = "ska_data_lifecycle"
 version = "1.2.0"
 description = "Services for managing the lifecycle of SKA data products"
@@ -45,6 +46,8 @@ msal = "1.31.0"
 ska-sdp-dataproduct-metadata = "^0.7.0"
 locust = "^2.37.11"
 click = "<=8.1.7"
+pytest = "^8.4.2"
+pytest-asyncio = "^1.2.0"
 
 [tool.poetry.group.test.dependencies]
 black = "^23.3.0"
@@ -52,7 +55,6 @@ flake8 = "^6.0.0"
 isort = "^5.12.0"
 pylint = "^3.2.6"
 pylint-junit = "^0.3.2"
-pytest = "^7.3.1"
 pytest-cov = "^4.1.0"
 pytest-integration = "^0.2.3"
 pytest-mock = "^3.14.0"

@@ -4,7 +4,10 @@ global:
     domainName: k8s.stfc.skao.int
   storageClass: nfss1
   sharedpvc:
+    pv:
+      create: false # Ensure CI/cluster values do not create PVs
     pvc:
       name: test-pvc
       create: true
-      storage: 20Gi
+      storageSize: 20Gi
+      storageClassName: nfss1
