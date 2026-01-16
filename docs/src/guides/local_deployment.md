@@ -3,56 +3,79 @@
 Interact with DLM by the way of local Docker deployment, using python methods or the CLI interface.
 From within your DLM directory, start the DLM services first, e.g., by running:
 ```
-docker compose -f tests/services.docker-compose.yaml -p dlm-test-services build
-docker compose -f tests/services.docker-compose.yaml -p dlm-test-services up -d
+docker compose -f tests/testrunner.docker-compose.yaml -p dlm-test-services build
+docker compose -f tests/testrunner.docker-compose.yaml -p dlm-test-services up -d
 ```
 
-## Register and Migrate Example Data Item
+## Register and Migrate a Data Item
 
 The following sections describe how to perform a data item registration and migration example from within a DLM server without the RESTful interface. This can be performed either on a developer machine after installing the `ska-data-lifecycle` package, or via a remote session to a DLM server instance.
 
 (local-development-cli)=
 ### Command Line Interface
 
+#### Set up a Location
 ```bash
-# check if the location MyLocation already exists
+# check if the location MyLocation already exists in the database
 ska-dlm storage query-location --location-name MyLocation
 # initialise location (if it doesn't already exist)
 ska-dlm storage init-location MyLocation local-dev
+```
+```{div} tip-subtle
+**Tip:** the pgAdmin application provides an easy way to view your database.
+```
 
+#### Set up a Storage
+```bash
 # check if the storage MyDisk already exists
 ska-dlm storage query-storage --storage-name MyDisk
 # initialise storage with root directory "/" (if it doesn't already exist)
 ska-dlm storage init-storage MyDisk filesystem "/" posix --location-name MyLocation
+```
 
+```bash
 # check if a storage config for MyDisk is already known to DLM
 ska-dlm storage get-storage-config --storage-name MyDisk
 # create a storage config for MyDisk (if one doesn't already exist). The default `config_type` is rclone.
 ska-dlm storage create-storage-config '{"name":"MyDisk", "type":"alias", "root_path":"/", "parameters":{"remote": "/"}}' \
 --storage-id '<the storage id received above>'
+```
 
+```bash
 # register an existing data item inside the rclone container (e.g., /etc/os-release)
 ska-dlm ingest register-data-item test_item_name etc/os-release --storage-name MyDisk \
 --metadata='{"execution_block":"eb-m001-20191031-12345"}'
+```
 
+```bash
 # query for data items called "test_item_name"
 ska-dlm data-item query-data-item --item-name test_item_name
+```
 
+```bash
 # migrate an item from one storage to another
 # register a second storage (same or different location)
 ska-dlm storage init-storage MyDisk2 filesystem "/" posix --location-name MyLocation
+```
 
+```bash
 # supply a storage configuration
 ska-dlm storage create-storage-config '{"name":"MyDisk2", "root_path": "/", "type":"alias", "parameters":{"remote": "/"}}' \
 --storage-id '<the storage id received above>'
+```
 
+```bash
 # copy your data item from MyDisk to MyDisk2
 ska-dlm migration copy-data-item --item-name test_item_name --destination-name MyDisk2 \
 --path /data/test_item
+```
 
+```bash
 # query for all instances of "test_item_name"
 ska-dlm data-item query-data-item --item-name test_item_name
+```
 
+```bash
 # if you can't find the command you need, follow the help prompts
 ska-dlm --help
 ```
@@ -121,5 +144,5 @@ dlm_request.query_data_item("test_item")
 
 Remember to tear down the services:
 ```
-docker compose -f tests/services.docker-compose.yaml -p dlm-test-services down
+docker compose -f tests/testrunner.docker-compose.yaml -p dlm-test-services down
 ```
