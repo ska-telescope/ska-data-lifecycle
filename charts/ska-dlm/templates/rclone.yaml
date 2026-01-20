@@ -81,7 +81,7 @@ spec:
         {{- end }}
         {{- end }}
           - name: shared-storage
-            mountPath: /shared-data
+            mountPath: /dlm
           - name: rclone-configmap
             mountPath: "/rclone-start.sh"
             subPath: rclone-start.sh
