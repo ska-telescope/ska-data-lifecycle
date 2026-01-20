@@ -2,6 +2,10 @@
 
 ## Development
 
+### Changed
+
+* Changed rclone mount path to /dlm
+
 ### Fixed
 
 * Verify that the user has CREATE permission in the DB before attempting to create a schema
