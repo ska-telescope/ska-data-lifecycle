@@ -2,6 +2,8 @@
 
 ## Development
 
+## 1.3.0
+
 ### Changed
 
 * Changed rclone mount path to /dlm
