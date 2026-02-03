@@ -437,7 +437,7 @@ def copy_data_item(  # noqa: C901
         raise UnmetPreconditionForOperation("No configuration for source storage found!")
 
     s_config = s_config[0]
-    source_root_path = s_config.get("root_path", "")
+    source_root_path = s_config.get("root_path", "/")
     source = {"backend": f"{s_config['name']}:{source_root_path}", "path": storage["uri"]}
     if not path:
         path = storage["uri"]
@@ -458,7 +458,7 @@ def copy_data_item(  # noqa: C901
     if not d_config:
         raise UnmetPreconditionForOperation("Unable to get configuration for destination storage!")
     d_config = d_config[0]
-    dest_root_path = d_config.get("root_path", "")
+    dest_root_path = d_config.get("root_path", "/")
     dest = {"backend": f"{d_config['name']}:{dest_root_path}", "path": path}
 
     source_storage = query_storage(storage_id=storage["storage_id"])

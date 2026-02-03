@@ -271,7 +271,7 @@ def query_location(location_name: str = "", location_id: str = "") -> list[dict]
 
 @cli.command()
 @rest.post("/storage/init_storage", response_model=str)
-# pylint: disable=too-many-arguments,too-many-locals,too-many-positional-arguments
+# pylint: disable=too-many-arguments,too-many-positional-arguments
 def init_storage(
     storage_name: str,
     storage_type: StorageType,
@@ -281,7 +281,7 @@ def init_storage(
     location_name: str | None = None,
     storage_capacity: int = -1,
     storage_phase: PhaseType = PhaseType.GAS,
-    rclone_config: JsonObjectOption = None,
+    storage_config: JsonObjectOption = None,
 ) -> str:
     """
     Initialise a new storage. Either location_id or location_name is required.
@@ -304,8 +304,8 @@ def init_storage(
         reserved storage capacity in bytes
     storage_phase
         from the enum PhaseType
-    rclone_config
-        extra rclone values such as secrets required for connection
+    storage_config
+        Alternative way to initialize a storage volume by providing JSON
 
     Returns
     -------
@@ -333,15 +333,14 @@ def init_storage(
     ]
     # TODO remove keys none values
 
-    post_data = {}
-    if rclone_config:
-        json_dict = rclone_config
+    if storage_config:
         for k in mandatory_keys:
-            if k not in json_dict:
+            if k not in storage_config:
                 logger.error("Parameter %s is required in json_data!", k)
                 return ""
-        post_data = json_dict
+        post_data = storage_config
     else:
+        post_data = {}
         if location_name and not location_id:
             result = query_location(location_name)
             if result:
@@ -524,6 +523,11 @@ def create_rclone_config(config: JsonObjectArg) -> bool:
         True if configuration is successful
     """
     logger.info("Got config: %s", CONFIG)
+    # NOTE: root_path is not a standard rclone config param, but
+    # we are using it and rclone ignores it's existence.
+    # It should be / by default, which is also enforced in other
+    # parts of the code.
+    config["root_path"] = config.get("root_path", "/")
     for url in CONFIG.RCLONE:
         request_url = f"{url}/config/create"
         logger.info("Creating new rclone config: %s %s", request_url, config)
@@ -570,7 +574,7 @@ def check_storage_access(
         raise UnmetPreconditionForOperation(
             "No valid configuration for storage found!", storage_name
         )
-    volume_name = f"{config[0]['name']}:{config[0].get('root_path', '')}"
+    volume_name = f"{config[0]['name']}:{config[0].get('root_path', '/')}"
     return rclone_access(volume_name, remote_file_path)
 
 
@@ -789,7 +793,7 @@ def delete_data_item_payload(uid: str) -> bool:
         logger.error("More than one storage volume keeping this UID: %s", uid)
     storage = storages[0]
     config = get_storage_config(storage["storage_id"])[0]
-    volume_name = f"{config['name']}:{config.get('root_path', '')}"
+    volume_name = f"{config['name']}:{config.get('root_path', '/')}"
     if not rclone_access(volume_name):
         return False
     source_storage = query_storage(storage_id=storage["storage_id"])
