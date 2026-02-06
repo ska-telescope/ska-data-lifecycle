@@ -15,7 +15,7 @@ For high-level design details, see the `Solution Intent page <https://confluence
    api/index
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :caption: Guides
 
    guides/dp_cluster
