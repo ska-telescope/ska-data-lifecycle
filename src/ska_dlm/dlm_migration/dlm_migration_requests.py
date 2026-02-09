@@ -194,7 +194,8 @@ async def update_migration_statuses():
         ),
     )
 
-    logger.info("number of outstanding migrations: %s", len(migrations))
+    if len(migrations) > 0:
+        logger.info("number of outstanding migrations: %s", len(migrations))
 
     for migration in migrations:
         # Want to try block so we go through each migration record to the end of the list
@@ -468,7 +469,7 @@ def copy_data_item(  # noqa: C901
     init_item = {
         "item_name": item_name,
         "oid": orig_item["oid"],
-        "storage_id": destination_id,
+        "storage_id": dest_id,
         "item_type": orig_item["item_type"],
         "metadata": orig_item["metadata"],
         "uri": path,
@@ -511,7 +512,7 @@ def copy_data_item(  # noqa: C901
             orig_item["oid"],
             url,
             source_storage[0]["storage_id"],
-            destination_id,
+            dest_id,
             authorization,
             command,
         )
