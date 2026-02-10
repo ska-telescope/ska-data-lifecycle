@@ -5,7 +5,7 @@ metadata:
   name: {{ include "ska-dlm.fullname" . }}-keycloak
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "ska-dlm.keycloak.labels" . | indent 4 }}
+    {{- include "ska-dlm.keycloak.labels" . | nindent 4 }}
 spec:
   type: ClusterIP
   ports:
@@ -27,7 +27,7 @@ metadata:
   name: {{ include "ska-dlm.fullname" . }}-keycloak
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "ska-dlm.keycloak.labels" . | indent 4 }}
+    {{- include "ska-dlm.keycloak.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.keycloak.replicas }}
   selector:
@@ -37,7 +37,7 @@ spec:
   template:
     metadata:
       labels:
-        {{- include "ska-dlm.keycloak.labels" . | indent 8 }}
+        {{- include "ska-dlm.keycloak.labels" . | nindent 8 }}
     spec:
       containers:
       - name: keycloak
