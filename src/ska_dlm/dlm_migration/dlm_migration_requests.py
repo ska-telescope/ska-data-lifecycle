@@ -148,7 +148,7 @@ def rclone_copy(
         request_url = f"{url}/sync/copy"
         post_data = {
             "srcFs": f"{src_fs}{src_root_dir}/{src_remote}",
-            "dstFs": dest_abs_path,
+            "dstFs": f"{dst_fs}{dest_abs_path}",
             "no-check-dest": "true",
             "s3-no-check-bucket": "true",
             "_async": "true",
@@ -484,6 +484,7 @@ def copy_data_item(  # noqa: C901
         # mechanisms to perform the copy. Also needs to be a non-blocking call
         # scheduling a job for dlm_migration service.
         logger.info("source: %s", source)
+        logger.info("destination: %s", dest)
 
         # get random Rclone instance to deal with copy
         url = random.choice(CONFIG.RCLONE)
