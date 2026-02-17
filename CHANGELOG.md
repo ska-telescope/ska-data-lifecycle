@@ -2,6 +2,10 @@
 
 ## Development
 
+* Capture the rclone command in the database.
+* Track the job stats while rclone copy is in progress not when it's finished.
+* Fixed a bug where the destination FS was not set on a file copy.
+
 ## 1.3.0
 
 ### Changed
