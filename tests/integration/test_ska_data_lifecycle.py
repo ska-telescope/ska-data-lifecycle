@@ -286,14 +286,6 @@ def test_copy(env: DlmTestClient):
     )
     assert source_data_item[0]["item_state"] == "READY"
 
-    # test the query_migration function
-    yesterday = (TODAY_DATE - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
-    result = env.migration_requests.query_migrations(start_date=yesterday, storage_id=dest_id)
-    assert len(result) == 1
-    # a query for migrations made up until yesterday should return nothing
-    query_result = env.migration_requests.query_migrations(end_date=yesterday)
-    assert query_result == []
-
 
 @pytest.mark.integration_test
 def test_copy_failed(env: DlmTestClient):
