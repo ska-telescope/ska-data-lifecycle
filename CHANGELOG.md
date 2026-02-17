@@ -2,9 +2,16 @@
 
 ## Development
 
+## 1.3.0
+
+### Changed
+
+* Changed rclone mount path to /dlm
+
 ### Fixed
 
-* fixed the error 'bearer_token' referenced before assignment
+* Verify that the user has CREATE permission in the DB before attempting to create a schema
+* Fixed the error 'bearer_token' referenced before assignment
 * Correctly handle the state of a data item after a failed or successful transfer
 * Ensure DLM schema is created and search_path is set before running SQL scripts
 

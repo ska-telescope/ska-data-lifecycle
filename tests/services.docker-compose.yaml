@@ -58,7 +58,8 @@ services:
         --rc-job-expire-duration=43200s \
         --rc-web-gui-no-open-browser \
         --rc-key=/etc/ssl/private/selfsigned.key \
-        --rc-cert=/etc/ssl/certs/selfsigned.cert
+        --rc-cert=/etc/ssl/certs/selfsigned.cert \
+        /
     volumes:
       - shared-tmpfs:/dlm
     networks:
@@ -95,7 +96,6 @@ services:
       - POSTGRES_DB=ska_dlm
       - POSTGRES_USER=ska_dlm_admin
       - POSTGRES_PASSWORD=password
-      - PGOPTIONS=-c search_path=dlm,public
     networks:
       - dlm_network
     healthcheck:
