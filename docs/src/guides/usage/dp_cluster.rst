@@ -6,13 +6,13 @@ External Storage
 DLM Client: Directory Watcher
 ------------------------------
 
-Please refer to the `Directory Watcher guide <https://developer.skatelescope.org/projects/ska-dlm-client/en/latest/api/directory_watcher.html>`_ on the dlm-client documentation.
+Please refer to the `Directory Watcher guide <https://developer.skatelescope.org/projects/ska-dlm-client/en/latest/api/directory_watcher.html>`_ (*WIP*) on the dlm-client documentation.
 
 
 DLM Client: ConfigDB Watcher
 -----------------------------
 
-Please refer to the `ConfigDB Watcher guide <https://developer.skatelescope.org/projects/ska-dlm-client/en/latest/api/configdb_watcher.html>`_ on the dlm-client documentation.
+Please refer to the `ConfigDB Watcher guide <https://developer.skatelescope.org/projects/ska-dlm-client/en/latest/api/configdb_watcher.html>`_ (*WIP*) on the dlm-client documentation.
 
 
 REST API interface
