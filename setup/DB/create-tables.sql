@@ -201,3 +201,4 @@ CREATE TABLE IF NOT EXISTS migration (
       ON DELETE SET NULL
 );
 
+ALTER TABLE migration ADD COLUMN IF NOT EXISTS command varchar;
