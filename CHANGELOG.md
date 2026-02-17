@@ -1,10 +1,18 @@
 # Version History
 
-## Development
+## 1.3.1
+
+### Changed
+
+* Track the job stats while rclone copy is in progress not when it's finished.
+
+### Fixed
+
+* Fixed a bug where the destination FS was not set on a file copy.
+
+### Added
 
 * Capture the rclone command in the database.
-* Track the job stats while rclone copy is in progress not when it's finished.
-* Fixed a bug where the destination FS was not set on a file copy.
 
 ## 1.3.0
 
