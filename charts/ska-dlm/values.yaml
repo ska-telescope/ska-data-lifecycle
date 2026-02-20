@@ -116,7 +116,7 @@ database:
 rclone:
   component: rclone
   subsystem: data-lifecycle-management
-  image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-rclone
+  image: artefact.skao.int/ska-data-lifecycle-rclone
   version: 1.3.1
   imagePullPolicy: Always
   replicas: 1
@@ -135,7 +135,7 @@ rclone:
 
 kubectl:
   image: rancher/kubectl
-  version: "v1.28.15-amd64"
+  version: "v1.34.4-arm64"
   imagePullPolicy: Always
 
 # Test Database
@@ -175,7 +175,7 @@ gateway:
   enabled: false
   component: gateway
   subsystem: data-lifecycle-management
-  image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-test-gateway
+  image: artefact.skao.int/ska-data-lifecycle-test-gateway
   version: "1.3.1"
   imagePullPolicy: Always
   replicas: 1
@@ -186,7 +186,7 @@ keycloak:
   enabled: false
   component: keycloak
   subsystem: data-lifecycle-management
-  image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-test-keycloak
+  image: artefact.skao.int/ska-data-lifecycle-keycloak
   version: "1.3.1"
   imagePullPolicy: Always
   replicas: 1

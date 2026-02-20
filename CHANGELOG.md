@@ -1,5 +1,11 @@
 # Version History
 
+## Development
+
+### Changed
+
+* Only generate new rclone ssh key if it doesn't exist on the shared drive
+
 ## 1.3.1
 
 ### Changed
