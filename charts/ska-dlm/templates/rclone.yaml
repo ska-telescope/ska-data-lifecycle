@@ -59,7 +59,7 @@ spec:
       - name: rclone
         image: {{ .Values.rclone.image}}:{{ .Values.rclone.version }}
         imagePullPolicy: {{ .Values.rclone.imagePullPolicy }}
-        command: ["/bin/bash", "/rclone-start.sh"]
+        command: ["/bin/sh", "/rclone-start.sh"]
         readinessProbe:
           httpGet:
             path: /
