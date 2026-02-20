@@ -4,11 +4,13 @@ metadata:
   name: {{ include "ska-dlm.fullname" . }}-rclone-configmap
 data:
   rclone-start.sh: |-
-    yes n | ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N '' || true
-    eval "$(ssh-agent -s)"
-    ssh-add /root/.ssh/id_rsa
-    mkdir -p /dlm/.ssh
-    cp /root/.ssh/id_rsa.pub /dlm/.ssh 2>/dev/null 
+    if [[ ! -f /dlm/.ssh/id_rsa.pub ]]; then
+      yes n | ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N '' || true
+      eval "$(ssh-agent -s)"
+      ssh-add /root/.ssh/id_rsa
+      mkdir -p /dlm/.ssh
+      cp /root/.ssh/id_rsa.pub /dlm/.ssh 2>/dev/null
+    fi
     rclone \
     rcd \
     --rc-web-gui-no-open-browser \
