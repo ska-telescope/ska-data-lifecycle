@@ -50,9 +50,9 @@ author = "SKA Observatory"
 # built documents.
 #
 # The short X.Y.Z version.
-version = "1.3.0"
+version = "1.3.2"
 # The full version, including alpha/beta/rc pre-release tags.
-release = "1.3.0"
+release = "1.3.2"
 
 # -- General configuration ------------------------------------------------
 
@@ -268,3 +268,7 @@ epub_exclude_files = ["search.html"]
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {"python": ("https://docs.python.org/", None)}
+
+myst_enable_extensions = [
+    "attrs_block",
+]

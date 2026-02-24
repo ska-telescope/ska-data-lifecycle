@@ -148,7 +148,7 @@ def rclone_copy(
         request_url = f"{url}/sync/copy"
         post_data = {
             "srcFs": f"{src_fs}{src_root_dir}/{src_remote}",
-            "dstFs": f"{dest_abs_path}",
+            "dstFs": f"{dst_fs}{dest_abs_path}",
             "no-check-dest": "true",
             "s3-no-check-bucket": "true",
             "_async": "true",
@@ -159,14 +159,16 @@ def rclone_copy(
             "srcFs": f"{src_fs}{src_root_dir}",
             "srcRemote": src_remote,
             "dstFs": dst_fs,
-            "dstRemote": dst_remote,
+            "dstRemote": dest_abs_path,
             "_async": "true",
         }
 
-    logger.info("rclone copy request: %s, %s", request_url, post_data)
+    command = f"{request_url} {str(post_data)}"
+
+    logger.info("rclone command: %s", command)
     request = requests.post(request_url, post_data, timeout=1800, verify=False)
     logger.info("Response status code: %s", request.status_code)
-    return request.status_code, request.json()
+    return request.status_code, request.json(), command
 
 
 async def update_migration_statuses():
@@ -192,7 +194,8 @@ async def update_migration_statuses():
         ),
     )
 
-    logger.info("number of outstanding migrations: %s", len(migrations))
+    if len(migrations) > 0:
+        logger.info("number of outstanding migrations: %s", len(migrations))
 
     for migration in migrations:
         # Want to try block so we go through each migration record to the end of the list
@@ -203,31 +206,24 @@ async def update_migration_statuses():
             url = migration["url"]
             logger.info("migration %s: %s", migration_id, job_id)
 
-            stats_json = ""
-            complete = False
+            migration_complete = False
             # query rclone for job/status
             status_json = await _query_job_status(url, job_id)
-            if status_json["finished"] is False:
-                continue
+            stats_json = await _query_core_stats(url, status_json["group"])
 
-            if not status_json["error"]:
-                # query rclone for core/stats
-                stats_json = await _query_core_stats(url, status_json["group"])
-                complete = status_json["success"]
-            else:
-                # if job is in error we dont want to query it again so mark it complete
-                complete = True
+            if status_json["finished"] is True:
+                migration_complete = True
+                # Get record for remote data item
+                dest_data_item = query_data_item(
+                    oid=migration["oid"], storage_id=migration["destination_storage_id"]
+                )
 
-            # Get record for remote data item
-            source_data_item = query_data_item(
-                oid=migration["oid"], storage_id=migration["destination_storage_id"]
-            )
-            if source_data_item:
-                if status_json["success"] is True:
-                    set_state(uid=source_data_item[0]["uid"], state="READY")
-                else:
-                    # delete remote data item if there is a transfer problem
-                    delete_data_item_entry(uid=source_data_item[0]["uid"])
+                if dest_data_item:
+                    if status_json["success"] is True:
+                        set_state(uid=dest_data_item[0]["uid"], state="READY")
+                    else:
+                        # delete remote data item if there is a transfer problem
+                        delete_data_item_entry(uid=dest_data_item[0]["uid"])
 
             # update migration database
             DB.update(
@@ -236,7 +232,7 @@ async def update_migration_statuses():
                 json={
                     "job_status": status_json,
                     "job_stats": stats_json,
-                    "complete": complete,
+                    "complete": migration_complete,
                 },
             )
         except Exception as e:  # pylint: disable=broad-except
@@ -344,6 +340,7 @@ def _create_migration_record(
     source_storage_id,
     destination_storage_id,
     authorization,
+    command
     # pylint: disable=too-many-arguments,too-many-positional-arguments
 ):
     # decode the username from the authorization
@@ -362,6 +359,7 @@ def _create_migration_record(
         "source_storage_id": source_storage_id,
         "destination_storage_id": destination_storage_id,
         "user": username,
+        "command": command,
     }
     return DB.insert(CONFIG.DLM.migration_table, json=json_data)
 
@@ -452,9 +450,9 @@ def copy_data_item(  # noqa: C901
         raise UnmetPreconditionForOperation(
             f"Unable to get ID of destination storage: {destination_name}."
         )
-    destination_id = destination[0]["storage_id"]
+    dest_id = destination[0]["storage_id"]
 
-    d_config = get_storage_config(storage_id=destination_id)
+    d_config = get_storage_config(storage_id=dest_id)
     if not d_config:
         raise UnmetPreconditionForOperation("Unable to get configuration for destination storage!")
     d_config = d_config[0]
@@ -471,7 +469,7 @@ def copy_data_item(  # noqa: C901
     init_item = {
         "item_name": item_name,
         "oid": orig_item["oid"],
-        "storage_id": destination_id,
+        "storage_id": dest_id,
         "item_type": orig_item["item_type"],
         "metadata": orig_item["metadata"],
         "uri": path,
@@ -486,11 +484,12 @@ def copy_data_item(  # noqa: C901
         # mechanisms to perform the copy. Also needs to be a non-blocking call
         # scheduling a job for dlm_migration service.
         logger.info("source: %s", source)
+        logger.info("destination: %s", dest)
 
         # get random Rclone instance to deal with copy
         url = random.choice(CONFIG.RCLONE)
 
-        status_code, content = rclone_copy(
+        status_code, content, command = rclone_copy(
             url,
             source["backend"],
             source["path"],
@@ -514,8 +513,9 @@ def copy_data_item(  # noqa: C901
             orig_item["oid"],
             url,
             source_storage[0]["storage_id"],
-            destination_id,
+            dest_id,
             authorization,
+            command,
         )
 
         return {"uid": new_item_uid, "migration_id": record[0]["migration_id"]}

@@ -1,7 +1,7 @@
 [tool.poetry]
 include = ["MANIFEST.skao.int"]
 name = "ska_data_lifecycle"
-version = "1.3.0"
+version = "1.3.2"
 description = "Services for managing the lifecycle of SKA data products"
 authors = [
     "Andreas Wicenec <andreas.wicenec@icrar.org>",
