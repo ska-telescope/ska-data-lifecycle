@@ -1,6 +1,8 @@
-system: dlm
+# ------------------------------------------------
+# Default Helm configuration for ska-dlm server
+# ------------------------------------------------
 
-# Global parameters
+# ------ Global configuration (shared across components / subcharts) ------
 global:
   ingress:
     enabled: false
@@ -26,21 +28,16 @@ global:
       storageSize: 2Gi
       storageClassName: ""  # empty string => no StorageClass (static PVC)
 
-
+# ------ Chart metadata / naming ------
+system: dlm
 nameOverride: ""
 fullnameOverride: ""
 
-# DLM
-request:
-  component: request
-  subsystem: data-lifecycle-management
-  image: artefact.skao.int/ska-data-lifecycle
-  version: "1.3.2"
-  imagePullPolicy: Always
-  replicas: 1
 
-migration:
-  component: migration
+# ------ Core DLM services and API ------
+
+ingest:
+  component: ingest
   subsystem: data-lifecycle-management
   image: artefact.skao.int/ska-data-lifecycle
   version: "1.3.2"
@@ -55,28 +52,52 @@ storage:
   imagePullPolicy: Always
   replicas: 1
 
-  locations:
+  locations: # Location endpoints (can list multiple)
+    - name: Pawsey
+      type: low-integration
+      country: AU
+      city: Kensington
+      facility: "SKA-Low HPC Science Cluster"
 
   endpointSecretName: ""
-  endpoints:
+  endpoints: # Storage endpoints (can list multiple)
+    - name: Acacia_ITF
+      location: Pawsey
+      storage_type: objectstore # options: filesystem, objectstore, tape
+      interface: s3 # options: posix, s3, sftp, https
+      root_directory: /itf
+      config:
+        name: acacia-itf
+        type: s3
+        parameters:
+          type: s3
+          provider: Ceph
+          endpoint: https://ingest.pawsey.org.au
+          access_key_id:
+          # secret_access_key: # Manually add this if there's no env variable RCLONE_S3_SECRET_ACCESS_KEY
 
-ingest:
-  component: ingest
+migration:
+  component: migration
   subsystem: data-lifecycle-management
   image: artefact.skao.int/ska-data-lifecycle
   version: "1.3.2"
   imagePullPolicy: Always
   replicas: 1
 
+request:
+  component: request
+  subsystem: data-lifecycle-management
+  image: artefact.skao.int/ska-data-lifecycle
+  version: "1.3.2"
+  imagePullPolicy: Always
+  replicas: 1
 
 postgrest:
   component: postgrest
   subsystem: data-lifecycle-management
-
   image: postgrest/postgrest
   version: "v13.0.7"
   imagePullPolicy: Always
-
   replicas: 1
   db_schema: dlm
   db_anon_role: ska_dlm_admin
@@ -94,53 +115,30 @@ postgrest:
   #   * VSO, or
   #   * Automatically from the postgresql.auth section
   db_auth_secret:
-    create: true
+    create: true  # true for local DB (postgresql.enabled=true)
     vault:
       enabled: false
       path: ""
       mount: ""
       type: "kv-v2"
-    name: ""
+    name: "" # secret name (for external DB), e.g., for DP cluster: "ska-dlm-dev-postgrest-secret-dp-dm"
+
+
+# ------ Database options ------
 
 database:
   migration:
-    enabled: false
+    enabled: false  # set to true if building a fresh database
     image: postgres
     version: "17.4"
     base:
-      baseInstall: true
+      baseInstall: true  # set to true
     patch:
-      patchInstall: false
+      patchInstall: false  # set to false (our patch migration system is TBD)
       patchVersion: ""  # Supply a valid patch version vx.x.x
 
-rclone:
-  component: rclone
-  subsystem: data-lifecycle-management
-  image: artefact.skao.int/ska-data-lifecycle-rclone
-  version: 1.3.2
-  imagePullPolicy: Always
-  replicas: 1
-
-  secret:
-    enabled: false
-    name: ""
-    mountPoint: "/secrets/"
-    ssl_key_name: ""
-    ssl_cert_name: ""
-    vault:
-      enabled: false
-      mount: ""
-      type: kv-v2
-      path: ""
-
-kubectl:
-  image: rancher/kubectl
-  version: "v1.34.4-arm64"
-  imagePullPolicy: Always
-
-# Test Database
 postgresql:  # see https://github.com/bitnami/charts/tree/main/bitnami/postgresql
-  enabled: false
+  enabled: false  # whether to deploy a test database
   nameOverride: postgresql
 
   # Custom user/password/db to create, has to match primary.initdb authentication
@@ -171,8 +169,30 @@ postgresql:  # see https://github.com/bitnami/charts/tree/main/bitnami/postgresq
     networkPolicy:
       enabled: false
 
+
+# ------ Supporting infrastructure ------
+
+rclone:
+  component: rclone
+  subsystem: data-lifecycle-management
+  image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-rclone
+  version: 1.3.1
+  imagePullPolicy: Always
+  replicas: 1
+  secret:
+    enabled: false
+    name: ""
+    mountPoint: "/secrets/"
+    ssl_key_name: ""
+    ssl_cert_name: ""
+    vault:
+      enabled: false
+      mount: ""
+      type: kv-v2
+      path: ""
+
 gateway:
-  enabled: false
+  enabled: false  # true for DP cluster
   component: gateway
   subsystem: data-lifecycle-management
   image: artefact.skao.int/ska-data-lifecycle-test-gateway
@@ -180,10 +200,10 @@ gateway:
   imagePullPolicy: Always
   replicas: 1
   secret:
-    name: ""
+    name: ""  # supply if gateway.enabled=true, e.g., "gateway-secret"
 
 keycloak:
-  enabled: false
+  enabled: false  # false for production
   component: keycloak
   subsystem: data-lifecycle-management
   image: artefact.skao.int/ska-data-lifecycle-keycloak
@@ -192,8 +212,11 @@ keycloak:
   replicas: 1
   use_https: true
 
+
+# ------ Optional utilities ------
+
 pgweb:  # see https://github.com/ectobit/charts/tree/main/pgweb
-  enabled: false
+  enabled: false  # enable web IDE access to Postgres
   ingress:
     enabled: false
     annotations:
@@ -204,16 +227,21 @@ pgweb:  # see https://github.com/ectobit/charts/tree/main/pgweb
         pathType: ImplementationSpecific
 
 benchmark:
-  enabled: false
+  enabled: false  # false for regular deployment. Set to true to run the benchmarking pod (see scripts/README.md)
   component: benchmark
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-benchmark
   version: "1.1.2"
   imagePullPolicy: Always
-
-  name: register
+  name: register  # register or migrate
   config:
     host:
     token:
     sourceFile:
     mountPath:
+
+# ------ Auxiliary utility images ------
+kubectl:
+  image: rancher/kubectl
+  version: "v1.28.15-amd64"
+  imagePullPolicy: Always
