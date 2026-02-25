@@ -70,7 +70,7 @@ Note: `database.migration.base.baseInstall` and `database.migration.patch.patchI
 There is an option to create multiple locations when the storage manager starts by adding the following list of named values:
 ```
 locations:
-    - name: name of the location
+    - name: name of the location (free text – no enum or lookup constraints)
       type: type of storage ("local-dev", "low-integration", "mid-integration", "low-operations", "mid-operations")
       country: country where storage is located ("AU", "AZ", "UK")
       city: city where the storage is located
@@ -84,14 +84,14 @@ There is an option to create multiple storage endpoints when the storage manager
 
 ```
 endpoints:
-  - name: storage name
-  - location: name of existing storage location
-  - storage_type: type of storage endpoint ('filesystem', 'objectstore', 'tape')
-  - interface: storage interface ('posix', 's3', 'sftp', 'https')
+  - name: storage name (free text – no enum or lookup constraints)
+  - location: name of existing location endpoint
+  - storage_type: type of storage endpoint ("filesystem", "objectstore", "tape")
+  - interface: storage interface ("posix", "s3", "sftp", "https")
   - root_directory: root directory of mount point.
   - config:
       - name: rclone storage name
-      - type: rclone storage type i.e. (s3, alias, ...)
+      - type: rclone storage type i.e. ("s3", "alias", ...)
       - parameters: rclone parameters as a json dictionary
 
   - name: ...
@@ -99,7 +99,7 @@ endpoints:
 ```
 
 * Set `storage.endpointSecretName` to the name of predefined k8 secret. The secret can contain the rclone secrets for a named storage endpoint. The `config.parameters` value for an endpoint will be replaced by the secret value if the secret key matches the name of the storage endpoint.
-If `storage.endpointSecretName` is empty then the `config.parameters` will remained unchanged.
+If `storage.endpointSecretName` is empty, then the `config.parameters` will remained unchanged.
 
 ### Storage Endpoint Examples
 
