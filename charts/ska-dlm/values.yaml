@@ -53,18 +53,18 @@ storage:
   replicas: 1
 
   locations: # Location endpoints (can list multiple)
-    - name: Pawsey
-      type: low-integration
-      country: AU
+    - name: SKA-Low
+      type: low-integration # Options: local-dev, low-integration, mid-integration, low-operations, mid-operations
+      country: AU # Options: AU, ZA, UK
       city: Kensington
-      facility: "SKA-Low HPC Science Cluster"
+      facility: "Pawsey Centre" # Options are in location_facility lookup-table
 
   endpointSecretName: ""
   endpoints: # Storage endpoints (can list multiple)
     - name: Acacia_ITF
-      location: Pawsey
-      storage_type: objectstore # options: filesystem, objectstore, tape
-      interface: s3 # options: posix, s3, sftp, https
+      location: Pawsey # Options are in location_facility lookup-table
+      storage_type: objectstore # Options: filesystem, objectstore, tape
+      interface: s3 # Options: posix, s3, sftp, https
       root_directory: /itf
       config:
         name: acacia-itf
