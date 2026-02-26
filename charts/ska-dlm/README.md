@@ -175,7 +175,7 @@ To run the benchmarking pod:
     * `benchmark.config.mountPath` = location in the pod the migration yaml config file will be copied
 
 1) Setup port forwarding on the benchmark pod to port: `8089`
-2) In a browser, navigate to `http://localhost:8089`
+2) In a browser, navigate to `http://localhost:8089`. Now you should see a Locust GUI.
 3) Click START
 
 For details on the benchmark configuration, see the [documentation](../../scripts/README.md).
@@ -221,7 +221,8 @@ Note: The v1.1.2 directory holds the code required to migrate the database *from
 
 ### pgweb (optional)
 
-Web IDE access to Postgres can be enabled by deploying pgweb in the cluster by adding `--set pgweb.enabled=true` to `K8S_CHART_PARAMS` in the project `Makefile`, or by setting `pgweb.enabled=true` in `values.yaml`. Once deployed, you can access the interface by port-forwarding to the pgweb service.
+Web IDE access to Postgres can be enabled by deploying pgweb in the cluster by adding `--set pgweb.enabled=true` to `K8S_CHART_PARAMS` in the project `Makefile`, or by setting `pgweb.enabled=true` in `values.yaml`. Once deployed, the pgweb interface can be accessed by port-forwarding the pgweb service or pod. For example, when using k9s, select the ``pgweb`` pod and press ``Shift+F`` to forward the default port (``8081``). Then open a browser and navigate to ``http://localhost:8081/``.
+Log in using the appropriate database credentials. If you deployed a local Postgres instance, these correspond to the values defined under ``postgresql.auth`` in your ``values.yaml`` file.
 
 With public network access to the development k8s cluster:
 

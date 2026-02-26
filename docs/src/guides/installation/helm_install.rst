@@ -72,7 +72,8 @@ Rclone Helm Chart ``secret`` values
 Pgweb
 ------
 
-Web IDE access to Postgres can be enabled by deploying pgweb in the cluster by setting ``pgweb.enabled`` : ``true``. Once deployed, you can access the interface by port-forwarding to the pgweb service.
+Web IDE access to Postgres can be enabled by deploying pgweb in the cluster by setting ``pgweb.enabled`` : ``true``. Once deployed, the pgweb interface can be accessed by port-forwarding the pgweb service or pod. For example, when using k9s, select the ``pgweb`` pod and press ``Shift+F`` to forward the default port (``8081``). Then open a browser and navigate to ``http://localhost:8081/``.
+Log in using the appropriate database credentials. If you deployed a local Postgres instance, these correspond to the values defined under ``postgresql.auth`` in your ``values.yaml`` file.
 
 
 .. _database-migrations:
@@ -196,8 +197,8 @@ API Gateway
 To install the OAuth API gateway:
 
   * Set ``gateway.enabled`` : ``true``
-  * Set ``image`` to the registry path of the container image.
-  * Set ``version`` to the container image version.
+  * Set ``gateway.image`` to the registry path of the container image.
+  * Set ``gateway.version`` to the container image version.
   * Set ``gateway.secret.name`` to the name of the k8 secret (see below).
 
 Create a k8 secret with the following Entra configuration items obtained by SKAO IT:
@@ -218,11 +219,12 @@ To run the benchmarking pod:
   * Set ``benchmark.config.host`` : hostname of the DLM gateway
   * Set ``benchmark.config.token`` : auth token
   * If ``benchmark.name`` : ``migrate``:
+
     * ``benchmark.config.sourceFile`` : name of the migration yaml config file (must be created in the directory ``charts/ska-dlm/benchmark``)
     * ``benchmark.config.mountPath`` : location in the pod the migration yaml config file will be copied
 
 1) Setup port forwarding on the benchmark pod to port: ``8089``
-2) In a browser, navigate to ``http://localhost:8089``
+2) In a browser, navigate to ``http://localhost:8089``.  Now you should see a Locust GUI.
 3) Click START
 
 For details on the benchmark configuration, see `benchmark utilities <https://gitlab.com/ska-telescope/ska-data-lifecycle/-/tree/main/scripts#benchmark-utilities>`_ in the scripts readme.
