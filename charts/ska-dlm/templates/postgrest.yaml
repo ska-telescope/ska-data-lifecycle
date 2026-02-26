@@ -5,7 +5,7 @@ metadata:
   name: {{ include "ska-dlm.fullname" . }}-postgrest
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "ska-dlm.postgrest.labels" . | indent 4 }}
+    {{- include "ska-dlm.postgrest.labels" . | nindent 4 }}
 spec:
   type: ClusterIP
   ports:
@@ -24,7 +24,7 @@ metadata:
   name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
   namespace: {{ $.Release.Namespace }}
   labels:
-    {{- include "ska-dlm.postgrest.labels" $ | indent 4 }}
+    {{- include "ska-dlm.postgrest.labels" $ | nindent 4 }}
 type: Opaque
 data:
   PGHOST: {{ include "ska-dlm.postgresql.name" $ | b64enc }}
@@ -62,7 +62,7 @@ metadata:
   name: {{ include "ska-dlm.fullname" . }}-postgrest
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "ska-dlm.postgrest.labels" . | indent 4 }}
+    {{- include "ska-dlm.postgrest.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.postgrest.replicas }}
   selector:
@@ -72,7 +72,7 @@ spec:
   template:
     metadata:
       labels:
-        {{- include "ska-dlm.postgrest.labels" . | indent 8 }}
+        {{- include "ska-dlm.postgrest.labels" . | nindent 8 }}
     spec:
       {{- if .Values.postgresql.enabled }}
       initContainers:

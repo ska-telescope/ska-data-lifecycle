@@ -4,7 +4,7 @@ metadata:
   name: {{ include "ska-dlm.fullname" . }}-migration
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "ska-dlm.migration.labels" . | indent 4 }}
+    {{- include "ska-dlm.migration.labels" . | nindent 4 }}
 spec:
   type: ClusterIP
   ports:
@@ -22,7 +22,7 @@ metadata:
   name: {{ include "ska-dlm.fullname" . }}-migration
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "ska-dlm.migration.labels" . | indent 4 }}
+    {{- include "ska-dlm.migration.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.migration.replicas }}
   selector:
@@ -32,7 +32,7 @@ spec:
   template:
     metadata:
       labels:
-        {{- include "ska-dlm.migration.labels" . | indent 8 }}
+        {{- include "ska-dlm.migration.labels" . | nindent 8 }}
     spec:
       containers:
       - name: migration

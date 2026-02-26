@@ -5,7 +5,7 @@ metadata:
   name: {{ include "ska-dlm.fullname" . }}-benchmark
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "ska-dlm.benchmark.labels" . | indent 4 }}
+    {{- include "ska-dlm.benchmark.labels" . | nindent 4 }}
 spec:
   type: ClusterIP
   ports:
@@ -34,7 +34,7 @@ metadata:
   name: {{ include "ska-dlm.fullname" . }}-benchmark
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "ska-dlm.benchmark.labels" . | indent 4 }}
+    {{- include "ska-dlm.benchmark.labels" . | nindent 4 }}
 spec:
   replicas: 1
   selector:
@@ -44,7 +44,7 @@ spec:
   template:
     metadata:
       labels:
-        {{- include "ska-dlm.benchmark.labels" . | indent 8 }}
+        {{- include "ska-dlm.benchmark.labels" . | nindent 8 }}
     spec:
       containers:
       - name: benchmark

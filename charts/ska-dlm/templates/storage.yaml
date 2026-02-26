@@ -4,7 +4,7 @@ metadata:
   name: {{ include "ska-dlm.fullname" . }}-storage
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "ska-dlm.storage.labels" . | indent 4 }}
+    {{- include "ska-dlm.storage.labels" . | nindent 4 }}
 spec:
   type: ClusterIP
   ports:
@@ -22,7 +22,7 @@ metadata:
   name: {{ include "ska-dlm.fullname" . }}-storage
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "ska-dlm.storage.labels" . | indent 4 }}
+    {{- include "ska-dlm.storage.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.storage.replicas }}
   selector:
@@ -32,7 +32,7 @@ spec:
   template:
     metadata:
       labels:
-        {{- include "ska-dlm.storage.labels" . | indent 8 }}
+        {{- include "ska-dlm.storage.labels" . | nindent 8 }}
     spec:
       initContainers:
         - name: wait-for-pod

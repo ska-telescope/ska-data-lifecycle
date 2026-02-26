@@ -4,7 +4,7 @@ metadata:
   name: {{ include "ska-dlm.fullname" . }}-rclone
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "ska-dlm.rclone.labels" . | indent 4 }}
+    {{- include "ska-dlm.rclone.labels" . | nindent 4 }}
 spec:
   type: ClusterIP
   ports:
@@ -43,7 +43,7 @@ metadata:
   name: {{ include "ska-dlm.fullname" . }}-rclone
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "ska-dlm.rclone.labels" . | indent 4 }}
+    {{- include "ska-dlm.rclone.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.rclone.replicas }}
   selector:
@@ -53,7 +53,7 @@ spec:
   template:
     metadata:
       labels:
-        {{- include "ska-dlm.rclone.labels" . | indent 8 }}
+        {{- include "ska-dlm.rclone.labels" . | nindent 8 }}
     spec:
       containers:
       - name: rclone

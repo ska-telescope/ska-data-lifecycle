@@ -35,10 +35,10 @@ Create chart name and version as used by the chart label.
 Common labels
 see https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/
 */}}
-{{- define "ska-dlm.labels" }}
-{{- if .Values.global.labels}}
+{{- define "ska-dlm.labels" -}}
+{{ if .Values.global.labels -}}
 app.kubernetes.io/name: {{ coalesce .Values.global.labels.app "ska-dlm.name" }}
-{{- else }}
+{{- else -}}
 app.kubernetes.io/name: {{ include "ska-dlm.name" . }}
 {{- end }}
 app.kubernetes.io/instance: {{ .Release.Name }}
@@ -46,22 +46,22 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 helm.sh/chart: {{ include "ska-dlm.chart" . }}
 system: {{ .Values.system }}
-{{- end }}
+{{- end -}}
 
 {{/*
 Postgrest labels
 */}}
-{{- define "ska-dlm.postgrest.labels" }}
-{{- include "ska-dlm.labels" . }}
+{{- define "ska-dlm.postgrest.labels" -}}
+{{ include "ska-dlm.labels" . }}
 component: {{ .Values.postgrest.component }}
 subsystem: {{ .Values.postgrest.subsystem }}
 intent: production
 {{- end }}
 
 {{/* PostgreSQL service name */}}
-{{- define "ska-dlm.postgresql.name" }}
+{{- define "ska-dlm.postgresql.name" -}}
 {{- printf "%s-%s" .Release.Name .Values.postgresql.nameOverride -}}
-{{- end}}
+{{- end -}}
 
 {{/*
 Generates the PostgreREST Secret name
@@ -81,82 +81,82 @@ Generates the PostgreREST Secret name
 {{/*
 Migration labels
 */}}
-{{- define "ska-dlm.migration.labels" }}
+{{- define "ska-dlm.migration.labels" -}}
 {{- include "ska-dlm.labels" . }}
 component: {{ .Values.migration.component }}
 subsystem: {{ .Values.migration.subsystem }}
 intent: production
-{{- end }}
+{{- end -}}
 
 {{/*
 Ingest labels
 */}}
-{{- define "ska-dlm.ingest.labels" }}
+{{- define "ska-dlm.ingest.labels" -}}
 {{- include "ska-dlm.labels" . }}
 component: {{ .Values.ingest.component }}
 subsystem: {{ .Values.ingest.subsystem }}
 intent: production
-{{- end }}
+{{- end -}}
 
 {{/*
 Storage labels
 */}}
-{{- define "ska-dlm.storage.labels" }}
+{{- define "ska-dlm.storage.labels" -}}
 {{- include "ska-dlm.labels" . }}
 component: {{ .Values.storage.component }}
 subsystem: {{ .Values.storage.subsystem }}
 intent: production
-{{- end }}
+{{- end -}}
 
 {{/*
 Request labels
 */}}
-{{- define "ska-dlm.request.labels" }}
+{{- define "ska-dlm.request.labels" -}}
 {{- include "ska-dlm.labels" . }}
 component: {{ .Values.request.component }}
 subsystem: {{ .Values.request.subsystem }}
 intent: production
-{{- end }}
+{{- end -}}
 
 {{/*
 RClone labels
 */}}
-{{- define "ska-dlm.rclone.labels" }}
+{{- define "ska-dlm.rclone.labels" -}}
 {{- include "ska-dlm.labels" . }}
 component: {{ .Values.rclone.component }}
 subsystem: {{ .Values.rclone.subsystem }}
 intent: production
-{{- end }}
+{{- end -}}
 
 {{/*
 Gateway labels
 */}}
-{{- define "ska-dlm.gateway.labels" }}
+{{- define "ska-dlm.gateway.labels" -}}
 {{- include "ska-dlm.labels" . }}
 component: {{ .Values.gateway.component }}
 subsystem: {{ .Values.gateway.subsystem }}
 intent: production
-{{- end }}
+{{- end -}}
 
 {{/*
 Benchmark labels
 */}}
-{{- define "ska-dlm.benchmark.labels" }}
+{{- define "ska-dlm.benchmark.labels" -}}
 {{- include "ska-dlm.labels" . }}
 component: {{ .Values.benchmark.component }}
 subsystem: {{ .Values.benchmark.subsystem }}
 intent: production
-{{- end }}
+{{- end -}}
 
 {{/*
 Keycloak labels
 */}}
-{{- define "ska-dlm.keycloak.labels" }}
+{{- define "ska-dlm.keycloak.labels" -}}
 {{- include "ska-dlm.labels" . }}
 component: {{ .Values.keycloak.component }}
 subsystem: {{ .Values.keycloak.subsystem }}
 intent: production
-{{- end }}
+{{- end -}}
 
 {{/*
 Rclone secret name
