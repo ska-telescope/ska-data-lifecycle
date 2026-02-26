@@ -5,7 +5,7 @@ metadata:
   name: {{ include "ska-dlm.fullname" . }}-gateway
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "ska-dlm.gateway.labels" . | indent 4 }}
+    {{- include "ska-dlm.gateway.labels" . | nindent 4 }}
 spec:
   type: ClusterIP
   ports:
@@ -23,7 +23,7 @@ metadata:
   name: {{ include "ska-dlm.fullname" . }}-gateway
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "ska-dlm.gateway.labels" . | indent 4 }}
+    {{- include "ska-dlm.gateway.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.gateway.replicas }}
   selector:
@@ -33,7 +33,7 @@ spec:
   template:
     metadata:
       labels:
-        {{- include "ska-dlm.gateway.labels" . | indent 8 }}
+        {{- include "ska-dlm.gateway.labels" . | nindent 8 }}
     spec:
       containers:
       - name: gateway
