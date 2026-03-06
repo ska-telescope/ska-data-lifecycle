@@ -2,7 +2,14 @@
 
 ## Development
 
+### Changed
+
+* Updated `values.yaml` so that the chart deploys out-of-the-box.
 * Updated ReadTheDocs
+
+## Removed
+
+* Out-dated configuration files in `resources` directory.
 
 ## 1.3.2
 
