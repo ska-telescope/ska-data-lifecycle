@@ -70,7 +70,7 @@ Note: `database.migration.base.baseInstall` and `database.migration.patch.patchI
 There is an option to create multiple locations when the storage manager starts by adding the following list of named values:
 ```
 locations:
-    - name: name of the location
+    - name: name of the location (free text – no enum or lookup constraints)
       type: type of storage ("local-dev", "low-integration", "mid-integration", "low-operations", "mid-operations")
       country: country where storage is located ("AU", "AZ", "UK")
       city: city where the storage is located
@@ -84,14 +84,14 @@ There is an option to create multiple storage endpoints when the storage manager
 
 ```
 endpoints:
-  - name: storage name
-  - location: name of existing storage location
-  - storage_type: type of storage endpoint ('filesystem', 'objectstore', 'tape')
-  - interface: storage interface ('posix', 's3', 'sftp', 'https')
+  - name: storage name (free text – no enum or lookup constraints)
+  - location: name of existing location endpoint
+  - storage_type: type of storage endpoint ("filesystem", "objectstore", "tape")
+  - interface: storage interface ("posix", "s3", "sftp", "https")
   - root_directory: root directory of mount point.
   - config:
       - name: rclone storage name
-      - type: rclone storage type i.e. (s3, alias, ...)
+      - type: rclone storage type i.e. ("s3", "alias", ...)
       - parameters: rclone parameters as a json dictionary
 
   - name: ...
@@ -99,7 +99,7 @@ endpoints:
 ```
 
 * Set `storage.endpointSecretName` to the name of predefined k8 secret. The secret can contain the rclone secrets for a named storage endpoint. The `config.parameters` value for an endpoint will be replaced by the secret value if the secret key matches the name of the storage endpoint.
-If `storage.endpointSecretName` is empty then the `config.parameters` will remained unchanged.
+If `storage.endpointSecretName` is empty, then the `config.parameters` will remained unchanged.
 
 ### Storage Endpoint Examples
 
@@ -161,6 +161,7 @@ Create a k8 secret with the following Entra configuration items obtained by SKAO
   * `CLIENT_ID` = `<Client ID>`
   * `CLIENT_CRED` = `<Client credential>`
 
+Both `gateway.enabled` must be set `true` and `gateway.secret.name` has to be supplied for the gateway pod to be deployed.
 
 ## Benchmark
 
@@ -175,7 +176,7 @@ To run the benchmarking pod:
     * `benchmark.config.mountPath` = location in the pod the migration yaml config file will be copied
 
 1) Setup port forwarding on the benchmark pod to port: `8089`
-2) In a browser, navigate to `http://localhost:8089`
+2) In a browser, navigate to `http://localhost:8089`. Now you should see a Locust GUI.
 3) Click START
 
 For details on the benchmark configuration, see the [documentation](../../scripts/README.md).
@@ -221,7 +222,8 @@ Note: The v1.1.2 directory holds the code required to migrate the database *from
 
 ### pgweb (optional)
 
-Web IDE access to Postgres can be enabled by deploying pgweb in the cluster by adding `--set pgweb.enabled=true` to `K8S_CHART_PARAMS` in the project `Makefile`, or by setting `pgweb.enabled=true` in `values.yaml`. Once deployed, you can access the interface by port-forwarding to the pgweb service.
+Web IDE access to Postgres can be enabled by deploying pgweb in the cluster by adding `--set pgweb.enabled=true` to `K8S_CHART_PARAMS` in the project `Makefile`, or by setting `pgweb.enabled=true` in `values.yaml`. Once deployed, the pgweb interface can be accessed by port-forwarding the pgweb service or pod. For example, when using k9s, select the ``pgweb`` pod and press ``Shift+F`` to forward the default port (``8081``). Then open a browser and navigate to ``http://localhost:8081/``.
+Log in using the appropriate database credentials. If you deployed a local Postgres instance, these correspond to the values defined under ``postgresql.auth`` in your ``values.yaml`` file.
 
 With public network access to the development k8s cluster:
 
