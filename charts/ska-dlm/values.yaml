@@ -7,7 +7,7 @@ global:
   ingress:
     enabled: false
     domainName: "sdhp.stfc.skao.int"  # required for whitelisting redirects
-  development: true
+  development: true  # true for local deployment (to trigger gateway & keycloak)
   storageClass: "localdisk"  # existing storage class
 
   sharedpvc:
@@ -53,28 +53,9 @@ storage:
   replicas: 1
 
   locations: # Location endpoints (can list multiple)
-    - name: SKA-Low
-      type: low-integration # Options: local-dev, low-integration, mid-integration, low-operations, mid-operations
-      country: AU # Options: AU, ZA, UK
-      city: Kensington
-      facility: "Pawsey Centre" # Options are in location_facility lookup-table
 
   endpointSecretName: ""
   endpoints: # Storage endpoints (can list multiple)
-    - name: Acacia_ITF
-      location: Pawsey # Options are in location_facility lookup-table
-      storage_type: objectstore # Options: filesystem, objectstore, tape
-      interface: s3 # Options: posix, s3, sftp, https
-      root_directory: /itf
-      config:
-        name: acacia-itf
-        type: s3
-        parameters:
-          type: s3
-          provider: Ceph
-          endpoint: https://ingest.pawsey.org.au
-          access_key_id:
-          # secret_access_key: # Manually add this if there's no env variable RCLONE_S3_SECRET_ACCESS_KEY
 
 migration:
   component: migration
@@ -128,7 +109,7 @@ postgrest:
 
 database:
   migration:
-    enabled: false  # set to true if building a fresh database
+    enabled: true  # set to true if building a fresh database
     image: postgres
     version: "17.4"
     base:
@@ -138,7 +119,7 @@ database:
       patchVersion: ""  # Supply a valid patch version vx.x.x
 
 postgresql:  # see https://github.com/bitnami/charts/tree/main/bitnami/postgresql
-  enabled: false  # whether to deploy a test database
+  enabled: true  # whether to deploy a test database
   nameOverride: postgresql
 
   # Custom user/password/db to create, has to match primary.initdb authentication
@@ -176,7 +157,7 @@ rclone:
   component: rclone
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-rclone
-  version: 1.3.1
+  version: 1.3.2
   imagePullPolicy: Always
   replicas: 1
   secret:
@@ -192,22 +173,22 @@ rclone:
       path: ""
 
 gateway:
-  enabled: false  # true for DP cluster
+  enabled: false  # true if you need AAA for DLM
   component: gateway
   subsystem: data-lifecycle-management
-  image: artefact.skao.int/ska-data-lifecycle-test-gateway
-  version: "1.3.2"
+  image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-test-gateway
+  version: "1.3.2-dev.cf081e1e7"
   imagePullPolicy: Always
   replicas: 1
   secret:
-    name: ""  # supply if gateway.enabled=true, e.g., "gateway-secret"
+    name: ""  # supply if gateway.enabled=true"
 
 keycloak:
-  enabled: false  # false for production
+  enabled: true  # false for production
   component: keycloak
   subsystem: data-lifecycle-management
-  image: artefact.skao.int/ska-data-lifecycle-keycloak
-  version: "1.3.2"
+  image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-test-keycloak
+  version: "1.3.2-dev.cf081e1e7"
   imagePullPolicy: Always
   replicas: 1
   use_https: true
@@ -218,7 +199,7 @@ keycloak:
 pgweb:  # see https://github.com/ectobit/charts/tree/main/pgweb
   enabled: false  # enable web IDE access to Postgres
   ingress:
-    enabled: false
+    enabled: true
     annotations:
       nginx.ingress.kubernetes.io/rewrite-target: /$2
     hosts:
@@ -231,7 +212,7 @@ benchmark:
   component: benchmark
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-benchmark
-  version: "1.1.2"
+  version: "1.3.2"
   imagePullPolicy: Always
   name: register  # register or migrate
   config:
