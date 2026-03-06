@@ -102,7 +102,7 @@ postgrest:
       path: ""
       mount: ""
       type: "kv-v2"
-    name: "" # secret name (for external DB), e.g., for DP cluster: "ska-dlm-dev-postgrest-secret-dp-dm"
+    name: "" # secret name if using external DB
 
 
 # ------ Database options ------
@@ -181,7 +181,7 @@ gateway:
   imagePullPolicy: Always
   replicas: 1
   secret:
-    name: ""  # supply if gateway.enabled=true"
+    name: ""  # supply if gateway.enabled=true
 
 keycloak:
   enabled: true  # false for production
