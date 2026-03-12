@@ -208,7 +208,7 @@ Create a k8 secret with the following Entra configuration items obtained by SKAO
   * ``CLIENT_ID`` : ``<Client ID>``
   * ``CLIENT_CRED`` : ``<Client credential>``
 
-Both `gateway.enabled` must be set `true` and `gateway.secret.name` has to be supplied for the gateway pod to be deployed.
+Both ``gateway.enabled`` must be set ``true`` and ``gateway.secret.name`` has to be supplied for the gateway pod to be deployed.
 
 Benchmark
 -----------

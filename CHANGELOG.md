@@ -2,6 +2,10 @@
 
 ## Development
 
+### Added
+
+* `s3-no-check-bucket` flag to rclone copy for files.
+
 ### Changed
 
 * Updated `values.yaml` so that the chart deploys out-of-the-box.
