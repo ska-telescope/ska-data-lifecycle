@@ -60,6 +60,13 @@ spec:
         image: {{ .Values.rclone.image}}:{{ .Values.rclone.version }}
         imagePullPolicy: {{ .Values.rclone.imagePullPolicy }}
         command: ["/bin/sh", "/rclone-start.sh"]
+        {{ with .Values.rclone.s3secret }}
+        {{- if .enabled }}
+        envFrom:
+          - secretRef:
+              name: {{ .name }}
+        {{- end }}
+        {{- end }}
         readinessProbe:
           httpGet:
             path: /

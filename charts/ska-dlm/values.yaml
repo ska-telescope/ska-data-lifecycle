@@ -171,6 +171,9 @@ rclone:
       mount: ""
       type: kv-v2
       path: ""
+  s3secret:
+    enabled: false
+    name: ""  # secret with an RCLONE_S3_SECRET_ACCESS_KEY env variable the client will use
 
 gateway:
   enabled: false  # true if you need AAA for DLM
