@@ -160,6 +160,7 @@ def rclone_copy(
             "srcRemote": src_remote,
             "dstFs": dst_fs,
             "dstRemote": dest_abs_path,
+            "s3-no-check-bucket": "true",
             "_async": "true",
         }
 
