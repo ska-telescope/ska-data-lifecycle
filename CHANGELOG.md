@@ -6,7 +6,8 @@
 
 * `s3-no-check-bucket` flag to rclone copy for files.
 * Add `target_phase` to `data_item` table.
-* Storage phase is configurable.
+* Add `target_phase` to `register_data_item`.
+* Make storage phase configurable.
 
 ### Changed
 
