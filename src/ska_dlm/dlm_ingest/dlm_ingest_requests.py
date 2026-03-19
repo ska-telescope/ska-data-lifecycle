@@ -121,6 +121,7 @@ def register_data_item(  # noqa: C901
     item_name: str,  # TODO: YAN-2002
     uri: str,
     item_type: ItemType = ItemType.FILE,
+    target_phase: PhaseType = PhaseType.SOLID,
     storage_name: str = "",
     storage_id: str = "",
     parents: str | None = None,
@@ -149,6 +150,8 @@ def register_data_item(  # noqa: C901
         the relative access path to the payload.
     item_type
         type of the data item (container, file)
+    target_phase
+        the proposed phase of the data item
     storage_name
         the name of the configured storage volume (name or ID required)
     storage_id
@@ -212,6 +215,7 @@ def register_data_item(  # noqa: C901
         "item_name": item_name,
         "storage_id": storage_id,
         "uid_phase": storages[0]["storage_phase"],
+        "target_phase": target_phase,
         "item_type": item_type,
         "item_owner": username,
         "parents": parents,

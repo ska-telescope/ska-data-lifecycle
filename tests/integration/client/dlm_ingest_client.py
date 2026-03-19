@@ -56,6 +56,7 @@ def register_data_item(
     item_name: str,
     uri: str,
     item_type: ItemType = ItemType.FILE,
+    target_phase: PhaseType = PhaseType.SOLID,
     storage_name: str = "",
     storage_id: str = "",
     parents: str | None = None,
