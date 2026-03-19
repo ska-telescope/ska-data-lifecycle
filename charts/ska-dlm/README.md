@@ -110,6 +110,7 @@ If `storage.endpointSecretName` is empty, then the `config.parameters` will rema
       location: DP
       storage_type: filesystem
       interface: posix
+      storage_phase: GAS
       root_directory: /
       config:
         name: SFTEndpoint
@@ -134,6 +135,7 @@ endpoints:
     storage_type: objectstore
     interface: s3
     root_directory: /dlm-archive
+    storage_phase: SOLID
     config:
       name: dlm-archive
       type: s3

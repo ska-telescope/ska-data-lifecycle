@@ -105,6 +105,7 @@ CREATE TABLE IF NOT EXISTS data_item (
     uid_phase         phase_type DEFAULT 'GAS',
     oid_phase         phase_type DEFAULT 'GAS',
     item_state        item_state DEFAULT 'INITIALISED',
+    target_phase      phase_type DEFAULT 'SOLID',
     UID_creation      timestamp without time zone DEFAULT now(),
     OID_creation      timestamp without time zone DEFAULT NULL,
     UID_expiration    timestamp without time zone DEFAULT now() + time '24:00',
@@ -201,4 +202,8 @@ CREATE TABLE IF NOT EXISTS migration (
       ON DELETE SET NULL
 );
 
+--- Migration changes
 ALTER TABLE migration ADD COLUMN IF NOT EXISTS command varchar;
+
+--- Data item changes
+ALTER TABLE data_item ADD COLUMN IF NOT EXISTS target_phase phase_type DEFAULT 'SOLID';

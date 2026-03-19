@@ -14,6 +14,7 @@ data:
           "location": {{ .location | quote }},
           "storage_type": {{ .storage_type | quote }},
           "interface": {{ .interface | quote }},
+          "storage_phase": {{ .storage_phase | quote }},
           "root_directory": {{ .root_directory | quote }},
           "config": {
             "name": {{ .config.name | quote }},

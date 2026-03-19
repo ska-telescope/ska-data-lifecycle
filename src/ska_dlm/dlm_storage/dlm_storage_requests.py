@@ -170,6 +170,7 @@ def _setup_storage(storage: dict):
                     "storage_type": "filesystem",
                     "interface": "posix",
                     "root_directory": "/",
+                    "storage_phase": "GAS",
                     "config": {
                         "name": "test_source",
                         "type": "alias",
@@ -180,6 +181,7 @@ def _setup_storage(storage: dict):
                     "location": "test_location",
                     "storage_type": "objectstore",
                     "interface": "s3",
+                    "storage_phase": "SOLID",
                     "root_directory": "/",
                         "config": {
                         "name": "s3",
@@ -206,6 +208,7 @@ def _setup_storage(storage: dict):
             storage_interface=storage["interface"],
             root_directory=storage["root_directory"],
             storage_type=storage["storage_type"],
+            storage_phase=PhaseType(storage.get("storage_phase", PhaseType.SOLID).upper()),
         )
         logging.info("Storage %s created.", {storage["name"]})
     else:
