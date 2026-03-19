@@ -85,6 +85,8 @@ def register_data_item(
         the relative access path to the payload.
     item_type
         type of the data item (container, file)
+    target_phase
+        the proposed phase of the data item
     storage_name
         the name of the configured storage volume (name or ID required)
     storage_id
