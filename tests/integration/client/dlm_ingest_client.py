@@ -56,6 +56,7 @@ def register_data_item(
     item_name: str,
     uri: str,
     item_type: ItemType = ItemType.FILE,
+    target_phase: PhaseType = PhaseType.SOLID,
     storage_name: str = "",
     storage_id: str = "",
     parents: str | None = None,
@@ -84,6 +85,8 @@ def register_data_item(
         the relative access path to the payload.
     item_type
         type of the data item (container, file)
+    target_phase
+        the proposed phase of the data item
     storage_name
         the name of the configured storage volume (name or ID required)
     storage_id

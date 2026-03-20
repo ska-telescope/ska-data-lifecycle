@@ -6,12 +6,14 @@ data:
   rclone-start.sh: |-
     #!/bin/bash
     if [[ ! -f /dlm/.ssh/id_rsa.pub ]]; then
-      yes n | ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N '' || true
-      eval "$(ssh-agent -s)"
-      ssh-add /root/.ssh/id_rsa
       mkdir -p /dlm/.ssh
-      cp /root/.ssh/id_rsa.pub /dlm/.ssh 2>/dev/null
+      yes n | ssh-keygen -t rsa -b 4096 -f /dlm/.ssh/id_rsa -N '' || true
     fi
+    mkdir -p /root/.ssh
+    chmod 700 -R /root/.ssh
+    cp -p /dlm/.ssh/id_rsa /root/.ssh/id_rsa 2>/dev/null
+    eval "$(ssh-agent -s)"
+    ssh-add /root/.ssh/id_rsa
     rclone \
     rcd \
     --rc-web-gui-no-open-browser \
