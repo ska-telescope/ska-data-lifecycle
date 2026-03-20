@@ -156,6 +156,7 @@ Storage Endpoint Examples
       storage_type: filesystem
       interface: posix
       root_directory: /
+      storage_phase: GAS
       config:
         name: SFTEndpoint
         type: sftp
@@ -181,14 +182,15 @@ Note that the public key must be put in the ``authorized_keys`` on the end point
       storage_type: objectstore
       interface: s3
       root_directory: /dlm-archive
+      storage_phase: SOLID
       config:
-      name: dlm-archive
-      type: s3
-      parameters: {"access_key_id": "access key",
-                   "provider": "AWS",
-                   "secret_access_key": "secret key",
-                   "region": "ap-southeast-2",
-                   "location_constraint": "ap-southeast-2"}
+        name: dlm-archive
+        type: s3
+        parameters: {"access_key_id": "access key",
+                    "provider": "AWS",
+                    "secret_access_key": "secret key",
+                    "region": "ap-southeast-2",
+                    "location_constraint": "ap-southeast-2"}
 
 
 API Gateway
