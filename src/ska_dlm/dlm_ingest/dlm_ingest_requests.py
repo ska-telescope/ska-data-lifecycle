@@ -131,7 +131,7 @@ def register_data_item(  # noqa: C901
     metadata: JsonObjectOption = None,
     do_storage_access_check: bool = True,
     authorization: Annotated[str | None, Header()] = None,
-    ) -> str:
+) -> str:
     """Ingest a data_item (register function is an alias).
 
     This high level function is a combination of init_data_item, set_uri and set_state(READY).
@@ -229,13 +229,14 @@ def register_data_item(  # noqa: C901
         "item_owner": username,
         "parents": parents,
     }
-    uid = init_data_item(json_data=init_item)
 
     if uid_expiration is not None:
         init_item["uid_expiration"] = uid_expiration
 
     if oid_expiration is not None:
         init_item["oid_expiration"] = oid_expiration
+
+    uid = init_data_item(json_data=init_item)
 
     # (5)
     set_uri(uid, uri, storage_id)
