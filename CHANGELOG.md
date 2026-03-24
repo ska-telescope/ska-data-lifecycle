@@ -8,6 +8,7 @@
 * Add `target_phase` to `data_item` table.
 * Add `target_phase` to `register_data_item`.
 * Make storage phase configurable.
+* Added heuristic engine
 
 ### Changed
 
