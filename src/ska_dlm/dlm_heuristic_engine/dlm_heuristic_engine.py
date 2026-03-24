@@ -75,6 +75,7 @@ def main() -> None:
     _configure_signals(stop_event)
 
     try:
+        logger.info("Running heuristic engine loop")
         asyncio.run(heuristic_process_loop(stop_event))
     except KeyboardInterrupt:
         logger.info("Heuristic engine interrupted")
