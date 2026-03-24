@@ -105,6 +105,14 @@ postgrest:
     name: "" # secret name if using external DB
 
 
+heuristic:
+  component: heuristic
+  subsystem: data-lifecycle-management
+  image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
+  version: 372bf582
+  imagePullPolicy: Always
+  replicas: 1
+
 # ------ Database options ------
 
 database:
