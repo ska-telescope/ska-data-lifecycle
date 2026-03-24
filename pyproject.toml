@@ -19,6 +19,7 @@ packages = [{include="ska_dlm", from="src"}]
 [tool.poetry.scripts]
 ska-dlm = "ska_dlm.cli:main"
 ska-dlm-sm-service = "ska_dlm.dlm_storage.main:main"
+ska-dlm-heuristic-engine = "ska_dlm.dlm_heuristic_engine:main"
 
 [[tool.poetry.source]]
 name = 'PyPI'
@@ -30,6 +31,7 @@ url = 'https://artefact.skao.int/repository/pypi-internal/simple'
 
 [tool.poetry.dependencies]
 python = "^3.10"
+sqlalchemy = "^2.0.48"
 ska-ser-logging = "^0.4.1"
 requests = "^2.32.3"
 pyyaml = "^6.0.1"
@@ -46,6 +48,7 @@ msal = "1.31.0"
 ska-sdp-dataproduct-metadata = "^0.7.0"
 locust = "^2.37.11"
 click = "<=8.1.7"
+asyncpg = "^0.31.0"
 pytest = "^8.4.2"
 pytest-asyncio = "^1.2.0"
 
@@ -80,6 +83,7 @@ addopts = [
     "--integration-cover",
     "-v",
 ]
+asyncio_mode = "auto"
 log_cli_level = "INFO"
 log_cli_format = "1|%(asctime)s.%(msecs)03dZ|%(levelname)s|%(threadName)s|%(funcName)s|%(filename)s#%(lineno)d||%(message)s"
 log_cli_date_format = "%Y-%m-%dT%H:%M:%S"
