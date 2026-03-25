@@ -2,6 +2,7 @@
 
 import logging
 import uuid
+from datetime import datetime
 
 import pytest
 from pytest_mock import MockerFixture
@@ -64,8 +65,11 @@ def test_register_data_item(caplog, mock_init_data_item, mock_update_data_item):
     metadata = {"execution_block": "eb123"}  # Client-provided metadata
     item_name = "test-item"
     uri = "test-uri"
+    oid_expiration = datetime(2099, 12, 31, 23, 59, 59)
 
-    dlm_ingest.register_data_item(metadata=metadata, item_name=item_name, uri=uri)
+    dlm_ingest.register_data_item(
+        metadata=metadata, item_name=item_name, uri=uri, oid_expiration=oid_expiration
+    )
 
     # Assert: No warnings or errors in logs
     for record in caplog.records:

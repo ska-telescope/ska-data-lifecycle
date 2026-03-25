@@ -1,6 +1,7 @@
 """DLM ingest API module."""
 
 import logging
+from datetime import datetime
 from typing import Annotated
 
 from fastapi import FastAPI, Header, Request
@@ -122,6 +123,8 @@ def register_data_item(  # noqa: C901
     uri: str,
     item_type: ItemType = ItemType.FILE,
     target_phase: PhaseType = PhaseType.SOLID,
+    uid_expiration: datetime | None = None,
+    oid_expiration: datetime | None = None,
     storage_name: str = "",
     storage_id: str = "",
     parents: str | None = None,
@@ -149,21 +152,27 @@ def register_data_item(  # noqa: C901
     uri
         the relative access path to the payload.
     item_type
-        type of the data item (container, file)
+        type of the data item (container, file).
     target_phase
-        the proposed phase of the data item
+        the proposed phase of the data item.
+    uid_expiration
+        expiration date and time of this copy of the data_item.
+        If not provided, defaults to 24 hours from creation (database default).
+    oid_expiration
+        expiration date and time of all copies of this data_item.
+        If not provided, defaults to 2099-12-31 23:59:59 (database default).
     storage_name
-        the name of the configured storage volume (name or ID required)
+        the name of the configured storage volume (name or ID required).
     storage_id
         the ID of the configured storage.
     parents
-        uuid of parent item
+        uuid of parent item.
     metadata
-        metadata provided by the client
+        metadata provided by the client.
     do_storage_access_check
-        perform check_storage_access() against provided storage and uri
+        perform check_storage_access() against provided storage and uri.
     authorization
-        Validated Bearer token with UserInfo
+        Validated Bearer token with UserInfo.
 
     Returns
     -------
@@ -220,6 +229,13 @@ def register_data_item(  # noqa: C901
         "item_owner": username,
         "parents": parents,
     }
+
+    if uid_expiration is not None:
+        init_item["uid_expiration"] = uid_expiration
+
+    if oid_expiration is not None:
+        init_item["oid_expiration"] = oid_expiration
+
     uid = init_data_item(json_data=init_item)
 
     # (5)

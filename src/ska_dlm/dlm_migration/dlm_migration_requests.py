@@ -473,6 +473,8 @@ def copy_data_item(  # noqa: C901
         "storage_id": dest_id,
         "item_type": orig_item["item_type"],
         "target_phase": orig_item["target_phase"],
+        "uid_expiration": orig_item["uid_expiration"],
+        "oid_expiration": orig_item["oid_expiration"],
         "metadata": orig_item["metadata"],
         "uri": path,
     }
