@@ -1,5 +1,4 @@
 """SQLAlchemy models for DLM database tables."""
-from enum import Enum
 
 from sqlalchemy import BigInteger, Boolean, Column, DateTime
 from sqlalchemy import Enum as SAEnum
@@ -7,165 +6,19 @@ from sqlalchemy import ForeignKey, Integer, Numeric, String, Text, func, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
+from ska_dlm.common_types import (
+    ChecksumMethod,
+    ConfigType,
+    ItemState,
+    LocationCountry,
+    LocationType,
+    MimeType,
+    PhaseType,
+    StorageInterface,
+    StorageType,
+)
+
 from .orm import Base
-
-
-# pylint: disable=invalid-name, too-few-public-methods, not-callable, useless-suppression
-class LocationType(str, Enum):
-    """Enumeration of location environments used by DLM."""
-
-    local_dev = "local-dev"
-    low_integration = "low-integration"
-    mid_integration = "mid-integration"
-    low_operations = "low-operations"
-    mid_operations = "mid-operations"
-
-
-# pylint: disable=invalid-name, too-few-public-methods, not-callable, useless-suppression
-class LocationCountry(str, Enum):
-    """Enumeration of country codes for locations."""
-
-    AU = "AU"
-    ZA = "ZA"
-    UK = "UK"
-
-
-# pylint: disable=invalid-name, too-few-public-methods, not-callable, useless-suppression
-class ConfigType(str, Enum):
-    """Supported secure access configuration transport protocols."""
-
-    rclone = "rclone"
-    ssh = "ssh"
-    aws = "aws"
-    gcs = "gcs"
-
-
-# pylint: disable=invalid-name, too-few-public-methods, not-callable, useless-suppression
-class StorageType(str, Enum):
-    """Type of storage layer: filesystem, object store, or tape."""
-
-    filesystem = "filesystem"
-    objectstore = "objectstore"
-    tape = "tape"
-
-
-# pylint: disable=invalid-name, too-few-public-methods, not-callable, useless-suppression
-class StorageInterface(str, Enum):
-    """Storage protocol/interface type used by each storage endpoint."""
-
-    posix = "posix"
-    s3 = "s3"
-    sftp = "sftp"
-    https = "https"
-
-
-# pylint: disable=invalid-name, too-few-public-methods, not-callable, useless-suppression
-class PhaseType(str, Enum):
-    """Physical phase used to model database lifecycle stages."""
-
-    GAS = "GAS"
-    LIQUID = "LIQUID"
-    SOLID = "SOLID"
-    PLASMA = "PLASMA"
-
-
-# pylint: disable=invalid-name, too-few-public-methods, not-callable, useless-suppression
-class ItemState(str, Enum):
-    """Lifecycle state of a data item in DLM."""
-
-    INITIALISED = "INITIALISED"
-    READY = "READY"
-    CORRUPTED = "CORRUPTED"
-    EXPIRED = "EXPIRED"
-    DELETED = "DELETED"
-
-
-# pylint: disable=invalid-name, too-few-public-methods, not-callable, useless-suppression
-class ChecksumMethod(str, Enum):
-    """Allowed checksum algorithms for data objects."""
-
-    none = "none"
-    adler32 = "adler32"
-    blake2b = "blake2b"
-    blake2s = "blake2s"
-    crc32 = "crc32"
-    crc32c = "crc32c"
-    fletcher32 = "fletcher32"
-    highwayhash = "highwayhash"
-    jenkinslookup3 = "jenkinslookup3"
-    md5 = "md5"
-    metrohash128 = "metrohash128"
-    sha1 = "sha1"
-    sha224 = "sha224"
-    sha256 = "sha256"
-    sha384 = "sha384"
-    sha3_224 = "sha3_224"
-    sha3_256 = "sha3_256"
-    sha3_384 = "sha3_384"
-    sha3_512 = "sha3_512"
-    sha512 = "sha512"
-    shake_128 = "shake_128"
-    shake_256 = "shake_256"
-    spookyhash = "spookyhash"
-    xxh3 = "xxh3"
-
-
-# pylint: disable=invalid-name, too-few-public-methods, not-callable, useless-suppression
-class MimeType(str, Enum):
-    """Common MIME types expected for DLM data records."""
-
-    application_fits = "application/fits"
-    application_gzip = "application/gzip"
-    application_json = "application/json"
-    application_mp4 = "application/mp4"
-    application_msword = "application/msword"
-    application_octet_stream = "application/octet-stream"
-    application_pdf = "application/pdf"
-    application_postscript = "application/postscript"
-    application_rtf = "application/rtf"
-    application_vnd_ms_cab_compressed = "application/vnd.ms-cab-compressed"
-    application_vnd_ms_excel = "application/vnd.ms-excel"
-    application_vnd_ms_powerpoint = "application/vnd.ms-powerpoint"
-    application_vnd_msv2 = "application/vnd.msv2"
-    application_vnd_msv3 = "application/vnd.msv3"
-    application_vnd_msv4 = "application/vnd.msv4"
-    application_vnd_rar = "application/vnd.rar"
-    application_vnd_sqlite3 = "application/vnd.sqlite3"
-    application_vnd_zarr = "application/vnd.zarr"
-    application_x_7z_compressed = "application/x-7z-compressed"
-    application_x_bzip = "application/x-bzip"
-    application_x_bzip2 = "application/x-bzip2"
-    application_x_cpio = "application/x-cpio"
-    application_x_debian_package = "application/x-debian-package"
-    application_x_gzip = "application/x-gzip"
-    application_x_hdf = "application/x-hdf"
-    application_x_iso9660_image = "application/x-iso9660-image"
-    application_x_ms_application = "application/x-ms-application"
-    application_x_msdownload = "application/x-msdownload"
-    application_x_rar_compressed = "application/x-rar-compressed"
-    application_x_sh = "application/x-sh"
-    application_x_shellscript = "application/x-shellscript"
-    application_x_tar = "application/x-tar"
-    application_x_tex = "application/x-tex"
-    application_x_zip_compressed = "application/x-zip-compressed"
-    application_xml = "application/xml"
-    application_yaml = "application/yaml"
-    application_zip = "application/zip"
-    audio_mp4 = "audio/mp4"
-    image_jpeg = "image/jpeg"
-    image_png = "image/png"
-    image_tiff = "image/tiff"
-    text_csv = "text/csv"
-    text_html = "text/html"
-    text_javascript = "text/javascript"
-    text_markdown = "text/markdown"
-    text_plain = "text/plain"
-    text_tab_separated_values = "text/tab-separated-values"
-    text_x_c = "text/x-c"
-    text_x_fortran = "text/x-fortran"
-    text_x_java_source = "text/x-java-source"
-    text_x_python = "text/x-python"
-    video_mp4 = "video/mp4"
 
 
 # pylint: disable=invalid-name, too-few-public-methods, not-callable, useless-suppression

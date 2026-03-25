@@ -81,7 +81,7 @@ class TestLocation:
         """Test creating a Location."""
         location = Location(
             location_name="test-location",
-            location_type=LocationType.local_dev,
+            location_type=LocationType.LOCAL_DEV,
             location_country=LocationCountry.UK,
             location_city="Test City",
         )
@@ -89,7 +89,7 @@ class TestLocation:
         await session.commit()
 
         assert location.location_name == "test-location"
-        assert location.location_type == LocationType.local_dev
+        assert location.location_type == LocationType.LOCAL_DEV
         assert location.location_country == LocationCountry.UK
         assert location.location_city == "Test City"
         assert isinstance(location.location_id, uuid.UUID)
@@ -104,7 +104,7 @@ class TestStorage:
         """Test creating a Storage."""
         location = Location(
             location_name="test-location",
-            location_type=LocationType.local_dev,
+            location_type=LocationType.LOCAL_DEV,
             location_country=LocationCountry.UK,
         )
         session.add(location)
@@ -115,16 +115,16 @@ class TestStorage:
         storage = Storage(
             location_id=location.location_id,
             storage_name="test-storage",
-            storage_type=StorageType.filesystem,
-            storage_interface=StorageInterface.posix,
+            storage_type=StorageType.FILESYSTEM,
+            storage_interface=StorageInterface.POSIX,
             storage_phase=PhaseType.GAS,
         )
         session.add(storage)
         await session.commit()
 
         assert storage.storage_name == "test-storage"
-        assert storage.storage_type == StorageType.filesystem
-        assert storage.storage_interface == StorageInterface.posix
+        assert storage.storage_type == StorageType.FILESYSTEM
+        assert storage.storage_interface == StorageInterface.POSIX
         assert storage.storage_phase == PhaseType.GAS
         assert storage.location_id == location.location_id
 
@@ -138,7 +138,7 @@ class TestStorageConfig:
         """Test creating a StorageConfig."""
         location = Location(
             location_name="test-location",
-            location_type=LocationType.local_dev,
+            location_type=LocationType.LOCAL_DEV,
             location_country=LocationCountry.UK,
         )
         session.add(location)
@@ -147,21 +147,21 @@ class TestStorageConfig:
         storage = Storage(
             location_id=location.location_id,
             storage_name="test-storage",
-            storage_type=StorageType.filesystem,
-            storage_interface=StorageInterface.posix,
+            storage_type=StorageType.FILESYSTEM,
+            storage_interface=StorageInterface.POSIX,
         )
         session.add(storage)
         await session.commit()
 
         config = StorageConfig(
             storage_id=storage.storage_id,
-            config_type=ConfigType.rclone,
+            config_type=ConfigType.RCLONE,
             config={"key": "value"},
         )
         session.add(config)
         await session.commit()
 
-        assert config.config_type == ConfigType.rclone
+        assert config.config_type == ConfigType.RCLONE
         assert config.config == {"key": "value"}
         assert config.storage_id == storage.storage_id
 
@@ -175,7 +175,7 @@ class TestDataItem:
         """Test creating a DataItem."""
         location = Location(
             location_name="test-location",
-            location_type=LocationType.local_dev,
+            location_type=LocationType.LOCAL_DEV,
             location_country=LocationCountry.UK,
         )
         session.add(location)
@@ -184,8 +184,8 @@ class TestDataItem:
         storage = Storage(
             location_id=location.location_id,
             storage_name="test-storage",
-            storage_type=StorageType.filesystem,
-            storage_interface=StorageInterface.posix,
+            storage_type=StorageType.FILESYSTEM,
+            storage_interface=StorageInterface.POSIX,
         )
         session.add(storage)
         await session.commit()
@@ -195,7 +195,7 @@ class TestDataItem:
             uri="test-uri",
             item_name="test-item",
             storage_id=storage.storage_id,
-            item_mime_type=MimeType.application_json,
+            item_mime_type=MimeType.APPLICATION_FITS,
             UID_phase=PhaseType.GAS,
             OID_phase=PhaseType.GAS,
             item_state=ItemState.INITIALISED,
@@ -205,7 +205,7 @@ class TestDataItem:
         await session.commit()
 
         assert item.item_name == "test-item"
-        assert item.item_mime_type == MimeType.application_json
+        assert item.item_mime_type == MimeType.APPLICATION_FITS
         assert item.item_state == ItemState.INITIALISED
         assert item.storage_id == storage.storage_id
 
@@ -219,7 +219,7 @@ class TestMigration:
         """Test creating a Migration."""
         location = Location(
             location_name="test-location",
-            location_type=LocationType.local_dev,
+            location_type=LocationType.LOCAL_DEV,
             location_country=LocationCountry.UK,
         )
         session.add(location)
@@ -228,14 +228,14 @@ class TestMigration:
         source_storage = Storage(
             location_id=location.location_id,
             storage_name="source-storage",
-            storage_type=StorageType.filesystem,
-            storage_interface=StorageInterface.posix,
+            storage_type=StorageType.FILESYSTEM,
+            storage_interface=StorageInterface.POSIX,
         )
         dest_storage = Storage(
             location_id=location.location_id,
             storage_name="dest-storage",
-            storage_type=StorageType.filesystem,
-            storage_interface=StorageInterface.posix,
+            storage_type=StorageType.FILESYSTEM,
+            storage_interface=StorageInterface.POSIX,
         )
         session.add_all([source_storage, dest_storage])
         await session.commit()
@@ -263,7 +263,7 @@ class TestRelationships:
         """Test Location to Storage relationship."""
         location = Location(
             location_name="test-location",
-            location_type=LocationType.local_dev,
+            location_type=LocationType.LOCAL_DEV,
             location_country=LocationCountry.UK,
         )
         session.add(location)
@@ -272,14 +272,14 @@ class TestRelationships:
         storage1 = Storage(
             location_id=location.location_id,
             storage_name="storage1",
-            storage_type=StorageType.filesystem,
-            storage_interface=StorageInterface.posix,
+            storage_type=StorageType.FILESYSTEM,
+            storage_interface=StorageInterface.POSIX,
         )
         storage2 = Storage(
             location_id=location.location_id,
             storage_name="storage2",
-            storage_type=StorageType.objectstore,
-            storage_interface=StorageInterface.s3,
+            storage_type=StorageType.OBJECTSTORE,
+            storage_interface=StorageInterface.S3,
         )
         session.add_all([storage1, storage2])
         await session.commit()
@@ -296,7 +296,7 @@ class TestRelationships:
         """Test Storage to DataItem relationship."""
         location = Location(
             location_name="test-location",
-            location_type=LocationType.local_dev,
+            location_type=LocationType.LOCAL_DEV,
             location_country=LocationCountry.UK,
         )
         session.add(location)
@@ -305,8 +305,8 @@ class TestRelationships:
         storage = Storage(
             location_id=location.location_id,
             storage_name="test-storage",
-            storage_type=StorageType.filesystem,
-            storage_interface=StorageInterface.posix,
+            storage_type=StorageType.FILESYSTEM,
+            storage_interface=StorageInterface.POSIX,
         )
         session.add(storage)
         await session.commit()
@@ -338,7 +338,7 @@ class TestRelationships:
         """Test Storage to StorageConfig relationship."""
         location = Location(
             location_name="test-location",
-            location_type=LocationType.local_dev,
+            location_type=LocationType.LOCAL_DEV,
             location_country=LocationCountry.UK,
         )
         session.add(location)
@@ -347,15 +347,15 @@ class TestRelationships:
         storage = Storage(
             location_id=location.location_id,
             storage_name="test-storage",
-            storage_type=StorageType.filesystem,
-            storage_interface=StorageInterface.posix,
+            storage_type=StorageType.FILESYSTEM,
+            storage_interface=StorageInterface.POSIX,
         )
         session.add(storage)
         await session.commit()
 
         config = StorageConfig(
             storage_id=storage.storage_id,
-            config_type=ConfigType.rclone,
+            config_type=ConfigType.RCLONE,
             config={"rclone_config": "data"},
         )
         session.add(config)
@@ -367,7 +367,7 @@ class TestRelationships:
         )
         storage_config = result.first()
         assert storage_config is not None
-        assert storage_config.config_type == ConfigType.rclone
+        assert storage_config.config_type == ConfigType.RCLONE
 
     @pytest.mark.asyncio
     async def test_location_facility_has_locations(self, session):
@@ -378,13 +378,13 @@ class TestRelationships:
 
         location1 = Location(
             location_name="loc1",
-            location_type=LocationType.local_dev,
+            location_type=LocationType.LOCAL_DEV,
             location_country=LocationCountry.UK,
             location_facility=facility.id,
         )
         location2 = Location(
             location_name="loc2",
-            location_type=LocationType.mid_integration,
+            location_type=LocationType.MID_INTEGRATION,
             location_country=LocationCountry.AU,
             location_facility=facility.id,
         )
@@ -403,7 +403,7 @@ class TestRelationships:
         """Test Migration relationships to storages."""
         location = Location(
             location_name="test-location",
-            location_type=LocationType.local_dev,
+            location_type=LocationType.LOCAL_DEV,
             location_country=LocationCountry.UK,
         )
         session.add(location)
@@ -412,14 +412,14 @@ class TestRelationships:
         source = Storage(
             location_id=location.location_id,
             storage_name="source",
-            storage_type=StorageType.filesystem,
-            storage_interface=StorageInterface.posix,
+            storage_type=StorageType.FILESYSTEM,
+            storage_interface=StorageInterface.POSIX,
         )
         dest = Storage(
             location_id=location.location_id,
             storage_name="dest",
-            storage_type=StorageType.objectstore,
-            storage_interface=StorageInterface.s3,
+            storage_type=StorageType.OBJECTSTORE,
+            storage_interface=StorageInterface.S3,
         )
         session.add_all([source, dest])
         await session.commit()
