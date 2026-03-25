@@ -7,34 +7,28 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 Base = declarative_base()
 
 
-def get_engine(database_url: str, **kwargs):
+def create_engine(database_url: str, **kwargs):
     """Create a synchronous SQLAlchemy engine."""
     return create_engine(database_url, future=True, **kwargs)
 
 
-# pylint: disable=invalid-name
-def get_session(engine, **kwargs):
+def create_session(engine, **kwargs):
     """Create a synchronous session. Use from non-async code."""
-    SessionLocal = sessionmaker(
-        bind=engine, future=True, autoflush=False, autocommit=False, **kwargs
-    )
-    return SessionLocal()
+    return sessionmaker(bind=engine, future=True, autoflush=False, autocommit=False, **kwargs)()
 
 
-def get_async_engine(database_url: str, **kwargs):
+def create_async_engine(database_url: str, **kwargs):
     """Create an async SQLAlchemy engine."""
     return create_async_engine(database_url, future=True, **kwargs)
 
 
-# pylint: disable=invalid-name
-def get_async_session(engine, **kwargs):
+def create_async_session(engine, **kwargs):
     """Create an async session. Use from async code."""
-    AsyncSessionLocal = sessionmaker(
+    return sessionmaker(
         bind=engine,
         class_=AsyncSession,
         expire_on_commit=False,
         autoflush=False,
         future=True,
         **kwargs,
-    )
-    return AsyncSessionLocal()
+    )()

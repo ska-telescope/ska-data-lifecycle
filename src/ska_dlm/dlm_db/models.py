@@ -21,10 +21,10 @@ from ska_dlm.common_types import (
 from .orm import Base
 
 
-# pylint: disable=invalid-name, too-few-public-methods, not-callable, useless-suppression
 class LocationFacility(Base):
     """Represents a facility associated with storage locations in DLM."""
 
+    # pylint: disable=too-few-public-methods
     __tablename__ = "location_facility"
     __table_args__ = {"schema": "dlm"}
 
@@ -32,10 +32,10 @@ class LocationFacility(Base):
     locations = relationship("Location", back_populates="facility")
 
 
-# pylint: disable=invalid-name, too-few-public-methods, not-callable, useless-suppression
 class Location(Base):
     """Represents a storage location record in the DLM schema."""
 
+    # pylint: disable=too-few-public-methods, not-callable
     __tablename__ = "location"
     __table_args__ = {"schema": "dlm"}
 
@@ -74,10 +74,10 @@ class Location(Base):
     facility = relationship("LocationFacility", back_populates="locations")
 
 
-# pylint: disable=invalid-name, too-few-public-methods, not-callable, useless-suppression
 class Storage(Base):
     """Represents a storage endpoint for DLM operations."""
 
+    # pylint: disable=too-few-public-methods, not-callable
     __tablename__ = "storage"
     __table_args__ = {"schema": "dlm"}
 
@@ -140,10 +140,10 @@ class Storage(Base):
     data_items = relationship("DataItem", back_populates="storage")
 
 
-# pylint: disable=invalid-name, too-few-public-methods, not-callable, useless-suppression
 class StorageConfig(Base):
     """Represents per-storage JSON configuration metadata."""
 
+    # pylint: disable=too-few-public-methods, not-callable
     __tablename__ = "storage_config"
     __table_args__ = {"schema": "dlm"}
 
@@ -167,10 +167,10 @@ class StorageConfig(Base):
     storage = relationship("Storage", back_populates="config")
 
 
-# pylint: disable=invalid-name, too-few-public-methods, not-callable, useless-suppression
 class DataItem(Base):
     """Represents a DLM data item and its lifecycle state."""
 
+    # pylint: disable=too-few-public-methods, not-callable
     __tablename__ = "data_item"
     __table_args__ = {"schema": "dlm"}
 
@@ -296,10 +296,10 @@ class DataItem(Base):
     storage = relationship("Storage", back_populates="data_items")
 
 
-# pylint: disable=invalid-name, too-few-public-methods, not-callable, useless-suppression
 class PhaseChange(Base):
     """Represents a phase-change request for a data item."""
 
+    # pylint: disable=too-few-public-methods, not-callable
     __tablename__ = "phase_change"
     __table_args__ = {"schema": "dlm"}
 
@@ -320,10 +320,10 @@ class PhaseChange(Base):
     request_creation = Column(DateTime(timezone=False), nullable=False, server_default=func.now())
 
 
-# pylint: disable=invalid-name, too-few-public-methods, not-callable, useless-suppression
 class Migration(Base):
     """Tracks file migration job details in DLM."""
 
+    # pylint: disable=too-few-public-methods, not-callable
     __tablename__ = "migration"
     __table_args__ = {"schema": "dlm"}
 
