@@ -26,7 +26,7 @@ ON CONFLICT DO NOTHING;
 --
 -- Table: location
 --
-CREATE TABLE IF NOT EXISTS location (
+CREATE TABLE IF NOT EXISTS dlm.location (
     location_id         uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     location_name       varchar NOT NULL UNIQUE,
     location_type       location_type NOT NULL,
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS location (
 --
 -- Table: storage
 --
-CREATE TABLE IF NOT EXISTS storage (
+CREATE TABLE IF NOT EXISTS dlm.storage (
     storage_id           uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     location_id          uuid NOT NULL,
     storage_name         varchar NOT NULL UNIQUE,
@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS storage (
     storage_date         timestamp without time zone DEFAULT now(),
     CONSTRAINT fk_location
       FOREIGN KEY (location_id)
-      REFERENCES location(location_id)
+      REFERENCES dlm.location(location_id)
       ON DELETE SET NULL
 );
 
@@ -73,7 +73,7 @@ CREATE TABLE IF NOT EXISTS storage (
 -- converted by the storage_manager software. Being a separate table
 -- this allows for multiple configurations for different mechanisms.
 --
-CREATE TABLE IF NOT EXISTS storage_config (
+CREATE TABLE IF NOT EXISTS dlm.storage_config (
     config_id   uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     storage_id  uuid NOT NULL,
     config_type config_type DEFAULT 'rclone',
@@ -81,14 +81,14 @@ CREATE TABLE IF NOT EXISTS storage_config (
     config_date timestamp without time zone DEFAULT now(),
     CONSTRAINT fk_cfg_storage_id
       FOREIGN KEY (storage_id)
-      REFERENCES storage(storage_id)
+      REFERENCES dlm.storage(storage_id)
       ON DELETE SET NULL
 );
 
 --
 -- Table: data_item
 --
-CREATE TABLE IF NOT EXISTS data_item (
+CREATE TABLE IF NOT EXISTS dlm.data_item (
     UID               uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     OID               uuid DEFAULT NULL,
     item_version      integer DEFAULT 1,
@@ -130,14 +130,14 @@ CREATE TABLE IF NOT EXISTS data_item (
     metadata          jsonb DEFAULT NULL,
     CONSTRAINT fk_storage
       FOREIGN KEY (storage_id)
-      REFERENCES storage(storage_id)
+      REFERENCES dlm.storage(storage_id)
       ON DELETE SET NULL
 );
 
 -- Indexes
-CREATE INDEX IF NOT EXISTS idx_fk_storage_id ON data_item USING btree (storage_id);
+CREATE INDEX IF NOT EXISTS idx_fk_storage_id ON dlm.data_item USING btree (storage_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_unq_OID_UID_item_version
-    ON data_item USING btree (OID, UID, item_version);
+    ON dlm.data_item USING btree (OID, UID, item_version);
 
 -- Trigger function to sync OID/UID fields
 CREATE OR REPLACE FUNCTION sync_oid_uid() RETURNS trigger AS $$
@@ -149,7 +149,7 @@ CREATE OR REPLACE FUNCTION sync_oid_uid() RETURNS trigger AS $$
         NEW.OID := NEW.UID;
         NEW.OID_creation := tnow;
     ELSE
-        FOR oidc IN SELECT OID, OID_creation FROM data_item WHERE UID = NEW.OID LOOP
+        FOR oidc IN SELECT OID, OID_creation FROM dlm.data_item WHERE UID = NEW.OID LOOP
             NEW.OID := oidc.OID;
             NEW.OID_creation := oidc.OID_creation;
         END LOOP;
@@ -159,15 +159,15 @@ CREATE OR REPLACE FUNCTION sync_oid_uid() RETURNS trigger AS $$
 $$ LANGUAGE plpgsql;
 
 -- Trigger (note: trigger names are not schema-qualified)
-DROP TRIGGER IF EXISTS sync_oid_uid ON data_item;
+DROP TRIGGER IF EXISTS sync_oid_uid ON dlm.data_item;
 CREATE TRIGGER sync_oid_uid
-BEFORE INSERT ON data_item
+BEFORE INSERT ON dlm.data_item
 FOR EACH ROW EXECUTE FUNCTION sync_oid_uid();
 
 --
 -- Table: phase_change
 --
-CREATE TABLE IF NOT EXISTS phase_change (
+CREATE TABLE IF NOT EXISTS dlm.phase_change (
     phase_change_ID  bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     OID              uuid NOT NULL,
     requested_phase  phase_type DEFAULT 'GAS',
@@ -177,7 +177,7 @@ CREATE TABLE IF NOT EXISTS phase_change (
 --
 -- Table: migration
 --
-CREATE TABLE IF NOT EXISTS migration (
+CREATE TABLE IF NOT EXISTS dlm.migration (
     migration_id            bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     job_id                  bigint NOT NULL,
     OID                     uuid NOT NULL,
@@ -194,16 +194,16 @@ CREATE TABLE IF NOT EXISTS migration (
     command                 varchar,
     CONSTRAINT fk_source_storage
       FOREIGN KEY (source_storage_id)
-      REFERENCES storage(storage_id)
+      REFERENCES dlm.storage(storage_id)
       ON DELETE SET NULL,
     CONSTRAINT fk_destination_storage
       FOREIGN KEY (destination_storage_id)
-      REFERENCES storage(storage_id)
+      REFERENCES dlm.storage(storage_id)
       ON DELETE SET NULL
 );
 
 --- Migration changes
-ALTER TABLE migration ADD COLUMN IF NOT EXISTS command varchar;
+ALTER TABLE dlm.migration ADD COLUMN IF NOT EXISTS command varchar;
 
 --- Data item changes
-ALTER TABLE data_item ADD COLUMN IF NOT EXISTS target_phase phase_type DEFAULT 'SOLID';
+ALTER TABLE dlm.data_item ADD COLUMN IF NOT EXISTS target_phase phase_type DEFAULT 'SOLID';

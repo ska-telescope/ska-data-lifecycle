@@ -177,3 +177,13 @@ Gateway secret name
 {{- .Values.gateway.secret.name -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Heuristic labels
+*/}}
+{{- define "ska-dlm.heuristic.labels" -}}
+{{- include "ska-dlm.labels" . }}
+component: {{ .Values.heuristic.component }}
+subsystem: {{ .Values.heuristic.subsystem }}
+intent: production
+{{- end -}}

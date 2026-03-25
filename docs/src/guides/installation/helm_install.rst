@@ -129,6 +129,7 @@ There is also an option to create multiple **storage** endpoints when the storag
   - ``storage_type``: type of storage endpoint (``filesystem``, ``objectstore``, ``tape``)
   - ``interface``: storage interface (``posix``, ``s3``, ``sftp``, ``https``)
   - ``root_directory``: root directory of mount point.
+  - ``storage_phase``: storage phase (``GAS``, ``LIQUID``, ``SOLID``)
   - ``config``:
 
       - ``name``: rclone storage name
