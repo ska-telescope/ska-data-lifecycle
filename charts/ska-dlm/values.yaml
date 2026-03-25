@@ -109,7 +109,7 @@ heuristic:
   component: heuristic
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: 372bf582
+  version: e03282c1
   imagePullPolicy: Always
   replicas: 1
 
