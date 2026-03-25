@@ -7,22 +7,22 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 Base = declarative_base()
 
 
-def create_engine(database_url: str, **kwargs):
+def create_sql_engine(database_url: str, **kwargs):
     """Create a synchronous SQLAlchemy engine."""
     return create_engine(database_url, future=True, **kwargs)
 
 
-def create_session(engine, **kwargs):
+def create_sql_session(engine, **kwargs):
     """Create a synchronous session. Use from non-async code."""
     return sessionmaker(bind=engine, future=True, autoflush=False, autocommit=False, **kwargs)()
 
 
-def create_async_engine(database_url: str, **kwargs):
+def create_async_sql_engine(database_url: str, **kwargs):
     """Create an async SQLAlchemy engine."""
     return create_async_engine(database_url, future=True, **kwargs)
 
 
-def create_async_session(engine, **kwargs):
+def create_async_sql_session(engine, **kwargs):
     """Create an async session. Use from async code."""
     return sessionmaker(
         bind=engine,
