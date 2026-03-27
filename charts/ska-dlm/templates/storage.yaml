@@ -87,7 +87,7 @@ spec:
         - name: dlm-configmap
           mountPath: "/home/ska-dlm/.dlm"
           readOnly: true
-        - name: storage-config-secret
+        - name: storage-secret
           mountPath: "/etc/storage-config.json"
           subPath: storage-config.json
           readOnly: true
@@ -101,9 +101,9 @@ spec:
       - name: dlm-configmap
         configMap:
           name: {{ include "ska-dlm.fullname" . }}-configmap
-      - name: storage-config-secret
+      - name: storage-secret
         secret:
-          secretName: {{ include "ska-dlm.fullname" . }}-storage-config-secret
+          secretName: {{ include "ska-dlm.fullname" . }}-storage-secret
       - name: location-configmap
         configMap:
           name: {{ include "ska-dlm.fullname" . }}-location-configmap
