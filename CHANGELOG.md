@@ -11,6 +11,7 @@
 * Make storage phase configurable.
 * Added heuristic engine
 * Storage config now uses secret instead of configmap
+* Fixed rclone image to 1.73.3
 
 ### Changed
 
