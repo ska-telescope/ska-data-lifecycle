@@ -10,6 +10,7 @@
 * Add `target_phase` to `register_data_item`.
 * Make storage phase configurable.
 * Added heuristic engine
+* Storage config now uses secret instead of configmap
 
 ### Changed
 
