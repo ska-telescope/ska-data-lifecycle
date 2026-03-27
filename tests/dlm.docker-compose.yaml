@@ -76,13 +76,13 @@ services:
     networks:
       - dlm_network
 
-  dlm_heuristic_engine:
+  dlm_heuristics:
     platform: linux/amd64
-    image: dlm_heuristic_engine
-    container_name: dlm_heuristic_engine
+    image: dlm_heuristics
+    container_name: dlm_heuristics
     build:
       context: ..
-      dockerfile: tests/Dockerfile-heuristic-engine
+      dockerfile: tests/Dockerfile-heuristics
     environment:
       DLM_HEURISTIC_DATABASE_URL: "postgresql+asyncpg://ska_dlm_admin:password@dlm_db:5432/ska_dlm"
       DLM_HEURISTIC_POLL_INTERVAL: "10"
