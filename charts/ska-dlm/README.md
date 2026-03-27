@@ -98,7 +98,8 @@ endpoints:
   - location: ...
 ```
 
-* Set `storage.endpointSecretName` to the name of predefined k8 secret. The secret can contain the rclone secrets for a named storage endpoint. The `config.parameters` value for an endpoint will be replaced by the secret value if the secret key matches the name of the storage endpoint.
+* Set `storage.endpointSecretName` to the name of predefined k8 secret. The secret can contain the key value pairs of rclone secrets for a named storage endpoint. The `config.parameters` value for an endpoint will be replaced by the secret value if the secret key matches the name of the storage endpoint.
+For example, if the `config.name` is `test` then the it will look for the key value pair with the name `test` and then replace `config.paramaters` with the keys value.
 If `storage.endpointSecretName` is empty, then the `config.parameters` will remained unchanged.
 
 ### Storage Endpoint Examples
