@@ -101,6 +101,14 @@ This service is implemented as a loop running until explicitely terminated. It e
 
 Since the external heuristics and internal logic of these tasks can be quite complex and very use case dependent these tasks will be implemented as required. The default ones are the first four above, but also those are being implemented over the timeframe of several DLM releases.
 
+.. toctree::
+   :maxdepth: 1
+   :caption: 
+
+   overview/index
+   api/index
+
+
 Interfaces
 ----------
 The SKA-DLM provides four different ways of interacting with it, which can be used in different scenarios.
