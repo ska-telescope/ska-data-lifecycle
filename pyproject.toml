@@ -19,7 +19,7 @@ packages = [{include="ska_dlm", from="src"}]
 [tool.poetry.scripts]
 ska-dlm = "ska_dlm.cli:main"
 ska-dlm-sm-service = "ska_dlm.dlm_storage.main:main"
-ska-dlm-heuristic-engine = "ska_dlm.dlm_heuristic_engine:main"
+ska-dlm-heuristics = "ska_dlm.dlm_heuristics:main"
 
 [[tool.poetry.source]]
 name = 'PyPI'

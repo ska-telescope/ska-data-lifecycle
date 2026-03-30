@@ -1,0 +1,36 @@
+sequenceDiagram
+    autonumber
+    actor Admin as Storage Actor
+    participant Controller as Heuristics Engine
+    participant DB as DLM Database
+    participant StorageManager as StorageManager
+    participant Volume as Storage Volume A
+    
+    Admin->>Controller: Request data_item Removal (UID)
+    
+    rect rgb(200, 200, 200)
+    Note over Controller, DB: Validation
+    Controller->>DB: Query OID (all UIDs)
+    DB-->>Controller: Return OID, UIDs, Phases & Hashes
+    Controller-->>Controller: Calculate Result Phase
+    
+    alt Result Phase < Target Phase
+        Controller-->>Admin: Error: Removal would violate resilience policy
+    else Result Phase >= Target Phase
+        Controller->>StorageManager: Verify File Integrity (fileID, Hash)
+        StorageManager-->>Controller: Verification Success
+    end
+    end
+
+    rect rgb(130, 155, 130)
+    Note over Controller, Volume: Execution
+    Controller->>StorageManager: Delete UID payload
+    StorageManager->>Volume: Remove UID data_item payload
+    StorageManager-->>Controller: Deletion Confirmed
+    
+    Controller->>DB: Update Metadata (Mark UID as DELETED)
+    Controller->>DB: Update Metadata (Update OID Phase)
+    DB-->>Controller: Metadata Updated
+    end
+
+    Controller-->>Admin: Removal Successful

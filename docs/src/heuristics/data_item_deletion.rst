@@ -4,4 +4,4 @@ Once a data_item is registered with the DLM the database records will be maintai
 
 UID Deletion Heuristics
 -----------------------
-**<insert sequence diagram>**
+.. image:: ../_static/img/resilient_data_removal.svg

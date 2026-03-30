@@ -1,0 +1,45 @@
+sequenceDiagram
+    autonumber
+    actor Admin as DLM Actor
+    participant Controller as Heuristics Engine
+    participant DB as DLM Database
+    participant StorageManager as StorageManager
+    participant Volume as Storage Volume A
+    
+    Admin->>Controller: Report Expired data_item (OID)
+    
+    rect rgb(200, 200, 200)
+    Note over Controller, DB: Validation
+    Controller->>DB: Query OID Expiration
+    DB-->>Controller: Return Expiration (OID_expiration)
+
+    alt OID_expiration < now()
+        Controller-->>Controller: STATE: Error: Not yet expired!
+    else OID_expiration >= now()
+        rect rgb(130, 155, 130)
+        Note over Controller, DB: Execution
+        Controller->>DB: Query UIDs (OID)
+        loop UIDs (DEL_RESULTS[])
+            Controller->>StorageManager: Delete UID payload
+            StorageManager->>Volume: Remove UID data_item payload
+            StorageManager-->>Controller: DEL_RESULT = Deletion Status
+            alt DEL_RESULT == FAILURE
+                Controller-->>Controller: DEL_RESULTS[UID] = FAILURE
+            else DEL_RESULTS == SUCCESS
+                Controller-->>Controller: DEL_RESULTS[UID] = SUCCESS
+                Controller->>DB: Update Metadata (Mark UID as DELETED)
+                Controller->>DB: Update Metadata (Update OID Phase)
+                DB-->>Controller: Metadata Updated
+            end
+        end
+        end
+        alt Any(DEL_RESULTS) == FAILURE
+            Controller-->>Controller: STATE = Error: UID deletion failed OID expiration failed!
+        else All(DEL_RESULTS) == SUCCESS
+            Controller-->>Controller: STATE = Deletion Confirmed (UID_del)
+        end
+    end
+    end
+    Controller-->>Admin: OID Expiration State: STATE
+
+

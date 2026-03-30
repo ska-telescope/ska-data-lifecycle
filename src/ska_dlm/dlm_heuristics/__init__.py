@@ -1,5 +1,5 @@
 """Heuristic engine daemon using SQLAlchemy ORM (asyncio)."""
 
-from .dlm_heuristic import main
+from .dlm_heuristics import main
 
 __all__ = ["main"]

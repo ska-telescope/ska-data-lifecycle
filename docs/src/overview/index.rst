@@ -67,7 +67,7 @@ This is a FastAPI-based service and is implementing the storage manager logic. C
 
   #. delete_data_item_payload, Delete expired data_item payloads and setting the state to DELETED.
   #. Produce a copy of newly ingested data_items to one more configured storage backend. This is using the copy_data_item function of the dlm_migration module.
-  #. Stub for handling a phase change heuristic engine.
+  #. Stub for handling a phase change heuristics engine.
   #. Stub for handling capacity based data movements.
 
 The storage manager exposes a number of storage related functions and is also running a background daemon, (currently) polling the DB using some of the functions provided by the request manager module in intervals to retrieve lists of expired and newly ingested data_items, respectively and then use the delete and copy functions to act accordingly. The future implementations of the phase change and capacity engines will use the same functions as well to free up space on storage volumes running low in capacity, while still making sure that the required persistence level (phase) is maintained. In addition to the daemon functionality the storage manager module also exposes some of its internal functions.
