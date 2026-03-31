@@ -1,0 +1,44 @@
+%% PLACEHOLDER!!!!!
+sequenceDiagram
+    title !!!PLACEHOLDER!!!
+    autonumber
+    actor Admin as DLM Actor
+    participant Controller as Heuristics Engine
+    participant Heuristic as OID Phase Heuristics
+    box rgb(200, 220, 255)
+        participant Combine as Combine UID Phases
+    end
+    box rgb(200, 220, 255)
+        participant Increase as Increase OID Phase
+    end
+    box rgb(200, 220, 255)
+        participant Decrease as Decrease OID Phase
+    end
+    participant DB as DLM Database
+    
+    Admin->>Controller: Trigger Heuristics
+    
+    Controller->>Heuristic: Trigger Heuristic Execution
+    Note over Heuristic, DB: OID Heuristics
+    Heuristic->>DB: Query OID and UID phases
+    DB->>Heuristic: Return Phases (OID_phase, UID_phases, target_phase)
+    rect rgb(200, 210, 235)
+        Heuristic-->>Combine: combine UID_phases
+    end
+    Combine-->>Heuristic: ACTUAL_PHASE
+
+    alt target_phase = ACTUAL_PHASE and OID_phase != ACTUAL_PHASE
+        Heuristic->>DB: Update OID_phase to ACTUAL_PHASE
+    else target_phase < ACTUAL_PHASE
+        rect rgb(200, 210, 235)
+            Heuristic-->>Increase: Add additional UID instance (increase OID_phase)
+        end
+    else target_phase > ACTUAL_PHASE
+        rect rgb(200, 210, 235)
+            Heuristic-->>Decrease: Remove redundant UID instance (lower OID_phase)
+        end
+    end
+    Heuristic-->>Controller: Return STATUS
+    Controller-->>Admin: OID Phase Heuristics Result: STATUS
+
+

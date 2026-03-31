@@ -2,28 +2,25 @@ sequenceDiagram
     autonumber
     actor Admin as Storage Actor
     participant Controller as Heuristics Engine
+    participant Heuristic as UID Expiry Heuristics
     participant DB as DLM Database
-    participant StorageManager as StorageManager
-    participant Volume as Storage Volume A
+    box rgb(200, 220, 255)
+        participant Delete as Delete UID Heuristic
+    end
     
     Admin->>Controller: Report Expired data_item (UID)
+    Controller->>Heuristic: Trigger Heuristic Execution
     
-    rect rgb(200, 200, 200)
-    Note over Controller, DB: Validation
-    Controller->>DB: Query Expiration (UID)
-    DB-->>Controller: Return Expiration (UID_expiration)
+    Note over Heuristic, Delete: UID Expiration Heuristics
+    Heuristic->>DB: Query Expiration (UID)
+    DB-->>Heuristic: Return Expiration (UID_expiration)
 
-    alt UID_expiration < now()
-        Controller-->>Admin: Error: Not yet expired!
+    alt UID_expiration < now() STATUS: ERROR
     else UID_expiration >= now()
-        DB-->>Controller: Verification Success
-    end
-    end
-
-    rect rgb(130, 155, 130)
-    Note over Controller, Volume: Execution
-    Controller-->>Controller: Call Delete Heuristic (UID)
-    Controller-->>Controller: Deletion Confirmed
+        Heuristic->>Delete: Call Delete Heuristic (UID)
+        Delete-->>Heuristic: STATUS
     end
 
-    Controller-->>Admin: Expiration Successful
+    Heuristic-->>Controller: STATUS
+
+    Controller-->>Admin: UID expiration status

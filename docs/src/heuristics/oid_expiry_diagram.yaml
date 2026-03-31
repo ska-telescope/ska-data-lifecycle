@@ -2,44 +2,35 @@ sequenceDiagram
     autonumber
     actor Admin as DLM Actor
     participant Controller as Heuristics Engine
+    participant Heuristic as OID Expiry Heuristics
     participant DB as DLM Database
-    participant StorageManager as StorageManager
-    participant Volume as Storage Volume A
+    box rgb(200, 220, 255)
+        participant Delete as Delete UID Heuristic
+    end
     
     Admin->>Controller: Report Expired data_item (OID)
+    Controller->>Heuristic: Trigger Heuristic Execution
     
-    rect rgb(200, 200, 200)
-    Note over Controller, DB: Validation
-    Controller->>DB: Query OID Expiration
-    DB-->>Controller: Return Expiration (OID_expiration)
+    Note over Heuristic, Delete: OID Expiration Heuristic
+    Heuristic->>DB: Query OID Expiration
+    DB-->>Heuristic: Return Expiration (OID_expiration)
 
-    alt OID_expiration < now()
-        Controller-->>Controller: STATE: Error: Not yet expired!
+    alt OID_expiration < now(): ERROR
     else OID_expiration >= now()
-        rect rgb(130, 155, 130)
-        Note over Controller, DB: Execution
-        Controller->>DB: Query UIDs (OID)
-        loop UIDs (DEL_RESULTS[])
-            Controller->>StorageManager: Delete UID payload
-            StorageManager->>Volume: Remove UID data_item payload
-            StorageManager-->>Controller: DEL_RESULT = Deletion Status
-            alt DEL_RESULT == FAILURE
-                Controller-->>Controller: DEL_RESULTS[UID] = FAILURE
-            else DEL_RESULTS == SUCCESS
-                Controller-->>Controller: DEL_RESULTS[UID] = SUCCESS
-                Controller->>DB: Update Metadata (Mark UID as DELETED)
-                Controller->>DB: Update Metadata (Update OID Phase)
-                DB-->>Controller: Metadata Updated
+        Heuristic->>DB: Query UIDs (OID)
+        loop UIDs
+            rect rgb(200, 220, 255)
+                Heuristic->>Delete: Delete UID payload
+                Delete-->>Heuristic: DEL_STATUS
+            end
+            alt DEL_STATUS == ERROR: ERROR
+            else DEL_STATUS == SUCCESS: SUCCESS
+                Heuristic->>DB: Update Metadata (Mark UID as DELETED)
+                Heuristic->>DB: Update Metadata (Update OID Phase)
             end
         end
         end
-        alt Any(DEL_RESULTS) == FAILURE
-            Controller-->>Controller: STATE = Error: UID deletion failed OID expiration failed!
-        else All(DEL_RESULTS) == SUCCESS
-            Controller-->>Controller: STATE = Deletion Confirmed (UID_del)
-        end
-    end
-    end
-    Controller-->>Admin: OID Expiration State: STATE
+    Heuristic-->>Controller: STATUS
+    Controller-->>Admin: OID Expired: STATUS
 
 
