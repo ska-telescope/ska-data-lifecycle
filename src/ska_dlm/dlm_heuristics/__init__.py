@@ -5,6 +5,7 @@ from .heuristics import (
     BaseHeuristic,
     CombineUidPhasesHeuristic,
     DecreaseOidPhaseHeuristic,
+    DeleteUidHeuristic,
     HeuristicResult,
     IncreaseOidPhaseHeuristic,
     OidPhaseEnforceHeuristic,
@@ -17,5 +18,6 @@ __all__ = [
     "CombineUidPhasesHeuristic",
     "IncreaseOidPhaseHeuristic",
     "DecreaseOidPhaseHeuristic",
+    "DeleteUidHeuristic",
     "OidPhaseEnforceHeuristic",
 ]

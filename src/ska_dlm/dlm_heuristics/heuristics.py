@@ -123,6 +123,115 @@ class DecreaseOidPhaseHeuristic(BaseHeuristic):
         return self.success_result(f"Decreased OID {oid} phase from {current_phase} towards {target_phase}")
 
 
+class DeleteUidHeuristic(BaseHeuristic):
+    """Heuristic to safely delete a UID payload while preserving OID resilience."""
+
+    def __init__(self, session: AsyncSession):
+        super().__init__(session)
+        self.combine_heuristic = CombineUidPhasesHeuristic(session)
+
+    async def execute(self, uid: UUID) -> HeuristicResult:
+        """Execute UID deletion heuristic according to deletion sequence diagram.
+
+        Steps:
+        1. Query UID entry and resolve OID
+        2. Query other UID phases for OID
+        3. Determine result phase if UID removed
+        4. Reject if result phase < target phase
+        5. Delete payload from storage
+        6. Mark UID deleted + update OID phase
+
+        Returns:
+            HeuristicResult
+        """
+        from sqlalchemy import select, update, func
+        from ska_dlm.dlm_db.models import DataItem
+        from ska_dlm.dlm_storage.dlm_storage_requests import delete_data_item_payload
+        from ska_dlm.common_types import ItemState
+
+        phase_order = {
+            PhaseType.GAS: 0,
+            PhaseType.LIQUID: 1,
+            PhaseType.SOLID: 2,
+            PhaseType.PLASMA: 3,
+        }
+
+        try:
+            # Fetch target UID
+            stmt = select(DataItem).where(DataItem.UID == uid)
+            result = await self.session.execute(stmt)
+            data_item = result.scalar()
+
+            if not data_item:
+                return HeuristicResult(False, f"No data found for UID {uid}")
+
+            if not data_item.OID:
+                return HeuristicResult(False, f"UID {uid} has no associated OID")
+
+            oid = data_item.OID
+            target_phase = data_item.target_phase
+
+            # Fetch other UIDs for same OID that are not already deleted
+            uid_stmt = select(DataItem.UID_phase, DataItem.UID).where(
+                DataItem.OID == oid,
+                DataItem.deleted.is_(False),
+            )
+            uid_result = await self.session.execute(uid_stmt)
+            remaining_rows = [r for r in uid_result.fetchall() if r[1] != uid]
+            remaining_phases = [r[0] for r in remaining_rows]
+
+            if remaining_phases:
+                combine_result = await self.combine_heuristic.execute(oid, remaining_phases)
+                if not combine_result.success:
+                    return combine_result
+                result_phase = combine_result.data["actual_phase"]
+            else:
+                # No remaining replicas; resilience phase reduces to GAS
+                result_phase = PhaseType.GAS
+
+            if phase_order[result_phase] < phase_order[target_phase]:
+                return HeuristicResult(
+                    False,
+                    "Removal would violate resilience policy",
+                    {"oid": oid, "uid": uid, "result_phase": result_phase, "target_phase": target_phase},
+                )
+
+            # Delete payload from storage manager
+            if not delete_data_item_payload(str(uid)):
+                return HeuristicResult(False, f"Failed to delete payload for UID {uid}")
+
+            # Update UID metadata
+            update_uid_stmt = (
+                update(DataItem)
+                .where(DataItem.UID == uid)
+                .values(
+                    item_state=ItemState.DELETED,
+                    deleted=True,
+                    UID_deletion=func.now(),
+                )
+            )
+            await self.session.execute(update_uid_stmt)
+
+            # Update OID phase for the OID group
+            update_oid_stmt = (
+                update(DataItem)
+                .where(DataItem.OID == oid)
+                .values(OID_phase=result_phase)
+            )
+            await self.session.execute(update_oid_stmt)
+
+            await self.session.commit()
+
+            return self.success_result(
+                f"Deleted UID {uid} payload and updated OID {oid} phase to {result_phase}",
+                {"uid": uid, "oid": oid, "result_phase": result_phase},
+            )
+
+        except Exception as exc:
+            await self.session.rollback()
+            return HeuristicResult(False, f"Error executing UID deletion heuristic: {str(exc)}")
+
+
 class OidPhaseEnforceHeuristic(BaseHeuristic):
     """Heuristic to enforce OID phase consistency with UID phases and target phase."""
 

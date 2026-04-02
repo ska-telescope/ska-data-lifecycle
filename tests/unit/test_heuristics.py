@@ -10,6 +10,7 @@ from ska_dlm.dlm_heuristics.heuristics import (
     BaseHeuristic,
     CombineUidPhasesHeuristic,
     DecreaseOidPhaseHeuristic,
+    DeleteUidHeuristic,
     HeuristicResult,
     IncreaseOidPhaseHeuristic,
     OidPhaseEnforceHeuristic,
@@ -374,3 +375,104 @@ class TestOidPhaseEnforceHeuristic:
         assert "Error executing OID Phase Enforce heuristic: Database error" in result.message
         # Verify rollback was called
         mock_session.rollback.assert_called_once()
+
+
+class TestDeleteUidHeuristic:
+    """Test DeleteUidHeuristic class."""
+
+    @pytest.fixture
+    def mock_session(self):
+        return AsyncMock()
+
+    @pytest.fixture
+    def heuristic(self, mock_session):
+        return DeleteUidHeuristic(mock_session)
+
+    @pytest.mark.asyncio
+    async def test_no_data_found(self, heuristic, mock_session):
+        uid = uuid.uuid4()
+
+        mock_result = MagicMock()
+        mock_result.scalar.return_value = None
+        mock_session.execute.return_value = mock_result
+
+        result = await heuristic.execute(uid)
+
+        assert result.success is False
+        assert result.message == f"No data found for UID {uid}"
+
+    @pytest.mark.asyncio
+    async def test_resilience_violation(self, heuristic, mock_session):
+        uid = uuid.uuid4()
+        oid = uuid.uuid4()
+
+        data_item = MagicMock()
+        data_item.OID = oid
+        data_item.target_phase = PhaseType.SOLID
+
+        mock_oid_result = MagicMock()
+        mock_oid_result.scalar.return_value = data_item
+
+        mock_uid_result = MagicMock()
+        mock_uid_result.fetchall.return_value = [(PhaseType.LIQUID, uid)]
+
+        mock_session.execute.side_effect = [mock_oid_result, mock_uid_result]
+
+        result = await heuristic.execute(uid)
+
+        assert result.success is False
+        assert "Removal would violate resilience policy" in result.message
+
+    @pytest.mark.asyncio
+    async def test_delete_payload_success(self, heuristic, mock_session, monkeypatch):
+        import ska_dlm.dlm_storage.dlm_storage_requests as storage_requests
+
+        uid = uuid.uuid4()
+        oid = uuid.uuid4()
+
+        data_item = MagicMock()
+        data_item.OID = oid
+        data_item.target_phase = PhaseType.GAS
+
+        mock_oid_result = MagicMock()
+        mock_oid_result.scalar.return_value = data_item
+
+        mock_uid_result = MagicMock()
+        mock_uid_result.fetchall.return_value = [(PhaseType.GAS, uuid.uuid4())]
+
+        mock_session.execute.side_effect = [mock_oid_result, mock_uid_result, MagicMock(), MagicMock()]
+
+        monkeypatch.setattr(storage_requests, "delete_data_item_payload", lambda x: True)
+
+        result = await heuristic.execute(uid)
+
+        assert result.success is True
+        assert "Deleted UID" in result.message
+        mock_session.commit.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_delete_payload_failure(self, heuristic, mock_session, monkeypatch):
+        import ska_dlm.dlm_storage.dlm_storage_requests as storage_requests
+
+        uid = uuid.uuid4()
+        oid = uuid.uuid4()
+
+        data_item = MagicMock()
+        data_item.OID = oid
+        data_item.target_phase = PhaseType.GAS
+
+        mock_oid_result = MagicMock()
+        mock_oid_result.scalar.return_value = data_item
+
+        mock_uid_result = MagicMock()
+        mock_uid_result.fetchall.return_value = [(PhaseType.GAS, uuid.uuid4())]
+
+        mock_session.execute.side_effect = [mock_oid_result, mock_uid_result]
+
+        monkeypatch.setattr(storage_requests, "delete_data_item_payload", lambda x: False)
+
+        result = await heuristic.execute(uid)
+
+        assert result.success is False
+        assert "Failed to delete payload" in result.message
+        mock_session.commit.assert_not_called()
