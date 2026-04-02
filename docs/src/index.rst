@@ -20,3 +20,4 @@ For high-level design details, see the `Solution Intent page <https://confluence
 
    guides/installation/index
    guides/usage/index
+   heuristics/index

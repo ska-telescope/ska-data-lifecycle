@@ -12,8 +12,9 @@ The OID Phase Enforce heuristic is checking the consistency between the OID phas
 
 Combine UID Phase Heuristic
 +++++++++++++++++++++++++++
+Not yet implemented
 
-.. image:: ../_static/img/combine_uid_phase.svg
+.. image:: ../_static/img/combine_uid_phases.svg
 
 Increase OID Phase Heuristic
 ++++++++++++++++++++++++++++

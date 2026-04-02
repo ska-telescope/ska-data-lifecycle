@@ -6,5 +6,6 @@ Individual heuristics are implemented as loadable classes based on an abstract c
    :maxdepth: 2
    :caption: Heuristics Details
 
+   data_item_phase
    data_item_deletion
    data_item_expiry
