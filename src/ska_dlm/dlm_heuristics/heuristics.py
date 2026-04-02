@@ -15,6 +15,15 @@ from ska_dlm.dlm_db.db_access import DB
 
 from ska_dlm.common_types import PhaseType
 
+# Phase hierarchy by resilience: lower number = higher resilience
+# Order from lowest to highest resilience: PLASMA, GAS, LIQUID, SOLID
+PHASE_ORDER = {
+    PhaseType.SOLID: 0,    # Highest resilience
+    PhaseType.LIQUID: 1,
+    PhaseType.GAS: 2,
+    PhaseType.PLASMA: 3,   # Lowest resilience
+}
+
 
 class HeuristicResult:
     """Result of a heuristic execution."""
@@ -64,7 +73,7 @@ class CombineUidPhasesHeuristic(BaseHeuristic):
         """Combine UID phases to determine the actual phase for an OID.
 
         The logic here is to take the highest phase among all UIDs.
-        Phase hierarchy: GAS < LIQUID < SOLID < PLASMA
+        Phase hierarchy: PLASMA < GAS < LIQUID < SOLID
 
         Args:
             oid: The OID to combine phases for
@@ -76,11 +85,8 @@ class CombineUidPhasesHeuristic(BaseHeuristic):
         if not uid_phases:
             return HeuristicResult(False, "No UID phases provided")
 
-        # Phase hierarchy for comparison
-        phase_order = {PhaseType.GAS: 0, PhaseType.LIQUID: 1, PhaseType.SOLID: 2, PhaseType.PLASMA: 3}
-
-        # Find the highest phase
-        actual_phase = max(uid_phases, key=lambda p: phase_order[p])
+        # Find the highest resilience phase (lowest PHASE_ORDER value)
+        actual_phase = min(uid_phases, key=lambda p: PHASE_ORDER[p])
 
         return self.success_result(f"Combined phase: {actual_phase}", {"actual_phase": actual_phase})
 
@@ -149,13 +155,6 @@ class DeleteUidHeuristic(BaseHeuristic):
         from ska_dlm.dlm_storage.dlm_storage_requests import delete_data_item_payload
         from ska_dlm.common_types import ItemState
 
-        phase_order = {
-            PhaseType.GAS: 0,
-            PhaseType.LIQUID: 1,
-            PhaseType.SOLID: 2,
-            PhaseType.PLASMA: 3,
-        }
-
         try:
             # Fetch target UID
             stmt = select(DataItem).where(DataItem.UID == uid)
@@ -189,7 +188,7 @@ class DeleteUidHeuristic(BaseHeuristic):
                 # No remaining replicas; resilience phase reduces to GAS
                 result_phase = PhaseType.GAS
 
-            if phase_order[result_phase] < phase_order[target_phase]:
+            if PHASE_ORDER[result_phase] > PHASE_ORDER[target_phase]:
                 return HeuristicResult(
                     False,
                     "Removal would violate resilience policy",
@@ -286,9 +285,6 @@ class OidPhaseEnforceHeuristic(BaseHeuristic):
 
             actual_phase = combine_result.data["actual_phase"]
 
-            # Phase hierarchy for comparison
-            phase_order = {PhaseType.GAS: 0, PhaseType.LIQUID: 1, PhaseType.SOLID: 2, PhaseType.PLASMA: 3}
-
             # Decision logic
             if target_phase == actual_phase and oid_phase != actual_phase:
                 # Update OID phase to match actual phase
@@ -302,13 +298,13 @@ class OidPhaseEnforceHeuristic(BaseHeuristic):
                 await self.session.commit()
                 return self.success_result(f"Updated OID {oid} phase to {actual_phase}")
 
-            elif phase_order.get(target_phase, 0) < phase_order.get(actual_phase, 0):
-                # Target phase is lower than actual phase - need to increase
+            elif PHASE_ORDER.get(target_phase, float('inf')) > PHASE_ORDER.get(actual_phase, float('inf')):
+                # Target phase has lower resilience than actual phase - need to increase
                 increase_result = await self.increase_heuristic.execute(oid, oid_phase, target_phase)
                 return increase_result
 
-            elif phase_order.get(target_phase, 0) > phase_order.get(actual_phase, 0):
-                # Target phase is higher than actual phase - need to decrease
+            elif PHASE_ORDER.get(target_phase, float('inf')) < PHASE_ORDER.get(actual_phase, float('inf')):
+                # Target phase has higher resilience than actual phase - need to decrease
                 decrease_result = await self.decrease_heuristic.execute(oid, oid_phase, target_phase)
                 return decrease_result
 
