@@ -7,6 +7,7 @@ class for heuristics and the OID Phase heuristics as one implementation.
 
 from abc import ABC, abstractmethod
 from typing import List, Optional
+import numpy as np
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -74,6 +75,8 @@ class CombineUidPhasesHeuristic(BaseHeuristic):
 
         The logic here is to take the highest phase among all UIDs.
         Phase hierarchy: PLASMA < GAS < LIQUID < SOLID
+        TODO: This implementation is worst case and does not cover the 
+        actual combination of multiple lower phases.
 
         Args:
             oid: The OID to combine phases for
@@ -85,8 +88,22 @@ class CombineUidPhasesHeuristic(BaseHeuristic):
         if not uid_phases:
             return HeuristicResult(False, "No UID phases provided")
 
-        # Find the highest resilience phase (lowest PHASE_ORDER value)
-        actual_phase = min(uid_phases, key=lambda p: PHASE_ORDER[p])
+        n_SOLID = uid_phases.count(PhaseType.SOLID)
+        n_LIQUID = uid_phases.count(PhaseType.LIQUID)
+        n_GAS = uid_phases.count(PhaseType.GAS)
+        n_PLASMA = uid_phases.count(PhaseType.PLASMA)
+        # PLASMA does not really count for any resilience, even if combined
+        if n_PLASMA == len(uid_phases):
+            actual_phase = PhaseType.PLASMA
+        elif n_SOLID >= 1:
+            # if it is already SOLID we can't get any better anyway
+            actual_phase = PhaseType.SOLID
+        elif n_LIQUID >=2 or n_GAS >= 3 or (n_LIQUID == 1 and n_GAS >= 2):
+            actual_phase = PhaseType.SOLID
+        elif (n_LIQUID == 1 and n_GAS <= 1) or (n_LIQUID == 0 and n_GAS == 2):
+            actual_phase = PhaseType.LIQUID
+        else:
+            actual_phase = PhaseType.GAS
 
         return self.success_result(f"Combined phase: {actual_phase}", {"actual_phase": actual_phase})
 
@@ -156,7 +173,7 @@ class DeleteUidHeuristic(BaseHeuristic):
         from ska_dlm.common_types import ItemState
 
         try:
-            # Fetch target UID
+            # Step 1: Fetch target UID to get OID
             stmt = select(DataItem).where(DataItem.UID == uid)
             result = await self.session.execute(stmt)
             data_item = result.scalar()
@@ -170,7 +187,7 @@ class DeleteUidHeuristic(BaseHeuristic):
             oid = data_item.OID
             target_phase = data_item.target_phase
 
-            # Fetch other UIDs for same OID that are not already deleted
+            # Step 2: Fetch other UIDs for same OID that are not already deleted
             uid_stmt = select(DataItem.UID_phase, DataItem.UID).where(
                 DataItem.OID == oid,
                 DataItem.deleted.is_(False),
@@ -183,15 +200,18 @@ class DeleteUidHeuristic(BaseHeuristic):
                 combine_result = await self.combine_heuristic.execute(oid, remaining_phases)
                 if not combine_result.success:
                     return combine_result
+                # Step 2: Get resulting phase after deletion
                 result_phase = combine_result.data["actual_phase"]
             else:
                 # No remaining replicas; resilience phase reduces to GAS
                 result_phase = PhaseType.GAS
 
             if PHASE_ORDER[result_phase] > PHASE_ORDER[target_phase]:
+                # Here we could try to create another copy by
+                # calling the IncreaseOidPhaseHeuristic, once implemented
                 return HeuristicResult(
                     False,
-                    "Removal would violate resilience policy",
+                    "Deletion would violate resilience policy",
                     {"oid": oid, "uid": uid, "result_phase": result_phase, "target_phase": target_phase},
                 )
 
@@ -227,6 +247,7 @@ class DeleteUidHeuristic(BaseHeuristic):
             )
 
         except Exception as exc:
+            # Any other exception: roll back
             await self.session.rollback()
             return HeuristicResult(False, f"Error executing UID deletion heuristic: {str(exc)}")
 

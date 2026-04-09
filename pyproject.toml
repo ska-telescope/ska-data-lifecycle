@@ -52,6 +52,7 @@ asyncpg = "^0.31.0"
 pytest = "^8.4.2"
 pytest-asyncio = "^1.2.0"
 aiosqlite = "^0.22.1"
+numpy = "<2.4.4"
 
 [tool.poetry.group.test.dependencies]
 black = "^23.3.0"

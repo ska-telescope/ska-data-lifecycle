@@ -2,6 +2,8 @@
 
 import asyncio
 import logging
+import math
+import numpy as np
 import os
 import signal
 from datetime import datetime, timezone
@@ -15,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 HEURISTIC_DATABASE_URL = os.getenv(
     "DLM_HEURISTIC_DATABASE_URL",
-    os.getenv("DATABASE_URL", "postgresql://ska_dlm_admin:password@dlm_db:5432/ska_dlm"),
+    os.getenv("DATABASE_URL", "postgresql+asyncpg://ska_dlm_admin:password@dlm_db:5432/ska_dlm"),
 )
 HEURISTIC_POLL_INTERVAL = int(os.getenv("DLM_HEURISTIC_POLL_INTERVAL", "10"))
 
@@ -27,28 +29,45 @@ async def heuristic_process_loop(stop_event: asyncio.Event):
         await conn.run_sync(Base.metadata.create_all)
 
     async_session = create_async_sql_session(engine)
-
+    loop_counter = 0
+    total_sleep_time = 0
+    loop_start = datetime.now(timezone.utc)
     while not stop_event.is_set():
         start = datetime.now(timezone.utc)
-        logger.debug("Heuristic engine tick at %s", start.isoformat())
+        # just for an initial load
+        pg_sleep = np.random.random() * 2
 
+        loop_counter += 1
+        logger.debug("Heuristic engine loop %s tick at %s", loop_counter, start.isoformat())
         try:
             async with async_session as session:
                 # Example query to keep the session alive; replace with real work
-                await session.execute(text("SELECT 1"))
+                await session.execute(text(f"SELECT pg_sleep({pg_sleep})"))
                 await session.commit()
 
             elapsed = (datetime.now(timezone.utc) - start).total_seconds()
             sleep_time = max(0, HEURISTIC_POLL_INTERVAL - elapsed)
-            logger.debug("Sleeping %s seconds", sleep_time)
-            await asyncio.wait([stop_event.wait()], timeout=sleep_time)
-
-        except asyncio.CancelledError:
+            total_sleep_time += sleep_time
+            await asyncio.wait_for(stop_event.wait(), timeout=sleep_time)
+        except asyncio.exceptions.TimeoutError:
+            if loop_counter % 10 == 0:
+                logger.info("Heuristic engine loop number: %s; average sleep time/loop: %5.2f s",
+                            loop_counter, total_sleep_time/loop_counter)
+                
+                loop_time = (datetime.now(timezone.utc)-loop_start).total_seconds()/loop_counter
+                suggested_interval = (math.ceil(loop_time/HEURISTIC_POLL_INTERVAL) *
+                    HEURISTIC_POLL_INTERVAL)
+                if suggested_interval > HEURISTIC_POLL_INTERVAL:
+                    logger.info("Suggested value for HEURISTIC_POLL_INTERVAL: %5.0f",
+                                suggested_interval
+                    )
+            continue
+        except asyncio.exceptions.CancelledError:
             logger.info("Heuristic loop cancelled")
             break
         # pylint: disable=broad-exception-caught
         except Exception:
-            logger.exception("Heuristic engine iteration failed; continuing")
+            logger.exception("Heuristic engine iteration %d failed; continuing", loop_counter)
 
     try:
         await engine.dispose()
