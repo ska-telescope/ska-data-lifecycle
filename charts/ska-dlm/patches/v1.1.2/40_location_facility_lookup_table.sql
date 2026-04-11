@@ -1,1 +1,0 @@
-../../../../setup/DB/patches/v1.1.2/location_facility_lookup_table.sql

@@ -91,7 +91,7 @@ postgrest:
   log_level: info
 
   # PostgREST's auth details against PostgreSQL come from a Secret, which can be:
-  # * Given to us by name, or
+  # * Given to us by name (via ska-db-migrations.dbCredentialsSecretName), or
   # * Created via:
   #   * VSO, or
   #   * Automatically from the postgresql.auth section
@@ -102,7 +102,6 @@ postgrest:
       path: ""
       mount: ""
       type: "kv-v2"
-    name: "" # secret name if using external DB
 
 
 heuristic:
@@ -113,18 +112,16 @@ heuristic:
   imagePullPolicy: Always
   replicas: 1
 
-# ------ Database options ------
+ska-db-migrations:
+  engine: liquibase
+  dbCredentialsSecretName: "{{ .Release.Name }}-ska-dlm-postgrest-secret"
+  configMapName: "ska-dlm-db-migrations-{{ .Release.Name }}"
+  liquibase:
+    contextFilter: ""
+    changelogFile: changelog.yaml
+    ttlSecondsAfterFinished: 300
 
-database:
-  migration:
-    enabled: true  # set to true if building a fresh database
-    image: postgres
-    version: "17.4"
-    base:
-      baseInstall: true  # set to true
-    patch:
-      patchInstall: false  # set to false (our patch migration system is TBD)
-      patchVersion: ""  # Supply a valid patch version vx.x.x
+# ------ Database options ------
 
 postgresql:  # see https://github.com/bitnami/charts/tree/main/bitnami/postgresql
   enabled: true  # whether to deploy a test database
