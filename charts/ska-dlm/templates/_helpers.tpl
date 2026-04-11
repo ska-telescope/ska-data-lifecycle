@@ -64,18 +64,11 @@ intent: production
 {{- end -}}
 
 {{/*
-Generates the PostgreREST Secret name
+Generates the PostgreREST Secret name. 
+Uses the subchart value as the single source of truth.
 */}}
 {{- define "ska-dlm.postgrest.db-auth-secret-name" -}}
-{{- if not .Values.postgrest.db_auth_secret.create -}}
-{{- if not .Values.postgrest.db_auth_secret.name -}}
-{{- fail "postgrest.db_auth_secret.enable=false but no postgrest.secret.name given" }}
-{{- else -}}
-{{ .Values.postgrest.db_auth_secret.name }}
-{{- end -}}
-{{- else -}}
-{{- printf "%s-postgrest-secret" (include "ska-dlm.fullname" .) -}}
-{{- end -}}
+{{- tpl (index .Values "ska-db-migrations" "dbCredentialsSecretName") . -}}
 {{- end -}}
 
 {{/*

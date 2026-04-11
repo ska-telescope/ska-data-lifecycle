@@ -44,25 +44,16 @@ RClone generates an SSH key pair which it shares with the Storage Manager via `g
 
 ## Database Migrations
 
-Database migrations are executed by Kubernetes Job resources as part of the Helm deployment process. There are two types of migrations:
+Database migrations are managed by the `ska-db-migrations` subchart using Liquibase. Migrations are automatically executed by a Kubernetes Job as part of the Helm deployment process.
 
-**1. Base Migrations (Initial Schema Creation)**
-To install the base DLM schema from scratch:
+To configure migrations:
 
-* Set `database.migration.enabled` = `true`
-* Set `database.migration.base.baseInstall` = `true`
+* `ska-db-migrations.runMigrations`: Set to `true` (default) to run migrations on deploy.
+* `ska-db-migrations.liquibase.contextFilter`: 
+    * Set to `""` (empty, default) to run all changesets, including schema creation if the role has permission.
+    * Set to `"unprivileged"` to run only standard application schema changes, skipping steps that require database-level privileges (like creating the schema itself). This is intended for use with sandboxed roles.
 
-This will run the SQL scripts located under `charts/ska-dlm/initdb-scripts/`. Use this option when deploying into a fresh database with no existing schema.
-
-**2. Patch Migrations (Schema Updates Between Releases)**
-To apply schema changes introduced after the initial deployment:
-
-* Set `database.migration.enabled` = `true`
-* Set `database.migration.patch.patchInstall` = `true`.
-* Set `database.migration.patch.patchVersion` to the release version (e.g., v1.1.2).
-
-Patch SQL scripts are located at `charts/ska-dlm/patches/<version>/`. They are mounted into the migration pod at `/etc/sql/patch/` and executed in alphabetical order. The following section provides a breakdown of all patch releases in version order.
-Note: `database.migration.base.baseInstall` and `database.migration.patch.patchInstall` can **not** be true at the same time.
+SQL migration scripts are located in `initdb-scripts/` (base schema) and `patches/` (updates). These are organized by the master `changelog.yaml` file.
 
 
 ## Storage Manager

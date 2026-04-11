@@ -1,38 +1,34 @@
+--liquibase formatted sql
+
+--changeset dlm:set-search-path-tables context:unprivileged
+SET search_path TO dlm;
+
+--changeset dlm:initial-tables-and-lookups context:unprivileged splitStatements:false
 --
 -- SQL DDL for SKA Data Lifecycle Management DB setup
 --
 
- -- verify that the user has CREATE permission within the DB before checking existence or creating a schema
-DO $$
-BEGIN
-   IF has_database_privilege(current_user, current_database(), 'CREATE') THEN
-   CREATE SCHEMA IF NOT EXISTS dlm;  -- this statement would throw error in sandboxed database environment without CREATE privilege
-   END IF;
-END $$ LANGUAGE plpgsql;
-
-SET search_path TO dlm;
-
 --
 -- Lookup tables
 --
-CREATE TABLE IF NOT EXISTS dlm.location_facility (
+CREATE TABLE IF NOT EXISTS location_facility (
     id TEXT PRIMARY KEY
 ); -- set permissions for the lookup tables?
 
-INSERT INTO dlm.location_facility (id)
+INSERT INTO location_facility (id)
 SELECT unnest(ARRAY['SRC', 'STFC', 'AWS', 'Google', 'Pawsey Centre', 'external', 'local'])
 ON CONFLICT DO NOTHING;
 
 --
 -- Table: location
 --
-CREATE TABLE IF NOT EXISTS dlm.location (
+CREATE TABLE IF NOT EXISTS location (
     location_id         uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     location_name       varchar NOT NULL UNIQUE,
     location_type       location_type NOT NULL,
     location_country    location_country DEFAULT NULL,
     location_city       varchar DEFAULT NULL,
-    location_facility   TEXT DEFAULT NULL REFERENCES dlm.location_facility(id),
+    location_facility   TEXT DEFAULT NULL REFERENCES location_facility(id),
     location_check_url  varchar DEFAULT NULL,
     location_last_check timestamp without time zone DEFAULT NULL,
     location_date       timestamp without time zone DEFAULT now()
@@ -41,14 +37,14 @@ CREATE TABLE IF NOT EXISTS dlm.location (
 --
 -- Table: storage
 --
-CREATE TABLE IF NOT EXISTS dlm.storage (
+CREATE TABLE IF NOT EXISTS storage (
     storage_id           uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     location_id          uuid NOT NULL,
     storage_name         varchar NOT NULL UNIQUE,
     root_directory       varchar DEFAULT NULL,
     storage_type         storage_type NOT NULL,
     storage_interface    storage_interface NOT NULL,
-    storage_phase        phase_type DEFAULT 'GAS',
+    storage_phase_level  phase_type DEFAULT 'GAS',
     storage_capacity     BIGINT DEFAULT -1,
     storage_use_pct      NUMERIC(3,1) DEFAULT 0.0,
     storage_permissions  varchar DEFAULT 'RW',
@@ -62,7 +58,7 @@ CREATE TABLE IF NOT EXISTS dlm.storage (
     storage_date         timestamp without time zone DEFAULT now(),
     CONSTRAINT fk_location
       FOREIGN KEY (location_id)
-      REFERENCES dlm.location(location_id)
+      REFERENCES location(location_id)
       ON DELETE SET NULL
 );
 
@@ -73,7 +69,7 @@ CREATE TABLE IF NOT EXISTS dlm.storage (
 -- converted by the storage_manager software. Being a separate table
 -- this allows for multiple configurations for different mechanisms.
 --
-CREATE TABLE IF NOT EXISTS dlm.storage_config (
+CREATE TABLE IF NOT EXISTS storage_config (
     config_id   uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     storage_id  uuid NOT NULL,
     config_type config_type DEFAULT 'rclone',
@@ -81,14 +77,14 @@ CREATE TABLE IF NOT EXISTS dlm.storage_config (
     config_date timestamp without time zone DEFAULT now(),
     CONSTRAINT fk_cfg_storage_id
       FOREIGN KEY (storage_id)
-      REFERENCES dlm.storage(storage_id)
+      REFERENCES storage(storage_id)
       ON DELETE SET NULL
 );
 
 --
 -- Table: data_item
 --
-CREATE TABLE IF NOT EXISTS dlm.data_item (
+CREATE TABLE IF NOT EXISTS data_item (
     UID               uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     OID               uuid DEFAULT NULL,
     item_version      integer DEFAULT 1,
@@ -102,7 +98,7 @@ CREATE TABLE IF NOT EXISTS dlm.data_item (
     item_encoding     varchar DEFAULT 'unknown',
     item_mime_type    mime_type DEFAULT 'application/octet-stream',
     item_level        smallint DEFAULT -1,
-    uid_phase         phase_type DEFAULT 'GAS',
+    item_phase        phase_type DEFAULT 'GAS',
     oid_phase         phase_type DEFAULT 'GAS',
     item_state        item_state DEFAULT 'INITIALISED',
     target_phase      phase_type DEFAULT 'SOLID',
@@ -130,14 +126,14 @@ CREATE TABLE IF NOT EXISTS dlm.data_item (
     metadata          jsonb DEFAULT NULL,
     CONSTRAINT fk_storage
       FOREIGN KEY (storage_id)
-      REFERENCES dlm.storage(storage_id)
+      REFERENCES storage(storage_id)
       ON DELETE SET NULL
 );
 
 -- Indexes
-CREATE INDEX IF NOT EXISTS idx_fk_storage_id ON dlm.data_item USING btree (storage_id);
+CREATE INDEX IF NOT EXISTS idx_fk_storage_id ON data_item USING btree (storage_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_unq_OID_UID_item_version
-    ON dlm.data_item USING btree (OID, UID, item_version);
+    ON data_item USING btree (OID, UID, item_version);
 
 -- Trigger function to sync OID/UID fields
 CREATE OR REPLACE FUNCTION sync_oid_uid() RETURNS trigger AS $$
@@ -149,7 +145,7 @@ CREATE OR REPLACE FUNCTION sync_oid_uid() RETURNS trigger AS $$
         NEW.OID := NEW.UID;
         NEW.OID_creation := tnow;
     ELSE
-        FOR oidc IN SELECT OID, OID_creation FROM dlm.data_item WHERE UID = NEW.OID LOOP
+        FOR oidc IN SELECT OID, OID_creation FROM data_item WHERE UID = NEW.OID LOOP
             NEW.OID := oidc.OID;
             NEW.OID_creation := oidc.OID_creation;
         END LOOP;
@@ -159,15 +155,15 @@ CREATE OR REPLACE FUNCTION sync_oid_uid() RETURNS trigger AS $$
 $$ LANGUAGE plpgsql;
 
 -- Trigger (note: trigger names are not schema-qualified)
-DROP TRIGGER IF EXISTS sync_oid_uid ON dlm.data_item;
+DROP TRIGGER IF EXISTS sync_oid_uid ON data_item;
 CREATE TRIGGER sync_oid_uid
-BEFORE INSERT ON dlm.data_item
+BEFORE INSERT ON data_item
 FOR EACH ROW EXECUTE FUNCTION sync_oid_uid();
 
 --
 -- Table: phase_change
 --
-CREATE TABLE IF NOT EXISTS dlm.phase_change (
+CREATE TABLE IF NOT EXISTS phase_change (
     phase_change_ID  bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     OID              uuid NOT NULL,
     requested_phase  phase_type DEFAULT 'GAS',
@@ -177,7 +173,7 @@ CREATE TABLE IF NOT EXISTS dlm.phase_change (
 --
 -- Table: migration
 --
-CREATE TABLE IF NOT EXISTS dlm.migration (
+CREATE TABLE IF NOT EXISTS migration (
     migration_id            bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     job_id                  bigint NOT NULL,
     OID                     uuid NOT NULL,
@@ -194,16 +190,16 @@ CREATE TABLE IF NOT EXISTS dlm.migration (
     command                 varchar,
     CONSTRAINT fk_source_storage
       FOREIGN KEY (source_storage_id)
-      REFERENCES dlm.storage(storage_id)
+      REFERENCES storage(storage_id)
       ON DELETE SET NULL,
     CONSTRAINT fk_destination_storage
       FOREIGN KEY (destination_storage_id)
-      REFERENCES dlm.storage(storage_id)
+      REFERENCES storage(storage_id)
       ON DELETE SET NULL
 );
 
 --- Migration changes
-ALTER TABLE dlm.migration ADD COLUMN IF NOT EXISTS command varchar;
+ALTER TABLE migration ADD COLUMN IF NOT EXISTS command varchar;
 
 --- Data item changes
-ALTER TABLE dlm.data_item ADD COLUMN IF NOT EXISTS target_phase phase_type DEFAULT 'SOLID';
+ALTER TABLE data_item ADD COLUMN IF NOT EXISTS target_phase phase_type DEFAULT 'SOLID';

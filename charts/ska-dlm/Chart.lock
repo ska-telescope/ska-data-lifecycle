@@ -5,5 +5,8 @@ dependencies:
 - name: pgweb
   repository: https://charts.ectobit.com
   version: 0.1.9
-digest: sha256:7aada4dbcecd58e45de5f9f00eb65dceb7b0a5f8565e9955f916c3bf90dad044
-generated: "2025-09-24T15:16:27.803346+08:00"
+- name: ska-db-migrations
+  repository: https://artefact.skao.int/repository/helm-internal
+  version: 0.5.1
+digest: sha256:28dd55453f16863a952697747713eecc1b322c9f9aee5137eedda9b4d370d371
+generated: "2026-04-12T21:33:41.735833971+08:00"

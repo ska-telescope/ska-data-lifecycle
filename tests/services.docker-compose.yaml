@@ -78,6 +78,28 @@ services:
     depends_on:
       dlm_db:
         condition: service_healthy
+      dlm_migrations:
+        condition: service_completed_successfully
+    networks:
+      - dlm_network
+
+  dlm_migrations:
+    image: liquibase/liquibase:4.33
+    container_name: dlm_migrations
+    command: >
+      --url="jdbc:postgresql://dlm_db:5432/ska_dlm"
+      --username="ska_dlm_admin"
+      --password="password"
+      --driver=org.postgresql.Driver
+      --search-path=/changelog
+      --changelog-file=changelog.yaml
+      update
+      --context-filter=create-schema
+    volumes:
+      - ../setup/DB:/changelog
+    depends_on:
+      dlm_db:
+        condition: service_healthy
     networks:
       - dlm_network
 
