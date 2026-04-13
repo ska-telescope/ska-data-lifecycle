@@ -1,9 +1,8 @@
 --liquibase formatted sql
 
---changeset dlm:set-search-path-tables context:unprivileged
+--changeset dlm:initial-tables-and-lookups context:unprivileged splitStatements:false
 SET search_path TO dlm;
 
---changeset dlm:initial-tables-and-lookups context:unprivileged splitStatements:false
 --
 -- SQL DDL for SKA Data Lifecycle Management DB setup
 --

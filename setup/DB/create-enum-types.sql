@@ -4,7 +4,7 @@
 -- DLM enum definitions
 
 -- As this is the first script to run in the base deploy,
--- its must ensure the schema exists and the search_path is set
+-- it must ensure the schema exists and the search_path is set
 
 -- verify that the user has CREATE permission within the DB before checking existence or creating a schema
 DO $$
@@ -13,9 +13,10 @@ BEGIN
    CREATE SCHEMA IF NOT EXISTS dlm;
    END IF;
 END $$ LANGUAGE plpgsql;
-SET search_path TO dlm;
 
 --changeset dlm:create-enum-types context:unprivileged splitStatements:false
+SET search_path TO dlm;
+
 DO $$ BEGIN
 CREATE TYPE location_type AS ENUM ('local-dev', 'low-integration', 'mid-integration', 'low-operations', 'mid-operations');
 EXCEPTION
