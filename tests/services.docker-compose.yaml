@@ -94,7 +94,7 @@ services:
       --search-path=/changelog
       --changelog-file=changelog.yaml
       update
-      --context-filter=create-schema
+      --context-filter=""
     volumes:
       - ../setup/DB:/changelog
     depends_on:
