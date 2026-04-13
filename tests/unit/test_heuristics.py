@@ -68,7 +68,7 @@ class TestCombineUidPhasesHeuristic:
     async def test_empty_uid_phases(self, heuristic):
         """Test combining empty UID phases list."""
         oid = uuid.uuid4()
-        result = await heuristic.execute(oid, [])
+        result = await heuristic.execute([])
         assert result.success is False
         assert result.message == "No UID phases provided"
         assert result.data == {}
@@ -78,7 +78,7 @@ class TestCombineUidPhasesHeuristic:
         """Test combining single UID phase."""
         oid = uuid.uuid4()
         uid_phases = [PhaseType.LIQUID]
-        result = await heuristic.execute(oid, uid_phases)
+        result = await heuristic.execute(uid_phases)
         assert result.success is True
         # assert result.message == "Combined phase: LIQUID"
         assert result.data == {"actual_phase": PhaseType.LIQUID}
@@ -88,7 +88,7 @@ class TestCombineUidPhasesHeuristic:
         """Test combining single UID phase."""
         oid = uuid.uuid4()
         uid_phases = [PhaseType.LIQUID, PhaseType.LIQUID]
-        result = await heuristic.execute(oid, uid_phases)
+        result = await heuristic.execute(uid_phases)
         assert result.success is True
         assert result.data == {"actual_phase": PhaseType.SOLID}
 
@@ -97,7 +97,7 @@ class TestCombineUidPhasesHeuristic:
         """Test combining GAS and LIQUID phases."""
         oid = uuid.uuid4()
         uid_phases = [PhaseType.GAS, PhaseType.LIQUID]
-        result = await heuristic.execute(oid, uid_phases)
+        result = await heuristic.execute(uid_phases)
         assert result.success is True
         assert result.data == {"actual_phase": PhaseType.LIQUID}
 
@@ -106,7 +106,7 @@ class TestCombineUidPhasesHeuristic:
         """Test combining all phase types."""
         oid = uuid.uuid4()
         uid_phases = [PhaseType.GAS, PhaseType.LIQUID, PhaseType.GAS, PhaseType.PLASMA]
-        result = await heuristic.execute(oid, uid_phases)
+        result = await heuristic.execute(uid_phases)
         assert result.success is True
         assert result.data == {"actual_phase": PhaseType.SOLID}
 
@@ -115,7 +115,7 @@ class TestCombineUidPhasesHeuristic:
         """Test combining all phase types."""
         oid = uuid.uuid4()
         uid_phases = [PhaseType.PLASMA, PhaseType.LIQUID, PhaseType.GAS, PhaseType.PLASMA]
-        result = await heuristic.execute(oid, uid_phases)
+        result = await heuristic.execute(uid_phases)
         assert result.success is True
         assert result.data == {"actual_phase": PhaseType.LIQUID}
 
@@ -124,7 +124,7 @@ class TestCombineUidPhasesHeuristic:
         """Test combining duplicate phases."""
         oid = uuid.uuid4()
         uid_phases = [PhaseType.GAS, PhaseType.GAS, PhaseType.LIQUID]
-        result = await heuristic.execute(oid, uid_phases)
+        result = await heuristic.execute(uid_phases)
         assert result.success is True
         # assert result.message == "Combined phase: PhaseType.SOLID"
         assert result.data == {"actual_phase": PhaseType.SOLID}
@@ -134,7 +134,7 @@ class TestCombineUidPhasesHeuristic:
         """Test that GAS is the lowest phase."""
         oid = uuid.uuid4()
         uid_phases = [PhaseType.GAS, PhaseType.GAS]
-        result = await heuristic.execute(oid, uid_phases)
+        result = await heuristic.execute(uid_phases)
         assert result.success is True
         assert result.data == {"actual_phase": PhaseType.LIQUID}
 
@@ -143,7 +143,7 @@ class TestCombineUidPhasesHeuristic:
         """Test that PLASMA does not increase resilience."""
         oid = uuid.uuid4()
         uid_phases = [PhaseType.GAS, PhaseType.PLASMA]
-        result = await heuristic.execute(oid, uid_phases)
+        result = await heuristic.execute(uid_phases)
         assert result.success is True
         assert result.data == {"actual_phase": PhaseType.GAS}
 
