@@ -15,6 +15,7 @@ from ska_dlm.dlm_heuristics.heuristics import (
     IncreaseOidPhaseHeuristic,
     OidPhaseEnforceHeuristic,
 )
+import ska_dlm.dlm_storage.dlm_storage_requests as storage_requests
 
 
 class TestHeuristicResult:
@@ -170,7 +171,10 @@ class TestIncreaseOidPhaseHeuristic:
         result = await heuristic.execute(oid, current_phase, target_phase)
 
         assert result.success is True
-        assert result.message == f"Increased OID {oid} phase from {current_phase} towards {target_phase}"
+        assert (
+            result.message
+            == f"Increased OID {oid} phase from {current_phase} towards {target_phase}"
+        )
         assert result.data == {}
 
 
@@ -197,7 +201,10 @@ class TestDecreaseOidPhaseHeuristic:
         result = await heuristic.execute(oid, current_phase, target_phase)
 
         assert result.success is True
-        assert result.message == f"Decreased OID {oid} phase from {current_phase} towards {target_phase}"
+        assert (
+            result.message
+            == f"Decreased OID {oid} phase from {current_phase} towards {target_phase}"
+        )
         assert result.data == {}
 
 
@@ -238,7 +245,7 @@ class TestOidPhaseEnforceHeuristic:
         mock_data_item = MagicMock()
         mock_data_item.OID_phase = PhaseType.GAS
         mock_data_item.target_phase = PhaseType.SOLID
-        
+
         mock_oid_result = MagicMock()
         mock_oid_result.scalar.return_value = mock_data_item
         mock_session.execute.return_value = mock_oid_result
@@ -249,7 +256,9 @@ class TestOidPhaseEnforceHeuristic:
         mock_session.execute.side_effect = [mock_oid_result, mock_uid_result]
 
         # Mock combine heuristic to fail
-        heuristic.combine_heuristic.execute = AsyncMock(return_value=HeuristicResult(False, "Combine failed"))
+        heuristic.combine_heuristic.execute = AsyncMock(
+            return_value=HeuristicResult(False, "Combine failed")
+        )
 
         result = await heuristic.execute(oid)
 
@@ -265,7 +274,7 @@ class TestOidPhaseEnforceHeuristic:
         mock_data_item = MagicMock()
         mock_data_item.OID_phase = PhaseType.GAS
         mock_data_item.target_phase = PhaseType.LIQUID
-        
+
         mock_oid_result = MagicMock()
         mock_oid_result.scalar.return_value = mock_data_item
         mock_session.execute.return_value = mock_oid_result
@@ -273,15 +282,17 @@ class TestOidPhaseEnforceHeuristic:
         # Mock UID phases query (UIDs have LIQUID)
         mock_uid_result = MagicMock()
         mock_uid_result.fetchall.return_value = [(PhaseType.LIQUID,)]
-        
+
         # Mock update statement result
         mock_update_result = MagicMock()
-        
+
         mock_session.execute.side_effect = [mock_oid_result, mock_uid_result, mock_update_result]
 
         # Mock combine heuristic
         heuristic.combine_heuristic.execute = AsyncMock(
-            return_value=BaseHeuristic.success_result("Combined", {"actual_phase": PhaseType.LIQUID})
+            return_value=BaseHeuristic.success_result(
+                "Combined", {"actual_phase": PhaseType.LIQUID}
+            )
         )
 
         result = await heuristic.execute(oid)
@@ -300,7 +311,7 @@ class TestOidPhaseEnforceHeuristic:
         mock_data_item = MagicMock()
         mock_data_item.OID_phase = PhaseType.GAS
         mock_data_item.target_phase = PhaseType.GAS
-        
+
         mock_oid_result = MagicMock()
         mock_oid_result.scalar.return_value = mock_data_item
         mock_session.execute.return_value = mock_oid_result
@@ -312,7 +323,9 @@ class TestOidPhaseEnforceHeuristic:
 
         # Mock combine heuristic
         heuristic.combine_heuristic.execute = AsyncMock(
-            return_value=BaseHeuristic.success_result("Combined", {"actual_phase": PhaseType.SOLID})
+            return_value=BaseHeuristic.success_result(
+                "Combined", {"actual_phase": PhaseType.SOLID}
+            )
         )
 
         # Mock increase heuristic
@@ -322,7 +335,9 @@ class TestOidPhaseEnforceHeuristic:
         result = await heuristic.execute(oid)
 
         assert result == increase_result
-        heuristic.increase_heuristic.execute.assert_called_once_with(oid, PhaseType.GAS, PhaseType.GAS)
+        heuristic.increase_heuristic.execute.assert_called_once_with(
+            oid, PhaseType.GAS, PhaseType.GAS
+        )
 
     @pytest.mark.asyncio
     async def test_decrease_heuristic_called(self, heuristic, mock_session):
@@ -333,7 +348,7 @@ class TestOidPhaseEnforceHeuristic:
         mock_data_item = MagicMock()
         mock_data_item.OID_phase = PhaseType.SOLID
         mock_data_item.target_phase = PhaseType.PLASMA
-        
+
         mock_oid_result = MagicMock()
         mock_oid_result.scalar.return_value = mock_data_item
         mock_session.execute.return_value = mock_oid_result
@@ -345,7 +360,9 @@ class TestOidPhaseEnforceHeuristic:
 
         # Mock combine heuristic
         heuristic.combine_heuristic.execute = AsyncMock(
-            return_value=BaseHeuristic.success_result("Combined", {"actual_phase": PhaseType.LIQUID})
+            return_value=BaseHeuristic.success_result(
+                "Combined", {"actual_phase": PhaseType.LIQUID}
+            )
         )
 
         # Mock decrease heuristic
@@ -365,7 +382,7 @@ class TestOidPhaseEnforceHeuristic:
         mock_data_item = MagicMock()
         mock_data_item.OID_phase = PhaseType.LIQUID
         mock_data_item.target_phase = PhaseType.LIQUID
-        
+
         mock_oid_result = MagicMock()
         mock_oid_result.scalar.return_value = mock_data_item
         mock_session.execute.return_value = mock_oid_result
@@ -377,7 +394,9 @@ class TestOidPhaseEnforceHeuristic:
 
         # Mock combine heuristic
         heuristic.combine_heuristic.execute = AsyncMock(
-            return_value=BaseHeuristic.success_result("Combined", {"actual_phase": PhaseType.LIQUID})
+            return_value=BaseHeuristic.success_result(
+                "Combined", {"actual_phase": PhaseType.LIQUID}
+            )
         )
 
         result = await heuristic.execute(oid)
@@ -406,14 +425,17 @@ class TestDeleteUidHeuristic:
 
     @pytest.fixture
     def mock_session(self):
+        """Mock session."""
         return AsyncMock()
 
     @pytest.fixture
     def heuristic(self, mock_session):
+        """Heuristics fixture."""
         return DeleteUidHeuristic(mock_session)
 
     @pytest.mark.asyncio
     async def test_no_data_found(self, heuristic, mock_session):
+        """No data test."""
         uid = uuid.uuid4()
 
         mock_result = MagicMock()
@@ -427,6 +449,7 @@ class TestDeleteUidHeuristic:
 
     @pytest.mark.asyncio
     async def test_resilience_violation(self, heuristic, mock_session):
+        """Resilience violation test."""
         uid = uuid.uuid4()
         oid = uuid.uuid4()
 
@@ -449,7 +472,7 @@ class TestDeleteUidHeuristic:
 
     @pytest.mark.asyncio
     async def test_delete_payload_success(self, heuristic, mock_session, monkeypatch):
-        import ska_dlm.dlm_storage.dlm_storage_requests as storage_requests
+        """Delete payload test."""
 
         uid = uuid.uuid4()
         oid = uuid.uuid4()
@@ -464,7 +487,12 @@ class TestDeleteUidHeuristic:
         mock_uid_result = MagicMock()
         mock_uid_result.fetchall.return_value = [(PhaseType.GAS, uuid.uuid4())]
 
-        mock_session.execute.side_effect = [mock_oid_result, mock_uid_result, MagicMock(), MagicMock()]
+        mock_session.execute.side_effect = [
+            mock_oid_result,
+            mock_uid_result,
+            MagicMock(),
+            MagicMock(),
+        ]
 
         monkeypatch.setattr(storage_requests, "delete_data_item_payload", lambda x: True)
 
@@ -476,7 +504,7 @@ class TestDeleteUidHeuristic:
 
     @pytest.mark.asyncio
     async def test_delete_payload_failure(self, heuristic, mock_session, monkeypatch):
-        import ska_dlm.dlm_storage.dlm_storage_requests as storage_requests
+        """Delete payload failure test."""
 
         uid = uuid.uuid4()
         oid = uuid.uuid4()

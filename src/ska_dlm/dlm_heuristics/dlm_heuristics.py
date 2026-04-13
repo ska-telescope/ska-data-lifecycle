@@ -3,11 +3,11 @@
 import asyncio
 import logging
 import math
-import numpy as np
 import os
 import signal
 from datetime import datetime, timezone
 
+import numpy as np
 from sqlalchemy import text
 
 from ska_dlm.dlm_db import create_async_sql_engine, create_async_sql_session
@@ -51,15 +51,21 @@ async def heuristic_process_loop(stop_event: asyncio.Event):
             await asyncio.wait_for(stop_event.wait(), timeout=sleep_time)
         except asyncio.exceptions.TimeoutError:
             if loop_counter % 10 == 0:
-                logger.info("Heuristic engine loop number: %s; average sleep time/loop: %5.2f s",
-                            loop_counter, total_sleep_time/loop_counter)
-                
-                loop_time = (datetime.now(timezone.utc)-loop_start).total_seconds()/loop_counter
-                suggested_interval = (math.ceil(loop_time/HEURISTIC_POLL_INTERVAL) *
-                    HEURISTIC_POLL_INTERVAL)
+                logger.info(
+                    "Heuristic engine loop number: %s; average sleep time/loop: %5.2f s",
+                    loop_counter,
+                    total_sleep_time / loop_counter,
+                )
+
+                loop_time = (
+                    datetime.now(timezone.utc) - loop_start
+                ).total_seconds() / loop_counter
+                suggested_interval = (
+                    math.ceil(loop_time / HEURISTIC_POLL_INTERVAL) * HEURISTIC_POLL_INTERVAL
+                )
                 if suggested_interval > HEURISTIC_POLL_INTERVAL:
-                    logger.info("Suggested value for HEURISTIC_POLL_INTERVAL: %5.0f",
-                                suggested_interval
+                    logger.info(
+                        "Suggested value for HEURISTIC_POLL_INTERVAL: %5.0f", suggested_interval
                     )
             continue
         except asyncio.exceptions.CancelledError:
