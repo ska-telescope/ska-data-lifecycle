@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS storage (
     root_directory       varchar DEFAULT NULL,
     storage_type         storage_type NOT NULL,
     storage_interface    storage_interface NOT NULL,
-    storage_phase_level  phase_type DEFAULT 'GAS',
+    storage_phase        phase_type DEFAULT 'GAS',
     storage_capacity     BIGINT DEFAULT -1,
     storage_use_pct      NUMERIC(3,1) DEFAULT 0.0,
     storage_permissions  varchar DEFAULT 'RW',
@@ -97,7 +97,7 @@ CREATE TABLE IF NOT EXISTS data_item (
     item_encoding     varchar DEFAULT 'unknown',
     item_mime_type    mime_type DEFAULT 'application/octet-stream',
     item_level        smallint DEFAULT -1,
-    item_phase        phase_type DEFAULT 'GAS',
+    uid_phase         phase_type DEFAULT 'GAS',
     oid_phase         phase_type DEFAULT 'GAS',
     item_state        item_state DEFAULT 'INITIALISED',
     target_phase      phase_type DEFAULT 'SOLID',
@@ -144,7 +144,7 @@ CREATE OR REPLACE FUNCTION sync_oid_uid() RETURNS trigger AS $$
         NEW.OID := NEW.UID;
         NEW.OID_creation := tnow;
     ELSE
-        FOR oidc IN SELECT OID, OID_creation FROM data_item WHERE UID = NEW.OID LOOP
+        FOR oidc IN SELECT OID, OID_creation FROM dlm.data_item WHERE UID = NEW.OID LOOP
             NEW.OID := oidc.OID;
             NEW.OID_creation := oidc.OID_creation;
         END LOOP;
