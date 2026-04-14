@@ -49,7 +49,7 @@ Database migrations are managed by the `ska-db-migrations` subchart using Liquib
 To configure migrations:
 
 * `ska-db-migrations.runMigrations`: Set to `true` (default) to run migrations on deploy.
-* `ska-db-migrations.liquibase.contextFilter`: 
+* `ska-db-migrations.liquibase.contextFilter`:
     * Set to `""` (empty, default) to run all changesets, including schema creation if the role has permission.
     * Set to `"unprivileged"` to run only standard application schema changes, skipping steps that require database-level privileges (like creating the schema itself). This is intended for use with sandboxed roles.
 
@@ -198,18 +198,16 @@ Note: The v1.1.2 directory holds the code required to migrate the database *from
   minikube addons enable ingress
   ```
 
-* Add the following additional repositories to helm:
+* Add the Helm repositories required by `Chart.yaml`:
   ```sh
-  helm repo add bitnami https://charts.bitnami.com/bitnami
-  helm repo add ectobit https://charts.ectobit.com
+  helm repo add <name> <url>
+  helm repo update
   ```
 
-* Download the helm dependencies and initialise the database from the root directory of this repository
+* From the root directory of this repository, download the Helm dependencies and initialise the database:
   ```sh
   make k8s-dep-build
   ```
-
-  * The chart lock can be regenerated using `make k8s-dep-update`
 
 - Depending on you system you may also need to run `minikube tunnel` in a separate terminal (notably [M1 Macs](https://github.com/kubernetes/minikube/issues/13510)). In this case, you can access ingress services via `localhost` instead of `minikube ip`.
 
