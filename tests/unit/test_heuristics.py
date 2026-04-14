@@ -476,10 +476,15 @@ class TestDeleteUidHeuristic:
 
         uid = uuid.uuid4()
         oid = uuid.uuid4()
+        storage_id = uuid.uuid4()
 
         data_item = MagicMock()
         data_item.OID = oid
         data_item.target_phase = PhaseType.GAS
+        data_item.storage_id = storage_id
+
+        mock_storage_result = MagicMock()
+        mock_storage_result.scalar.return_value = data_item
 
         mock_oid_result = MagicMock()
         mock_oid_result.scalar.return_value = data_item
@@ -488,8 +493,10 @@ class TestDeleteUidHeuristic:
         mock_uid_result.fetchall.return_value = [(PhaseType.GAS, uuid.uuid4())]
 
         mock_session.execute.side_effect = [
+            mock_storage_result,
             mock_oid_result,
             mock_uid_result,
+            MagicMock(),
             MagicMock(),
             MagicMock(),
         ]
