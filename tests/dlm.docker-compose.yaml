@@ -89,6 +89,8 @@ services:
     depends_on:
       dlm_db:
         condition: service_healthy
+      dlm_migrations:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ska_dlm_admin -d ska_dlm -h dlm_db || exit 1"]
       interval: 10s
