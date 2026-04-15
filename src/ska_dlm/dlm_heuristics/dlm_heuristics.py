@@ -12,6 +12,7 @@ from sqlalchemy import text
 
 from ska_dlm.dlm_db import create_async_sql_engine, create_async_sql_session
 from ska_dlm.dlm_db.orm import Base
+from ska_dlm.dlm_heuristics.heuristics import UidExpiryHeuristic
 
 logger = logging.getLogger(__name__)
 
@@ -34,15 +35,14 @@ async def heuristic_process_loop(stop_event: asyncio.Event):
     loop_start = datetime.now(timezone.utc)
     while not stop_event.is_set():
         start = datetime.now(timezone.utc)
-        # just for an initial load
-        pg_sleep = np.random.random() * 2
 
         loop_counter += 1
         logger.debug("Heuristic engine loop %s tick at %s", loop_counter, start.isoformat())
         try:
+            # we are packing each called heuristics in it's own session
             async with async_session as session:
-                # Example query to keep the session alive; replace with real work
-                await session.execute(text(f"SELECT pg_sleep({pg_sleep})"))
+                uidExpiryHeuristic = UidExpiryHeuristic(session)
+                await uidExpiryHeuristic.execute()
                 await session.commit()
 
             elapsed = (datetime.now(timezone.utc) - start).total_seconds()
@@ -51,22 +51,24 @@ async def heuristic_process_loop(stop_event: asyncio.Event):
             await asyncio.wait_for(stop_event.wait(), timeout=sleep_time)
         except asyncio.exceptions.TimeoutError:
             if loop_counter % 10 == 0:
+                average_sleep_time = total_sleep_time / loop_counter
                 logger.info(
                     "Heuristic engine loop number: %s; average sleep time/loop: %5.2f s",
                     loop_counter,
-                    total_sleep_time / loop_counter,
+                    average_sleep_time,
                 )
 
                 loop_time = (
                     datetime.now(timezone.utc) - loop_start
                 ).total_seconds() / loop_counter
-                suggested_interval = (
-                    math.ceil(loop_time / HEURISTIC_POLL_INTERVAL) * HEURISTIC_POLL_INTERVAL
-                )
-                if suggested_interval > HEURISTIC_POLL_INTERVAL:
-                    logger.info(
-                        "Suggested value for HEURISTIC_POLL_INTERVAL: %5.0f", suggested_interval
+                if average_sleep_time < HEURISTIC_POLL_INTERVAL/10:
+                    suggested_interval = (
+                        math.ceil(loop_time / HEURISTIC_POLL_INTERVAL) * HEURISTIC_POLL_INTERVAL
                     )
+                    if suggested_interval > HEURISTIC_POLL_INTERVAL:
+                        logger.info(
+                            "Suggested value for HEURISTIC_POLL_INTERVAL: %5.0f", suggested_interval
+                        )
             continue
         except asyncio.exceptions.CancelledError:
             logger.info("Heuristic loop cancelled")

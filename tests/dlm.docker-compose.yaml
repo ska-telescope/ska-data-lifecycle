@@ -16,6 +16,11 @@ services:
       - dlm_postgrest
       - dlm_rclone
       - dlm_gateway
+    healthcheck:
+      test: ["CMD-SHELL", "ska-dlm --help || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - dlm_network
 
@@ -37,6 +42,11 @@ services:
       - dlm_gateway
       - dlm_postgrest
       - dlm_rclone
+    healthcheck:
+      test: ["CMD-SHELL", "ska-dlm --help || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - dlm_network
 
@@ -54,6 +64,11 @@ services:
       - dlm_gateway
       - dlm_postgrest
       - dlm_rclone
+    healthcheck:
+      test: ["CMD-SHELL", "ska-dlm --help || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - dlm_network
 
@@ -73,6 +88,11 @@ services:
       - dlm_postgrest
       - dlm_rclone
       - dlm_gateway
+    healthcheck:
+      test: ["CMD-SHELL", "ska-dlm --help || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - dlm_network
 
@@ -90,7 +110,7 @@ services:
       dlm_db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ska_dlm_admin -d ska_dlm -h dlm_db || exit 1"]
+      test: ["CMD-SHELL", "ska-dlm --help || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
