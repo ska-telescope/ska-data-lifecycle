@@ -1,6 +1,6 @@
 """Heuristic engine daemon using SQLAlchemy ORM (asyncio)."""
-from .dlm_heuristics import main
 
+from .dlm_heuristics import main
 from .heuristics import (
     CombineUidPhasesHeuristic,
     DecreaseOidPhaseHeuristic,

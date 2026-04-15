@@ -7,9 +7,6 @@ import os
 import signal
 from datetime import datetime, timezone
 
-import numpy as np
-from sqlalchemy import text
-
 from ska_dlm.dlm_db import create_async_sql_engine, create_async_sql_session
 from ska_dlm.dlm_db.orm import Base
 from ska_dlm.dlm_heuristics.heuristics import UidExpiryHeuristic
@@ -41,8 +38,8 @@ async def heuristic_process_loop(stop_event: asyncio.Event):
         try:
             # we are packing each called heuristics in it's own session
             async with async_session as session:
-                uidExpiryHeuristic = UidExpiryHeuristic(session)
-                await uidExpiryHeuristic.execute()
+                uid_expiry_heuristics = UidExpiryHeuristic(session)
+                await uid_expiry_heuristics.execute()
                 await session.commit()
 
             elapsed = (datetime.now(timezone.utc) - start).total_seconds()
@@ -61,13 +58,14 @@ async def heuristic_process_loop(stop_event: asyncio.Event):
                 loop_time = (
                     datetime.now(timezone.utc) - loop_start
                 ).total_seconds() / loop_counter
-                if average_sleep_time < HEURISTIC_POLL_INTERVAL/10:
+                if average_sleep_time < HEURISTIC_POLL_INTERVAL / 10:
                     suggested_interval = (
                         math.ceil(loop_time / HEURISTIC_POLL_INTERVAL) * HEURISTIC_POLL_INTERVAL
                     )
                     if suggested_interval > HEURISTIC_POLL_INTERVAL:
                         logger.info(
-                            "Suggested value for HEURISTIC_POLL_INTERVAL: %5.0f", suggested_interval
+                            "Suggested value for HEURISTIC_POLL_INTERVAL: %5.0f",
+                            suggested_interval,
                         )
             continue
         except asyncio.exceptions.CancelledError:
