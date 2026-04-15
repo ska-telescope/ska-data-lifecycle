@@ -15,9 +15,7 @@ from ska_dlm.dlm_heuristics.heuristics import (
     IncreaseOidPhaseHeuristic,
     OidPhaseEnforceHeuristic,
 )
-import ska_dlm.dlm_storage.dlm_storage_requests as storage_requests
-
-
+from ska_dlm.dlm_storage import dlm_storage_requests
 class TestHeuristicResult:
     """Test HeuristicResult class."""
 
@@ -475,39 +473,44 @@ class TestDeleteUidHeuristic:
         """Delete payload test."""
 
         uid = uuid.uuid4()
+        uid1 = uuid.uuid4()
         oid = uuid.uuid4()
         storage_id = uuid.uuid4()
+        storage_id1 = uuid.uuid4()
 
         data_item = MagicMock()
         data_item.OID = oid
+        data_item.UID = uid
         data_item.target_phase = PhaseType.GAS
         data_item.storage_id = storage_id
-
-        mock_storage_result = MagicMock()
-        mock_storage_result.scalar.return_value = data_item
 
         mock_oid_result = MagicMock()
         mock_oid_result.scalar.return_value = data_item
 
         mock_uid_result = MagicMock()
-        mock_uid_result.fetchall.return_value = [(PhaseType.GAS, uuid.uuid4())]
+        mock_uid_result.fetchall.return_value = [(PhaseType.GAS, uid), (PhaseType.GAS, uid1)]
+
+        mock_delete_data_item_payload = MagicMock()
+        mock_delete_data_item_payload.return_value = True
+
+        mock_query_exists_and_ready = MagicMock()
+        mock_query_exists_and_ready.return_value = True
 
         mock_session.execute.side_effect = [
-            mock_storage_result,
             mock_oid_result,
             mock_uid_result,
-            MagicMock(),
-            MagicMock(),
-            MagicMock(),
+            mock_delete_data_item_payload,
+            mock_query_exists_and_ready,
         ]
 
-        monkeypatch.setattr(storage_requests, "delete_data_item_payload", lambda x: True)
+        monkeypatch.setattr(dlm_storage_requests, "delete_data_item_payload", lambda x: True)
 
         result = await heuristic.execute(uid)
 
         assert result.success is True
         assert "Deleted UID" in result.message
         mock_session.commit.assert_called_once()
+        mock_session.reset_mock()
 
     @pytest.mark.asyncio
     async def test_delete_payload_failure(self, heuristic, mock_session, monkeypatch):
@@ -528,7 +531,7 @@ class TestDeleteUidHeuristic:
 
         mock_session.execute.side_effect = [mock_oid_result, mock_uid_result]
 
-        monkeypatch.setattr(storage_requests, "delete_data_item_payload", lambda x: False)
+        monkeypatch.setattr(dlm_storage_requests, "delete_data_item_payload", lambda x: False)
 
         result = await heuristic.execute(uid)
 

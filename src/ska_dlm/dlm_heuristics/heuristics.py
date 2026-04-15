@@ -21,7 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ska_dlm.common_types import ItemState, PhaseType
 from ska_dlm.dlm_db.models import DataItem
-from ska_dlm.dlm_storage.dlm_storage_requests import delete_data_item_payload
+from ska_dlm.dlm_storage import dlm_storage_requests
 
 
 # Phase hierarchy by resilience: lower number = higher resilience
@@ -264,7 +264,7 @@ class DeleteUidHeuristic(BaseHeuristic):
                 )
 
             # Delete payload from storage manager
-            if not delete_data_item_payload(str(uid)):
+            if not dlm_storage_requests.delete_data_item_payload(str(uid)):
                 return HeuristicResult(False, f"Failed to delete payload for UID {uid}")
 
             # Update UID metadata
