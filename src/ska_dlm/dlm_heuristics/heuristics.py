@@ -23,7 +23,6 @@ from ska_dlm.common_types import ItemState, PhaseType
 from ska_dlm.dlm_db.models import DataItem
 from ska_dlm.dlm_storage import dlm_storage_requests
 
-
 # Phase hierarchy by resilience: lower number = higher resilience
 # Order from lowest to highest resilience: PLASMA, GAS, LIQUID, SOLID
 PHASE_ORDER = {

@@ -16,6 +16,8 @@ from ska_dlm.dlm_heuristics.heuristics import (
     OidPhaseEnforceHeuristic,
 )
 from ska_dlm.dlm_storage import dlm_storage_requests
+
+
 class TestHeuristicResult:
     """Test HeuristicResult class."""
 
@@ -65,7 +67,6 @@ class TestCombineUidPhasesHeuristic:
     @pytest.mark.asyncio
     async def test_empty_uid_phases(self, heuristic):
         """Test combining empty UID phases list."""
-        oid = uuid.uuid4()
         result = await heuristic.execute([])
         assert result.success is False
         assert result.message == "No UID phases provided"
@@ -74,7 +75,6 @@ class TestCombineUidPhasesHeuristic:
     @pytest.mark.asyncio
     async def test_single_uid_phase(self, heuristic):
         """Test combining single UID phase."""
-        oid = uuid.uuid4()
         uid_phases = [PhaseType.LIQUID]
         result = await heuristic.execute(uid_phases)
         assert result.success is True
@@ -84,7 +84,6 @@ class TestCombineUidPhasesHeuristic:
     @pytest.mark.asyncio
     async def test_double_liquid_uid_phase(self, heuristic):
         """Test combining single UID phase."""
-        oid = uuid.uuid4()
         uid_phases = [PhaseType.LIQUID, PhaseType.LIQUID]
         result = await heuristic.execute(uid_phases)
         assert result.success is True
@@ -93,7 +92,6 @@ class TestCombineUidPhasesHeuristic:
     @pytest.mark.asyncio
     async def test_multiple_uid_phases_gas_liquid(self, heuristic):
         """Test combining GAS and LIQUID phases."""
-        oid = uuid.uuid4()
         uid_phases = [PhaseType.GAS, PhaseType.LIQUID]
         result = await heuristic.execute(uid_phases)
         assert result.success is True
@@ -102,7 +100,6 @@ class TestCombineUidPhasesHeuristic:
     @pytest.mark.asyncio
     async def test_multiple_uid_phases_combined(self, heuristic):
         """Test combining all phase types."""
-        oid = uuid.uuid4()
         uid_phases = [PhaseType.GAS, PhaseType.LIQUID, PhaseType.GAS, PhaseType.PLASMA]
         result = await heuristic.execute(uid_phases)
         assert result.success is True
@@ -111,7 +108,6 @@ class TestCombineUidPhasesHeuristic:
     @pytest.mark.asyncio
     async def test_multiple_uid_phases_plasma_combined(self, heuristic):
         """Test combining all phase types."""
-        oid = uuid.uuid4()
         uid_phases = [PhaseType.PLASMA, PhaseType.LIQUID, PhaseType.GAS, PhaseType.PLASMA]
         result = await heuristic.execute(uid_phases)
         assert result.success is True
@@ -120,7 +116,6 @@ class TestCombineUidPhasesHeuristic:
     @pytest.mark.asyncio
     async def test_duplicate_phases(self, heuristic):
         """Test combining duplicate phases."""
-        oid = uuid.uuid4()
         uid_phases = [PhaseType.GAS, PhaseType.GAS, PhaseType.LIQUID]
         result = await heuristic.execute(uid_phases)
         assert result.success is True
@@ -130,7 +125,6 @@ class TestCombineUidPhasesHeuristic:
     @pytest.mark.asyncio
     async def test_phase_hierarchy_gas(self, heuristic):
         """Test that GAS is the lowest phase."""
-        oid = uuid.uuid4()
         uid_phases = [PhaseType.GAS, PhaseType.GAS]
         result = await heuristic.execute(uid_phases)
         assert result.success is True
@@ -139,7 +133,6 @@ class TestCombineUidPhasesHeuristic:
     @pytest.mark.asyncio
     async def test_phase_plasma(self, heuristic):
         """Test that PLASMA does not increase resilience."""
-        oid = uuid.uuid4()
         uid_phases = [PhaseType.GAS, PhaseType.PLASMA]
         result = await heuristic.execute(uid_phases)
         assert result.success is True
@@ -471,12 +464,10 @@ class TestDeleteUidHeuristic:
     @pytest.mark.asyncio
     async def test_delete_payload_success(self, heuristic, mock_session, monkeypatch):
         """Delete payload test."""
-
         uid = uuid.uuid4()
         uid1 = uuid.uuid4()
         oid = uuid.uuid4()
         storage_id = uuid.uuid4()
-        storage_id1 = uuid.uuid4()
 
         data_item = MagicMock()
         data_item.OID = oid
@@ -515,7 +506,6 @@ class TestDeleteUidHeuristic:
     @pytest.mark.asyncio
     async def test_delete_payload_failure(self, heuristic, mock_session, monkeypatch):
         """Delete payload failure test."""
-
         uid = uuid.uuid4()
         oid = uuid.uuid4()
 
