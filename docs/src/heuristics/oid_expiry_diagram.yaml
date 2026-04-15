@@ -8,28 +8,26 @@ sequenceDiagram
         participant Delete as Delete UID Heuristic
     end
     
-    Admin->>Controller: Report Expired data_item (OID)
+    Admin->>Controller: Ask to Delete Expired data_items (OID)
     Controller->>Heuristic: Trigger Heuristic Execution
     
     Note over Heuristic, Delete: OID Expiration Heuristic
-    Heuristic->>DB: Query OID Expiration
-    DB-->>Heuristic: Return Expiration (OID_expiration)
-
-    alt OID_expiration < now(): ERROR
-    else OID_expiration >= now()
-        Heuristic->>DB: Query UIDs (OID)
-        loop UIDs
-            rect rgb(200, 220, 255)
-                Heuristic->>Delete: Delete UID payload
-                Delete-->>Heuristic: DEL_STATUS
+    Heuristic->>DB: Query for expired OIDs
+    DB-->>Heuristic: Return Expirations (OID_expiration)
+    loop OIDs:
+            Heuristic->>DB: Query UIDs (OID)
+            loop UIDs:
+                rect rgb(200, 220, 255)
+                    Heuristic->>Delete: Delete UID payload
+                    Delete-->>Heuristic: DEL_STATUS
+                end
+                alt DEL_STATUS == ERROR: ERROR
+                else DEL_STATUS == SUCCESS: SUCCESS
+                    Heuristic->>DB: Update Metadata (Mark UID as DELETED)
+                    Heuristic->>DB: Update Metadata (Update OID Phase)
+                end
             end
-            alt DEL_STATUS == ERROR: ERROR
-            else DEL_STATUS == SUCCESS: SUCCESS
-                Heuristic->>DB: Update Metadata (Mark UID as DELETED)
-                Heuristic->>DB: Update Metadata (Update OID Phase)
-            end
-        end
-        end
+    end
     Heuristic-->>Controller: STATUS
     Controller-->>Admin: OID Expired: STATUS
 

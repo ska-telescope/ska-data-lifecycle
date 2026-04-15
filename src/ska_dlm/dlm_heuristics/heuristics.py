@@ -297,6 +297,130 @@ class DeleteUidHeuristic(BaseHeuristic):
             return HeuristicResult(False, f"Error executing UID deletion heuristic: {str(exc)}")
 
 
+class UidExpiryHeuristic(BaseHeuristic):
+    """Heuristic to discover expired UIDs and delegate deletion."""
+
+    def __init__(self, session: AsyncSession):
+        super().__init__(session)
+        self.delete_heuristic = DeleteUidHeuristic(session)
+
+    async def execute(self) -> HeuristicResult:
+        """Execute the UID expiry heuristic.
+
+        The heuristic discovers any UIDs whose expiration timestamp has passed,
+        then delegates their cleanup to the delete heuristic.
+
+        Returns
+        -------
+        HeuristicResult
+            The result of the expiry scan and delegated deletions.
+        """
+        try:
+            stmt = select(DataItem.UID).where(
+                DataItem.UID_expiration < func.now(),  # pylint: disable=not-callable
+                DataItem.deleted.is_(False),
+            )
+            result = await self.session.execute(stmt)
+            expired_rows = result.fetchall()
+            expired_uids = [row[0] for row in expired_rows]
+
+            if not expired_uids:
+                return self.success_result("No expired UIDs found", {"expired_uids": []})
+
+            deletion_results = []
+            for uid in expired_uids:
+                delete_result = await self.delete_heuristic.execute(uid)
+                deletion_results.append(
+                    {
+                        "uid": uid,
+                        "success": delete_result.success,
+                        "message": delete_result.message,
+                    }
+                )
+
+            success = all(item["success"] for item in deletion_results)
+            message = "Deleted expired UIDs" if success else "Some expired UID deletions failed"
+
+            return HeuristicResult(
+                success,
+                message,
+                {"expired_uids": expired_uids, "deletion_results": deletion_results},
+            )
+
+        except Exception as exc:
+            await self.session.rollback()
+            return HeuristicResult(False, f"Error executing UID expiry heuristic: {str(exc)}")
+
+
+class OidExpiryHeuristic(BaseHeuristic):
+    """Heuristic to discover expired OIDs and delete their UIDs."""
+
+    def __init__(self, session: AsyncSession):
+        super().__init__(session)
+        self.delete_heuristic = DeleteUidHeuristic(session)
+
+    async def execute(self) -> HeuristicResult:
+        """Execute the OID expiry heuristic.
+
+        The heuristic discovers any expired OIDs and delegates deletion of their
+        associated UIDs to the delete heuristic.
+
+        Returns
+        -------
+        HeuristicResult
+            The result of the OID expiry scan and delegated UID deletions.
+        """
+        try:
+            stmt = (
+                select(DataItem.OID)
+                .distinct()
+                .where(
+                    DataItem.OID_expiration < func.now(),  # pylint: disable=not-callable
+                    DataItem.deleted.is_(False),
+                    DataItem.OID.is_not(None),
+                )
+            )
+            result = await self.session.execute(stmt)
+            expired_rows = result.fetchall()
+            expired_oids = [row[0] for row in expired_rows]
+
+            if not expired_oids:
+                return self.success_result("No expired OIDs found", {"expired_oids": []})
+
+            deletion_results = []
+            for oid in expired_oids:
+                uid_stmt = select(DataItem.UID).where(
+                    DataItem.OID == oid,
+                    DataItem.deleted.is_(False),
+                )
+                uid_result = await self.session.execute(uid_stmt)
+                uid_rows = uid_result.fetchall()
+                for uid_row in uid_rows:
+                    uid = uid_row[0]
+                    delete_result = await self.delete_heuristic.execute(uid)
+                    deletion_results.append(
+                        {
+                            "oid": oid,
+                            "uid": uid,
+                            "success": delete_result.success,
+                            "message": delete_result.message,
+                        }
+                    )
+
+            success = all(item["success"] for item in deletion_results)
+            message = "Deleted expired OIDs" if success else "Some expired OID deletions failed"
+
+            return HeuristicResult(
+                success,
+                message,
+                {"expired_oids": expired_oids, "deletion_results": deletion_results},
+            )
+
+        except Exception as exc:
+            await self.session.rollback()
+            return HeuristicResult(False, f"Error executing OID expiry heuristic: {str(exc)}")
+
+
 class OidPhaseEnforceHeuristic(BaseHeuristic):
     """Heuristic to enforce OID phase consistency with UID phases and target phase."""
 

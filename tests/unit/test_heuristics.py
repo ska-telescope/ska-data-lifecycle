@@ -13,7 +13,9 @@ from ska_dlm.dlm_heuristics.heuristics import (
     DeleteUidHeuristic,
     HeuristicResult,
     IncreaseOidPhaseHeuristic,
+    OidExpiryHeuristic,
     OidPhaseEnforceHeuristic,
+    UidExpiryHeuristic,
 )
 from ska_dlm.dlm_storage import dlm_storage_requests
 
@@ -197,6 +199,174 @@ class TestDecreaseOidPhaseHeuristic:
             == f"Decreased OID {oid} phase from {current_phase} towards {target_phase}"
         )
         assert result.data == {}
+
+
+class TestUidExpiryHeuristic:
+    """Test UidExpiryHeuristic class."""
+
+    @pytest.fixture
+    def mock_session(self):
+        """Create a mock async session."""
+        return AsyncMock()
+
+    @pytest.fixture
+    def heuristic(self, mock_session):
+        """Create UidExpiryHeuristic instance."""
+        return UidExpiryHeuristic(mock_session)
+
+    @pytest.mark.asyncio
+    async def test_no_expired_uids(self, heuristic, mock_session):
+        """Test when there are no expired UIDs to process."""
+        mock_result = MagicMock()
+        mock_result.fetchall.return_value = []
+        mock_session.execute.return_value = mock_result
+
+        result = await heuristic.execute()
+
+        assert result.success is True
+        assert result.message == "No expired UIDs found"
+        assert result.data == {"expired_uids": []}
+
+    @pytest.mark.asyncio
+    async def test_delete_expired_uids(self, heuristic, mock_session):
+        """Test deletion of multiple expired UIDs."""
+        uid1 = uuid.uuid4()
+        uid2 = uuid.uuid4()
+
+        mock_result = MagicMock()
+        mock_result.fetchall.return_value = [(uid1,), (uid2,)]
+        mock_session.execute.return_value = mock_result
+
+        heuristic.delete_heuristic.execute = AsyncMock(
+            side_effect=[
+                HeuristicResult(True, "Deleted UID 1"),
+                HeuristicResult(True, "Deleted UID 2"),
+            ]
+        )
+
+        result = await heuristic.execute()
+
+        assert result.success is True
+        assert result.message == "Deleted expired UIDs"
+        assert result.data["expired_uids"] == [uid1, uid2]
+        assert len(result.data["deletion_results"]) == 2
+
+    @pytest.mark.asyncio
+    async def test_delete_expired_uids_partial_failure(self, heuristic, mock_session):
+        """Test when one expired UID deletion fails."""
+        uid1 = uuid.uuid4()
+        uid2 = uuid.uuid4()
+
+        mock_result = MagicMock()
+        mock_result.fetchall.return_value = [(uid1,), (uid2,)]
+        mock_session.execute.return_value = mock_result
+
+        heuristic.delete_heuristic.execute = AsyncMock(
+            side_effect=[
+                HeuristicResult(True, "Deleted UID 1"),
+                HeuristicResult(False, "Delete failed for UID 2"),
+            ]
+        )
+
+        result = await heuristic.execute()
+
+        assert result.success is False
+        assert result.message == "Some expired UID deletions failed"
+        assert result.data["expired_uids"] == [uid1, uid2]
+        assert result.data["deletion_results"][1]["success"] is False
+
+
+class TestOidExpiryHeuristic:
+    """Test OidExpiryHeuristic class."""
+
+    @pytest.fixture
+    def mock_session(self):
+        """Create a mock async session."""
+        return AsyncMock()
+
+    @pytest.fixture
+    def heuristic(self, mock_session):
+        """Create OidExpiryHeuristic instance."""
+        return OidExpiryHeuristic(mock_session)
+
+    @pytest.mark.asyncio
+    async def test_no_expired_oids(self, heuristic, mock_session):
+        """Test when there are no expired OIDs to process."""
+        mock_result = MagicMock()
+        mock_result.fetchall.return_value = []
+        mock_session.execute.return_value = mock_result
+
+        result = await heuristic.execute()
+
+        assert result.success is True
+        assert result.message == "No expired OIDs found"
+        assert result.data == {"expired_oids": []}
+
+    @pytest.mark.asyncio
+    async def test_delete_expired_oids(self, heuristic, mock_session):
+        """Test deletion of UIDs for expired OIDs."""
+        oid1 = uuid.uuid4()
+        oid2 = uuid.uuid4()
+        uid1 = uuid.uuid4()
+        uid2 = uuid.uuid4()
+        uid3 = uuid.uuid4()
+
+        mock_oid_result = MagicMock()
+        mock_oid_result.fetchall.return_value = [(oid1,), (oid2,)]
+
+        mock_uid_result_1 = MagicMock()
+        mock_uid_result_1.fetchall.return_value = [(uid1,), (uid2,)]
+
+        mock_uid_result_2 = MagicMock()
+        mock_uid_result_2.fetchall.return_value = [(uid3,)]
+
+        mock_session.execute.side_effect = [
+            mock_oid_result,
+            mock_uid_result_1,
+            mock_uid_result_2,
+        ]
+
+        heuristic.delete_heuristic.execute = AsyncMock(
+            side_effect=[
+                HeuristicResult(True, "Deleted UID 1"),
+                HeuristicResult(True, "Deleted UID 2"),
+                HeuristicResult(True, "Deleted UID 3"),
+            ]
+        )
+
+        result = await heuristic.execute()
+
+        assert result.success is True
+        assert result.message == "Deleted expired OIDs"
+        assert result.data["expired_oids"] == [oid1, oid2]
+        assert len(result.data["deletion_results"]) == 3
+        assert result.data["deletion_results"][0]["oid"] == oid1
+        assert result.data["deletion_results"][2]["oid"] == oid2
+
+    @pytest.mark.asyncio
+    async def test_partial_failure(self, heuristic, mock_session):
+        """Test when some UID deletions for expired OIDs fail."""
+        oid1 = uuid.uuid4()
+        uid1 = uuid.uuid4()
+
+        mock_oid_result = MagicMock()
+        mock_oid_result.fetchall.return_value = [(oid1,)]
+
+        mock_uid_result_1 = MagicMock()
+        mock_uid_result_1.fetchall.return_value = [(uid1,)]
+
+        mock_session.execute.side_effect = [mock_oid_result, mock_uid_result_1]
+
+        heuristic.delete_heuristic.execute = AsyncMock(
+            return_value=HeuristicResult(False, "Delete failed")
+        )
+
+        result = await heuristic.execute()
+
+        assert result.success is False
+        assert result.message == "Some expired OID deletions failed"
+        assert result.data["expired_oids"] == [oid1]
+        assert result.data["deletion_results"][0]["success"] is False
 
 
 class TestOidPhaseEnforceHeuristic:
