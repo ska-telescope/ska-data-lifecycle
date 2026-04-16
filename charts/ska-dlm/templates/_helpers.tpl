@@ -181,9 +181,9 @@ Gateway secret name
 {{/*
 Heuristic labels
 */}}
-{{- define "ska-dlm.heuristic.labels" -}}
+{{- define "ska-dlm.heuristics.labels" -}}
 {{- include "ska-dlm.labels" . }}
-component: {{ .Values.heuristic.component }}
-subsystem: {{ .Values.heuristic.subsystem }}
+component: {{ .Values.heuristics.component }}
+subsystem: {{ .Values.heuristics.subsystem }}
 intent: production
 {{- end -}}

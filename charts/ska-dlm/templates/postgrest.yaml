@@ -32,7 +32,7 @@ data:
   PGPASSWORD: {{ $.Values.postgresql.auth.password | b64enc }}
   PGDATABASE: {{ $.Values.postgresql.auth.database | b64enc }}
 {{- else -}}
-{{  with .Values.postgrest.db_auth_secret -}}
+{{- with .Values.postgrest.db_auth_secret -}}
 {{- if .create -}}
 {{- if or (not .vault.mount) (not .vault.type) (not .vault.path) -}}
 {{- fail (printf "No embedded PostgreSQL server enabled (postgresql.enabled=%s), but Vault values are missing (postgrest.db_auth_secret.vault.{mount,type,path})" ($.Values.postgresql.enabled | toString)) -}}
