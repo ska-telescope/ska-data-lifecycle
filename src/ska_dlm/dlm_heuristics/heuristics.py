@@ -21,7 +21,7 @@ from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ska_dlm.common_types import ItemState, PhaseType
-from ska_dlm.dlm_db.models import DataItem
+from ska_dlm.dlm_db.models import DataItem, Storage
 from ska_dlm.dlm_storage import dlm_storage_requests
 
 # Phase hierarchy by resilience: lower number = higher resilience
@@ -231,9 +231,10 @@ class DeleteUidHeuristic(BaseHeuristic):
             target_phase = data_item.target_phase
 
             # Step 2: Fetch other UIDs for same OID that are not already deleted
-            uid_stmt = select(DataItem.UID_phase, DataItem.UID).where(
+            uid_stmt = select(Storage.storage_phase, DataItem.UID).where(
                 DataItem.OID == oid,
                 DataItem.deleted.is_(False),
+                DataItem.storage_id == Storage.storage_id,
             )
             uid_result = await self.session.execute(uid_stmt)
             remaining_rows = [r for r in uid_result.fetchall() if r[1] != uid]
@@ -466,7 +467,9 @@ class OidPhaseEnforceHeuristic(BaseHeuristic):
             target_phase = data_item.target_phase
 
             # Query all UID phases for this OID
-            uid_stmt = select(DataItem.UID_phase).where(DataItem.OID == oid)
+            uid_stmt = select(Storage.storage_phase).where(
+                DataItem.OID == oid,
+                DataItem.storage_id == Storage.storage_id)
             uid_result = await self.session.execute(uid_stmt)
             uid_phases = [row[0] for row in uid_result.fetchall()]
 

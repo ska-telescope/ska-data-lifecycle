@@ -39,9 +39,9 @@ async def heuristic_process_loop(stop_event: asyncio.Event):
             # we are packing each called heuristics in it's own session
             async with async_session as session:
                 uid_expiry_heuristics = UidExpiryHeuristic(session)
-                await uid_expiry_heuristics.execute()
+                result = await uid_expiry_heuristics.execute()
                 await session.commit()
-
+            logger.info("UID expiry heuristics returned: %s", result.message)
             elapsed = (datetime.now(timezone.utc) - start).total_seconds()
             sleep_time = max(0, HEURISTIC_POLL_INTERVAL - elapsed)
             total_sleep_time += sleep_time
