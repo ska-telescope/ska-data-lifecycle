@@ -1,5 +1,5 @@
 databaseChangeLog:
   - include:
-      file: create-enum-types.sql
+      file: 05_create_enum_types.sql
   - include:
-      file: create-tables.sql
+      file: 10_create_tables.sql

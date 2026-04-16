@@ -10,3 +10,17 @@ data:
 {{ .Files.Get "changelog.yaml" | indent 4 }}
 {{ (.Files.Glob "initdb-scripts/*.sql").AsConfig | indent 2 }}
 {{ (.Files.Glob "patches/**/*.sql").AsConfig | indent 2 }}
+
+---
+
+# --- initdb ConfigMap (for Postgres startup) ---
+{{- if .Values.postgresql.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ska-dlm-postgresql-initdb-{{ .Release.Name }}
+  namespace: {{ .Release.Namespace }}
+data:
+  01_grants.sql: |-
+    GRANT CREATE ON DATABASE {{ .Values.postgresql.auth.database }} TO {{ .Values.postgresql.auth.username }};
+{{- end }}
