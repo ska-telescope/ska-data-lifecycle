@@ -468,8 +468,8 @@ class OidPhaseEnforceHeuristic(BaseHeuristic):
 
             # Query all UID phases for this OID
             uid_stmt = select(Storage.storage_phase).where(
-                DataItem.OID == oid,
-                DataItem.storage_id == Storage.storage_id)
+                DataItem.OID == oid, DataItem.storage_id == Storage.storage_id
+            )
             uid_result = await self.session.execute(uid_stmt)
             uid_phases = [row[0] for row in uid_result.fetchall()]
 

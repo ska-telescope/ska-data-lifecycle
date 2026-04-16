@@ -22,6 +22,7 @@ HEURISTIC_POLL_INTERVAL = int(os.getenv("DLM_HEURISTIC_POLL_INTERVAL", "10"))
 
 async def heuristic_process_loop(stop_event: asyncio.Event):
     """Run heuristic iteration until stop event is set."""
+    # pylint: disable=too-many-locals
     engine = create_async_sql_engine(HEURISTIC_DATABASE_URL)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
