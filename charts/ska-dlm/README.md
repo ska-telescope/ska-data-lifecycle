@@ -7,20 +7,26 @@ The main configuration options are:
  * `global.ingress.enabled`: If set to false, no Ingress resources will be created, meaning external access to services like pgweb and PostgREST will be unavailable. Set to true to expose these services outside the cluster.
  * `postgresql.enabled`: If true, a local PostgreSQL instance will be deployed. Otherwise, an external PostgreSQL service is assumed.
  * `postgresql.primary.persistence.enabled`: If enabled, PostgreSQL will persist data between executions, otherwise it will start from scratch each time.
- * `database.migration.enabled`: If true, the DLM tables will be created automatically in the database. Must be true for any base or patch migration to run. See [Database Migrations](#database-migrations) for more information.
- * `database.migration.image`: The Docker image used for executing SQL migration jobs (default: `postgres`)
- * `database.migration.version`: Version tag of the migration image (default: 17.4).
+ * `ska-db-migrations.runMigrations`: True by default. When enabled, a Liquibase job is run to apply database migrations during deployment.
+
 
 ## Authentication
 
-DB authentication details for PostgREST are stored in a Kubernetes `Secret`.
-The `Secret` is **always** automatically created to point to the internal PostgreSQL server, if that is enabled.
-Otherwise, the following Helm values under `postgrest.db_auth_secret` take effect:
+Database authentication details for PostgREST are provided via a Kubernetes 'Secret'.
 
- * `create`: Whether to create a `Secret` or not.
-   * If unset, an existing one has to be provided via `name`.
-   * If set, the `Secret` is created from the Vault contents at `vault.{mount,path,type}`.
- * In both cases, the `Secret` should provide the following keys: `PGHOST`, `PGUSER`, `PGPASSWORD` and `PGDATABASE`.
+* `postgrest.db_auth_secret.create`: Whether to create the Secret.
+
+  * If `true` (default for `postgresql.enabled=true`), the Secret is created automatically using the credentials defined under `postgresql.auth`:
+
+    - `postgresql.auth.username`
+    - `postgresql.auth.password`
+    - `postgresql.auth.database`
+
+  * If `false`, an existing Secret must be provided via
+    `ska-db-migrations.dbCredentialsSecretName`.
+
+* In all cases, the Secret must contain the following keys:
+  `PGHOST`, `PGUSER`, `PGPASSWORD` and `PGDATABASE`.
 
 ## Shared volume
 

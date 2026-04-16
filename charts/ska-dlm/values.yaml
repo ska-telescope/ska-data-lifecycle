@@ -5,7 +5,7 @@
 # ------ Global configuration (shared across components / subcharts) ------
 global:
   ingress:
-    enabled: true
+    enabled: false
     domainName: "sdhp.stfc.skao.int"  # required for whitelisting redirects
   development: true  # true for local deployment (to trigger gateway & keycloak)
   storageClass: "localdisk"  # existing storage class
