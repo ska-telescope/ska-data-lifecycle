@@ -60,11 +60,11 @@ intent: production
 
 {{/* PostgreSQL service name */}}
 {{- define "ska-dlm.postgresql.name" -}}
-{{- printf "%s-%s" .Release.Name .Values.postgresql.nameOverride -}}
+{{- printf "%s-postgresql" .Release.Name -}}
 {{- end -}}
 
 {{/*
-Generates the PostgreREST Secret name. 
+Generates the PostgREST Secret name.
 Uses the subchart value as the single source of truth.
 */}}
 {{- define "ska-dlm.postgrest.db-auth-secret-name" -}}
