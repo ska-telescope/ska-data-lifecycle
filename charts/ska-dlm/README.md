@@ -1,11 +1,11 @@
 # SKA Data Lifecycle Management Chart
 
-This chart installs the DLM services, including PostgREST and, optionally, a PostgreSQL instance via the Bitnami chart.
+This chart installs the DLM services, including PostgREST and, optionally, a local PostgreSQL instance for development purposes.
 
 The main configuration options are:
 
  * `global.ingress.enabled`: If set to false, no Ingress resources will be created, meaning external access to services like pgweb and PostgREST will be unavailable. Set to true to expose these services outside the cluster.
- * `postgresql.enabled`: If true, a PostgreSQL instance will be deployed via the Bitnami chart. Otherwise, an external PostgreSQL service is assumed.
+ * `postgresql.enabled`: If true, a local PostgreSQL instance will be deployed. Otherwise, an external PostgreSQL service is assumed.
  * `postgresql.primary.persistence.enabled`: If enabled, PostgreSQL will persist data between executions, otherwise it will start from scratch each time.
  * `database.migration.enabled`: If true, the DLM tables will be created automatically in the database. Must be true for any base or patch migration to run. See [Database Migrations](#database-migrations) for more information.
  * `database.migration.image`: The Docker image used for executing SQL migration jobs (default: `postgres`)
@@ -198,13 +198,7 @@ Note: The v1.1.2 directory holds the code required to migrate the database *from
   minikube addons enable ingress
   ```
 
-* Add the Helm repositories required by `Chart.yaml`:
-  ```sh
-  helm repo add <name> <url>
-  helm repo update
-  ```
-
-* From the root directory of this repository, download the Helm dependencies and initialise the database:
+* From the root directory of this repository, install Helm chart dependencies (as defined in `Chart.yaml` / `Chart.lock`):
   ```sh
   make k8s-dep-build
   ```
@@ -248,10 +242,9 @@ To deploy in a cluster k8s environment, DevOps can:
 
 * Select the Kubernetes environment via `export KUBECONFIG="path to kubeconfig"`
 * Modify the `resources/<location>-values.yaml` file to override helm values
-* Install the release using the following commands:
+* Install chart dependencies and build them:
 
 ```bash
-helm repo add bitnami https://charts.bitnami.com/bitnami
 make k8s-dep-build
 
 KUBE_NAMESPACE=<prod-namespace> HELM_RELEASE=<prod-release-name> HELM_VALUES=resources/<values_file> K8S_SKIP_NAMESPACE=1 make k8s-install-chart

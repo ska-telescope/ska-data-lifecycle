@@ -126,19 +126,12 @@ ska-db-migrations:
 
 postgresql:
   enabled: true  # whether to deploy a local 'test' DB instead of connecting to an existing DB
-  # nameOverride: postgresql
 
   auth:
   # Used for local PostgreSQL bootstrap when postgresql.enabled=true
     username: ska_dlm_admin
     password: password
     database: ska_dlm
-
-  # image:
-  #   repository: postgres # docker.io has a pull limit of 100 per 6 hours per IP, 200 for authenticated users
-  #   tag: "17-bookworm"
-  #   pullPolicy: Always  # Always for fresh pulls
-    # debug: true
 
   primary:
     containerSecurityContext:
@@ -198,7 +191,7 @@ keycloak:
 # ------ Optional utilities ------
 
 pgweb:  # see https://github.com/ectobit/charts/tree/main/pgweb
-  enabled: true  # enable web IDE access to Postgres
+  enabled: false  # enable web IDE access to Postgres
   ingress:
     enabled: true
     annotations:

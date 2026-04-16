@@ -128,16 +128,10 @@ To turn off authentication:
 
 DLM also provides a Helm chart that is tested weekly through the SKA GitLab test runners and can also be run locally with Minikube. The following commands only need to be run once to prepare the test environment.
 
-- Add the Helm repositories required by `Chart.yaml`:
-```bash
-  helm repo add <name> <url>
-  helm repo update
-```
-
-- From the root directory of this repository, download the Helm dependencies and initialise the database:
-```bash
+- From the root directory of this repository, install Helm chart dependencies (as defined in `Chart.yaml` / `Chart.lock`):
+  ```sh
   make k8s-dep-build
-```
+  ```
 
 - Start minikube
 ```bash
@@ -145,7 +139,7 @@ DLM also provides a Helm chart that is tested weekly through the SKA GitLab test
   minikube addons enable ingress
 ```
 
-- On Apple Silicon Macs, also start a Minikube tunnel:
+- On Apple Silicon Macs, you might also have to start a Minikube tunnel:
 ```bash
   minikube tunnel
 ```
