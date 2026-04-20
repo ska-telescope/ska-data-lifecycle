@@ -118,7 +118,7 @@ ska-db-migrations:
   dbCredentialsSecretName: "{{ .Release.Name }}-ska-dlm-postgrest-secret"
   configMapName: "ska-dlm-db-migrations-{{ .Release.Name }}"
   liquibase:
-    contextFilter: ""
+    contextFilter: "create-schema" # "default" or a combination of "create-db,create-schema"
     changelogFile: changelog.yaml
     ttlSecondsAfterFinished: 300
 

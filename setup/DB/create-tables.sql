@@ -1,6 +1,6 @@
 --liquibase formatted sql
 
---changeset dlm:initial-tables-and-lookups context:unprivileged splitStatements:false
+--changeset dlm:initial-tables-and-lookups splitStatements:false
 SET search_path TO dlm;
 
 --

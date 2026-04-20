@@ -1,20 +1,8 @@
 --liquibase formatted sql
 
---changeset dlm:create-schema splitStatements:false
 -- DLM enum definitions
 
--- As this is the first script to run in the base deploy,
--- it must ensure the schema exists and the search_path is set
-
--- verify that the user has CREATE permission within the DB before checking existence or creating a schema
-DO $$
-BEGIN
-   IF has_database_privilege(current_user, current_database(), 'CREATE') THEN
-   CREATE SCHEMA IF NOT EXISTS dlm;
-   END IF;
-END $$ LANGUAGE plpgsql;
-
---changeset dlm:create-enum-types context:unprivileged splitStatements:false
+--changeset dlm:create-enum-types splitStatements:false
 SET search_path TO dlm;
 
 DO $$ BEGIN

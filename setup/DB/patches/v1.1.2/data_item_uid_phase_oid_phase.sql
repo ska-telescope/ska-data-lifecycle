@@ -1,6 +1,6 @@
 --liquibase formatted sql
 
---changeset dlm:v1.1.2-uid-oid-phase context:unprivileged splitStatements:false
+--changeset dlm:v1.1.2-uid-oid-phase splitStatements:false
 -- Add column (safe to re-run)
 ALTER TABLE data_item
   ADD COLUMN IF NOT EXISTS oid_phase VARCHAR DEFAULT 'GAS';
