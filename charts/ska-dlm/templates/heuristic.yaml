@@ -37,7 +37,59 @@ spec:
       initContainers:
         - name: wait-for-postgres
           image: postgres:17.4
-          command: ['sh', '-c', 'until pg_isready -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE"; do echo waiting for database; sleep 2; done;']
+          command:
+            - sh
+            - -c
+            - |
+              until pg_isready -h "$PGHOST" -p "${PGPORT:-5432}" -U "$PGUSER" -d "$PGDATABASE"; do
+                echo "waiting for database"
+                sleep 2
+              done
+
+              echo "Database is reachable."
+
+          env:
+            {{- range $envvar_name := tuple "PGUSER" "PGPASSWORD" "PGHOST" "PGDATABASE" }}
+            - name: {{ $envvar_name }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
+                  key: {{ $envvar_name }}
+            {{- end }}
+            - name: PGPORT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
+                  key: PGPORT
+                  optional: true
+
+        - name: wait-for-liquibase-finished # waits for Liquibase to be finished, but does not guarantee success.
+          image: postgres:17.4
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for Liquibase lock table..."
+              until PGPASSWORD="$PGPASSWORD" psql \
+                -h "$PGHOST" \
+                -p "${PGPORT:-5432}" \
+                -U "$PGUSER" \
+                -d "$PGDATABASE" \
+                -tAc "SELECT 1 FROM information_schema.tables WHERE table_name='databasechangeloglock'" | grep -q 1; do
+                sleep 2
+              done
+
+              echo "Waiting for Liquibase to finish..."
+              until PGPASSWORD="$PGPASSWORD" psql \
+                -h "$PGHOST" \
+                -p "${PGPORT:-5432}" \
+                -U "$PGUSER" \
+                -d "$PGDATABASE" \
+                -tAc "SELECT NOT locked FROM databasechangeloglock WHERE id = 1" | grep -q t; do
+                sleep 2
+              done
+
+              echo "Liquibase is no longer running."
           env:
             {{- range $envvar_name := tuple "PGUSER" "PGPASSWORD" "PGHOST" "PGDATABASE" }}
             - name: {{ $envvar_name }}
@@ -59,27 +111,17 @@ spec:
             - sh
             - -c
             - |
-              echo "Waiting for dlm schema to exist..."
-              until PGPASSWORD="$PGPASSWORD" psql \
-                -h "$PGHOST" \
-                -p "${PGPORT:-5432}" \
-                -U "$PGUSER" \
-                -d "$PGDATABASE" \
-                -tAc "SELECT 1 FROM information_schema.schemata WHERE schema_name='dlm'" | grep -q 1; do
-                sleep 2
-              done
-
               echo "Waiting for dlm tables to exist..."
               until PGPASSWORD="$PGPASSWORD" psql \
                 -h "$PGHOST" \
                 -p "${PGPORT:-5432}" \
                 -U "$PGUSER" \
                 -d "$PGDATABASE" \
-                -tAc "SELECT 1 FROM information_schema.tables WHERE table_schema='dlm' LIMIT 1" | grep -q 1; do
+                -tAc "SELECT 1 FROM information_schema.tables WHERE table_schema='dlm' AND table_name='data_item'" | grep -q 1; do
                 sleep 2
               done
 
-              echo "Database is ready."
+              echo "Database schema looks ready."
           env:
             {{- range $envvar_name := tuple "PGUSER" "PGPASSWORD" "PGHOST" "PGDATABASE" }}
             - name: {{ $envvar_name }}
