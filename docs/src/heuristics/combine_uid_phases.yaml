@@ -8,12 +8,10 @@ sequenceDiagram
     participant DB as DLM Database
 
     
-    Admin->>Controller: Retrieve data_item combined phase (OID)
+    Admin->>Controller: Retrieve data_item combined phase (uid_phases)
     Controller->>Heuristic: Trigger Heuristic Execution
     
     Note over Heuristic, DB: Combine Phase Heuristic Execution
-    Heuristic->>DB: Query OID (all UIDs)
-    DB-->>Heuristic: Return OID, UIDs, uid_phases
     rect rgb(200, 210, 235)
         Heuristic->>Heuristic: Calculate actual_phase (uid_phases)
     end

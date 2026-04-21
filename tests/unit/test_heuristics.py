@@ -1,3 +1,4 @@
+# pylint: disable=C0302
 """Unit tests for DLM heuristics."""
 
 import uuid
@@ -8,6 +9,7 @@ import pytest
 from ska_dlm.common_types import PhaseType
 from ska_dlm.dlm_heuristics.heuristics import (
     BaseHeuristic,
+    ChangeOidPhaseHeuristic,
     CombineUidPhasesHeuristic,
     DecreaseOidPhaseHeuristic,
     DeleteUidHeuristic,
@@ -155,20 +157,404 @@ class TestIncreaseOidPhaseHeuristic:
         return IncreaseOidPhaseHeuristic(mock_session)
 
     @pytest.mark.asyncio
-    async def test_execute(self, heuristic):
-        """Test executing increase heuristic."""
+    async def test_invalid_target_phase(self, heuristic):
+        """Test when target phase does not provide higher resilience."""
         oid = uuid.uuid4()
-        current_phase = PhaseType.GAS
-        target_phase = PhaseType.LIQUID
+        current_phase = PhaseType.LIQUID
+        target_phase = PhaseType.GAS  # GAS has lower resilience (higher order)
 
         result = await heuristic.execute(oid, current_phase, target_phase)
 
+        assert result.success is False
+        assert "does not provide higher resilience" in result.message
+
+    @pytest.mark.asyncio
+    async def test_execute_not_implemented(self, heuristic):
+        """Test that UID creation is not yet implemented."""
+        oid = uuid.uuid4()
+        current_phase = PhaseType.GAS
+        target_phase = PhaseType.LIQUID  # LIQUID has higher resilience (lower order)
+
+        result = await heuristic.execute(oid, current_phase, target_phase)
+
+        assert result.success is False
+        assert "not yet fully implemented" in result.message
+
+
+class TestChangeOidPhaseHeuristic:
+    """Test ChangeOidPhaseHeuristic class."""
+
+    @pytest.fixture
+    def mock_session(self):
+        """Create a mock async session."""
+        return AsyncMock()
+
+    @pytest.fixture
+    def heuristic(self, mock_session):
+        """Create ChangeOidPhaseHeuristic instance."""
+        return ChangeOidPhaseHeuristic(mock_session)
+
+    @pytest.mark.asyncio
+    async def test_no_data_found_for_oid(self, heuristic, mock_session):
+        """Test when no data is found for the OID."""
+        oid = uuid.uuid4()
+
+        mock_result = MagicMock()
+        mock_result.scalar.return_value = None
+        mock_session.execute.return_value = mock_result
+
+        result = await heuristic.execute(oid)
+
+        assert result.success is False
+        assert result.message == f"No data found for OID {oid}"
+
+    @pytest.mark.asyncio
+    async def test_no_uids_found_for_oid(self, heuristic, mock_session):
+        """Test when no UIDs are found for the OID."""
+        oid = uuid.uuid4()
+
+        # Mock the OID query
+        mock_data_item = MagicMock()
+        mock_data_item.target_phase = PhaseType.SOLID
+        mock_data_item.OID_phase = PhaseType.GAS
+
+        mock_oid_result = MagicMock()
+        mock_oid_result.scalar.return_value = mock_data_item
+
+        # Mock the UID query to return empty
+        mock_uid_result = MagicMock()
+        mock_uid_result.fetchall.return_value = []
+
+        mock_session.execute.side_effect = [mock_oid_result, mock_uid_result]
+
+        result = await heuristic.execute(oid)
+
+        assert result.success is False
+        assert result.message == f"No UIDs found for OID {oid}"
+
+    @pytest.mark.asyncio
+    async def test_combine_heuristic_failure(self, heuristic, mock_session):
+        """Test when combine heuristic fails."""
+        oid = uuid.uuid4()
+        uid1 = uuid.uuid4()
+
+        # Mock the OID query
+        mock_data_item = MagicMock()
+        mock_data_item.target_phase = PhaseType.SOLID
+        mock_data_item.OID_phase = PhaseType.LIQUID
+
+        mock_oid_result = MagicMock()
+        mock_oid_result.scalar.return_value = mock_data_item
+
+        # Mock the UID query
+        mock_uid_result = MagicMock()
+        mock_uid_result.fetchall.return_value = [(PhaseType.GAS, uid1)]
+
+        mock_session.execute.side_effect = [mock_oid_result, mock_uid_result]
+
+        # Mock combine heuristic to fail
+        heuristic.combine_heuristic.execute = AsyncMock(
+            return_value=HeuristicResult(False, "Combine failed")
+        )
+
+        result = await heuristic.execute(oid)
+
+        assert result.success is False
+        assert result.message == "Combine failed"
+
+    @pytest.mark.asyncio
+    async def test_phases_already_match(self, heuristic, mock_session):
+        """Test when target phase equals actual phase and OID phase matches."""
+        oid = uuid.uuid4()
+        uid1 = uuid.uuid4()
+
+        # Mock the OID query
+        mock_data_item = MagicMock()
+        mock_data_item.target_phase = PhaseType.LIQUID
+        mock_data_item.OID_phase = PhaseType.LIQUID
+
+        mock_oid_result = MagicMock()
+        mock_oid_result.scalar.return_value = mock_data_item
+
+        # Mock the UID query
+        mock_uid_result = MagicMock()
+        mock_uid_result.fetchall.return_value = [(PhaseType.LIQUID, uid1)]
+
+        mock_session.execute.side_effect = [mock_oid_result, mock_uid_result]
+
+        # Mock combine heuristic
+        heuristic.combine_heuristic.execute = AsyncMock(
+            return_value=BaseHeuristic.success_result(
+                "Combined", {"actual_phase": PhaseType.LIQUID}
+            )
+        )
+
+        result = await heuristic.execute(oid)
+
+        assert result.success is True
+        assert result.message == f"OID {oid} already at target phase {PhaseType.LIQUID}"
+        assert result.data["current_phase"] == PhaseType.LIQUID
+
+    @pytest.mark.asyncio
+    async def test_delete_uids_to_decrease_resilience(self, heuristic, mock_session):
+        """Test deleting UIDs when target phase requires lower resilience."""
+        oid = uuid.uuid4()
+        uid1 = uuid.uuid4()
+        uid2 = uuid.uuid4()
+
+        # Mock the OID query
+        mock_data_item = MagicMock()
+        mock_data_item.target_phase = PhaseType.GAS  # Target: lower resilience (1)
+        mock_data_item.OID_phase = PhaseType.LIQUID
+
+        mock_oid_result = MagicMock()
+        mock_oid_result.scalar.return_value = mock_data_item
+
+        # Mock the UID query - has 2 UIDs with LIQUID phase
+        mock_uid_result = MagicMock()
+        mock_uid_result.fetchall.return_value = [
+            (PhaseType.GAS, uid1),
+            (PhaseType.GAS, uid2),
+        ]
+
+        # Mock the update query
+        mock_update_result = MagicMock()
+
+        mock_session.execute.side_effect = [
+            mock_oid_result,
+            mock_uid_result,
+            mock_update_result,
+        ]
+
+        # Mock combine heuristic - actual phase is LIQUID (higher resilience than target)
+        heuristic.combine_heuristic.execute = AsyncMock(
+            return_value=BaseHeuristic.success_result(
+                "Combined", {"actual_phase": PhaseType.LIQUID}
+            )
+        )
+
+        # Mock delete heuristic - deletion succeeds and brings us to target phase
+        heuristic.delete_heuristic.execute = AsyncMock(
+            side_effect=[
+                HeuristicResult(
+                    True,
+                    "Deleted UID",
+                    {"result_phase": PhaseType.GAS, "uid": uid1, "oid": oid},
+                ),
+            ]
+        )
+
+        result = await heuristic.execute(oid)
+
         assert result.success is True
         assert (
-            result.message
-            == f"Increased OID {oid} phase from {current_phase} towards {target_phase}"
+            f"Deleted UID instances to reach OID {oid} target phase {PhaseType.GAS}"
+            in result.message
         )
-        assert result.data == {}
+        assert result.data["target_phase"] == PhaseType.GAS
+        assert result.data["result_phase"] == PhaseType.GAS
+        mock_session.commit.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_delete_uids_multiple_iterations(self, heuristic, mock_session):
+        """Test deleting multiple UIDs until reaching target phase."""
+        oid = uuid.uuid4()
+        uid1 = uuid.uuid4()
+        uid2 = uuid.uuid4()
+        uid3 = uuid.uuid4()
+
+        # Mock the OID query
+        mock_data_item = MagicMock()
+        mock_data_item.target_phase = PhaseType.GAS  # Target: minimum resilience
+        mock_data_item.OID_phase = PhaseType.SOLID
+
+        mock_oid_result = MagicMock()
+        mock_oid_result.scalar.return_value = mock_data_item
+
+        # Mock the UID query - has 3 UIDs
+        mock_uid_result = MagicMock()
+        mock_uid_result.fetchall.return_value = [
+            (PhaseType.GAS, uid1),
+            (PhaseType.GAS, uid2),
+            (PhaseType.GAS, uid3),
+        ]
+
+        # Mock the update query
+        mock_update_result = MagicMock()
+
+        mock_session.execute.side_effect = [
+            mock_oid_result,
+            mock_uid_result,
+            mock_update_result,
+        ]
+
+        # Mock combine heuristic
+        heuristic.combine_heuristic.execute = AsyncMock(
+            return_value=BaseHeuristic.success_result(
+                "Combined", {"actual_phase": PhaseType.SOLID}
+            )
+        )
+
+        # Mock delete heuristic - multiple deletions reach target phase
+        heuristic.delete_heuristic.execute = AsyncMock(
+            side_effect=[
+                HeuristicResult(
+                    True,
+                    "Deleted UID 1",
+                    {"result_phase": PhaseType.LIQUID, "uid": uid1, "oid": oid},
+                ),
+                HeuristicResult(
+                    True,
+                    "Deleted UID 2",
+                    {"result_phase": PhaseType.GAS, "uid": uid2, "oid": oid},
+                ),
+            ]
+        )
+
+        result = await heuristic.execute(oid)
+
+        assert result.success is True
+        assert result.data["target_phase"] == PhaseType.GAS
+        assert result.data["result_phase"] == PhaseType.GAS
+        assert len(result.data["deletion_results"]) == 2
+        assert result.data["deletion_results"][0]["success"] is True
+        assert result.data["deletion_results"][1]["success"] is True
+
+    @pytest.mark.asyncio
+    async def test_delete_uids_fails_midway(self, heuristic, mock_session):
+        """Test when UID deletion fails midway through process."""
+        oid = uuid.uuid4()
+        uid1 = uuid.uuid4()
+        uid2 = uuid.uuid4()
+
+        # Mock the OID query
+        mock_data_item = MagicMock()
+        mock_data_item.target_phase = PhaseType.GAS
+        mock_data_item.OID_phase = PhaseType.SOLID
+
+        mock_oid_result = MagicMock()
+        mock_oid_result.scalar.return_value = mock_data_item
+
+        # Mock the UID query
+        mock_uid_result = MagicMock()
+        mock_uid_result.fetchall.return_value = [
+            (PhaseType.LIQUID, uid1),
+            (PhaseType.LIQUID, uid2),
+        ]
+
+        mock_session.execute.side_effect = [mock_oid_result, mock_uid_result]
+
+        # Mock combine heuristic
+        heuristic.combine_heuristic.execute = AsyncMock(
+            return_value=BaseHeuristic.success_result(
+                "Combined", {"actual_phase": PhaseType.SOLID}
+            )
+        )
+
+        # Mock delete heuristic - first deletion succeeds, second fails
+        heuristic.delete_heuristic.execute = AsyncMock(
+            side_effect=[
+                HeuristicResult(
+                    True,
+                    "Deleted UID 1",
+                    {"result_phase": PhaseType.LIQUID, "uid": uid1, "oid": oid},
+                ),
+                HeuristicResult(False, "Failed to delete UID 2"),
+            ]
+        )
+
+        result = await heuristic.execute(oid)
+
+        assert result.success is False
+        assert "Failed to reach target phase PhaseType.GAS" in result.message
+        assert result.data["deletion_results"][0]["success"] is True
+        assert result.data["deletion_results"][1]["success"] is False
+
+    @pytest.mark.asyncio
+    async def test_create_uids_not_implemented(self, heuristic, mock_session):
+        """Test that creating UIDs to increase phase is not yet implemented."""
+        oid = uuid.uuid4()
+        uid1 = uuid.uuid4()
+
+        # Mock the OID query
+        mock_data_item = MagicMock()
+        mock_data_item.target_phase = PhaseType.SOLID  # Target: higher resilience (3)
+        mock_data_item.OID_phase = PhaseType.GAS
+
+        mock_oid_result = MagicMock()
+        mock_oid_result.scalar.return_value = mock_data_item
+
+        # Mock the UID query - has GAS phase (lower resilience than target)
+        mock_uid_result = MagicMock()
+        mock_uid_result.fetchall.return_value = [(PhaseType.GAS, uid1)]
+
+        mock_session.execute.side_effect = [mock_oid_result, mock_uid_result]
+
+        # Mock combine heuristic
+        heuristic.combine_heuristic.execute = AsyncMock(
+            return_value=BaseHeuristic.success_result("Combined", {"actual_phase": PhaseType.GAS})
+        )
+
+        result = await heuristic.execute(oid)
+
+        assert result.success is False
+        assert "Creating additional UID instances" in result.message
+        assert "not yet implemented" in result.message
+
+    @pytest.mark.asyncio
+    async def test_update_oid_phase_when_mismatch(self, heuristic, mock_session):
+        """Test updating OID_phase when it doesn't match actual_phase."""
+        oid = uuid.uuid4()
+        uid1 = uuid.uuid4()
+
+        # Mock the OID query - OID_phase = GAS, target_phase = LIQUID
+        mock_data_item = MagicMock()
+        mock_data_item.target_phase = PhaseType.LIQUID
+        mock_data_item.OID_phase = PhaseType.GAS
+
+        mock_oid_result = MagicMock()
+        mock_oid_result.scalar.return_value = mock_data_item
+
+        # Mock the UID query - actual phase is LIQUID
+        mock_uid_result = MagicMock()
+        mock_uid_result.fetchall.return_value = [(PhaseType.LIQUID, uid1)]
+
+        # Mock the update query
+        mock_update_result = MagicMock()
+
+        mock_session.execute.side_effect = [
+            mock_oid_result,
+            mock_uid_result,
+            mock_update_result,
+        ]
+
+        # Mock combine heuristic
+        heuristic.combine_heuristic.execute = AsyncMock(
+            return_value=BaseHeuristic.success_result(
+                "Combined", {"actual_phase": PhaseType.LIQUID}
+            )
+        )
+
+        result = await heuristic.execute(oid)
+
+        assert result.success is True
+        assert "already at target phase" in result.message
+        mock_session.commit.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_exception_handling(self, heuristic, mock_session):
+        """Test exception handling in the heuristic."""
+        oid = uuid.uuid4()
+
+        # Mock the OID query to raise an exception
+        mock_session.execute.side_effect = Exception("Database error")
+
+        result = await heuristic.execute(oid)
+
+        assert result.success is False
+        assert "Error executing Change OID Phase heuristic" in result.message
+        assert "Database error" in result.message
+        mock_session.rollback.assert_called_once()
 
 
 class TestDecreaseOidPhaseHeuristic:
@@ -185,20 +571,38 @@ class TestDecreaseOidPhaseHeuristic:
         return DecreaseOidPhaseHeuristic(mock_session)
 
     @pytest.mark.asyncio
-    async def test_execute(self, heuristic):
-        """Test executing decrease heuristic."""
+    async def test_invalid_target_phase(self, heuristic):
+        """Test when target phase does not provide lower resilience."""
         oid = uuid.uuid4()
-        current_phase = PhaseType.SOLID
-        target_phase = PhaseType.LIQUID
+        current_phase = PhaseType.GAS
+        target_phase = PhaseType.LIQUID  # LIQUID has higher resilience (lower order)
 
         result = await heuristic.execute(oid, current_phase, target_phase)
 
-        assert result.success is True
-        assert (
-            result.message
-            == f"Decreased OID {oid} phase from {current_phase} towards {target_phase}"
+        assert result.success is False
+        assert "does not provide lower resilience" in result.message
+
+    @pytest.mark.asyncio
+    async def test_execute_not_implemented(self, heuristic, mock_session):
+        """Test that UID deletion is not fully implemented."""
+        oid = uuid.uuid4()
+        uid1 = uuid.uuid4()
+        current_phase = PhaseType.SOLID
+        target_phase = PhaseType.GAS  # GAS has lower resilience (higher order)
+
+        # Mock the UID query
+        mock_uid_result = MagicMock()
+        mock_uid_result.fetchall.return_value = [(uid1,)]
+        mock_session.execute.return_value = mock_uid_result
+
+        # Mock delete heuristic
+        heuristic.delete_heuristic.execute = AsyncMock(
+            return_value=HeuristicResult(False, "Delete failed")
         )
-        assert result.data == {}
+
+        result = await heuristic.execute(oid, current_phase, target_phase)
+
+        assert result.success is False
 
 
 class TestUidExpiryHeuristic:
@@ -465,28 +869,26 @@ class TestOidPhaseEnforceHeuristic:
 
     @pytest.mark.asyncio
     async def test_increase_heuristic_called(self, heuristic, mock_session):
-        """Test calling increase heuristic when target < actual."""
+        """Test calling increase heuristic when target > actual."""
         oid = uuid.uuid4()
 
-        # Mock OID phase query (OID_phase = GAS, target_phase = GAS)
+        # Mock OID phase query (OID_phase = GAS, target_phase = SOLID - more resilient)
         mock_data_item = MagicMock()
         mock_data_item.OID_phase = PhaseType.GAS
-        mock_data_item.target_phase = PhaseType.GAS
+        mock_data_item.target_phase = PhaseType.SOLID
 
         mock_oid_result = MagicMock()
         mock_oid_result.scalar.return_value = mock_data_item
         mock_session.execute.return_value = mock_oid_result
 
-        # Mock UID phases query (UIDs have SOLID - higher than target)
+        # Mock UID phases query (UIDs have GAS - lower than target)
         mock_uid_result = MagicMock()
-        mock_uid_result.fetchall.return_value = [(PhaseType.SOLID,)]
+        mock_uid_result.fetchall.return_value = [(PhaseType.GAS,)]
         mock_session.execute.side_effect = [mock_oid_result, mock_uid_result]
 
-        # Mock combine heuristic
+        # Mock combine heuristic - actual phase is GAS
         heuristic.combine_heuristic.execute = AsyncMock(
-            return_value=BaseHeuristic.success_result(
-                "Combined", {"actual_phase": PhaseType.SOLID}
-            )
+            return_value=BaseHeuristic.success_result("Combined", {"actual_phase": PhaseType.GAS})
         )
 
         # Mock increase heuristic
@@ -497,7 +899,7 @@ class TestOidPhaseEnforceHeuristic:
 
         assert result == increase_result
         heuristic.increase_heuristic.execute.assert_called_once_with(
-            oid, PhaseType.GAS, PhaseType.GAS
+            oid, PhaseType.GAS, PhaseType.SOLID
         )
 
     @pytest.mark.asyncio
