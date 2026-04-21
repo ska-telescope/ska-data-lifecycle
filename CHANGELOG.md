@@ -4,6 +4,7 @@
 
 ### Added
 
+* Support for Liquibase.
 * Make uid expiration and oid expiration configurable.
 * `s3-no-check-bucket` flag to rclone copy for files.
 * Add `target_phase` to `data_item` table.
@@ -20,6 +21,7 @@
 
 ## Removed
 
+* Old custom database migration scripts.
 * Out-dated configuration files in `resources` directory.
 
 ## 1.3.2

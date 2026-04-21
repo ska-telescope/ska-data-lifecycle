@@ -9,7 +9,6 @@ data:
   changelog.yaml: |-
 {{ .Files.Get "changelog.yaml" | indent 4 }}
 {{ (.Files.Glob "initdb-scripts/*.sql").AsConfig | indent 2 }}
-{{ (.Files.Glob "patches/**/*.sql").AsConfig | indent 2 }}
 
 ---
 

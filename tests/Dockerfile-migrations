@@ -2,4 +2,3 @@ FROM liquibase/liquibase:4.33
 
 COPY charts/ska-dlm/changelog.yaml /changelog/changelog.yaml
 COPY charts/ska-dlm/initdb-scripts/*.sql /changelog/
-COPY charts/ska-dlm/patches/v1.1.2/*.sql /changelog/

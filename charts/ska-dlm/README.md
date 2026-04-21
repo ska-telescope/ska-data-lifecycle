@@ -181,14 +181,7 @@ To run the benchmarking pod:
 
 For details on the benchmark configuration, see the [documentation](../../scripts/README.md).
 
-## Schema changes by release
-
-### Working version
-
-Note: The v1.1.2 directory holds the code required to migrate the database *from* 1.1.2 to the *next* release.
-
-**Changes**:
-* `data_item.metadata` column changed from `json` to `jsonb`
+Database migrations are now managed using [Liquibase](https://www.liquibase.com/). Future schema changes will be defined in the Liquibase changelog.
 
 ## Test Deployment
 

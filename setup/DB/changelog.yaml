@@ -9,7 +9,3 @@ databaseChangeLog:
       file: 05_create_enum_types.sql
   - include:
       file: 10_create_tables.sql
-  - include:
-      file: 10_alter_data_item_metadata_to_jsonb.sql
-  - include:
-      file: 20_data_item_uid_phase_oid_phase.sql
