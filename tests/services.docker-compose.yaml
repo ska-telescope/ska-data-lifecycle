@@ -97,7 +97,7 @@ services:
       --search-path=/changelog
       --changelog-file=changelog.yaml
       update
-      --context-filter="create-schema"
+      --context-filter="create-db,create-schema"
     depends_on:
       dlm_db:
         condition: service_healthy
