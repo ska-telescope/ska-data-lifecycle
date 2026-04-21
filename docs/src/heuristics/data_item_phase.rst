@@ -12,16 +12,12 @@ The OID Phase Enforce heuristic is checking the consistency between the OID phas
 
 Combine UID Phase Heuristic
 +++++++++++++++++++++++++++
-Not yet implemented
+This heuristic is used by other heuristics to determine the combined phase (``actual_phase``) of a data_item referred to by an ``OID``. If the data_item is in a consistent state the ``actual_phase`` should be the same as the ``oid_phase``, which is also held in the DLM DB. 
 
 .. image:: ../_static/img/combine_uid_phases.svg
 
-Increase OID Phase Heuristic
+Change OID Phase Heuristic
 ++++++++++++++++++++++++++++
+This heuristic, if called directly, will attempt to change the OID phase to reach the requested target phase. This can be achieved by adding or removing an additional instance of the ``data_item`` or by moving it to a storage volume providing a higher/lower phase (resilience). This heuristic makes use of the ``combine_uid_phases`` heuristic above.
 
-.. image:: ../_static/img/increase_oid_phase.svg
-
-Decrease OID Phase Heuristic
-++++++++++++++++++++++++++++
-
-.. image:: ../_static/img/decrease_oid_phase.svg
+.. image:: ../_static/img/oid_phase_change.svg

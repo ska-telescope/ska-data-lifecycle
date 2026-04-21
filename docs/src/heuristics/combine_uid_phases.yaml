@@ -2,37 +2,21 @@ sequenceDiagram
     autonumber
     actor Admin as Storage Actor
     participant Controller as Heuristics Engine
-    participant Heuristic as UID Delete Heuristics
-    participant DB as DLM Database
     box rgb(200, 220, 255)
-        participant Combine as Combine UID Phases
+        participant Heuristic as Combine Phase Heuristic
     end
-    participant Manager as Storage Manager
-    participant Volume as Volume A
+    participant DB as DLM Database
 
     
-    Admin->>Controller: Request data_item Removal (UID)
+    Admin->>Controller: Retrieve data_item combined phase (OID)
     Controller->>Heuristic: Trigger Heuristic Execution
     
-    Note over Heuristic, Volume: UID Delete Heuristics Execution
+    Note over Heuristic, DB: Combine Phase Heuristic Execution
     Heuristic->>DB: Query OID (all UIDs)
-    DB-->>Heuristic: Return OID, UIDs, Phases & Hashes
+    DB-->>Heuristic: Return OID, UIDs, uid_phases
     rect rgb(200, 210, 235)
-        Heuristic->>Combine: Calculate Result Phase (UIDs - UID)
+        Heuristic->>Heuristic: Calculate actual_phase (uid_phases)
     end
-    Combine->>Heuristic: Result Phase
+    Heuristic->>Controller: actual_phase
     
-    alt Result Phase < Target Phase
-        Heuristic-->>Heuristic: STATUS: ERROR (Removal would violate resilience policy)
-        %% We could also try to move the UID to another volume        
-    else Result Phase >= Target Phase
-        Heuristic->>Manager: Delete UID payload
-        Manager->>Volume: Remove UID data_item payload
-        Manager-->>Heuristic: Deletion Confirmed
-        
-        Heuristic->>DB: Update Metadata (Mark UID as DELETED)
-        Heuristic->>DB: Update Metadata (Update OID Phase)
-        DB-->>Heuristic: Metadata Updated
-        Heuristic-->>Heuristic: STATUS: SUCCESS (Payload of UID removed)
-    end
-    Controller->>Admin: Removal Status (STATUS)
+    Controller->>Admin: Combined phase (actual_phase)

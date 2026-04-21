@@ -4,6 +4,6 @@ Once a data_item is registered with the DLM the database records will be maintai
 
 UID Deletion Heuristics
 -----------------------
-Data items can not be deleted without proper checks of the current and resulting resilience phase. If the resulting ``oid_phase`` is lower than the ``target_phase``, the system should not simply delete the UID payload. In the sequence diagram below this situation will lead to an error being raised. In future implementations of this heuristics we may want to create another UID on another volume and then delete the requested one. This alternate path relies on having enough flexibility in the available storage volumes, but as long as that is not the case there is very little that could be done.
+Data items can not be deleted without proper checks of the current and resulting resilience phase. If the resulting ``oid_phase`` would be lower than the ``target_phase``, the system should not simply delete the UID payload. In the sequence diagram below this situation will lead to an error being raised. In future implementations of this heuristics we may want to create another UID on another volume and then delete the requested one. This alternate path relies on having enough flexibility in the available storage volumes, but as long as that is not the case there is very little that could be done.
 
 .. image:: ../_static/img/deletion_diagram.svg

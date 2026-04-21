@@ -99,7 +99,7 @@ This service is implemented as a loop running until explicitely terminated. It e
   #. Re-balancing of capacity load when additional storage volumes become available.
   #. Regular data transfer queues between or across sites.
 
-Since the external heuristics and internal logic of these tasks can be quite complex and very use case dependent these tasks will be implemented as required. The default ones are the first four above, but also those are being implemented over the timeframe of several DLM releases.
+Since the external heuristics and internal logic of these tasks can be quite complex and very use case dependent these tasks will be implemented as required. The default ones are the first four above, but also those are being implemented over the timeframe of several DLM releases. Detailed information can be found in :ref:`heuristics`.
 
 Interfaces
 ----------
