@@ -27,12 +27,10 @@ from ska_dlm.dlm_storage import dlm_storage_requests
 
 # Phase hierarchy by resilience: higher number = higher resilience
 # Order from lowest to highest resilience: PLASMA, GAS, LIQUID, SOLID
-PHASE_ORDER = {
-    PhaseType.PLASMA: 0,  # Lowest resilience
-    PhaseType.GAS: 1,
-    PhaseType.LIQUID: 2,
-    PhaseType.SOLID: 3,  # Highest resilience
-}
+
+PHASE_ORDER = {v: p for p, v in enumerate(PhaseType)}
+PHASE_ORDER[PhaseType.SOLID] = 4
+n_PHASE_ORDER = {v: k for k, v in PHASE_ORDER.items()}
 
 
 class HeuristicResult:
@@ -90,10 +88,10 @@ class CombineUidPhasesHeuristic(BaseHeuristic):
     async def execute(self, uid_phases: List[PhaseType]) -> HeuristicResult:
         """Combine UID phases to determine the actual phase for an OID.
 
-        The logic here is to take the highest phase among all UIDs.
-        Phase hierarchy: PLASMA < GAS < LIQUID < SOLID
-        TODO: This implementation is worst case and does not cover the
-        actual combination of multiple lower phases.
+        The logic works with integers assigned to the PHASES:
+        PLASMA=0, GAS=1, LIQUID=2, SOLID=4 and using
+        2*GAS == LIQUID and 2*LIQUID == SOLID as well as
+        the special case of when the numeric combined phase 3 == LIQUID
 
         Args
         ----
@@ -108,25 +106,20 @@ class CombineUidPhasesHeuristic(BaseHeuristic):
         if not uid_phases:
             return HeuristicResult(False, "No UID phases provided")
 
-        n_SOLID = uid_phases.count(PhaseType.SOLID)
-        n_LIQUID = uid_phases.count(PhaseType.LIQUID)
         n_GAS = uid_phases.count(PhaseType.GAS)
-        n_PLASMA = uid_phases.count(PhaseType.PLASMA)
+        n_LIQUID = uid_phases.count(PhaseType.LIQUID)
+        n_SOLID = uid_phases.count(PhaseType.SOLID)
         # PLASMA does not really count for any resilience, even if combined
-        if n_PLASMA == len(uid_phases):
-            actual_phase = PhaseType.PLASMA
-        elif n_SOLID >= 1:
-            # if it is already SOLID we can't get any better anyway
-            actual_phase = PhaseType.SOLID
-        elif n_LIQUID >= 2 or n_GAS >= 3 or (n_LIQUID == 1 and n_GAS >= 2):
-            actual_phase = PhaseType.SOLID
-        elif (n_LIQUID == 1 and n_GAS <= 1) or (n_LIQUID == 0 and n_GAS == 2):
-            actual_phase = PhaseType.LIQUID
-        else:
-            actual_phase = PhaseType.GAS
-
+        n_combined_phase = (
+            n_GAS * PHASE_ORDER[PhaseType.GAS]
+            + n_LIQUID * PHASE_ORDER[PhaseType.LIQUID]
+            + n_SOLID * PHASE_ORDER[PhaseType.SOLID]
+        )
+        if n_combined_phase == 3:
+            n_combined_phase = 2
+        combined_phase = n_PHASE_ORDER[min(n_combined_phase, 4)]
         return self.success_result(
-            f"Combined phase: {actual_phase}", {"actual_phase": actual_phase}
+            f"Combined phase: {combined_phase}", {"actual_phase": combined_phase}
         )
 
 

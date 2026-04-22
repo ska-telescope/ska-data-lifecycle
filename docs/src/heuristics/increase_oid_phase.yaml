@@ -1,4 +1,3 @@
-%% PLACEHOLDER!!!!!
 sequenceDiagram
     autonumber
     actor Admin as DLM Actor
