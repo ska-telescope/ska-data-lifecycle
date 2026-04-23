@@ -105,11 +105,11 @@ postgrest:
     name: "" # secret name if using external DB
 
 
-heuristic:
-  component: heuristic
+heuristics:
+  component: heuristics
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: e03282c1
+  version: "1.3.2-dev.c0d5ea041"
   imagePullPolicy: Always
   replicas: 1
 
@@ -134,7 +134,7 @@ postgresql:  # see https://github.com/bitnami/charts/tree/main/bitnami/postgresq
   auth:
     username: ska_dlm_admin
     password: password
-    database: ska_dlm
+    database: dlm
 
   image:
     repository: postgres # docker.io has a pull limit of 100 per 6 hours per IP, 200 for authenticated users

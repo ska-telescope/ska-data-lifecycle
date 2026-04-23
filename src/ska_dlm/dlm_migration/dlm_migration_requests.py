@@ -341,7 +341,7 @@ def _create_migration_record(
     source_storage_id,
     destination_storage_id,
     authorization,
-    command
+    command,
     # pylint: disable=too-many-arguments,too-many-positional-arguments
 ):
     # decode the username from the authorization

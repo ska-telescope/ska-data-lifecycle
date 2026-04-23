@@ -19,7 +19,7 @@ packages = [{include="ska_dlm", from="src"}]
 [tool.poetry.scripts]
 ska-dlm = "ska_dlm.cli:main"
 ska-dlm-sm-service = "ska_dlm.dlm_storage.main:main"
-ska-dlm-heuristic-engine = "ska_dlm.dlm_heuristic_engine:main"
+ska-dlm-heuristics = "ska_dlm.dlm_heuristics:main"
 
 [[tool.poetry.source]]
 name = 'PyPI'
@@ -30,7 +30,7 @@ name = 'skao'
 url = 'https://artefact.skao.int/repository/pypi-internal/simple'
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = ">=3.10, <3.13"
 sqlalchemy = "^2.0.48"
 ska-ser-logging = "^0.4.1"
 requests = "^2.32.3"
@@ -51,6 +51,8 @@ click = "<=8.1.7"
 asyncpg = "^0.31.0"
 pytest = "^8.4.2"
 pytest-asyncio = "^1.2.0"
+aiosqlite = "^0.22.1"
+numpy = "<2.4.4"
 
 [tool.poetry.group.test.dependencies]
 black = "^23.3.0"
