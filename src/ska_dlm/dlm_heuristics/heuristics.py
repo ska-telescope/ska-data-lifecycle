@@ -346,7 +346,7 @@ class DeleteUidHeuristic(BaseHeuristic):
                 combine_result = await self.combine_heuristic.execute(remaining_phases)
                 if not combine_result.success:
                     return combine_result
-                # Step 2: Get resulting phase after deletion
+                # Step 3: Get resulting phase after deletion
                 result_phase = combine_result.data["actual_phase"]
             else:
                 # No remaining replicas; resilience phase reduces to GAS
