@@ -236,7 +236,7 @@ class ChangeOidPhaseHeuristic(BaseHeuristic):
                         {"deletion_results": deletion_results},
                     )
 
-                # Update OID_phase to target_phase
+                # Step 4: Update OID_phase to target_phase
                 update_stmt = (
                     update(DataItem).where(DataItem.OID == oid).values(OID_phase=target_phase)
                 )
