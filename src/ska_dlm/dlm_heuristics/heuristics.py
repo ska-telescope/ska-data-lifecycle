@@ -352,6 +352,7 @@ class DeleteUidHeuristic(BaseHeuristic):
                 # No remaining replicas; resilience phase reduces to GAS
                 result_phase = PhaseType.GAS
 
+            # Step 4: Reject if result phase < target phase
             if PHASE_ORDER[result_phase] < PHASE_ORDER[target_phase]:
                 # Here we could try to create another copy by
                 # calling the IncreaseOidPhaseHeuristic, once implemented
@@ -366,11 +367,11 @@ class DeleteUidHeuristic(BaseHeuristic):
                     },
                 )
 
-            # Delete payload from storage manager
+            # Step 5: Delete payload from storage manager
             if not dlm_storage_requests.delete_data_item_payload(str(uid)):
                 return HeuristicResult(False, f"Failed to delete payload for UID {uid}")
 
-            # Update UID metadata
+            # Step 6: Update UID metadata
             update_uid_stmt = (
                 update(DataItem)
                 .where(DataItem.UID == uid)
