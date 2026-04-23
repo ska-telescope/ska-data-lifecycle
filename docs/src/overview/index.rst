@@ -8,11 +8,11 @@ As outlined in the `design <https://confluence.skatelescope.org/display/SE/YAN-1
   - DLM Storage Manager
   - DLM Migration Manager
   - DLM Request Manager
-  - DLM DB
+  - DLM Heuristics Engine
 
-These managers are bound together by a 'hidden' service, which is DLM database. For operations, the DB engine is assumed to be provided, maintained and operated by other SKAO teams (and trains), but for the testing and evaluation a DB is installed and started locally. As a system the first thing which has to be up and running is the DLM DB. In operations this will require a High Avaliability Database setup and the load on this DB will be quite substantial. Actual numbers are dependent on the kind of data products from all over the organisation, which will eventually be managed by DLM. There is now a process in place to collect such information.
+These services are bound together by a 'hidden' service, which is the DLM database. For operations, the DB engine is assumed to be provided, maintained and operated by other SKAO teams (and trains), but for the testing and evaluation a DB is installed and started locally. As a system the first thing which has to be up and running is the DLM DB. In operations this will require a High Avaliability Database setup and the load on this DB will be quite substantial. Actual numbers are dependent on the kind of data products from all over the organisation, which will eventually be managed by DLM. There is now a process in place to collect such information.
 
-DLM is designed to accept arbitrary types and categories of data. It also allows to register and track relationships between data items. The most important features are centred around the management of the lifecycle and resilience of data items as well as the distribution over and across multiple, geographically distributed storage volumes featuring heterogenous performance and interface characteristics. The SKA-DLM initially targets posix based file systems as well as S3 storage. The end-user (or system) does not need to know any of the details of these storage volumes or even their existence. This separation will also allow the operators to add new types of volumes and remove retired or broken ones. Such functionality is foreseen and reflected by the DLM DB schema, but some of the functionality is not yet implemented.
+The DLM is designed to accept arbitrary types and categories of data. It also allows to register and track relationships between data items. The most important features are centred around the management of the lifecycle and resilience of data items as well as the distribution over and across multiple, geographically distributed storage volumes featuring heterogenous performance and interface characteristics. The SKA-DLM initially targets posix based file systems as well as S3 storage. The end-user (or system) does not need to know any of the details of these storage volumes or even their existence. This separation will also allow the operators to add new types of volumes and remove retired or broken ones. Such functionality is foreseen and reflected by the DLM DB schema, but some of the functionality is not yet implemented.
 
 The DLM DB service included with the code is not intended to be used in an operational deployment, but the DLM system will be a client of the observatory wide DB setup. The DLMingest and DLMrequest services are the main input and output services, respectively exposed to other subsystems and users. This requires APIs for subsystems and at least administrator and operator level user interfaces. Apart from a future Request Manager interface, end-users are not expected to access or use DLM directly. One of the early user interfaces is the SKA Data Product Dashboard.
 
@@ -22,12 +22,13 @@ The implementation structures the code accordingly into the following sub-module
 
   - ``data_item``, setter and update functions
   - ``dlm_db``, DB maintenance functions (currently empty)
+  - ``dlm_heuristics``, asynchronous loop running pluggable heuristics functions for data_item and storage checks and maintenance.
   - ``dlm_ingest``, data_item ingest and initialization functions
   - ``dlm_migration``, migration and copy functions
   - ``dlm_request``, query functions
   - ``dlm_storage``, location and storage initialization, configuration and query functions as well as data_item payload deletion.
 
-With exception of the ``dlm_db`` and the ``data_item`` modules these are currently implemented as FastAPI libraries and can be used through direct REST calls as well as by using the provided python function calls. All the managers are running their own FastAPI daemon.
+With exception of the ``dlm_db``, ``data_item`` and ``dlm_heuristics`` modules these are implemented as FastAPI libraries and can be used through direct REST calls as well as by using the provided python function calls. All the managers are running their own FastAPI daemon. All services are deployed in separate containers/pods.
 
 The Data Item Module
 --------------------
@@ -66,7 +67,7 @@ This is a FastAPI-based service and is implementing the storage manager logic. C
 
   #. delete_data_item_payload, Delete expired data_item payloads and setting the state to DELETED.
   #. Produce a copy of newly ingested data_items to one more configured storage backend. This is using the copy_data_item function of the dlm_migration module.
-  #. Stub for handling a phase change heuristic engine.
+  #. Stub for handling a phase change heuristics engine.
   #. Stub for handling capacity based data movements.
 
 The storage manager exposes a number of storage related functions and is also running a background daemon, (currently) polling the DB using some of the functions provided by the request manager module in intervals to retrieve lists of expired and newly ingested data_items, respectively and then use the delete and copy functions to act accordingly. The future implementations of the phase change and capacity engines will use the same functions as well to free up space on storage volumes running low in capacity, while still making sure that the required persistence level (phase) is maintained. In addition to the daemon functionality the storage manager module also exposes some of its internal functions.
@@ -87,6 +88,18 @@ The current implementation of this FastAPI based manager is limited to a number 
   - query_exists_and_ready, same as above, but only returns data_items if they are in READY state.
   - query_expired, returns all expired data_items given a datetime.
   - query_item_storage, returns a list of all storage volumes containing a copy of a data_item identified by an item_name, OID or UID.
+
+The DLM Heuristics Engine
+-------------------------
+This service is implemented as a loop running until explicitely terminated. It executes all housekeeping, data_item management and storage management tasks. Each of those tasks is implemented as an asynchronously instantiated and executed, pluggable class exposing a standard interface for the engine. Examples of such tasks include:
+
+  #. Treatment of expired data_items
+  #. Treatment of data_item phase change events. Such phase change events could have multiple reasons, including explicit requests, degragation due to storage failure or explicit deletion from a storage volume due to capacity constraints.
+  #. Treatment of storage capacity shortage on a specific volume. This could for instance be dealt with by moving data_items to other volumes, or deleting expired data_items.
+  #. Re-balancing of capacity load when additional storage volumes become available.
+  #. Regular data transfer queues between or across sites.
+
+Since the external heuristics and internal logic of these tasks can be quite complex and very use case dependent these tasks will be implemented as required. The default ones are the first four above, but also those are being implemented over the timeframe of several DLM releases. Detailed information can be found in :ref:`heuristics`.
 
 Interfaces
 ----------

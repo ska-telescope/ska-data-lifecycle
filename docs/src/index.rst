@@ -8,15 +8,21 @@ and practical guides for interacting with the DLM through both the request-based
 For high-level design details, see the `Solution Intent page <https://confluence.skatelescope.org/pages/viewpage.action?pageId=159387101>`_.
 
 .. toctree::
-   :maxdepth: 1
-   :caption: SKA Data Lifecycle Management
+   :maxdepth: 2
+   :caption: Guides
+
+   guides/installation/index
+   guides/usage/index
+
+.. toctree::
+   :maxdepth: 2
+   :caption: SKA DLM Modules and API
 
    overview/index
    api/index
 
 .. toctree::
    :maxdepth: 2
-   :caption: Guides
+   :caption: Heuristics
 
-   guides/installation/index
-   guides/usage/index
+   heuristics/index

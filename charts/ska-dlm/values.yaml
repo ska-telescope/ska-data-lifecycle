@@ -104,11 +104,11 @@ postgrest:
       type: "kv-v2"
 
 
-heuristic:
-  component: heuristic
+heuristics:
+  component: heuristics
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: e03282c1
+  version: "1.3.2-dev.c0d5ea041"
   imagePullPolicy: Always
   replicas: 1
 
@@ -131,7 +131,7 @@ postgresql:
   # Used for local PostgreSQL bootstrap when postgresql.enabled=true
     username: ska_dlm_admin
     password: password
-    database: ska_dlm
+    database: dlm
 
   primary:
     containerSecurityContext:

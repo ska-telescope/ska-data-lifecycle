@@ -3,11 +3,11 @@ PYTHON_LINE_LENGTH = 99
 PYTHON_SWITCHES_FOR_FLAKE8 = --ignore-decorator=override
 
 K8S_CHART = ska-dlm
-KUBE_NAMESPACE ?=
+KUBE_NAMESPACE ?= default
 HELM_RELEASE ?= $(K8S_CHART)-default  # unique value
 KUBE_APP = $(HELM_RELEASE)
 HELM_TIMEOUT ?= 5m
-HELM_VALUES ?= resources/config-ci-dev-values.yaml resources/cluster-sdhp-values.yaml
+HELM_VALUES ?=
 K8S_CHART_PARAMS ?= $(foreach file,$(HELM_VALUES),--values $(file)) --wait --timeout=$(HELM_TIMEOUT)
 
 include .make/base.mk

@@ -52,10 +52,10 @@ class StorageInterface(str, Enum):
 class PhaseType(str, Enum):
     """Phase type / resilience level."""
 
+    PLASMA = "PLASMA"
     GAS = "GAS"
     LIQUID = "LIQUID"
     SOLID = "SOLID"
-    PLASMA = "PLASMA"
 
 
 class ItemType(str, Enum):

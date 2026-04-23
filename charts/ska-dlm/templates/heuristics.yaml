@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "ska-dlm.fullname" . }}-heuristic
+  name: {{ include "ska-dlm.fullname" . }}-heuristics
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "ska-dlm.heuristic.labels" . | nindent 4 }}
+    {{- include "ska-dlm.heuristics.labels" . | nindent 4 }}
 spec:
   type: ClusterIP
   ports:
@@ -13,26 +13,26 @@ spec:
       targetPort: 80
       protocol: TCP
   selector:
-    component: {{ .Values.heuristic.component }}
-    subsystem: {{ .Values.heuristic.subsystem }}
+    component: {{ .Values.heuristics.component }}
+    subsystem: {{ .Values.heuristics.subsystem }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "ska-dlm.fullname" . }}-heuristic
+  name: {{ include "ska-dlm.fullname" . }}-heuristics
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "ska-dlm.heuristic.labels" . | nindent 4 }}
+    {{- include "ska-dlm.heuristics.labels" . | nindent 4 }}
 spec:
-  replicas: {{ .Values.heuristic.replicas }}
+  replicas: {{ .Values.heuristics.replicas }}
   selector:
     matchLabels:
-      component: {{ .Values.heuristic.component }}
-      subsystem: {{ .Values.heuristic.subsystem }}
+      component: {{ .Values.heuristics.component }}
+      subsystem: {{ .Values.heuristics.subsystem }}
   template:
     metadata:
       labels:
-        {{- include "ska-dlm.heuristic.labels" . | nindent 8 }}
+        {{- include "ska-dlm.heuristics.labels" . | nindent 8 }}
     spec:
       initContainers:
         - name: wait-for-postgres
@@ -138,34 +138,33 @@ spec:
                   optional: true
 
       containers:
-        - name: heuristic
-          image: {{ .Values.heuristic.image }}:{{ .Values.heuristic.version }}
-          imagePullPolicy: {{ .Values.heuristic.imagePullPolicy }}
-          command:
-            - ska-dlm-heuristic-engine
-          env:
-            {{- range $envvar_name := tuple "PGUSER" "PGPASSWORD" "PGHOST" "PGDATABASE" }}
-            - name: {{ $envvar_name }}
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
-                  key: {{ $envvar_name }}
-            {{- end }}
-            - name: PGPORT
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
-                  key: PGPORT
-                  optional: true
-            - name: DATABASE_URL
-              value: "postgresql+asyncpg://$(PGUSER):$(PGPASSWORD)@$(PGHOST):$(PGPORT)/$(PGDATABASE)"
-            - name: DLM_HEURISTIC_POLL_INTERVAL
-              value: {{ .Values.heuristic.pollInterval | default 10 | quote }}
-          volumeMounts:
-            - name: dlm-configmap
-              mountPath: "/home/ska-dlm/.dlm"
-              readOnly: true
-
+      - name: heuristics
+        image: {{ .Values.heuristics.image}}:{{ .Values.heuristics.version }}
+        imagePullPolicy: {{ .Values.heuristics.imagePullPolicy }}
+        command:
+        - ska-dlm-heuristics
+        env:
+        {{- range $envvar_name := tuple "PGUSER" "PGPASSWORD" "PGHOST" "PGDATABASE" }}
+        - name: {{ $envvar_name }}
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
+              key: {{ $envvar_name }}
+        {{- end }}
+        - name: PGPORT
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
+              key: PGPORT
+              optional: true
+        - name: DATABASE_URL
+          value: "postgresql+asyncpg://$(PGUSER):$(PGPASSWORD)@$(PGHOST)/$(PGDATABASE)"
+        - name: DLM_HEURISTIC_POLL_INTERVAL
+          value: {{ .Values.heuristics.pollInterval | default 10 | quote}}
+        volumeMounts:
+        - name: dlm-configmap
+          mountPath: "/home/ska-dlm/.dlm"
+          readOnly: true
       volumes:
         - name: dlm-configmap
           configMap:

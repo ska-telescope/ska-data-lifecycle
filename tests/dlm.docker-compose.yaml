@@ -16,6 +16,11 @@ services:
       - dlm_postgrest
       - dlm_rclone
       - dlm_gateway
+    healthcheck:
+      test: ["CMD-SHELL", "ska-dlm --help || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - dlm_network
 
@@ -37,6 +42,11 @@ services:
       - dlm_gateway
       - dlm_postgrest
       - dlm_rclone
+    healthcheck:
+      test: ["CMD-SHELL", "ska-dlm --help || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - dlm_network
 
@@ -54,6 +64,11 @@ services:
       - dlm_gateway
       - dlm_postgrest
       - dlm_rclone
+    healthcheck:
+      test: ["CMD-SHELL", "ska-dlm --help || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - dlm_network
 
@@ -73,16 +88,21 @@ services:
       - dlm_postgrest
       - dlm_rclone
       - dlm_gateway
+    healthcheck:
+      test: ["CMD-SHELL", "ska-dlm --help || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - dlm_network
 
-  dlm_heuristic_engine:
+  dlm_heuristics:
     platform: linux/amd64
-    image: dlm_heuristic_engine
-    container_name: dlm_heuristic_engine
+    image: dlm_heuristics
+    container_name: dlm_heuristics
     build:
       context: ..
-      dockerfile: tests/Dockerfile-heuristic-engine
+      dockerfile: tests/Dockerfile-heuristics
     environment:
       DLM_HEURISTIC_DATABASE_URL: "postgresql+asyncpg://ska_dlm_admin:password@dlm_db:5432/ska_dlm"
       DLM_HEURISTIC_POLL_INTERVAL: "10"
@@ -92,7 +112,7 @@ services:
       dlm_migrations:
         condition: service_completed_successfully
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ska_dlm_admin -d ska_dlm -h dlm_db || exit 1"]
+      test: ["CMD-SHELL", "ska-dlm --help || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
