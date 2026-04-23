@@ -8,7 +8,6 @@ import signal
 from datetime import datetime, timezone
 
 from ska_dlm.dlm_db import create_async_sql_engine, create_async_sql_session
-from ska_dlm.dlm_db.orm import Base
 from ska_dlm.dlm_heuristics.heuristics import UidExpiryHeuristic
 
 logger = logging.getLogger(__name__)
