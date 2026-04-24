@@ -150,7 +150,6 @@ spec:
               value: {{ $value | quote }}
             {{- end }}
             {{- end }}
-{{- if .Values.postgresql.enabled }}
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -184,4 +183,3 @@ rules:
   - apiGroups: ["batch"]
     resources: ["jobs"]
     verbs: ["get", "list", "watch"]
-{{- end }}
