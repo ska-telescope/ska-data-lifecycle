@@ -34,6 +34,7 @@ spec:
       labels:
         {{- include "ska-dlm.heuristics.labels" . | nindent 8 }}
     spec:
+      serviceAccountName: {{ printf "%s-postgrest" .Release.Name }}
       initContainers:
         - name: wait-for-postgres
           image: postgres:17.4
@@ -63,47 +64,41 @@ spec:
                   key: PGPORT
                   optional: true
 
-        - name: wait-for-liquibase-finished # waits for Liquibase to be finished, but does not guarantee success.
-          image: postgres:17.4
+        {{- if (index $.Values "ska-db-migrations" "runMigrations") }}
+        - name: wait-for-db-migrations
+          image: rancher/shell:v0.7.1-rc.1
           command:
             - sh
             - -c
             - |
-              echo "Waiting for Liquibase lock table..."
-              until PGPASSWORD="$PGPASSWORD" psql \
-                -h "$PGHOST" \
-                -p "${PGPORT:-5432}" \
-                -U "$PGUSER" \
-                -d "$PGDATABASE" \
-                -tAc "SELECT 1 FROM information_schema.tables WHERE table_name='databasechangeloglock'" | grep -q 1; do
+              set -eu
+
+              JOB_NAME="{{ include "ska-dlm.fullname" . }}-db-migrations-{{ .Release.Name }}"
+              NAMESPACE="{{ .Release.Namespace }}"
+
+              echo "Looking for migrations Job: ${JOB_NAME} in namespace ${NAMESPACE}"
+              kubectl get job "$JOB_NAME" -n "$NAMESPACE" -o wide
+
+              echo "Waiting for migrations Job ${JOB_NAME} to complete..."
+
+              while true; do
+                SUCCEEDED="$(kubectl get job "$JOB_NAME" -n "$NAMESPACE" -o jsonpath='{.status.succeeded}')"
+                FAILED="$(kubectl get job "$JOB_NAME" -n "$NAMESPACE" -o jsonpath='{.status.failed}')"
+
+                if [ "$SUCCEEDED" = "1" ]; then
+                  echo "Migrations Job completed successfully."
+                  break
+                fi
+
+                if [ -n "$FAILED" ] && [ "$FAILED" != "0" ]; then
+                  echo "Migrations Job failed."
+                  exit 1
+                fi
+
+                echo "Waiting for migrations Job ${JOB_NAME} to complete..."
                 sleep 2
               done
-
-              echo "Waiting for Liquibase to finish..."
-              until PGPASSWORD="$PGPASSWORD" psql \
-                -h "$PGHOST" \
-                -p "${PGPORT:-5432}" \
-                -U "$PGUSER" \
-                -d "$PGDATABASE" \
-                -tAc "SELECT NOT locked FROM databasechangeloglock WHERE id = 1" | grep -q t; do
-                sleep 2
-              done
-
-              echo "Liquibase is no longer running."
-          env:
-            {{- range $envvar_name := tuple "PGUSER" "PGPASSWORD" "PGHOST" "PGDATABASE" }}
-            - name: {{ $envvar_name }}
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
-                  key: {{ $envvar_name }}
-            {{- end }}
-            - name: PGPORT
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
-                  key: PGPORT
-                  optional: true
+        {{- end }}
 
         - name: wait-for-dlm-schema
           image: postgres:17.4
