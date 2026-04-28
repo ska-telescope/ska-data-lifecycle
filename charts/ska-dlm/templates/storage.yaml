@@ -36,7 +36,7 @@ spec:
         {{- include "ska-dlm.storage.labels" . | nindent 8 }}
     spec:
       initContainers:
-        - name: wait-for-pod
+        - name: wait-for-postgrest
           image: curlimages/curl
           command: ["/bin/sh", "-c"]
           args:

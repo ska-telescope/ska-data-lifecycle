@@ -37,7 +37,7 @@ see https://kubernetes.io/docs/concepts/overview/working-with-objects/common-lab
 */}}
 {{- define "ska-dlm.labels" -}}
 {{ if .Values.global.labels -}}
-app.kubernetes.io/name: {{ coalesce .Values.global.labels.app "ska-dlm.name" }}
+app.kubernetes.io/name: {{ coalesce .Values.global.labels.app (include "ska-dlm.name" .) }}
 {{- else -}}
 app.kubernetes.io/name: {{ include "ska-dlm.name" . }}
 {{- end }}
@@ -179,4 +179,12 @@ Heuristic labels
 component: {{ .Values.heuristics.component }}
 subsystem: {{ .Values.heuristics.subsystem }}
 intent: production
+{{- end -}}
+
+{{/*
+Database migrations job/configmap name.
+This must match the ska-db-migrations subchart naming convention.
+*/}}
+{{- define "ska-dlm.db-migrations.name" -}}
+ska-dlm-db-migrations-{{ .Release.Name }}
 {{- end -}}

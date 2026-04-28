@@ -73,7 +73,7 @@ spec:
             - |
               set -eu
 
-              JOB_NAME="{{ include "ska-dlm.fullname" . }}-db-migrations-{{ .Release.Name }}"
+              JOB_NAME="{{ include "ska-dlm.db-migrations.name" . }}"
               NAMESPACE="{{ .Release.Namespace }}"
 
               echo "Looking for migrations Job: ${JOB_NAME} in namespace ${NAMESPACE}"
