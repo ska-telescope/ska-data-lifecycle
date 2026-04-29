@@ -75,42 +75,113 @@ spec:
       labels:
         {{- include "ska-dlm.postgrest.labels" . | nindent 8 }}
     spec:
-      {{- if .Values.postgresql.enabled }}
+      serviceAccountName: {{ printf "%s-postgrest" .Release.Name }}
       initContainers:
-        - name: wait-for-postgresql
-          image: postgres:17
-          command: ["/bin/sh", "-c"]
-          args:
+        - name: wait-for-postgres # works for either local or external PostgreSQL
+          image: postgres:17.4
+          command:
+            - sh
+            - -c
             - |
               MAX_RETRIES=40
               RETRY_COUNT=0
               DELAY=3
 
               until [ $RETRY_COUNT -ge $MAX_RETRIES ]; do
-                pg_isready -h {{ include "ska-dlm.postgresql.name" . }} -p 5432 && exit 0
+                if pg_isready -h "$PGHOST" -p "${PGPORT:-5432}" -U "$PGUSER" -d "$PGDATABASE"; then
+                  echo "PostgreSQL is reachable."
+                  exit 0
+                fi
+
                 RETRY_COUNT=$((RETRY_COUNT + 1))
                 echo "Attempt $RETRY_COUNT failed. Retrying in $DELAY seconds..."
                 sleep $DELAY
               done
-              echo "PostgreSQL not ready"
+              echo "PostgreSQL not ready/reachable"
               exit 1
-
-        - name: wait-for-dlm-schema
-          image: postgres:17-bookworm
-          command: ["/bin/sh", "-c"]
-          args:
-            - |
-              until psql -h {{ include "ska-dlm.postgresql.name" . }} \
-                        -U {{ .Values.postgresql.auth.username }} \
-                        -d {{ .Values.postgresql.auth.database }} \
-                        -tAc "SELECT 1 FROM pg_namespace WHERE nspname = 'dlm'" | grep -q 1; do
-                echo "Waiting for dlm schema..."
-                sleep 3
-              done
           env:
-            - name: PGPASSWORD
-              value: {{ .Values.postgresql.auth.password | quote }}
-      {{- end }}
+            {{- range $envvar_name := tuple "PGUSER" "PGPASSWORD" "PGHOST" "PGDATABASE" }}
+            - name: {{ $envvar_name }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
+                  key: {{ $envvar_name }}
+            {{- end }}
+            - name: PGPORT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
+                  key: PGPORT
+                  optional: true
+
+        {{- if (index $.Values "ska-db-migrations" "runMigrations") }}
+        - name: wait-for-db-migrations
+          image: rancher/shell:v0.7.1-rc.1
+          command:
+            - sh
+            - -c
+            - |
+              set -eu
+
+              JOB_NAME="{{ include "ska-dlm.db-migrations.name" . }}"
+              NAMESPACE="{{ .Release.Namespace }}"
+
+              echo "Looking for migrations Job: ${JOB_NAME} in namespace ${NAMESPACE}"
+              kubectl get job "$JOB_NAME" -n "$NAMESPACE" -o wide
+
+              echo "Waiting for migrations Job ${JOB_NAME} to complete..."
+
+              while true; do
+                SUCCEEDED="$(kubectl get job "$JOB_NAME" -n "$NAMESPACE" -o jsonpath='{.status.succeeded}')"
+                FAILED="$(kubectl get job "$JOB_NAME" -n "$NAMESPACE" -o jsonpath='{.status.failed}')"
+
+                if [ "$SUCCEEDED" = "1" ]; then
+                  echo "Migrations Job completed successfully."
+                  break
+                fi
+
+                if [ -n "$FAILED" ] && [ "$FAILED" != "0" ]; then
+                  echo "Migrations Job failed."
+                  exit 1
+                fi
+
+                echo "Waiting for migrations Job ${JOB_NAME} to complete..."
+                sleep 2
+              done
+        {{- end }}
+
+        - name: wait-for-data-item-table
+          image: postgres:17.4
+          command:
+            - sh
+            - -c
+            - |
+              echo "Checking if dlm.data_item exists..."
+
+              until PGPASSWORD="$PGPASSWORD" psql \
+                -h "$PGHOST" \
+                -p "${PGPORT:-5432}" \
+                -U "$PGUSER" \
+                -d "$PGDATABASE" \
+                -tAc "SELECT 1 FROM information_schema.tables WHERE table_schema='dlm' AND table_name='data_item'" | grep -q 1; do
+                sleep 2
+              done
+
+              echo "dlm.data_item table exists."
+          env:
+            {{- range $envvar_name := tuple "PGUSER" "PGPASSWORD" "PGHOST" "PGDATABASE" }}
+            - name: {{ $envvar_name }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
+                  key: {{ $envvar_name }}
+            {{- end }}
+            - name: PGPORT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
+                  key: PGPORT
+                  optional: true
       containers:
         - name: postgrest
           image: {{ .Values.postgrest.image }}:{{ .Values.postgrest.version }}
