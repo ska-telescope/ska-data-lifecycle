@@ -28,6 +28,7 @@ metadata:
 type: Opaque
 data:
   PGHOST: {{ include "ska-dlm.postgresql.name" $ | b64enc }}
+  PGPORT: {{ "5432" | b64enc }}
   PGUSER: {{ $.Values.postgresql.auth.username | b64enc }}
   PGPASSWORD: {{ $.Values.postgresql.auth.password | b64enc }}
   PGDATABASE: {{ $.Values.postgresql.auth.database | b64enc }}
@@ -74,64 +75,152 @@ spec:
       labels:
         {{- include "ska-dlm.postgrest.labels" . | nindent 8 }}
     spec:
-      {{- if .Values.postgresql.enabled }}
+      serviceAccountName: {{ printf "%s-postgrest" .Release.Name }}
       initContainers:
-      - name: wait-for-postgresql
-        image: {{ .Values.kubectl.image }}:{{ .Values.kubectl.version }}
-        imagePullPolicy: {{ .Values.kubectl.imagePullPolicy }}
-        command:
-        - kubectl
-        - wait
-        - pod
-        - --for=condition=ready
-        - {{ include "ska-dlm.postgresql.name" . }}-0
-        - --timeout
-        - 120s
-      serviceAccountName: {{ $rbac_name }}
-      {{- end }}
-      containers:
-      - name: postgrest
-        image: {{ .Values.postgrest.image}}:{{ .Values.postgrest.version }}
-        imagePullPolicy: {{ .Values.postgrest.imagePullPolicy }}
-        readinessProbe:
-          httpGet:
-            path: /
-            port: 3001
-          initialDelaySeconds: 5
-          periodSeconds: 5
-        env:
-          {{/* DB connection parameters are first read from the secret, then put into PGRST_DB_URI */ -}}
-          {{ range $envvar_name := tuple "PGUSER" "PGPASSWORD" "PGHOST" "PGDATABASE" -}}
-          - name: {{ $envvar_name }}
-            valueFrom:
-              secretKeyRef:
-                name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
-                key: {{ $envvar_name }}
-                optional: false
-          {{ end -}}
-          - name: PGRST_DB_URI
-            value: "postgres://$(PGUSER):$(PGPASSWORD)@$(PGHOST)/$(PGDATABASE)"
+        - name: wait-for-postgres # works for either local or external PostgreSQL
+          image: postgres:17.4
+          command:
+            - sh
+            - -c
+            - |
+              MAX_RETRIES=40
+              RETRY_COUNT=0
+              DELAY=3
 
-          {{- /* The rest of the configuration is always taken from the given Helm values */ -}}
-          {{ $env := dict
-            "PGRST_SERVER_PORT" 3001
-            "PGRST_DB_ANON_ROLE" .Values.postgrest.db_anon_role
-            "PGRST_DB_POOL" .Values.postgresql.db_pool
-            "PGRST_SERVER_HOST" .Values.postgrest.server_host
-            "PGRST_SECRET_IS_BASE64" .Values.postgrest.secret_is_base64
-            "PGRST_MAX_ROWS" .Values.postgrest.max_rows
-            "PGRST_PRE_REQUEST" .Values.postgrest.pre_request
-            "PGRST_ROLE_CLAIM_KEY" .Values.postgrest.role_claim_key
-            "PGRST_DB_SCHEMA" .Values.postgrest.db_schema
-            "PGRST_LOG_LEVEL" .Values.postgrest.log_level
-          }}
-          {{- range $envvar_name, $value := $env }}
-          {{- if $value }}
-          - name: {{ $envvar_name }}
-            value: {{ $value | quote }}
-          {{- end }}
-          {{- end }}
-{{- if .Values.postgresql.enabled }}
+              until [ $RETRY_COUNT -ge $MAX_RETRIES ]; do
+                if pg_isready -h "$PGHOST" -p "${PGPORT:-5432}" -U "$PGUSER" -d "$PGDATABASE"; then
+                  echo "PostgreSQL is reachable."
+                  exit 0
+                fi
+
+                RETRY_COUNT=$((RETRY_COUNT + 1))
+                echo "Attempt $RETRY_COUNT failed. Retrying in $DELAY seconds..."
+                sleep $DELAY
+              done
+              echo "PostgreSQL not ready/reachable"
+              exit 1
+          env:
+            {{- range $envvar_name := tuple "PGUSER" "PGPASSWORD" "PGHOST" "PGDATABASE" }}
+            - name: {{ $envvar_name }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
+                  key: {{ $envvar_name }}
+            {{- end }}
+            - name: PGPORT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
+                  key: PGPORT
+                  optional: true
+
+        {{- if (index $.Values "ska-db-migrations" "runMigrations") }}
+        - name: wait-for-db-migrations
+          image: rancher/shell:v0.7.1-rc.1
+          command:
+            - sh
+            - -c
+            - |
+              set -eu
+
+              JOB_NAME="{{ include "ska-dlm.db-migrations.name" . }}"
+              NAMESPACE="{{ .Release.Namespace }}"
+
+              echo "Looking for migrations Job: ${JOB_NAME} in namespace ${NAMESPACE}"
+              kubectl get job "$JOB_NAME" -n "$NAMESPACE" -o wide
+
+              echo "Waiting for migrations Job ${JOB_NAME} to complete..."
+
+              while true; do
+                SUCCEEDED="$(kubectl get job "$JOB_NAME" -n "$NAMESPACE" -o jsonpath='{.status.succeeded}')"
+                FAILED="$(kubectl get job "$JOB_NAME" -n "$NAMESPACE" -o jsonpath='{.status.failed}')"
+
+                if [ "$SUCCEEDED" = "1" ]; then
+                  echo "Migrations Job completed successfully."
+                  break
+                fi
+
+                if [ -n "$FAILED" ] && [ "$FAILED" != "0" ]; then
+                  echo "Migrations Job failed."
+                  exit 1
+                fi
+
+                echo "Waiting for migrations Job ${JOB_NAME} to complete..."
+                sleep 2
+              done
+        {{- end }}
+
+        - name: wait-for-data-item-table
+          image: postgres:17.4
+          command:
+            - sh
+            - -c
+            - |
+              echo "Checking if dlm.data_item exists..."
+
+              until PGPASSWORD="$PGPASSWORD" psql \
+                -h "$PGHOST" \
+                -p "${PGPORT:-5432}" \
+                -U "$PGUSER" \
+                -d "$PGDATABASE" \
+                -tAc "SELECT 1 FROM information_schema.tables WHERE table_schema='dlm' AND table_name='data_item'" | grep -q 1; do
+                sleep 2
+              done
+
+              echo "dlm.data_item table exists."
+          env:
+            {{- range $envvar_name := tuple "PGUSER" "PGPASSWORD" "PGHOST" "PGDATABASE" }}
+            - name: {{ $envvar_name }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
+                  key: {{ $envvar_name }}
+            {{- end }}
+            - name: PGPORT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
+                  key: PGPORT
+                  optional: true
+      containers:
+        - name: postgrest
+          image: {{ .Values.postgrest.image }}:{{ .Values.postgrest.version }}
+          imagePullPolicy: {{ .Values.postgrest.imagePullPolicy }}
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3001
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          env:
+            {{- range $envvar_name := tuple "PGUSER" "PGPASSWORD" "PGHOST" "PGPORT" "PGDATABASE" }}
+            - name: {{ $envvar_name }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
+                  key: {{ $envvar_name }}
+                  optional: false
+            {{- end }}
+            - name: PGRST_DB_URI
+              value: "postgres://$(PGUSER):$(PGPASSWORD)@$(PGHOST):$(PGPORT)/$(PGDATABASE)"
+            {{- $env := dict
+              "PGRST_SERVER_PORT" "3001"
+              "PGRST_DB_ANON_ROLE" .Values.postgrest.db_anon_role
+              "PGRST_DB_POOL" .Values.postgrest.db_pool
+              "PGRST_SERVER_HOST" .Values.postgrest.server_host
+              "PGRST_SECRET_IS_BASE64" .Values.postgrest.secret_is_base64
+              "PGRST_MAX_ROWS" .Values.postgrest.max_rows
+              "PGRST_PRE_REQUEST" .Values.postgrest.pre_request
+              "PGRST_ROLE_CLAIM_KEY" .Values.postgrest.role_claim_key
+              "PGRST_DB_SCHEMA" .Values.postgrest.db_schema
+              "PGRST_LOG_LEVEL" .Values.postgrest.log_level
+            }}
+            {{- range $envvar_name, $value := $env }}
+            {{- if $value }}
+            - name: {{ $envvar_name }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- end }}
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -145,9 +234,9 @@ metadata:
   name: {{ $rbac_name }}
   namespace: {{ .Release.Namespace }}
 subjects:
-- kind: ServiceAccount
-  name: {{ $rbac_name }}
-  namespace: {{ .Release.Namespace }}
+  - kind: ServiceAccount
+    name: {{ $rbac_name }}
+    namespace: {{ .Release.Namespace }}
 roleRef:
   kind: Role
   name: {{ $rbac_name }}
@@ -159,7 +248,9 @@ metadata:
   name: {{ $rbac_name }}
   namespace: {{ .Release.Namespace }}
 rules:
-- apiGroups: [""]
-  resources: ["pods"]
-  verbs: ["get", "list", "watch"]
-{{- end }}
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["get", "list", "watch"]

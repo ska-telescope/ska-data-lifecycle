@@ -1,8 +1,6 @@
 Helm Install
 =============
 
-*WIP*
-
 For help on installing ska-dlm *client*, please refer to the `dlm-client documentation <https://developer.skatelescope.org/projects/ska-dlm-client/en/latest/>`_.
 
 To install the DLM server services on a Kubernetes cluster, e.g., the DP cluster, start by cloning the repository (if not already present):
@@ -28,24 +26,29 @@ Configure the ``values.yaml`` file to match your environment and deployment requ
 **The main configuration options are:**
 
 * ``global.ingress.enabled``: If set to false, no Ingress resources will be created, meaning external access to services like pgweb and PostgREST will be unavailable. Set to true to expose these services outside the cluster.
-* ``postgresql.enabled``: If true, a PostgreSQL instance will be deployed via the Bitnami chart. Otherwise, an external PostgreSQL service is assumed.
+* ``postgresql.enabled``: If true, a local PostgreSQL instance will be deployed. Otherwise, an external PostgreSQL service is assumed, and auth details must be given through a secret (via ``ska-db-migrations.dbCredentialsSecretName``).
 * ``postgresql.primary.persistence.enabled``: If enabled, PostgreSQL will persist data between executions; otherwise it will start from scratch each time.
-* ``database.migration.enabled``: If true, the DLM tables will be created automatically in the database. Must be true for any base or patch migration to run. See :ref:`database-migrations` for more information.
-* ``database.migration.image``: The Docker image used for executing SQL migration jobs (default: ``postgres``).
-* ``database.migration.version``: Version tag of the migration image (default: 17.4).
+* ``ska-db-migrations.runMigrations``: True by default. When enabled, a Liquibase job is run to apply database migrations during deployment.
 
 Authentication
 ---------------
 
-DB authentication details for PostgREST are stored in a Kubernetes ``Secret``.
+Database authentication details for PostgREST are provided via a Kubernetes ``Secret``.
 
-- ``create``: Whether to create a secret.
+- ``postgrest.db_auth_secret.create``: Whether to create the Secret.
 
-  * If unset, an existing one must be provided via ``name``.
-  * If set, the ``Secret`` is created from Vault contents at ``vault.{mount,path,type}``.
+  * If ``true`` (default for ``postgresql.enabled=true``), the Secret is created automatically
+    using the credentials defined under ``postgresql.auth``:
 
-- In both cases, the ``Secret`` must provide the following keys: ``PGHOST``, ``PGUSER``, ``PGPASSWORD`` and ``PGDATABASE``.
+    - ``postgresql.auth.username``
+    - ``postgresql.auth.password``
+    - ``postgresql.auth.database``
 
+  * If ``false``, an existing Secret must be provided via
+    ``ska-db-migrations.dbCredentialsSecretName``.
+
+- In all cases, the Secret must contain the following keys:
+  ``PGHOST``, ``PGUSER``, ``PGPASSWORD`` and ``PGDATABASE``.
 
 Shared volume
 --------------
@@ -81,27 +84,19 @@ Log in using the appropriate database credentials. If you deployed a local Postg
 Database Migrations
 ---------------------
 
-Database migrations are executed by Kubernetes Job resources as part of the Helm deployment process. There are two types of migrations:
+Database migrations are executed by Kubernetes Job resources as part of the Helm deployment process.
+These Jobs run Liquibase to apply schema changes defined in the migration scripts.
 
-**Base Migrations (Initial Schema Creation)**
+Migrations are managed by the ``ska-db-migrations`` subchart and are enabled by default.
+When enabled, a short-lived Job is created during deployment to run the Liquibase changelog
+against the configured PostgreSQL database.
 
-To install the base DLM schema from scratch:
+The behaviour of the migration process can be controlled using Helm values, such as:
 
-- Set ``database.migration.enabled`` : ``true``.
-- Set ``database.migration.base.baseInstall`` : ``true``.
+- ``ska-db-migrations.runMigrations``: Enables or disables running migrations
+- ``ska-db-migrations.liquibase.contextFilter``: Controls which changesets are applied
 
-This runs the SQL scripts located under ``charts/ska-dlm/initdb-scripts/``. Use this option when deploying into a fresh database with no existing schema.
-
-**Patch Migrations (Schema Updates Between Releases)**
-
-To apply schema changes introduced after the initial deployment:
-
-- Set ``database.migration.enabled`` : ``true``.
-- Set ``database.migration.patch.patchInstall`` : ``false`` for now, as the database migration process is still being formalised (see `Managing database schema changes <https://confluence.skatelescope.org/display/SE/Managing+database+schema+changes>`_).
-- Set ``database.migration.patch.patchVersion`` to the desired release version (e.g., ``v1.1.2``).
-
-Patch SQL scripts are located at ``charts/ska-dlm/patches/<version>/``. They are mounted into the migration pod at ``/etc/sql/patch/`` and executed in alphabetical order.
-Note: ``database.migration.base.baseInstall`` and ``database.migration.patch.patchInstall`` cannot both be ``true`` at the same time.
+If migrations are disabled (not recommended), the database must be pre-initialised and already conform to the latest schema version before deployment.
 
 Storage Manager
 ----------------
@@ -249,15 +244,4 @@ To uninstall the chart:
 
     helm uninstall [-n <namespace>] ska-dlm
 
-
-.. Schema changes by release
-.. -----------------------------
-
-.. **Working version**
-
-.. Note: The v1.1.2 directory holds the code required to migrate the database *from* 1.1.2 to the *next* release.
-
-.. **Changes**:
-
-.. * ``data_item.metadata`` column changed from ``json`` to ``jsonb``
 

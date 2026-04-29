@@ -1,10 +1,8 @@
+--liquibase formatted sql
+
 -- DLM enum definitions
 
--- As this is the first script to run in the base deploy,
--- its must ensure the schema exists and the search_path is set
-
-CREATE SCHEMA IF NOT EXISTS dlm;
-
+--changeset dlm:create-enum-types splitStatements:false
 SET search_path TO dlm;
 
 DO $$ BEGIN

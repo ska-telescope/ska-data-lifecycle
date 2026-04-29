@@ -109,6 +109,8 @@ services:
     depends_on:
       dlm_db:
         condition: service_healthy
+      dlm_migrations:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD-SHELL", "ska-dlm --help || exit 1"]
       interval: 10s

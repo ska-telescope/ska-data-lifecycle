@@ -124,25 +124,29 @@ To turn off authentication:
 * Run tests: `pytest --env local --auth 0`
 
 
-### Test against Helm Chart
+### Test against the Helm chart
 
-DLM also provides a helm chart tested weekly through the SKA gitlab test runners that can also be executed locally using Minikube. The following commands only need to be executed once to prepare a test environment.
+DLM also provides a Helm chart that is tested weekly through the SKA GitLab test runners and can also be run locally with Minikube. The following commands only need to be run once to prepare the test environment.
 
+- From the root directory of this repository, install Helm chart dependencies (as defined in `Chart.yaml` / `Chart.lock`):
+  ```sh
+  make k8s-dep-build
+  ```
+
+- Start minikube
 ```bash
-helm repo add bitnami https://charts.bitnami.com/bitnami
-minikube start --disk-size 64g --cpus=6 --memory=16384
-minikube addons enable ingress
-
-ifeq ($(shell uname -m), arm64)
-  # Use tunnel on M-Series MacOS
-  minikube tunnel
-endif
+  minikube start --disk-size 64g --cpus=6 --memory=16384
+  minikube addons enable ingress
 ```
 
-Tests can then be run using the command:
+- On Apple Silicon Macs, you might also have to start a Minikube tunnel:
+```bash
+  minikube tunnel
+```
 
+- Tests can then be run using the command:
 ```sh
-make k8s-test
+  make k8s-test
 ```
 
 For more information see [helm chart README.md](./charts/ska-dlm/README.md)

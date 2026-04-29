@@ -1,26 +1,32 @@
 # SKA Data Lifecycle Management Chart
 
-This chart installs the DLM services, including PostgREST and, optionally, a PostgreSQL instance via the Bitnami chart.
+This chart installs the DLM services, including PostgREST and, optionally, a local PostgreSQL instance for development purposes.
 
 The main configuration options are:
 
  * `global.ingress.enabled`: If set to false, no Ingress resources will be created, meaning external access to services like pgweb and PostgREST will be unavailable. Set to true to expose these services outside the cluster.
- * `postgresql.enabled`: If true, a PostgreSQL instance will be deployed via the Bitnami chart. Otherwise, an external PostgreSQL service is assumed.
+ * `postgresql.enabled`: If true, a local PostgreSQL instance will be deployed. Otherwise, an external PostgreSQL service is assumed.
  * `postgresql.primary.persistence.enabled`: If enabled, PostgreSQL will persist data between executions, otherwise it will start from scratch each time.
- * `database.migration.enabled`: If true, the DLM tables will be created automatically in the database. Must be true for any base or patch migration to run. See [Database Migrations](#database-migrations) for more information.
- * `database.migration.image`: The Docker image used for executing SQL migration jobs (default: `postgres`)
- * `database.migration.version`: Version tag of the migration image (default: 17.4).
+ * `ska-db-migrations.runMigrations`: True by default. When enabled, a Liquibase job is run to apply database migrations during deployment.
+
 
 ## Authentication
 
-DB authentication details for PostgREST are stored in a Kubernetes `Secret`.
-The `Secret` is **always** automatically created to point to the internal PostgreSQL server, if that is enabled.
-Otherwise, the following Helm values under `postgrest.db_auth_secret` take effect:
+Database authentication details for PostgREST are provided via a Kubernetes 'Secret'.
 
- * `create`: Whether to create a `Secret` or not.
-   * If unset, an existing one has to be provided via `name`.
-   * If set, the `Secret` is created from the Vault contents at `vault.{mount,path,type}`.
- * In both cases, the `Secret` should provide the following keys: `PGHOST`, `PGUSER`, `PGPASSWORD` and `PGDATABASE`.
+* `postgrest.db_auth_secret.create`: Whether to create the Secret.
+
+  * If `true` (default for `postgresql.enabled=true`), the Secret is created automatically using the credentials defined under `postgresql.auth`:
+
+    - `postgresql.auth.username`
+    - `postgresql.auth.password`
+    - `postgresql.auth.database`
+
+  * If `false`, an existing Secret must be provided via
+    `ska-db-migrations.dbCredentialsSecretName`.
+
+* In all cases, the Secret must contain the following keys:
+  `PGHOST`, `PGUSER`, `PGPASSWORD` and `PGDATABASE`.
 
 ## Shared volume
 
@@ -44,25 +50,16 @@ RClone generates an SSH key pair which it shares with the Storage Manager via `g
 
 ## Database Migrations
 
-Database migrations are executed by Kubernetes Job resources as part of the Helm deployment process. There are two types of migrations:
+Database migrations are managed by the `ska-db-migrations` subchart using Liquibase. Migrations are automatically executed by a Kubernetes Job as part of the Helm deployment process.
 
-**1. Base Migrations (Initial Schema Creation)**
-To install the base DLM schema from scratch:
+To configure migrations:
 
-* Set `database.migration.enabled` = `true`
-* Set `database.migration.base.baseInstall` = `true`
+* `ska-db-migrations.runMigrations`: Set to `true` (default) to run migrations on deploy.
+* `ska-db-migrations.liquibase.contextFilter`:
+    * Set to `"create-roles,create-db,create-schema"` to run all changesets, including role creation, database creation and schema creation (if the role has permission).
+    * Set to `"default"` to run only standard application schema changes, skipping steps that require database-level privileges (like creating the roles/database/schema themselves). This is intended for use with sandboxed roles.
 
-This will run the SQL scripts located under `charts/ska-dlm/initdb-scripts/`. Use this option when deploying into a fresh database with no existing schema.
-
-**2. Patch Migrations (Schema Updates Between Releases)**
-To apply schema changes introduced after the initial deployment:
-
-* Set `database.migration.enabled` = `true`
-* Set `database.migration.patch.patchInstall` = `true`.
-* Set `database.migration.patch.patchVersion` to the release version (e.g., v1.1.2).
-
-Patch SQL scripts are located at `charts/ska-dlm/patches/<version>/`. They are mounted into the migration pod at `/etc/sql/patch/` and executed in alphabetical order. The following section provides a breakdown of all patch releases in version order.
-Note: `database.migration.base.baseInstall` and `database.migration.patch.patchInstall` can **not** be true at the same time.
+SQL migration scripts are located in `initdb-scripts/` (base schema) and `patches/` (updates). These are organized by the master `changelog.yaml` file.
 
 
 ## Storage Manager
@@ -184,14 +181,7 @@ To run the benchmarking pod:
 
 For details on the benchmark configuration, see the [documentation](../../scripts/README.md).
 
-## Schema changes by release
-
-### Working version
-
-Note: The v1.1.2 directory holds the code required to migrate the database *from* 1.1.2 to the *next* release.
-
-**Changes**:
-* `data_item.metadata` column changed from `json` to `jsonb`
+Database migrations are now managed using [Liquibase](https://www.liquibase.com/). Future schema changes will be defined in the Liquibase changelog.
 
 ## Test Deployment
 
@@ -207,18 +197,10 @@ Note: The v1.1.2 directory holds the code required to migrate the database *from
   minikube addons enable ingress
   ```
 
-* Add the following additional repositories to helm:
-  ```sh
-  helm repo add bitnami https://charts.bitnami.com/bitnami
-  helm repo add ectobit https://charts.ectobit.com
-  ```
-
-* Download the helm dependencies and initialise the database from the root directory of this repository
+* From the root directory of this repository, install Helm chart dependencies (as defined in `Chart.yaml` / `Chart.lock`):
   ```sh
   make k8s-dep-build
   ```
-
-  * The chart lock can be regenerated using `make k8s-dep-update`
 
 - Depending on you system you may also need to run `minikube tunnel` in a separate terminal (notably [M1 Macs](https://github.com/kubernetes/minikube/issues/13510)). In this case, you can access ingress services via `localhost` instead of `minikube ip`.
 
@@ -259,10 +241,9 @@ To deploy in a cluster k8s environment, DevOps can:
 
 * Select the Kubernetes environment via `export KUBECONFIG="path to kubeconfig"`
 * Modify the `resources/<location>-values.yaml` file to override helm values
-* Install the release using the following commands:
+* Install chart dependencies and build them:
 
 ```bash
-helm repo add bitnami https://charts.bitnami.com/bitnami
 make k8s-dep-build
 
 KUBE_NAMESPACE=<prod-namespace> HELM_RELEASE=<prod-release-name> HELM_VALUES=resources/<values_file> K8S_SKIP_NAMESPACE=1 make k8s-install-chart

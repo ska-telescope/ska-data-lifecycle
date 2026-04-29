@@ -91,7 +91,7 @@ postgrest:
   log_level: info
 
   # PostgREST's auth details against PostgreSQL come from a Secret, which can be:
-  # * Given to us by name, or
+  # * Given to us by name (via ska-db-migrations.dbCredentialsSecretName), or
   # * Created via:
   #   * VSO, or
   #   * Automatically from the postgresql.auth section
@@ -102,7 +102,6 @@ postgrest:
       path: ""
       mount: ""
       type: "kv-v2"
-    name: "" # secret name if using external DB
 
 
 heuristics:
@@ -113,45 +112,32 @@ heuristics:
   imagePullPolicy: Always
   replicas: 1
 
+ska-db-migrations:
+  runMigrations: true
+  engine: liquibase
+  dbCredentialsSecretName: "{{ .Release.Name }}-ska-dlm-postgrest-secret"
+  configMapName: "ska-dlm-db-migrations-{{ .Release.Name }}"
+  liquibase:
+    contextFilter: "create-db,create-schema" # "default" or a combination of "create-roles,create-db,create-schema"
+    changelogFile: changelog.yaml
+    ttlSecondsAfterFinished: 300
+
 # ------ Database options ------
 
-database:
-  migration:
-    enabled: true  # set to true if building a fresh database
-    image: postgres
-    version: "17.4"
-    base:
-      baseInstall: true  # set to true
-    patch:
-      patchInstall: false  # set to false (our patch migration system is TBD)
-      patchVersion: ""  # Supply a valid patch version vx.x.x
+postgresql:
+  enabled: true  # whether to deploy a local 'test' DB instead of connecting to an existing DB
 
-postgresql:  # see https://github.com/bitnami/charts/tree/main/bitnami/postgresql
-  enabled: true  # whether to deploy a test database
-  nameOverride: postgresql
-
-  # Custom user/password/db to create, has to match primary.initdb authentication
   auth:
+  # Used for local PostgreSQL bootstrap when postgresql.enabled=true
     username: ska_dlm_admin
     password: password
     database: dlm
 
-  image:
-    repository: postgres # docker.io has a pull limit of 100 per 6 hours per IP, 200 for authenticated users
-    tag: "17-bookworm"
-    pullPolicy: Always  # Always for fresh pulls
-    debug: true
-
   primary:
-    name: ska_dlm
     containerSecurityContext:
       readOnlyRootFilesystem: false
     persistence:
       enabled: false
-    initdb:
-      user: ska_dlm_admin
-      password: password
-      scriptsConfigMap: ska-dlm-postgresql-initdb-base-scripts
     podLabels:
       component: postgresql
       subsystem: data-lifecycle-management

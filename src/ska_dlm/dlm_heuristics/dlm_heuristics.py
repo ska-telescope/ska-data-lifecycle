@@ -8,7 +8,6 @@ import signal
 from datetime import datetime, timezone
 
 from ska_dlm.dlm_db import create_async_sql_engine, create_async_sql_session
-from ska_dlm.dlm_db.orm import Base
 from ska_dlm.dlm_heuristics.heuristics import UidExpiryHeuristic
 
 logger = logging.getLogger(__name__)
@@ -24,8 +23,6 @@ async def heuristic_process_loop(stop_event: asyncio.Event):
     """Run heuristic iteration until stop event is set."""
     # pylint: disable=too-many-locals
     engine = create_async_sql_engine(HEURISTIC_DATABASE_URL)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
 
     async_session = create_async_sql_session(engine)
     loop_counter = 0
@@ -94,8 +91,8 @@ def _configure_signals(stop_event: asyncio.Event):
 
 def main() -> None:
     """Entrypoint for the heuristic engine process."""
-    logger.info("Starting DLM heuristic engine")
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    logger.info("Starting DLM heuristic engine")
 
     stop_event = asyncio.Event()
     _configure_signals(stop_event)

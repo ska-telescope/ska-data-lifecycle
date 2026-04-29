@@ -78,6 +78,29 @@ services:
     depends_on:
       dlm_db:
         condition: service_healthy
+      dlm_migrations:
+        condition: service_completed_successfully
+    networks:
+      - dlm_network
+
+  dlm_migrations:
+    build:
+      context: ..
+      dockerfile: tests/Dockerfile-migrations
+    image: dlm_migrations
+    container_name: dlm_migrations
+    command: >
+      --url="jdbc:postgresql://dlm_db:5432/ska_dlm"
+      --username="ska_dlm_admin"
+      --password="password"
+      --driver=org.postgresql.Driver
+      --search-path=/changelog
+      --changelog-file=changelog.yaml
+      update
+      --context-filter="create-db,create-schema"
+    depends_on:
+      dlm_db:
+        condition: service_healthy
     networks:
       - dlm_network
 

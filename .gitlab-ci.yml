@@ -111,6 +111,12 @@ python-test:
   script:
     - docker compose --file tests/testrunner.docker-compose.yaml -p dlm-test-services run dlm_testrunner .
   after_script:
+    - echo "==== docker compose ps ===="
+    - docker compose --file tests/testrunner.docker-compose.yaml -p dlm-test-services ps || true
+    - echo "==== dlm_migrations logs ===="
+    - docker compose --file tests/testrunner.docker-compose.yaml -p dlm-test-services logs dlm_migrations || true
+    - if [ "$CI_JOB_STATUS" != "success" ]; then echo "==== dlm_db logs ===="; docker compose --file tests/testrunner.docker-compose.yaml -p dlm-test-services logs dlm_db || true; fi
+    - if [ "$CI_JOB_STATUS" != "success" ]; then echo "==== dlm_heuristics logs ===="; docker compose --file tests/testrunner.docker-compose.yaml -p dlm-test-services logs dlm_heuristics || true; fi
     - docker compose --file tests/testrunner.docker-compose.yaml -p dlm-test-services down
 
 k8s-test:

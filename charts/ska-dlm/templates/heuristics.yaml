@@ -34,24 +34,104 @@ spec:
       labels:
         {{- include "ska-dlm.heuristics.labels" . | nindent 8 }}
     spec:
+      serviceAccountName: {{ printf "%s-postgrest" .Release.Name }}
       initContainers:
-      - name: wait-for-postgres
-        image: postgres:17.4
-        command: ['sh', '-c', 'until pg_isready -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE"; do echo waiting for database; sleep 2; done;']
-        env:
-        {{- range $envvar_name := tuple "PGUSER" "PGPASSWORD" "PGHOST" "PGDATABASE" }}
-        - name: {{ $envvar_name }}
-          valueFrom:
-            secretKeyRef:
-              name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
-              key: {{ $envvar_name }}
+        - name: wait-for-postgres
+          image: postgres:17.4
+          command:
+            - sh
+            - -c
+            - |
+              until pg_isready -h "$PGHOST" -p "${PGPORT:-5432}" -U "$PGUSER" -d "$PGDATABASE"; do
+                echo "waiting for database"
+                sleep 2
+              done
+
+              echo "Database is reachable."
+
+          env:
+            {{- range $envvar_name := tuple "PGUSER" "PGPASSWORD" "PGHOST" "PGDATABASE" }}
+            - name: {{ $envvar_name }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
+                  key: {{ $envvar_name }}
+            {{- end }}
+            - name: PGPORT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
+                  key: PGPORT
+                  optional: true
+
+        {{- if (index $.Values "ska-db-migrations" "runMigrations") }}
+        - name: wait-for-db-migrations
+          image: rancher/shell:v0.7.1-rc.1
+          command:
+            - sh
+            - -c
+            - |
+              set -eu
+
+              JOB_NAME="{{ include "ska-dlm.db-migrations.name" . }}"
+              NAMESPACE="{{ .Release.Namespace }}"
+
+              echo "Looking for migrations Job: ${JOB_NAME} in namespace ${NAMESPACE}"
+              kubectl get job "$JOB_NAME" -n "$NAMESPACE" -o wide
+
+              echo "Waiting for migrations Job ${JOB_NAME} to complete..."
+
+              while true; do
+                SUCCEEDED="$(kubectl get job "$JOB_NAME" -n "$NAMESPACE" -o jsonpath='{.status.succeeded}')"
+                FAILED="$(kubectl get job "$JOB_NAME" -n "$NAMESPACE" -o jsonpath='{.status.failed}')"
+
+                if [ "$SUCCEEDED" = "1" ]; then
+                  echo "Migrations Job completed successfully."
+                  break
+                fi
+
+                if [ -n "$FAILED" ] && [ "$FAILED" != "0" ]; then
+                  echo "Migrations Job failed."
+                  exit 1
+                fi
+
+                echo "Waiting for migrations Job ${JOB_NAME} to complete..."
+                sleep 2
+              done
         {{- end }}
-        - name: PGPORT
-          valueFrom:
-            secretKeyRef:
-              name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
-              key: PGPORT
-              optional: true
+
+        - name: wait-for-dlm-schema
+          image: postgres:17.4
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for dlm tables to exist..."
+              until PGPASSWORD="$PGPASSWORD" psql \
+                -h "$PGHOST" \
+                -p "${PGPORT:-5432}" \
+                -U "$PGUSER" \
+                -d "$PGDATABASE" \
+                -tAc "SELECT 1 FROM information_schema.tables WHERE table_schema='dlm' AND table_name='data_item'" | grep -q 1; do
+                sleep 2
+              done
+
+              echo "Database schema looks ready."
+          env:
+            {{- range $envvar_name := tuple "PGUSER" "PGPASSWORD" "PGHOST" "PGDATABASE" }}
+            - name: {{ $envvar_name }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
+                  key: {{ $envvar_name }}
+            {{- end }}
+            - name: PGPORT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
+                  key: PGPORT
+                  optional: true
+
       containers:
       - name: heuristics
         image: {{ .Values.heuristics.image}}:{{ .Values.heuristics.version }}
@@ -81,6 +161,6 @@ spec:
           mountPath: "/home/ska-dlm/.dlm"
           readOnly: true
       volumes:
-      - name: dlm-configmap
-        configMap:
-          name: {{ include "ska-dlm.fullname" . }}-configmap
+        - name: dlm-configmap
+          configMap:
+            name: {{ include "ska-dlm.fullname" . }}-configmap

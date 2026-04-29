@@ -37,7 +37,7 @@ see https://kubernetes.io/docs/concepts/overview/working-with-objects/common-lab
 */}}
 {{- define "ska-dlm.labels" -}}
 {{ if .Values.global.labels -}}
-app.kubernetes.io/name: {{ coalesce .Values.global.labels.app "ska-dlm.name" }}
+app.kubernetes.io/name: {{ coalesce .Values.global.labels.app (include "ska-dlm.name" .) }}
 {{- else -}}
 app.kubernetes.io/name: {{ include "ska-dlm.name" . }}
 {{- end }}
@@ -60,22 +60,15 @@ intent: production
 
 {{/* PostgreSQL service name */}}
 {{- define "ska-dlm.postgresql.name" -}}
-{{- printf "%s-%s" .Release.Name .Values.postgresql.nameOverride -}}
+{{- printf "%s-postgresql" .Release.Name -}}
 {{- end -}}
 
 {{/*
-Generates the PostgreREST Secret name
+Generates the PostgREST Secret name.
+Uses the subchart value as the single source of truth.
 */}}
 {{- define "ska-dlm.postgrest.db-auth-secret-name" -}}
-{{- if not .Values.postgrest.db_auth_secret.create -}}
-{{- if not .Values.postgrest.db_auth_secret.name -}}
-{{- fail "postgrest.db_auth_secret.enable=false but no postgrest.secret.name given" }}
-{{- else -}}
-{{ .Values.postgrest.db_auth_secret.name }}
-{{- end -}}
-{{- else -}}
-{{- printf "%s-postgrest-secret" (include "ska-dlm.fullname" .) -}}
-{{- end -}}
+{{- tpl (index .Values "ska-db-migrations" "dbCredentialsSecretName") . -}}
 {{- end -}}
 
 {{/*
@@ -186,4 +179,12 @@ Heuristic labels
 component: {{ .Values.heuristics.component }}
 subsystem: {{ .Values.heuristics.subsystem }}
 intent: production
+{{- end -}}
+
+{{/*
+Database migrations job/configmap name.
+This must match the ska-db-migrations subchart naming convention.
+*/}}
+{{- define "ska-dlm.db-migrations.name" -}}
+ska-dlm-db-migrations-{{ .Release.Name }}
 {{- end -}}

@@ -1,16 +1,11 @@
+--liquibase formatted sql
+
+--changeset dlm:initial-tables-and-lookups splitStatements:false
+SET search_path TO dlm;
+
 --
 -- SQL DDL for SKA Data Lifecycle Management DB setup
 --
-
- -- verify that the user has CREATE permission within the DB before checking existence or creating a schema
-DO $$
-BEGIN
-   IF has_database_privilege(current_user, current_database(), 'CREATE') THEN
-   CREATE SCHEMA IF NOT EXISTS dlm;  -- this statement would throw error in sandboxed database environment without CREATE privilege
-   END IF;
-END $$ LANGUAGE plpgsql;
-
-SET search_path TO dlm;
 
 --
 -- Lookup tables
