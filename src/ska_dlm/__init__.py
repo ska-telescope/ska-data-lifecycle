@@ -14,7 +14,7 @@ from benedict import benedict
 
 from . import dlm_db
 
-__version__ = "1.3.2"
+__version__ = "2.0.0"
 
 DLM_LIB_DIR = Path(__file__).parent
 """The library install path of dlm."""

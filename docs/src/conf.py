@@ -50,9 +50,9 @@ author = "SKA Observatory"
 # built documents.
 #
 # The short X.Y.Z version.
-version = "1.3.2"
+version = "2.0.0"
 # The full version, including alpha/beta/rc pre-release tags.
-release = "1.3.2"
+release = "2.0.0"
 
 # -- General configuration ------------------------------------------------
 
