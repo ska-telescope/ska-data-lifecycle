@@ -9,7 +9,7 @@ sequenceDiagram
     participant Combine as Combine UID Phases
     participant DB as DLM Database
     participant Delete as Delete Heuristics
-    participant Add as Add Heuristics
+    participant Identify as Identify Target Storage Heuristics
     
     Admin->>Controller: Trigger Heuristics (oid, target_phase)
     
@@ -31,7 +31,9 @@ sequenceDiagram
         end
     else target_phase > ACTUAL_PHASE
         rect rgb(200, 210, 235)
-            Heuristic-->>Add: Create additional UID instance
+            Heuristic-->>Identify: Get storage
+            Identify-->>Heuristic: storage_id
+            Heuristic-->>copy_data_item: OID, storage_id
         end
     Heuristic->>DB: Update OID_phase to target_phase
     end
