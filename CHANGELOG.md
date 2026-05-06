@@ -1,5 +1,11 @@
 # Version History
 
+## Development
+
+### Added
+
+* Publish migrations image to Gitlab registery.
+
 ## 2.0.0
 
 ### Added
