@@ -93,10 +93,15 @@ against the configured PostgreSQL database.
 
 The behaviour of the migration process can be controlled using Helm values, such as:
 
-- ``ska-db-migrations.runMigrations``: Enables or disables running migrations
-- ``ska-db-migrations.liquibase.contextFilter``: Controls which changesets are applied
+* ``ska-db-migrations.runMigrations``: Set to ``true`` (default) to run migrations on deploy.
 
-If migrations are disabled (not recommended), the database must be pre-initialised and already conform to the latest schema version before deployment.
+   * If migrations are disabled (not recommended), the database must be pre-initialised and already conform to the latest schema version before deployment.
+
+* ``ska-db-migrations.liquibase.contextFilter``: Controls which changesets are applied.
+
+   * Set to ``create-roles,create-db,create-schema`` to run all changesets, including role creation, database creation and schema creation (if the role has permission).
+   * Set to ``default`` to run only standard application schema changes, skipping steps that require database-level privileges (like creating the roles/database/schema themselves). This is intended for use with sandboxed roles.
+
 
 Storage Manager
 ----------------
