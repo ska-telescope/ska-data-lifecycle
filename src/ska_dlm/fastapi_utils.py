@@ -1,3 +1,4 @@
+# pylint: disable=C0103
 """Common utilities for CLI modules."""
 
 import copy

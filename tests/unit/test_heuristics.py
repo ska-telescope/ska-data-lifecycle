@@ -1,4 +1,7 @@
 # pylint: disable=C0302
+# pylint: disable=W0612
+# pylint: disable=E1129
+# flake8: noqa: F841
 """Unit tests for DLM heuristics."""
 
 import uuid
@@ -174,7 +177,6 @@ class TestIncreaseOidPhaseHeuristic:
         """Test that UID creation uses copy_data_item."""
         oid = uuid.uuid4()
         source_uid = uuid.uuid4()
-        new_uid = uuid.uuid4()
         target_storage_id = uuid.uuid4()
         current_phase = PhaseType.GAS
         target_phase = PhaseType.LIQUID  # LIQUID has higher resilience (lower order)
@@ -196,7 +198,9 @@ class TestIncreaseOidPhaseHeuristic:
 
         # Mock combine heuristic
         heuristic.combine_heuristic.execute = AsyncMock(
-            return_value=BaseHeuristic.success_result("Combined", {"actual_phase": PhaseType.LIQUID})
+            return_value=BaseHeuristic.success_result(
+                "Combined", {"actual_phase": PhaseType.LIQUID}
+            )
         )
 
         # Mock identify storage heuristic
@@ -1206,7 +1210,6 @@ class TestIdentifyTargetStorageHeuristic:
         """Test when no storage backends are available."""
         oid = uuid.uuid4()
         target_phase = PhaseType.LIQUID
-        uid = uuid.uuid4()
         storage_id = uuid.uuid4()
 
         # Mock: UID already exists with storage_id
@@ -1296,7 +1299,9 @@ class TestIdentifyTargetStorageHeuristic:
 
         # Mock combine heuristic - 2 GAS phases combine to LIQUID
         heuristic.combine_heuristic.execute = AsyncMock(
-            return_value=BaseHeuristic.success_result("Combined", {"actual_phase": PhaseType.LIQUID})
+            return_value=BaseHeuristic.success_result(
+                "Combined", {"actual_phase": PhaseType.LIQUID}
+            )
         )
 
         result = await heuristic.execute(oid, target_phase)
@@ -1374,7 +1379,9 @@ class TestIdentifyTargetStorageHeuristic:
 
         # Mock combine heuristic
         heuristic.combine_heuristic.execute = AsyncMock(
-            return_value=BaseHeuristic.success_result("Combined", {"actual_phase": PhaseType.LIQUID})
+            return_value=BaseHeuristic.success_result(
+                "Combined", {"actual_phase": PhaseType.LIQUID}
+            )
         )
 
         result = await heuristic.execute(oid, target_phase)
