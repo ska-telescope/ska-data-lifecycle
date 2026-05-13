@@ -5,6 +5,7 @@ from .heuristics import (
     CombineUidPhasesHeuristic,
     DecreaseOidPhaseHeuristic,
     DeleteUidHeuristic,
+    IdentifyTargetStorageHeuristic,
     IncreaseOidPhaseHeuristic,
     OidPhaseEnforceHeuristic,
 )
@@ -16,4 +17,5 @@ __all__ = [
     "DecreaseOidPhaseHeuristic",
     "DeleteUidHeuristic",
     "OidPhaseEnforceHeuristic",
+    "IdentifyTargetStorageHeuristic",
 ]
