@@ -4,6 +4,7 @@
 
 ### Added
 
+* Heuristic to enable raising the OID phase of a data_item to an expected target_phase.
 * Publish migrations image to Gitlab registery.
 
 ## 2.0.0
