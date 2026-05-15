@@ -294,19 +294,19 @@ def init_storage(
     storage_name
         An organisation or owner name for the storage.
     storage_type
-        high level type of the storage, from enum StorageType
+        High level type of the storage, from enum StorageType
     storage_interface
-        storage interface for rclone access, from enum StorageInterface
+        Storage interface for rclone access, from enum StorageInterface
     root_directory
-        data directory as an absolute path on the remote storage endpoint
+        Data directory as an absolute path on the remote storage endpoint
     location_id
-        a dlm registered location id
+        A dlm registered location id
     location_name
-        a dlm registered location name
+        A dlm registered location name
     storage_capacity
-        reserved storage capacity in bytes
+        Reserved storage capacity in bytes
     storage_phase
-        from the enum PhaseType
+        From the enum PhaseType. One of "GAS", "LIQUID", "SOLID"
     storage_config
         Alternative way to initialize a storage volume by providing JSON
 

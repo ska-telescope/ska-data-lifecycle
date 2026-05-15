@@ -10,7 +10,7 @@ from ska_dlm.common_types import (
     StorageInterface,
     StorageType,
 )
-from ska_dlm.typer_types import JsonObjectArg
+from ska_dlm.typer_types import JsonObjectArg, JsonObjectOption
 from tests.integration.client.exception_handler import dlm_raise_for_status
 
 STORAGE_URL = ""
@@ -39,6 +39,20 @@ def init_location(
         the location city name
     location_facility
         the location facility name, from table location_facility
+
+    Returns
+    -------
+    str
+        created location_id
+
+    Raises
+    ------
+    InvalidQueryParameters
+        either location_name or location_type is empty
+    ValueAlreadyInDB
+        location_name aleady exists in database
+    ValueError
+        if location_country is not a valid enum value from LocationCountry
     """
     params = {k: v for k, v in locals().items() if v}
     headers = {"Authorization": f"Bearer {TOKEN}"}
@@ -59,45 +73,52 @@ def init_storage(
     location_name: str | None = None,
     storage_capacity: int = -1,
     storage_phase: PhaseType = PhaseType.GAS,
-    rclone_config: dict | None = None,
+    storage_config: JsonObjectOption = None,
 ) -> str:
     """
     Initialise a new storage. Either location_id or location_name is required.
-
-    location_name or location_id is required.
 
     Parameters
     ----------
     storage_name
         An organisation or owner name for the storage.
-    location_name
-        a dlm registered location name
-    storage_interface
-        storage interface for rclone access, e.g. "posix", "s3"
-    root_directory
-        root directory of storage
-    location_id
-        a dlm registered location id
     storage_type
-        high level type of the storage: 'filesystem', 'objectstore' or 'tape'
+        High level type of the storage, from enum StorageType
+    storage_interface
+        Storage interface for rclone access, from enum StorageInterface
+    root_directory
+        Data directory as an absolute path on the remote storage endpoint
+    location_id
+        A dlm registered location id
+    location_name
+        A dlm registered location name
     storage_capacity
-        reserved storage capacity in bytes
+        Reserved storage capacity in bytes
     storage_phase
-        one of "GAS", "LIQUID", "SOLID"
-    rclone_config
-        extra rclone values such as secrets required for connection
+        From the enum PhaseType. one of "GAS", "LIQUID", "SOLID"
+    storage_config
+        Alternative way to initialize a storage volume by providing JSON
 
     Returns
     -------
     str
         Either a storage_id or an empty string
+
+    Raises
+    ------
+    InvalidQueryParameters
+        if a mandatory argument is missing
+    ValueError
+        if storage_type is not a valid enum value from StorageType
+        if storage_interface is not a valid enum value from StorageInterface
+        if storage_phase is not a valid enum value from PhaseType
     """
     params = {k: v for k, v in locals().items() if v}
     headers = {"Authorization": f"Bearer {TOKEN}"}
     response = requests.post(
         f"{STORAGE_URL}/storage/init_storage",
         params=params,
-        json=rclone_config,
+        json=storage_config,
         headers=headers,
         timeout=60,
     )
@@ -195,20 +216,19 @@ def create_rclone_config(config: JsonObjectArg) -> bool:
 # pylint: disable=unused-argument
 def query_storage(storage_name: str = "", storage_id: str = "") -> list[dict]:
     """
-    Query a storage.
-
-    storage_name or storage_id is required.
+    Query storage locations.
 
     Parameters
     ----------
     storage_name
-        could be empty, in which case the first 1000 items are returned
+        Name of the storage to query. If not provided, the first 1000 locations are returned.
     storage_id
-        Return locations referred to by the location_id provided.
+        ID of the storage to query. Ignored if storage_name is provided.
 
     Returns
     -------
     list[dict]
+        A list of storage locations matching the query criteria.
     """
     params = {k: v for k, v in locals().items() if v}
     headers = {"Authorization": f"Bearer {TOKEN}"}

@@ -24,10 +24,7 @@ def copy_data_item(
     (2) convert one (first) storage_id to a configured rclone backend
     (3) initialise the new item with the same OID on the new storage
     (4) use the rclone copy command to copy it to the new location
-    (5) set the access path to the payload
-    (6) set state to READY
-    (7) save metadata in the data_item table
-
+    (5) add record to the migration table
 
     Parameters
     ----------
