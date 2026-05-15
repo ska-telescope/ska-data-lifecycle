@@ -39,6 +39,7 @@ Within a configuration, a user can:
       - storage_type: type of storage endpoint ('filesystem', 'objectstore', 'tape')
       - interface: storage interface ('posix', 's3', 'sftp', 'https')
       - root_directory: root directory of mount point.
+      - storage_phase: resilience level of the storage ("GAS", "LIQUID", "SOLID")
       - config: RClone config
 
 ```
@@ -79,6 +80,7 @@ storage:
     storage_type: filesystem
     interface: posix
     root_directory: /
+    storage_phase: GAS
     config:
         name: test_source
         type: alias
@@ -91,6 +93,7 @@ storage:
     storage_type: filesystem
     interface: posix
     root_directory: /
+    storage_phase: GAS
     config:
         name: test_destination
         type: alias
@@ -99,10 +102,11 @@ storage:
   storage3:
     location: test_location
     name: s3_destination
-    location_type: local-dev
+    location_type: low-integration
     storage_type: objectstore
     interface: s3
     root_directory: /
+    storage_phase: SOLID
     config:
       name: s3
       type: s3
