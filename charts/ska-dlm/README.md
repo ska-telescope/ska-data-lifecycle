@@ -122,8 +122,8 @@ endpoints:
                     "region": ap-southeast-2,
                     "location_constraint": ap-southeast-2}
 ```
-Alternatively, instead of defining the `config.parameters` values directly in `values.yaml`, you can reference an existing Kubernetes Secret.
-For example, if you have a Secret named `s3-example-secret` containing:
+Alternatively, `config.parameters` values can be sourced from an existing Kubernetes Secret instead of being defined directly in `values.yaml`.
+For example, given a Secret named `s3-example-secret` containing:
 ```
 dlm-storage: {
   "access_key_id": "access key",
@@ -133,7 +133,7 @@ dlm-storage: {
   "location_constraint": "ap-southeast-2"
   }
 ```
-You can reference it from `values.yaml` like this:
+It is possible to reference the Secret in `values.yaml` as follows:
 ```
 endpointSecretName: "s3-example-secret"
 endpoints:
