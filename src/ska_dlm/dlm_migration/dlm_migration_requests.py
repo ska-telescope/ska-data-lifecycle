@@ -384,6 +384,7 @@ def copy_data_item(  # noqa: C901
     (2) convert one (first) storage_id to a configured rclone backend
     (3) initialise the new item with the same OID on the new storage
     (4) use the rclone copy command to copy it to the new location
+    (5) add record to the migration table
 
     Parameters
     ----------
@@ -483,7 +484,7 @@ def copy_data_item(  # noqa: C901
     new_item_uid = init_data_item(json_data=init_item)
 
     try:
-        # (4)
+        # (4) copy item to the new location
         # TODO(yan-xxx) abstract the actual function called away to allow for different
         # mechanisms to perform the copy. Also needs to be a non-blocking call
         # scheduling a job for dlm_migration service.
@@ -510,7 +511,7 @@ def copy_data_item(  # noqa: C901
             )
             raise OSError("rclone copy request failed.")
 
-        # add row to migration table
+        # (5) add row to migration table
         # NOTE: temporarily use server_id='rclone0' until we actually have multiple rclone servers
         record = _create_migration_record(
             content["jobid"],
