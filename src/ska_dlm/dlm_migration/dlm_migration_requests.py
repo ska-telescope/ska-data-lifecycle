@@ -274,7 +274,7 @@ def query_migrations(
         if username is None:
             raise ValueError("Username not found in profile")
 
-    params = {'limit': 1000}
+    params = {"limit": 1000}
     if username:
         params["user"] = f"eq.{username}"
 
