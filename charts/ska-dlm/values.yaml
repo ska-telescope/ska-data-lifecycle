@@ -126,6 +126,8 @@ ska-db-migrations:
 
 postgresql:
   enabled: true  # whether to deploy a local 'test' DB instead of connecting to an existing DB
+  image: postgres
+  version: "17-bookworm"
 
   auth:
   # Used for local PostgreSQL bootstrap when postgresql.enabled=true

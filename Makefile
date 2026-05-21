@@ -70,6 +70,10 @@ oci-build-migrations:
 	make oci-build OCI_IMAGE=ska-data-lifecycle-migrations \
 	OCI_IMAGE_FILE_PATH=tests/Dockerfile-migrations
 
+oci-build-db:
+	make oci-build OCI_IMAGE=ska-data-lifecycle-db \
+	OCI_IMAGE_FILE_PATH=tests/Dockerfile-db
+
 k8s-recreate-namespace: k8s-delete-namespace k8s-namespace
 k8s-do-test:
 	$(PYTHON_VARS_BEFORE_PYTEST) $(PYTHON_RUNNER) pytest --env k8s $(PYTHON_VARS_AFTER_PYTEST) \
