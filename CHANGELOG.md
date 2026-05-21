@@ -5,6 +5,7 @@
 ### Added
 
 * Publish migrations image to Gitlab registery.
+* Added pg_sphere to local db build.
 
 ## 2.0.0
 
