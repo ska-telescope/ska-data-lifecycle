@@ -86,6 +86,7 @@ endpoints:
   - storage_type: type of storage endpoint ("filesystem", "objectstore", "tape")
   - interface: storage interface ("posix", "s3", "sftp", "https")
   - root_directory: root directory of mount point.
+  - storage_phase: resilience level of the storage ("GAS", "LIQUID", "SOLID")
   - config:
       - name: rclone storage name
       - type: rclone storage type i.e. ("s3", "alias", ...)
@@ -95,11 +96,54 @@ endpoints:
   - location: ...
 ```
 
-* Set `storage.endpointSecretName` to the name of predefined k8 secret. The secret can contain the key value pairs of rclone secrets for a named storage endpoint. The `config.parameters` value for an endpoint will be replaced by the secret value if the secret key matches the name of the storage endpoint.
-For example, if the `config.name` is `test` then the it will look for the key value pair with the name `test` and then replace `config.paramaters` with the keys value.
-If `storage.endpointSecretName` is empty, then the `config.parameters` will remained unchanged.
+* Set `storage.endpointSecretName` to the name of predefined Kubernetes Secret containing rclone configuration parameters for one or more storage endpoints.
+The Secret name itself does not need to match any endpoint name. However, each key inside the Secret must match the corresponding `storage.endpoints[].name` value in `values.yaml`.
+During Helm rendering, the `config.parameters` value for an endpoint will be replaced by the JSON content stored in the matching Secret key.
+If `storage.endpointSecretName` is empty, then the `config.parameters` will remain unchanged.
 
 ### Storage Endpoint Examples
+
+#### S3 Endpoint
+
+```
+endpoints:
+  - name: dlm-storage
+    location: AWS
+    storage_type: objectstore
+    interface: s3
+    root_directory: /dlm-storage
+    storage_phase: SOLID
+    config:
+      name: dlm-storage
+      type: s3
+      parameters: {"access_key_id": "access key",
+                    "provider": "AWS",
+                    "secret_access_key": "secret key",
+                    "region": ap-southeast-2,
+                    "location_constraint": ap-southeast-2}
+```
+Alternatively, `config.parameters` values can be sourced from an existing Kubernetes Secret instead of being defined directly in `values.yaml`.
+For example, given a Secret named `s3-example-secret` containing:
+```
+dlm-storage: {
+  "access_key_id": "access key",
+  "provider": "AWS",
+  "secret_access_key": "secret key",
+  "region": "ap-southeast-2",
+  "location_constraint": "ap-southeast-2"
+  }
+```
+It is possible to reference the Secret in `values.yaml` as follows:
+```
+endpointSecretName: "s3-example-secret"
+endpoints:
+  - name: dlm-storage
+    ...
+    config:
+      name: dlm-storage
+      type: s3
+      parameters: {}
+```
 
 #### SFTP Endpoint
 ```
@@ -123,27 +167,6 @@ If `storage.endpointSecretName` is empty, then the `config.parameters` will rema
 Alternatively, one can specifiy the location of the key file by using `key_file`.
 
 Note that the public key must be put in the `authorized_keys` on the end point.
-
-#### S3 Endpoint
-
-```
-endpoints:
-  - name: dlm-archive
-    location: AWS
-    storage_type: objectstore
-    interface: s3
-    root_directory: /dlm-archive
-    storage_phase: SOLID
-    config:
-      name: dlm-archive
-      type: s3
-      parameters: {"access_key_id": "access key",
-                    "provider": "AWS",
-                    "secret_access_key": "secret key",
-                    "region": ap-southeast-2,
-                    "location_constraint": ap-southeast-2}
-```
-
 
 ## API Gateway
 

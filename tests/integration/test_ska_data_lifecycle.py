@@ -98,16 +98,6 @@ def __initialise_data_item(env):
 
 
 @pytest.mark.integration_test
-@pytest.mark.skip(reason="Placeholder. We removed the ingest_data_item alias.")
-def test_ingest_data_item(env):
-    """Test the ingest_data_item function."""
-    uid = env.ingest_requests.register_data_item(
-        item_name="/my/ingest/test/item", uri=TEST_URI, storage_name="MyDisk", metadata=None
-    )
-    assert len(uid) == 36
-
-
-@pytest.mark.integration_test
 def test_register_data_item_with_metadata(env):
     """Test the register_data_item function with provided metadata."""
     uid = env.ingest_requests.register_data_item(
