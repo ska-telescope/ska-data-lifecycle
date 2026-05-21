@@ -1,5 +1,9 @@
 # Version History
 
+## Development
+
+* Added pg_sphere to local db build.
+
 ## 2.1.0
 
 ### Added
@@ -7,7 +11,6 @@
 * Publish migrations image to Gitlab registery.
 * Heuristic to enable raising the OID phase of a data_item to an expected target_phase.
 * Publish migrations image to Gitlab registry.
-* Added pg_sphere to local db build.
 
 ## 2.0.0
 
