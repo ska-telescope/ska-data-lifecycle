@@ -3,6 +3,7 @@
 ## Development
 
 * Added pg_sphere to local db build.
+* Add default dlm-archive storage endpoint. 
 
 ## 2.1.0
 
