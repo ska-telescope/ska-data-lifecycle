@@ -53,10 +53,25 @@ storage:
   replicas: 1
 
   locations: # Location endpoints (can list multiple)
-
+    - name: local
+      type: local-dev
+      country: AU
+      city: Perth
+      facility: local
   endpointSecretName: ""
   endpoints: # Storage endpoints (can list multiple)
-
+    - name: dlm-archive
+      location: local
+      storage_type: filesystem
+      interface: posix
+      root_directory: /
+      storage_phase: SOLID
+      config:
+        name: local
+        type: alias
+        parameters: {
+            "remote": "/data",
+          }
 migration:
   component: migration
   subsystem: data-lifecycle-management
