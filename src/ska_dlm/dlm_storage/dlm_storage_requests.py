@@ -654,7 +654,7 @@ def init_location(
     location_type: LocationType,
     location_country: LocationCountry | None = None,
     location_city: str = "",
-    location_facility: str = "",
+    location_facility: str = "",  # TODO: enforce choice from query_location_facility()
 ) -> str:
     """Initialise a new location for a storage by specifying the location_name and location_type.
 
