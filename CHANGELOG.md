@@ -2,8 +2,14 @@
 
 ## Development
 
+### Changed
+
+* The integration tests set up a storage endpoint dlm-archive.
+
+### Added
+
 * Added pg_sphere to local db build.
-* Add default dlm-archive storage endpoint. 
+* Add default dlm-archive storage endpoint.
 
 ## 2.1.0
 
