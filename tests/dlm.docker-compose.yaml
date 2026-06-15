@@ -39,8 +39,8 @@ services:
     ports:
       - 8003:8003
     volumes:
-      - ./location-config.json:/etc/location-config.json
-      - ./storage-config.json:/etc/storage-config.json
+      - ${PWD}/tests/location-config.json:/etc/location-config.json
+      - ${PWD}/tests/storage-config.json:/etc/storage-config.json
       - shared-tmpfs:/dlm
     depends_on:
       - dlm_gateway
