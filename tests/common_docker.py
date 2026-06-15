@@ -73,15 +73,19 @@ class DlmTestClientDocker(DlmTestClient):
     @override
     def clear_rclone_data(self, path: str):
         directory = Path(path)
-        for item in directory.iterdir():
-            if item.is_dir():
-                self.clear_rclone_data(item)
-            else:
-                item.unlink()
+        try:
+            for item in directory.iterdir():
+                if item.is_dir():
+                    self.clear_rclone_data(item)
+                else:
+                    item.unlink()
+        except FileNotFoundError:
+            pass
 
-    def create_rclone_directory(self, path: str):
+    def create_rclone_directory(self, path: str, mode: int = 0o777):
         """Create rclone directory."""
         os.makedirs(path, exist_ok=True)
+        os.chmod(path, mode)
 
     @override
     def get_gateway_url(self) -> str:

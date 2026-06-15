@@ -114,14 +114,14 @@ class DlmTestClientK8s(DlmTestClient):
         )
         return output
 
-    def create_rclone_directory(self, path: str):
+    def create_rclone_directory(self, path: str, mode: int = 0o777):
         """Create rclone directory."""
         pod_name = self._get_pod_name(RCLONE_DEPLOYMENT)
         output = stream.stream(
             self.core_api.connect_get_namespaced_pod_exec,
             pod_name,
             NAMESPACE,
-            command=["/bin/sh", "-c", f"mkdir -p {path}"],
+            command=["/bin/sh", "-c", f"mkdir -p {path}", f" && chmod {mode:o} {path}"],
             stdout=True,
         )
         return output

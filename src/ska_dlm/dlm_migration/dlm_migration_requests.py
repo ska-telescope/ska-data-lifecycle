@@ -221,9 +221,19 @@ async def update_migration_statuses():
 
                 if dest_data_item:
                     if status_json["success"] is True:
+                        logging.info(
+                            "Migration %s success, data item %s",
+                            migration_id,
+                            dest_data_item[0]["uid"],
+                        )
                         set_state(uid=dest_data_item[0]["uid"], state="READY")
                     else:
                         # delete remote data item if there is a transfer problem
+                        logging.info(
+                            "Migration %s failed, deleting data item %s",
+                            migration_id,
+                            dest_data_item[0]["uid"],
+                        )
                         delete_data_item_entry(uid=dest_data_item[0]["uid"])
 
             # update migration database

@@ -1,5 +1,6 @@
 """Unit tests for DLM SQLAlchemy models."""
 
+import asyncio
 import os
 import uuid
 
@@ -63,13 +64,7 @@ async def session(engine):
 
     async with async_session_factory() as async_session:
         # cleanup rows, keep table schema
-        await async_session.execute(Migration.__table__.delete())
-        await async_session.execute(DataItem.__table__.delete())
-        await async_session.execute(StorageConfig.__table__.delete())
-        await async_session.execute(Storage.__table__.delete())
-        await async_session.execute(Location.__table__.delete())
-        await async_session.execute(LocationFacility.__table__.delete())
-        await async_session.commit()
+        pass
 
 
 # pylint: disable=too-few-public-methods, redefined-outer-name
@@ -77,8 +72,9 @@ class TestLocation:
     """Test Location model."""
 
     @pytest.mark.asyncio
-    async def test_create_location(self, session):
+    async def test_create_location(self, session, request):
         """Test creating a Location."""
+        loop = asyncio.get_running_loop()
         location = Location(
             location_name="test-location",
             location_type=LocationType.LOCAL_DEV,
@@ -87,6 +83,16 @@ class TestLocation:
         )
         session.add(location)
         await session.commit()
+
+        def cleanup():
+            async def async_cleanup():
+                await session.delete(location)
+                await session.commit()
+
+            loop.run_until_complete(async_cleanup())
+
+        # Register the teardown function
+        request.addfinalizer(cleanup)
 
         assert location.location_name == "test-location"
         assert location.location_type == LocationType.LOCAL_DEV
@@ -100,8 +106,9 @@ class TestStorage:
     """Test Storage model."""
 
     @pytest.mark.asyncio
-    async def test_create_storage(self, session):
+    async def test_create_storage(self, session, request):
         """Test creating a Storage."""
+        loop = asyncio.get_running_loop()
         location = Location(
             location_name="test-location",
             location_type=LocationType.LOCAL_DEV,
@@ -122,6 +129,17 @@ class TestStorage:
         session.add(storage)
         await session.commit()
 
+        def cleanup():
+            async def async_cleanup():
+                await session.delete(storage)
+                await session.delete(location)
+                await session.commit()
+
+            loop.run_until_complete(async_cleanup())
+
+        # Register the teardown function
+        request.addfinalizer(cleanup)
+
         assert storage.storage_name == "test-storage"
         assert storage.storage_type == StorageType.FILESYSTEM
         assert storage.storage_interface == StorageInterface.POSIX
@@ -134,8 +152,9 @@ class TestStorageConfig:
     """Test StorageConfig model."""
 
     @pytest.mark.asyncio
-    async def test_create_storage_config(self, session):
+    async def test_create_storage_config(self, session, request):
         """Test creating a StorageConfig."""
+        loop = asyncio.get_running_loop()
         location = Location(
             location_name="test-location",
             location_type=LocationType.LOCAL_DEV,
@@ -161,6 +180,18 @@ class TestStorageConfig:
         session.add(config)
         await session.commit()
 
+        def cleanup():
+            async def async_cleanup():
+                await session.delete(config)
+                await session.delete(storage)
+                await session.delete(location)
+                await session.commit()
+
+            loop.run_until_complete(async_cleanup())
+
+        # Register the teardown function
+        request.addfinalizer(cleanup)
+
         assert config.config_type == ConfigType.RCLONE
         assert config.config == {"key": "value"}
         assert config.storage_id == storage.storage_id
@@ -171,8 +202,9 @@ class TestDataItem:
     """Test DataItem model."""
 
     @pytest.mark.asyncio
-    async def test_create_data_item(self, session):
+    async def test_create_data_item(self, session, request):
         """Test creating a DataItem."""
+        loop = asyncio.get_running_loop()
         location = Location(
             location_name="test-location",
             location_type=LocationType.LOCAL_DEV,
@@ -204,6 +236,18 @@ class TestDataItem:
         session.add(item)
         await session.commit()
 
+        def cleanup():
+            async def async_cleanup():
+                await session.delete(item)
+                await session.delete(storage)
+                await session.delete(location)
+                await session.commit()
+
+            loop.run_until_complete(async_cleanup())
+
+        # Register the teardown function
+        request.addfinalizer(cleanup)
+
         assert item.item_name == "test-item"
         assert item.item_mime_type == MimeType.APPLICATION_FITS
         assert item.item_state == ItemState.INITIALISED
@@ -215,8 +259,9 @@ class TestMigration:
     """Test Migration model."""
 
     @pytest.mark.asyncio
-    async def test_create_migration(self, session):
+    async def test_create_migration(self, session, request):
         """Test creating a Migration."""
+        loop = asyncio.get_running_loop()
         location = Location(
             location_name="test-location",
             location_type=LocationType.LOCAL_DEV,
@@ -250,6 +295,19 @@ class TestMigration:
         session.add(migration)
         await session.commit()
 
+        def cleanup():
+            async def async_cleanup():
+                await session.delete(migration)
+                await session.delete(source_storage)
+                await session.delete(dest_storage)
+                await session.delete(location)
+                await session.commit()
+
+            loop.run_until_complete(async_cleanup())
+
+        # Register the teardown function
+        request.addfinalizer(cleanup)
+
         assert migration.job_id == 123
         assert migration.source_storage_id == source_storage.storage_id
         assert migration.destination_storage_id == dest_storage.storage_id
@@ -259,8 +317,9 @@ class TestRelationships:
     """Test relationships between models."""
 
     @pytest.mark.asyncio
-    async def test_location_has_storages(self, session):
+    async def test_location_has_storages(self, session, request):
         """Test Location to Storage relationship."""
+        loop = asyncio.get_running_loop()
         location = Location(
             location_name="test-location",
             location_type=LocationType.LOCAL_DEV,
@@ -284,6 +343,18 @@ class TestRelationships:
         session.add_all([storage1, storage2])
         await session.commit()
 
+        def cleanup():
+            async def async_cleanup():
+                await session.delete(storage1)
+                await session.delete(storage2)
+                await session.delete(location)
+                await session.commit()
+
+            loop.run_until_complete(async_cleanup())
+
+        # Register the teardown function
+        request.addfinalizer(cleanup)
+
         # Check storages
         result = await session.execute(
             Storage.__table__.select().where(Storage.location_id == location.location_id)
@@ -292,8 +363,9 @@ class TestRelationships:
         assert len(storages) == 2
 
     @pytest.mark.asyncio
-    async def test_storage_has_data_items(self, session):
+    async def test_storage_has_data_items(self, session, request):
         """Test Storage to DataItem relationship."""
+        loop = asyncio.get_running_loop()
         location = Location(
             location_name="test-location",
             location_type=LocationType.LOCAL_DEV,
@@ -326,6 +398,19 @@ class TestRelationships:
         session.add_all([data_item1, data_item2])
         await session.commit()
 
+        def cleanup():
+            async def async_cleanup():
+                await session.delete(data_item1)
+                await session.delete(data_item2)
+                await session.delete(storage)
+                await session.delete(location)
+                await session.commit()
+
+            loop.run_until_complete(async_cleanup())
+
+        # Register the teardown function
+        request.addfinalizer(cleanup)
+
         # Check data items
         result = await session.execute(
             DataItem.__table__.select().where(DataItem.storage_id == storage.storage_id)
@@ -334,8 +419,9 @@ class TestRelationships:
         assert len(data_items) == 2
 
     @pytest.mark.asyncio
-    async def test_storage_has_config(self, session):
+    async def test_storage_has_config(self, session, request):
         """Test Storage to StorageConfig relationship."""
+        loop = asyncio.get_running_loop()
         location = Location(
             location_name="test-location",
             location_type=LocationType.LOCAL_DEV,
@@ -361,6 +447,18 @@ class TestRelationships:
         session.add(config)
         await session.commit()
 
+        def cleanup():
+            async def async_cleanup():
+                await session.delete(config)
+                await session.delete(storage)
+                await session.delete(location)
+                await session.commit()
+
+            loop.run_until_complete(async_cleanup())
+
+        # Register the teardown function
+        request.addfinalizer(cleanup)
+
         # Check config
         result = await session.execute(
             StorageConfig.__table__.select().where(StorageConfig.storage_id == storage.storage_id)
@@ -370,8 +468,9 @@ class TestRelationships:
         assert storage_config.config_type == ConfigType.RCLONE
 
     @pytest.mark.asyncio
-    async def test_location_facility_has_locations(self, session):
+    async def test_location_facility_has_locations(self, session, request):
         """Test LocationFacility to Location relationship."""
+        loop = asyncio.get_running_loop()
         facility = LocationFacility(id="test-facility")
         session.add(facility)
         await session.commit()
@@ -391,6 +490,18 @@ class TestRelationships:
         session.add_all([location1, location2])
         await session.commit()
 
+        def cleanup():
+            async def async_cleanup():
+                await session.delete(location1)
+                await session.delete(location2)
+                await session.delete(facility)
+                await session.commit()
+
+            loop.run_until_complete(async_cleanup())
+
+        # Register the teardown function
+        request.addfinalizer(cleanup)
+
         # Check locations
         result = await session.execute(
             Location.__table__.select().where(Location.location_facility == facility.id)
@@ -399,8 +510,9 @@ class TestRelationships:
         assert len(locations) == 2
 
     @pytest.mark.asyncio
-    async def test_migration_has_storages(self, session):
+    async def test_migration_has_storages(self, session, request):
         """Test Migration relationships to storages."""
+        loop = asyncio.get_running_loop()
         location = Location(
             location_name="test-location",
             location_type=LocationType.LOCAL_DEV,
@@ -433,6 +545,19 @@ class TestRelationships:
         )
         session.add(migration)
         await session.commit()
+
+        def cleanup():
+            async def async_cleanup():
+                await session.delete(migration)
+                await session.delete(source)
+                await session.delete(dest)
+                await session.delete(location)
+                await session.commit()
+
+            loop.run_until_complete(async_cleanup())
+
+        # Register the teardown function
+        request.addfinalizer(cleanup)
 
         # Check migration storages
         result = await session.execute(Migration.__table__.select().where(Migration.job_id == 456))

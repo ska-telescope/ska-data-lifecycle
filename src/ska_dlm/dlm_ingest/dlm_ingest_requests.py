@@ -1,6 +1,7 @@
 """DLM ingest API module."""
 
 import logging
+import re
 from datetime import datetime
 from typing import Annotated
 
@@ -203,8 +204,10 @@ def register_data_item(  # noqa: C901
             f"No storages found for {storage_name=}, {storage_id=}"
         )
     storage_id = storages[0]["storage_id"]
-    file_path = f"{storages[0]['root_directory']}/{uri}".replace("//", "/")
-
+    file_path = f"{storages[0]['root_directory']}/{uri}"
+    # Removes duplicate slashes from the file path, os.path.normpath cannot be
+    # used as it does not remove dupliacate slashes at the start.
+    file_path = re.sub(r"/{2,}", "/", file_path)
     # (2)
     if do_storage_access_check and not check_storage_access(
         storage_name=storage_name, storage_id=storage_id, remote_file_path=file_path

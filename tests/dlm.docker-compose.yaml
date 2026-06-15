@@ -33,15 +33,19 @@ services:
        dockerfile: tests/Dockerfile-dlm-compose
     environment:
       SSH_PUBLIC_KEY_PATH: "/dlm/.ssh/id_rsa.pub"
+      LOCATION_CONFIG: "/etc/location-config.json"
+      STORAGE_CONFIG: "/etc/storage-config.json"
     entrypoint: uvicorn ska_dlm.dlm_storage.dlm_storage_requests:rest --host 0.0.0.0 --port 8003
     ports:
       - 8003:8003
     volumes:
+      - ./location-config.json:/etc/location-config.json
+      - ./storage-config.json:/etc/storage-config.json
       - shared-tmpfs:/dlm
     depends_on:
       - dlm_gateway
       - dlm_postgrest
-      - dlm_rclone
+      - dlm_archive
     healthcheck:
       test: ["CMD-SHELL", "ska-dlm --help || exit 1"]
       interval: 10s

@@ -12,10 +12,6 @@ from ska_dlm.dlm_db.db_access import DB
 
 def _clear_database():
     DB.delete(CONFIG.DLM.dlm_table)
-    DB.delete(CONFIG.DLM.storage_config_table)
-    DB.delete(CONFIG.DLM.storage_table)
-    DB.delete(CONFIG.DLM.migration_table)
-    DB.delete(CONFIG.DLM.location_table)
 
 
 # pylint: disable=unused-argument
