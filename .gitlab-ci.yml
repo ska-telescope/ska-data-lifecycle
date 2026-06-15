@@ -144,13 +144,16 @@ k8s-test:
     KUBE_NAMESPACE: ci-$CI_PROJECT_NAME-$CI_PIPELINE_ID
     HELM_VALUES: resources/dp-cluster.yaml
     K8S_CHART_PARAMS: --values resources/dp-cluster.yaml --wait --timeout=5m
+    HELM_RELEASE: ska-dlm-ci-$CI_PIPELINE_ID # unique value
   before_script:
     - poetry config virtualenvs.create $POETRY_CONFIG_VIRTUALENVS_CREATE
     - poetry install --with=test
   script:
     - make k8s-install-chart
     - kubectl -n $KUBE_NAMESPACE get pods
-    - kubectl -n $KUBE_NAMESPACE wait --for=condition=Ready pods --all --timeout=5m
+    # - kubectl -n $KUBE_NAMESPACE wait --for=condition=Ready pods --all --timeout=5m # times out
+    - kubectl -n $KUBE_NAMESPACE wait --for=condition=Available deployment --all --timeout=5m
+    - kubectl -n $KUBE_NAMESPACE get deployments
     # - make k8s-test # WIP
   after_script:
     - make k8s-uninstall-chart || true

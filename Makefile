@@ -4,7 +4,7 @@ PYTHON_SWITCHES_FOR_FLAKE8 = --ignore-decorator=override
 
 K8S_CHART = ska-dlm
 KUBE_NAMESPACE ?= default
-HELM_RELEASE ?= $(K8S_CHART)-default  # unique value
+HELM_RELEASE ?= $(K8S_CHART)-default  # default local release name
 KUBE_APP = $(HELM_RELEASE)
 HELM_TIMEOUT ?= 5m
 HELM_VALUES ?=
@@ -30,7 +30,7 @@ endif  # GITLAB_CI
 SHARED_VOLUMES_DIR ?= ${PWD}/tests/volumes
 
 # Make these available as environment variables
-export KUBE_NAMESPACE K8S_HOST_URL SHARED_VOLUMES_DIR
+export KUBE_NAMESPACE K8S_HOST_URL SHARED_VOLUMES_DIR HELM_RELEASE
 
 .PHONY: docs-pre-build k8s-recreate-namespace k8s-do-test
 
@@ -102,6 +102,7 @@ export DP_PVC
 ## Delete the existing PVC and PV. Note that this is safe as the PV is shared clusterwide
 ## Recreate the PV and PVC before installing the app
 k8s-pre-install-chart:
+	echo "CI_RUNNER_TAGS=$CI_RUNNER_TAGS" ;\
 	if [[ "$(CI_RUNNER_TAGS)" == *"ska-k8srunner-dp"* ]] || [[ "$(CI_RUNNER_TAGS)" == *"ska-k8srunner-dp-gpu-a100"* ]] ; then \
 	make k8s-namespace ;\
 	kubectl -n ${KUBE_NAMESPACE} delete --now --ignore-not-found pvc/shared-mnl || true ;\
