@@ -1,5 +1,5 @@
 include:
-- path: services.docker-compose.yaml
+  - path: services.docker-compose.yaml
 
 services:
   dlm_migration:
@@ -7,8 +7,8 @@ services:
     image: dlm_migration
     container_name: dlm_migration
     build:
-       context: ..
-       dockerfile: tests/Dockerfile-dlm-compose
+      context: ..
+      dockerfile: tests/Dockerfile-dlm-compose
     entrypoint: uvicorn ska_dlm.dlm_migration.dlm_migration_requests:rest --host 0.0.0.0 --port 8004
     ports:
       - 8004:8004
@@ -29,18 +29,21 @@ services:
     image: dlm_storage
     container_name: dlm_storage
     build:
-       context: ..
-       dockerfile: tests/Dockerfile-dlm-compose
+      context: ..
+      dockerfile: tests/Dockerfile-dlm-compose
     environment:
       SSH_PUBLIC_KEY_PATH: "/dlm/.ssh/id_rsa.pub"
       LOCATION_CONFIG: "/etc/location-config.json"
       STORAGE_CONFIG: "/etc/storage-config.json"
+    configs:
+      - source: location_config
+        target: /etc/location-config.json
+      - source: storage_config
+        target: /etc/storage-config.json
     entrypoint: uvicorn ska_dlm.dlm_storage.dlm_storage_requests:rest --host 0.0.0.0 --port 8003
     ports:
       - 8003:8003
     volumes:
-      - ${PWD}/tests/location-config.json:/etc/location-config.json
-      - ${PWD}/tests/storage-config.json:/etc/storage-config.json
       - shared-tmpfs:/dlm
     depends_on:
       - dlm_gateway
@@ -59,8 +62,8 @@ services:
     container_name: dlm_request
     platform: linux/amd64
     build:
-       context: ..
-       dockerfile: tests/Dockerfile-dlm-compose
+      context: ..
+      dockerfile: tests/Dockerfile-dlm-compose
     entrypoint: uvicorn ska_dlm.dlm_request.dlm_request_requests:rest --host 0.0.0.0 --port 8002
     ports:
       - 8002:8002
@@ -81,8 +84,8 @@ services:
     image: dlm_ingest
     container_name: dlm_ingest
     build:
-       context: ..
-       dockerfile: tests/Dockerfile-dlm-compose
+      context: ..
+      dockerfile: tests/Dockerfile-dlm-compose
     entrypoint: uvicorn ska_dlm.dlm_ingest.dlm_ingest_requests:rest --host 0.0.0.0 --port 8001
     ports:
       - 8001:8001
@@ -122,3 +125,12 @@ services:
       retries: 5
     networks:
       - dlm_network
+
+configs:
+  # Declare the first file asset
+  storage_config:
+    file: ${PWD}/tests/storage-config.json
+
+  # Declare the second file asset
+  location_config:
+    file: ${PWD}/tests/location-config.json
