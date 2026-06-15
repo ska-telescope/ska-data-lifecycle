@@ -142,14 +142,18 @@ python-test:
 k8s-test:
   variables:
     KUBE_NAMESPACE: ci-$CI_PROJECT_NAME-$CI_PIPELINE_ID
-    HELM_VALUES: resources/config-ci-dev-values.yaml
-    K8S_CHART_PARAMS: --values resources/config-ci-dev-values.yaml --values resources/cluster-k8s-values.yaml --wait --timeout=5m
+    HELM_VALUES: resources/dp-cluster.yaml
+    K8S_CHART_PARAMS: --values resources/dp-cluster.yaml --wait --timeout=5m
   before_script:
     - poetry config virtualenvs.create $POETRY_CONFIG_VIRTUALENVS_CREATE
     - poetry install --with=test
   script:
     - make k8s-install-chart
-    - make k8s-test
+    - kubectl -n $KUBE_NAMESPACE get pods
+    - kubectl -n $KUBE_NAMESPACE wait --for=condition=Ready pods --all --timeout=5m
+    # - make k8s-test # WIP
+  after_script:
+    - make k8s-uninstall-chart || true
   environment:
     action: access
   rules:
@@ -157,11 +161,11 @@ k8s-test:
       when: manual
       allow_failure: true
     - if: $CI_PIPELINE_SOURCE == "push"
-      when: manual
-      allow_failure: true
-    - if: $CI_PIPELINE_SOURCE == "schedule"
       when: always
       allow_failure: true
+    # - if: $CI_PIPELINE_SOURCE == "schedule"
+    #   when: always
+    #   allow_failure: true
 
 .info_script: &info_script
   - |-

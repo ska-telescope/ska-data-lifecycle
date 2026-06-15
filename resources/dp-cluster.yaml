@@ -1,5 +1,210 @@
-# -------------------------------------------
-# Example Helm configuration for DP cluster
-# -------------------------------------------
+# -----------------------------------------------------------
+# Example Helm configuration for ska-dlm server on DP cluster
+# -----------------------------------------------------------
 
-# TODO: DMAN-228
+# ------ Global configuration (shared across components / subcharts) ------
+global:
+  ingress:
+    enabled: false
+    domainName: "sdhp.stfc.skao.int"
+  development: false
+  storageClass: "localdisk"
+
+  sharedpvc:
+    pv:
+      create: false
+      name: shared
+      storageSize: 2Gi
+      storageClassName: ""
+
+    pvc:
+      name: shared
+      create: false
+      storageSize: 2Gi
+      storageClassName: ""
+
+# ------ Chart metadata / naming ------
+system: dlm
+nameOverride: ""
+fullnameOverride: ""
+
+
+# ------ Core DLM services and API ------
+
+ingest:
+  component: ingest
+  subsystem: data-lifecycle-management
+  image: artefact.skao.int/ska-data-lifecycle
+  version: "2.1.0"
+  imagePullPolicy: Always
+  replicas: 1
+
+storage:
+  component: storage
+  subsystem: data-lifecycle-management
+  image: artefact.skao.int/ska-data-lifecycle
+  version: "2.1.0"
+  imagePullPolicy: Always
+  replicas: 1
+
+  locations: # Location endpoints (can list multiple)
+    - name: local
+      type: local-dev
+      country: AU
+      city: Perth
+      facility: local
+  endpointSecretName: ""
+  endpoints: # Storage endpoints (can list multiple)
+    - name: dlm-archive
+      location: local
+      storage_type: filesystem
+      interface: posix
+      root_directory: /
+      storage_phase: SOLID
+      config:
+        name: local
+        type: alias
+        parameters: {
+            "remote": "/data",
+          }
+migration:
+  component: migration
+  subsystem: data-lifecycle-management
+  image: artefact.skao.int/ska-data-lifecycle
+  version: "2.1.0"
+  imagePullPolicy: Always
+  replicas: 1
+
+request:
+  component: request
+  subsystem: data-lifecycle-management
+  image: artefact.skao.int/ska-data-lifecycle
+  version: "2.1.0"
+  imagePullPolicy: Always
+  replicas: 1
+
+postgrest:
+  component: postgrest
+  subsystem: data-lifecycle-management
+  image: postgrest/postgrest
+  version: "v13.0.7"
+  imagePullPolicy: Always
+  replicas: 1
+  db_schema: dlm
+  db_anon_role: ska_dlm_admin
+  db_pool: 10
+  server_host: '*4'
+  secret_is_base64: false
+  max_rows: ""
+  pre_request: ""
+  role_claim_key: '.role'
+  log_level: info
+
+  db_auth_secret:
+    create: true  # true for local DB (postgresql.enabled=true)
+    vault:
+      enabled: false
+      path: ""
+      mount: ""
+      type: "kv-v2"
+
+
+heuristics:
+  component: heuristics
+  subsystem: data-lifecycle-management
+  image: artefact.skao.int/ska-data-lifecycle
+  version: "2.1.0"
+  imagePullPolicy: Always
+  replicas: 1
+
+ska-db-migrations:
+  runMigrations: true
+  engine: liquibase
+  dbCredentialsSecretName: "{{ .Release.Name }}-ska-dlm-postgrest-secret"
+  configMapName: "ska-dlm-db-migrations-{{ .Release.Name }}"
+  liquibase:
+    contextFilter: "create-db,create-schema" # "default" or a combination of "create-roles,create-db,create-schema"
+    changelogFile: changelog.yaml
+    ttlSecondsAfterFinished: 300
+
+# ------ Database options ------
+
+postgresql:
+  enabled: true  # whether to deploy a local 'test' DB instead of connecting to an existing DB
+  image: postgres
+  version: "17-bookworm"
+
+  auth:
+  # Used for local PostgreSQL bootstrap when postgresql.enabled=true
+    username: ska_dlm_admin
+    password: password
+    database: dlm
+
+  primary:
+    containerSecurityContext:
+      readOnlyRootFilesystem: false
+    persistence:
+      enabled: false
+    podLabels:
+      component: postgresql
+      subsystem: data-lifecycle-management
+    networkPolicy:
+      enabled: false
+
+
+# ------ Supporting infrastructure ------
+
+rclone:
+  component: rclone
+  subsystem: data-lifecycle-management
+  image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-rclone
+  version: "2.1.0-dev.c52d940eb"
+  imagePullPolicy: Always
+  replicas: 1
+  secret:
+    enabled: false
+    name: ""
+    mountPoint: "/secrets/"
+    ssl_key_name: ""
+    ssl_cert_name: ""
+    vault:
+      enabled: false
+      mount: ""
+      type: kv-v2
+      path: ""
+
+gateway:
+  enabled: false  # true if you need AAA for DLM
+  component: gateway
+  subsystem: data-lifecycle-management
+  image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-test-gateway
+  version: "2.1.0-dev.c52d940eb"
+  imagePullPolicy: Always
+  replicas: 1
+  secret:
+    name: ""  # supply if gateway.enabled=true
+
+keycloak:
+  enabled: true  # false for production
+  component: keycloak
+  subsystem: data-lifecycle-management
+  image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-test-keycloak
+  version: "2.1.0-dev.c52d940eb"
+  imagePullPolicy: Always
+  replicas: 1
+  use_https: true
+
+
+# ------ Optional utilities ------
+
+pgweb:
+  enabled: false
+
+benchmark:
+  enabled: false
+
+# ------ Auxiliary utility images ------
+kubectl:
+  image: rancher/kubectl
+  version: "v1.28.15-amd64"
+  imagePullPolicy: Always
