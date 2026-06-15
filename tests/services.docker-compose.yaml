@@ -84,7 +84,7 @@ services:
       - PUBLIC_KEY_ACCESS=true
       - PUBLIC_KEY_FILE=/dlm/.ssh/id_rsa.pub
     healthcheck:
-      test: ["CMD", "wget", "--no-check-certificate", "--post-data='{\"my_key\": \"my_value\"}'", "-qO-", "https://localhost:5572/rc/noop"]
+      test: ["CMD", "wget", "--no-check-certificate", "--post-data='{\"my_key\": \"my_value\"}'", "-qO-", "https://dlm_rclone:5572/rc/noop"]
       interval: 5s
       timeout: 5s
       retries: 10
