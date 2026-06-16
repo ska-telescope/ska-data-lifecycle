@@ -33,14 +33,16 @@ services:
       dockerfile: tests/Dockerfile-dlm-compose
     environment:
       SSH_PUBLIC_KEY_PATH: "/dlm/.ssh/id_rsa.pub"
-      LOCATION_CONFIG: "/etc/location-config.json"
-      STORAGE_CONFIG: "/etc/storage-config.json"
+      LOCATION_CONFIG: "/home/ska-dlm/.dlm/location-config.json"
+      STORAGE_CONFIG: "/home/ska-dlm/.dlm/storage-config.json"
     entrypoint: uvicorn ska_dlm.dlm_storage.dlm_storage_requests:rest --host 0.0.0.0 --port 8003
     ports:
       - 8003:8003
     volumes:
-      - ${CI_PROJECT_DIR:-..}/tests/storage-config.json:/etc/storage-config.json
-      - ${CI_PROJECT_DIR:-..}/tests/location-config.json:/etc/location-config.json
+      # This is an issue with Gitlab runner where you cant mount volumes on a DinD container
+      # https://jira.skatelescope.org/browse/STS-1082
+      #- ${CI_PROJECT_DIR:-..}/tests/storage-config.json:/mnt/storage-config.json
+      #- ${CI_PROJECT_DIR:-..}/tests/location-config.json:/mnt/location-config.json
       - shared-tmpfs:/dlm
     depends_on:
       - dlm_gateway

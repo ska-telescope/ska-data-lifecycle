@@ -28,4 +28,6 @@ COPY --from=buildenv /app/.venv /app/.venv/
 ENV PATH="/app/.venv/bin:${PATH}"
 
 COPY ./tests/volumes/config-dockercompose.yaml /home/ska-dlm/.dlm/config.yaml
+COPY ./tests/storage-config.json /home/ska-dlm/.dlm/storage-config.json
+COPY ./tests/location-config.json /home/ska-dlm/.dlm/location-config.json
 CMD ["ska-dlm-sm-service"]

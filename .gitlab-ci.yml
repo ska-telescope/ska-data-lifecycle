@@ -130,7 +130,7 @@ python-test:
     - docker compose --file tests/testrunner.docker-compose.yaml build
   script:
     - echo "The current directory is $BASE_DIR"
-    - docker compose -f tests/testrunner.docker-compose.yaml -p dlm-test-services up
+    - docker compose --file tests/testrunner.docker-compose.yaml -p dlm-test-services run dlm_testrunner .
   after_script:
     - echo "==== docker compose ps ===="
     - docker compose --file tests/testrunner.docker-compose.yaml -p dlm-test-services ps || true
