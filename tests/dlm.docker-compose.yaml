@@ -35,15 +35,12 @@ services:
       SSH_PUBLIC_KEY_PATH: "/dlm/.ssh/id_rsa.pub"
       LOCATION_CONFIG: "/etc/location-config.json"
       STORAGE_CONFIG: "/etc/storage-config.json"
-    configs:
-      - source: location_config
-        target: /etc/location-config.json
-      - source: storage_config
-        target: /etc/storage-config.json
     entrypoint: uvicorn ska_dlm.dlm_storage.dlm_storage_requests:rest --host 0.0.0.0 --port 8003
     ports:
       - 8003:8003
     volumes:
+      - ${BASE_DIR:-..}/tests/storage-config.json:/etc/storage-config.json
+      - ${BASE_DIR:-..}/tests/location-config.json:/etc/location-config.json
       - shared-tmpfs:/dlm
     depends_on:
       - dlm_gateway
@@ -125,12 +122,3 @@ services:
       retries: 5
     networks:
       - dlm_network
-
-configs:
-  # Declare the first file asset
-  storage_config:
-    file: ${PWD}/tests/storage-config.json
-
-  # Declare the second file asset
-  location_config:
-    file: ${PWD}/tests/location-config.json

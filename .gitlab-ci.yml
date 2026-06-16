@@ -129,6 +129,7 @@ python-test:
   before_script:
     - docker compose --file tests/testrunner.docker-compose.yaml build
   script:
+    - export BASE_DIR="$CI_PROJECT_DIR/tests"
     - docker compose --file tests/testrunner.docker-compose.yaml -p dlm-test-services run dlm_testrunner .
   after_script:
     - echo "==== docker compose ps ===="
