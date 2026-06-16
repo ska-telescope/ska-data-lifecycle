@@ -4,7 +4,7 @@ variables:
   GIT_SUBMODULE_STRATEGY: recursive
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
   CI_POETRY_VERSION: 1.8.2
-  BASE_DIR: "$CI_PROJECT_DIR/tests"
+  BASE_DIR: "$CI_PROJECT_DIR"
 
 # Enable caching for python
 cache:
@@ -130,7 +130,7 @@ python-test:
   before_script:
     - docker compose --file tests/testrunner.docker-compose.yaml build
   script:
-    - echo "The current test directory is $BASE_DIR"
+    - echo "The current directory is $BASE_DIR"
     - docker compose --file tests/testrunner.docker-compose.yaml -p dlm-test-services run dlm_testrunner .
   after_script:
     - echo "==== docker compose ps ===="
