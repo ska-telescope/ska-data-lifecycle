@@ -143,7 +143,7 @@ k8s-test:
   variables:
     KUBE_NAMESPACE: ci-$CI_PROJECT_NAME-$CI_PIPELINE_ID
     HELM_VALUES: resources/dp-cluster.yaml
-    K8S_CHART_PARAMS: --values resources/dp-cluster.yaml --timeout=5m
+    K8S_CHART_PARAMS: --values resources/dp-cluster.yaml --timeout=5m # removing the 'wait' for debuggings
     HELM_RELEASE: ska-dlm-ci-$CI_PIPELINE_ID # unique value
   before_script:
     - poetry config virtualenvs.create $POETRY_CONFIG_VIRTUALENVS_CREATE
@@ -152,10 +152,17 @@ k8s-test:
     - make k8s-install-chart
     - kubectl -n $KUBE_NAMESPACE get pods
     - kubectl -n $KUBE_NAMESPACE get deployments
+    - kubectl -n $KUBE_NAMESPACE get events --sort-by=.lastTimestamp
     # - kubectl -n $KUBE_NAMESPACE wait --for=condition=Ready pods --all --timeout=5m # times out
-    - kubectl -n $KUBE_NAMESPACE wait --for=condition=Available deployment --all --timeout=5m # removing the 'wait' for debuggings
+    - kubectl -n $KUBE_NAMESPACE wait --for=condition=Available deployment --all --timeout=5m
     # - make k8s-test # WIP
   after_script:
+    - kubectl -n $KUBE_NAMESPACE get pods -o wide || true
+    - kubectl -n $KUBE_NAMESPACE get events --sort-by=.lastTimestamp || true
+    - kubectl -n $KUBE_NAMESPACE describe pod -l app.kubernetes.io/instance=$HELM_RELEASE || true
+    - kubectl -n $KUBE_NAMESPACE logs deployment/$HELM_RELEASE-rclone || true
+    - kubectl -n $KUBE_NAMESPACE logs deployment/$HELM_RELEASE-request || true
+    - kubectl -n $KUBE_NAMESPACE logs deployment/$HELM_RELEASE-storage || true
     - make k8s-uninstall-chart || true
   environment:
     action: access
