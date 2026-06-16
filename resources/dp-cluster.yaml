@@ -13,12 +13,12 @@ global:
   sharedpvc:
     pv:
       create: false
-      name: shared
+      name: shared-mnl
       storageSize: 2Gi
       storageClassName: ""
 
     pvc:
-      name: shared
+      name: shared-mnl
       create: false
       storageSize: 2Gi
       storageClassName: ""

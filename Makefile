@@ -102,6 +102,7 @@ export DP_PVC
 ## Delete the existing PVC and PV. Note that this is safe as the PV is shared clusterwide
 ## Recreate the PV and PVC before installing the app
 k8s-pre-install-chart:
+	echo "DLM custom k8s-pre-install-chart is running"
 	echo "CI_RUNNER_TAGS=$CI_RUNNER_TAGS" ;\
 	if [[ "$(CI_RUNNER_TAGS)" == *"ska-k8srunner-dp"* ]] || [[ "$(CI_RUNNER_TAGS)" == *"ska-k8srunner-dp-gpu-a100"* ]] ; then \
 	make k8s-namespace ;\

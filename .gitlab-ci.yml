@@ -157,12 +157,6 @@ k8s-test:
     - kubectl -n $KUBE_NAMESPACE wait --for=condition=Available deployment --all --timeout=5m
     # - make k8s-test # WIP
   after_script:
-    - kubectl -n $KUBE_NAMESPACE get pods -o wide || true
-    - kubectl -n $KUBE_NAMESPACE get events --sort-by=.lastTimestamp || true
-    - kubectl -n $KUBE_NAMESPACE describe pod -l app.kubernetes.io/instance=$HELM_RELEASE || true
-    - kubectl -n $KUBE_NAMESPACE logs deployment/$HELM_RELEASE-rclone || true
-    - kubectl -n $KUBE_NAMESPACE logs deployment/$HELM_RELEASE-request || true
-    - kubectl -n $KUBE_NAMESPACE logs deployment/$HELM_RELEASE-storage || true
     - make k8s-uninstall-chart || true
   environment:
     action: access
