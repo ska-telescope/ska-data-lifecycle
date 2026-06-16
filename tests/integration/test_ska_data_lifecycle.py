@@ -326,7 +326,7 @@ def test_copy_container(env):
     )
     assert len(file2_uid) == 36
 
-    dest = f"{ROOT_DIRECTORY2}/container"
+    dest = f"{ROOT_DIRECTORY2}"
     result = env.migration_requests.copy_data_item(uid=uid_root, destination_id=dest_id, path=dest)
 
     # trigger manual update of migrations status
