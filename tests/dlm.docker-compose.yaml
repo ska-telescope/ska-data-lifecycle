@@ -39,8 +39,8 @@ services:
     ports:
       - 8003:8003
     volumes:
-      - ${BASE_DIR:-..}/tests/storage-config.json:/etc/storage-config.json
-      - ${BASE_DIR:-..}/tests/location-config.json:/etc/location-config.json
+      - ${CI_PROJECT_DIR:-..}/tests/storage-config.json:/etc/storage-config.json
+      - ${CI_PROJECT_DIR:-..}/tests/location-config.json:/etc/location-config.json
       - shared-tmpfs:/dlm
     depends_on:
       - dlm_gateway
