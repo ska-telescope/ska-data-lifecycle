@@ -206,7 +206,7 @@ def register_data_item(  # noqa: C901
     storage_id = storages[0]["storage_id"]
     file_path = f"{storages[0]['root_directory']}/{uri}"
     # Removes duplicate slashes from the file path, os.path.normpath cannot be
-    # used as it does not remove dupliacate slashes at the start.
+    # used as it does not remove duplicate slashes at the start.
     file_path = re.sub(r"/{2,}", "/", file_path)
     # (2)
     if do_storage_access_check and not check_storage_access(

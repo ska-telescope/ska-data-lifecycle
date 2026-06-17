@@ -39,7 +39,7 @@ services:
     ports:
       - 8003:8003
     volumes:
-      # This is an issue with Gitlab runner where you cant mount volumes on a DinD container
+      # SKA Gitlab runner is unable to mount shared volumes on a DinD container
       # https://jira.skatelescope.org/browse/STS-1082
       #- ${CI_PROJECT_DIR:-..}/tests/storage-config.json:/mnt/storage-config.json
       #- ${CI_PROJECT_DIR:-..}/tests/location-config.json:/mnt/location-config.json
