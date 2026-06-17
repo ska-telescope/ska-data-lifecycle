@@ -3,9 +3,10 @@
 import asyncio
 import os
 import uuid
+from collections.abc import AsyncGenerator
 
 import pytest
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
 from ska_dlm.dlm_db import (
@@ -45,6 +46,8 @@ async def engine_fixture() -> AsyncGenerator[AsyncEngine, None]:
     db_url = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///:memory:")
     if db_url.startswith("postgresql://"):
         db_url = db_url.replace("postgresql://", "postgresql+asyncpg://")
+
+    engine = create_async_engine(db_url)
     try:
         yield engine
     finally:
@@ -61,9 +64,9 @@ async def connection_fixture(engine):
 @pytest.fixture(scope="function", name="session")
 async def session(connection) -> AsyncGenerator[AsyncSession, None]:
     """Create an async session for testing."""
+    # pylint: disable=redefined-outer-name
     async with connection.begin() as outer_txn:
         async with connection.begin_nested():
-
             async with sessionmaker(
                 bind=connection,
                 class_=AsyncSession,
