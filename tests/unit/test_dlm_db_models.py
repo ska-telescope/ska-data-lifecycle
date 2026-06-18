@@ -1,6 +1,5 @@
 """Unit tests for DLM SQLAlchemy models."""
 
-import asyncio
 import os
 import uuid
 from collections.abc import AsyncGenerator
@@ -82,9 +81,8 @@ class TestLocation:
     """Test Location model."""
 
     @pytest.mark.asyncio
-    async def test_create_location(self, session, request):
+    async def test_create_location(self, session):
         """Test creating a Location."""
-        loop = asyncio.get_running_loop()
         location = Location(
             location_name="test-location",
             location_type=LocationType.LOCAL_DEV,
@@ -106,9 +104,8 @@ class TestStorage:
     """Test Storage model."""
 
     @pytest.mark.asyncio
-    async def test_create_storage(self, session, request):
+    async def test_create_storage(self, session):
         """Test creating a Storage."""
-        loop = asyncio.get_running_loop()
         location = Location(
             location_name="test-location",
             location_type=LocationType.LOCAL_DEV,
@@ -141,9 +138,8 @@ class TestStorageConfig:
     """Test StorageConfig model."""
 
     @pytest.mark.asyncio
-    async def test_create_storage_config(self, session, request):
+    async def test_create_storage_config(self, session):
         """Test creating a StorageConfig."""
-        loop = asyncio.get_running_loop()
         location = Location(
             location_name="test-location",
             location_type=LocationType.LOCAL_DEV,
@@ -179,9 +175,8 @@ class TestDataItem:
     """Test DataItem model."""
 
     @pytest.mark.asyncio
-    async def test_create_data_item(self, session, request):
+    async def test_create_data_item(self, session):
         """Test creating a DataItem."""
-        loop = asyncio.get_running_loop()
         location = Location(
             location_name="test-location",
             location_type=LocationType.LOCAL_DEV,
@@ -224,9 +219,8 @@ class TestMigration:
     """Test Migration model."""
 
     @pytest.mark.asyncio
-    async def test_create_migration(self, session, request):
+    async def test_create_migration(self, session):
         """Test creating a Migration."""
-        loop = asyncio.get_running_loop()
         location = Location(
             location_name="test-location",
             location_type=LocationType.LOCAL_DEV,
@@ -269,9 +263,8 @@ class TestRelationships:
     """Test relationships between models."""
 
     @pytest.mark.asyncio
-    async def test_location_has_storages(self, session, request):
+    async def test_location_has_storages(self, session):
         """Test Location to Storage relationship."""
-        loop = asyncio.get_running_loop()
         location = Location(
             location_name="test-location",
             location_type=LocationType.LOCAL_DEV,
@@ -303,9 +296,8 @@ class TestRelationships:
         assert len(storages) == 2
 
     @pytest.mark.asyncio
-    async def test_storage_has_data_items(self, session, request):
+    async def test_storage_has_data_items(self, session):
         """Test Storage to DataItem relationship."""
-        loop = asyncio.get_running_loop()
         location = Location(
             location_name="test-location",
             location_type=LocationType.LOCAL_DEV,
@@ -346,9 +338,8 @@ class TestRelationships:
         assert len(data_items) == 2
 
     @pytest.mark.asyncio
-    async def test_storage_has_config(self, session, request):
+    async def test_storage_has_config(self, session):
         """Test Storage to StorageConfig relationship."""
-        loop = asyncio.get_running_loop()
         location = Location(
             location_name="test-location",
             location_type=LocationType.LOCAL_DEV,
@@ -383,9 +374,8 @@ class TestRelationships:
         assert storage_config.config_type == ConfigType.RCLONE
 
     @pytest.mark.asyncio
-    async def test_location_facility_has_locations(self, session, request):
+    async def test_location_facility_has_locations(self, session):
         """Test LocationFacility to Location relationship."""
-        loop = asyncio.get_running_loop()
         facility = LocationFacility(id="test-facility")
         session.add(facility)
         await session.commit()
@@ -413,9 +403,8 @@ class TestRelationships:
         assert len(locations) == 2
 
     @pytest.mark.asyncio
-    async def test_migration_has_storages(self, session, request):
+    async def test_migration_has_storages(self, session):
         """Test Migration relationships to storages."""
-        loop = asyncio.get_running_loop()
         location = Location(
             location_name="test-location",
             location_type=LocationType.LOCAL_DEV,
