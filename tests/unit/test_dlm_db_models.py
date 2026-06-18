@@ -94,16 +94,6 @@ class TestLocation:
         session.add(location)
         await session.commit()
 
-        def cleanup():
-            async def async_cleanup():
-                await session.delete(location)
-                await session.commit()
-
-            loop.run_until_complete(async_cleanup())
-
-        # Register the teardown function
-        request.addfinalizer(cleanup)
-
         assert location.location_name == "test-location"
         assert location.location_type == LocationType.LOCAL_DEV
         assert location.location_country == LocationCountry.UK
@@ -138,17 +128,6 @@ class TestStorage:
         )
         session.add(storage)
         await session.commit()
-
-        def cleanup():
-            async def async_cleanup():
-                await session.delete(storage)
-                await session.delete(location)
-                await session.commit()
-
-            loop.run_until_complete(async_cleanup())
-
-        # Register the teardown function
-        request.addfinalizer(cleanup)
 
         assert storage.storage_name == "test-storage"
         assert storage.storage_type == StorageType.FILESYSTEM
@@ -189,18 +168,6 @@ class TestStorageConfig:
         )
         session.add(config)
         await session.commit()
-
-        def cleanup():
-            async def async_cleanup():
-                await session.delete(config)
-                await session.delete(storage)
-                await session.delete(location)
-                await session.commit()
-
-            loop.run_until_complete(async_cleanup())
-
-        # Register the teardown function
-        request.addfinalizer(cleanup)
 
         assert config.config_type == ConfigType.RCLONE
         assert config.config == {"key": "value"}
@@ -245,18 +212,6 @@ class TestDataItem:
         )
         session.add(item)
         await session.commit()
-
-        def cleanup():
-            async def async_cleanup():
-                await session.delete(item)
-                await session.delete(storage)
-                await session.delete(location)
-                await session.commit()
-
-            loop.run_until_complete(async_cleanup())
-
-        # Register the teardown function
-        request.addfinalizer(cleanup)
 
         assert item.item_name == "test-item"
         assert item.item_mime_type == MimeType.APPLICATION_FITS
@@ -305,19 +260,6 @@ class TestMigration:
         session.add(migration)
         await session.commit()
 
-        def cleanup():
-            async def async_cleanup():
-                await session.delete(migration)
-                await session.delete(source_storage)
-                await session.delete(dest_storage)
-                await session.delete(location)
-                await session.commit()
-
-            loop.run_until_complete(async_cleanup())
-
-        # Register the teardown function
-        request.addfinalizer(cleanup)
-
         assert migration.job_id == 123
         assert migration.source_storage_id == source_storage.storage_id
         assert migration.destination_storage_id == dest_storage.storage_id
@@ -352,18 +294,6 @@ class TestRelationships:
         )
         session.add_all([storage1, storage2])
         await session.commit()
-
-        def cleanup():
-            async def async_cleanup():
-                await session.delete(storage1)
-                await session.delete(storage2)
-                await session.delete(location)
-                await session.commit()
-
-            loop.run_until_complete(async_cleanup())
-
-        # Register the teardown function
-        request.addfinalizer(cleanup)
 
         # Check storages
         result = await session.execute(
@@ -408,19 +338,6 @@ class TestRelationships:
         session.add_all([data_item1, data_item2])
         await session.commit()
 
-        def cleanup():
-            async def async_cleanup():
-                await session.delete(data_item1)
-                await session.delete(data_item2)
-                await session.delete(storage)
-                await session.delete(location)
-                await session.commit()
-
-            loop.run_until_complete(async_cleanup())
-
-        # Register the teardown function
-        request.addfinalizer(cleanup)
-
         # Check data items
         result = await session.execute(
             DataItem.__table__.select().where(DataItem.storage_id == storage.storage_id)
@@ -457,18 +374,6 @@ class TestRelationships:
         session.add(config)
         await session.commit()
 
-        def cleanup():
-            async def async_cleanup():
-                await session.delete(config)
-                await session.delete(storage)
-                await session.delete(location)
-                await session.commit()
-
-            loop.run_until_complete(async_cleanup())
-
-        # Register the teardown function
-        request.addfinalizer(cleanup)
-
         # Check config
         result = await session.execute(
             StorageConfig.__table__.select().where(StorageConfig.storage_id == storage.storage_id)
@@ -499,18 +404,6 @@ class TestRelationships:
         )
         session.add_all([location1, location2])
         await session.commit()
-
-        def cleanup():
-            async def async_cleanup():
-                await session.delete(location1)
-                await session.delete(location2)
-                await session.delete(facility)
-                await session.commit()
-
-            loop.run_until_complete(async_cleanup())
-
-        # Register the teardown function
-        request.addfinalizer(cleanup)
 
         # Check locations
         result = await session.execute(
@@ -555,19 +448,6 @@ class TestRelationships:
         )
         session.add(migration)
         await session.commit()
-
-        def cleanup():
-            async def async_cleanup():
-                await session.delete(migration)
-                await session.delete(source)
-                await session.delete(dest)
-                await session.delete(location)
-                await session.commit()
-
-            loop.run_until_complete(async_cleanup())
-
-        # Register the teardown function
-        request.addfinalizer(cleanup)
 
         # Check migration storages
         result = await session.execute(Migration.__table__.select().where(Migration.job_id == 456))
