@@ -193,9 +193,6 @@ ska-dlm-db-migrations-{{ .Release.Name }}
 {{/*
 Archive labels
 */}}
-{{/*
-Heuristic labels
-*/}}
 {{- define "ska-dlm.archive.labels" -}}
 {{- include "ska-dlm.labels" . }}
 component: {{ .Values.archive.component }}

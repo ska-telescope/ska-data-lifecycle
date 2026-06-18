@@ -69,12 +69,11 @@ storage:
       config:
         name: dlm-archive
         type: sftp
-        parameters: {
-          host: ska-dlm-archive,
-          port: 22,
-          user: root,
+        parameters:
+          host: ska-dlm-archive
+          port: 22
+          user: root
           key_file: "/root/.ssh/id_rsa"
-        }
 
     - name: local
       location: local
@@ -85,9 +84,8 @@ storage:
       config:
         name: local
         type: alias
-        parameters: {
-            "remote": "/data",
-          }
+        parameters:
+          remote: "/data"
 
 migration:
   component: migration
