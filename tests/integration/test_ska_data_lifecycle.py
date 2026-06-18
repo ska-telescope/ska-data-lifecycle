@@ -16,7 +16,6 @@ from ska_dlm.dlm_migration.dlm_migration_requests import (
     _get_migration_record,
     update_migration_statuses,
 )
-from ska_dlm.dlm_storage.main import persist_new_data_items
 from ska_dlm.exceptions import DatabaseOperationError, InvalidQueryParameters, ValueAlreadyInDB
 from tests.common_local import DlmTestClientLocal
 from tests.integration.client.dlm_gateway_client import get_token
@@ -24,7 +23,7 @@ from tests.test_env import DlmTestClient
 
 ROOT = "/dlm/"
 RCLONE_TEST_FILE_PATH = "/dlm/MyDisk/testfile"
-TEST_URI = "testfile"
+TEST_URI = "/dlm/MyDisk/testfile"
 ROOT_DIRECTORY1 = "/dlm/MyDisk/"
 ROOT_DIRECTORY2 = "/dlm/MyDisk2/"
 
@@ -40,9 +39,6 @@ METADATA_RECEIVED = {
 def _clear_database():
     DB.delete(CONFIG.DLM.migration_table)
     DB.delete(CONFIG.DLM.dlm_table)
-    DB.delete(CONFIG.DLM.storage_config_table)
-    DB.delete(CONFIG.DLM.storage_table)
-    DB.delete(CONFIG.DLM.location_table)
 
 
 @pytest.fixture(name="auth", scope="session", autouse=True)
@@ -63,26 +59,15 @@ def setup_auth(env, request):
 def setup(env):
     """Initialise test storage and rclone configuration."""
     _clear_database()
-
+    env.create_rclone_directory(ROOT_DIRECTORY1)
+    env.create_rclone_directory(ROOT_DIRECTORY2)
     env.write_rclone_file_content(RCLONE_TEST_FILE_PATH, RCLONE_TEST_FILE_CONTENT)
 
-    # we need a location to register the storage
-    location_id = env.storage_requests.init_location("MyOwnStorage", "local-dev")
-    uuid = env.storage_requests.init_storage(
-        storage_name="MyDisk",
-        root_directory=ROOT_DIRECTORY1,
-        location_id=location_id,
-        storage_type="filesystem",
-        storage_interface="posix",
-        storage_capacity=100000000,
-    )
-    config = {"name": "MyDisk", "root_path": "/", "type": "alias", "parameters": {"remote": "/"}}
-    env.storage_requests.create_storage_config(storage_id=uuid, config=config)
-    # configure rclone
-    env.storage_requests.create_rclone_config(config)
     yield
+
     _clear_database()
-    env.clear_rclone_data(ROOT)
+    env.clear_rclone_data(ROOT_DIRECTORY1)
+    env.clear_rclone_data(ROOT_DIRECTORY2)
 
 
 def __initialise_data_item(env):
@@ -103,7 +88,7 @@ def test_register_data_item_with_metadata(env):
     uid = env.ingest_requests.register_data_item(
         item_name="/my/ingest/test/item2",
         uri=TEST_URI,
-        storage_name="MyDisk",
+        storage_name="local",
         metadata=METADATA_RECEIVED,
     )
     assert len(uid) == 36
@@ -111,7 +96,7 @@ def test_register_data_item_with_metadata(env):
         env.ingest_requests.register_data_item(
             item_name="/my/ingest/test/item2",
             uri=TEST_URI,
-            storage_name="MyDisk",
+            storage_name="local",
             metadata=METADATA_RECEIVED,
         )
 
@@ -138,11 +123,16 @@ def test_query_expired(env):
 
 
 @pytest.mark.integration_test
-def test_location_init(env):
+def test_location_init(env, request):
     """Test initialisation on a location."""
-    env.storage_requests.init_location("TestLocation", "low-integration")
+    location_id = env.storage_requests.init_location("TestLocation", "low-integration")
     location = env.storage_requests.query_location(location_name="TestLocation")[0]
     assert location["location_type"] == "low-integration"
+
+    def cleanup():
+        DB.delete(CONFIG.DLM.location_table, params={"location_id": f"eq.{location_id}"})
+
+    request.addfinalizer(cleanup)
 
 
 @pytest.mark.integration_test
@@ -159,7 +149,7 @@ def test_location_init_with_invalid_facility(env):
 def test_set_uri_state_phase(env):
     """Update a data_item record with the pointer to a file."""
     uid = env.ingest_requests.init_data_item(item_name="this/is/the/first/test/item")
-    storage_id = env.storage_requests.query_storage(storage_name="MyDisk")[0]["storage_id"]
+    storage_id = env.storage_requests.query_storage(storage_name="local")[0]["storage_id"]
     data_item.set_uri(uid, TEST_URI, storage_id)
     assert env.data_item_requests.query_data_item(uid=uid)[0]["uri"] == TEST_URI
     data_item.set_state(uid, "READY")
@@ -175,8 +165,8 @@ def test_set_uri_state_phase(env):
 def test_delete_item_payload(env):
     """Delete the payload of a data_item."""
     fpath = TEST_URI
-    storage_id = env.storage_requests.query_storage(storage_name="MyDisk")[0]["storage_id"]
-    uid = env.ingest_requests.register_data_item(item_name=fpath, uri=fpath, storage_name="MyDisk")
+    storage_id = env.storage_requests.query_storage(storage_name="local")[0]["storage_id"]
+    uid = env.ingest_requests.register_data_item(item_name=fpath, uri=fpath, storage_name="local")
     data_item.set_state(uid, "READY")
     data_item.set_uri(uid, fpath, storage_id)
     queried_uid = env.data_item_requests.query_data_item(item_name=fpath)[0]["uid"]
@@ -191,31 +181,6 @@ def test_delete_item_payload(env):
     assert env.data_item_requests.query_data_item(item_name=fpath)[0]["item_state"] == "DELETED"
 
 
-def __initialise_storage_config(env):
-    """Add a new location, storage and configuration to the rclone server."""
-    env.create_rclone_directory(ROOT_DIRECTORY2)
-    location = env.storage_requests.query_location("MyHost")
-    if location:
-        location_id = location[0]["location_id"]
-    else:
-        location_id = env.storage_requests.init_location("MyHost", "low-integration")
-    assert len(location_id) == 36
-    config = {"name": "MyDisk2", "root_path": "/", "type": "alias", "parameters": {"remote": "/"}}
-    uuid = env.storage_requests.init_storage(
-        storage_name="MyDisk2",
-        root_directory=ROOT_DIRECTORY2,
-        location_id=location_id,
-        storage_type="filesystem",
-        storage_interface="posix",
-        storage_capacity=100000000,
-    )
-    assert len(uuid) == 36
-    config_id = env.storage_requests.create_storage_config(storage_id=uuid, config=config)
-    assert len(config_id) == 36
-    # configure rclone
-    assert env.storage_requests.create_rclone_config(config) is True
-
-
 def __get_migration(record, count=100):
     """Wait for migration to complete or timeout."""
     total_count = 0
@@ -227,7 +192,7 @@ def __get_migration(record, count=100):
             or migration_record[0]["job_status"]["finished"] is False
         ):
             total_count += 1
-            time.sleep(0.2)
+            time.sleep(0.5)
         else:
             break
 
@@ -247,13 +212,12 @@ def test_copy(env: DlmTestClient):
     if isinstance(env, DlmTestClientLocal):
         pytest.skip("Unprocessable Entity")
 
-    __initialise_storage_config(env)
-    dest_id = env.storage_requests.query_storage("MyDisk2")[0]["storage_id"]
+    dest_id = env.storage_requests.query_storage("dlm-archive")[0]["storage_id"]
     uid = env.ingest_requests.register_data_item(
-        item_name="/my/ingest/test/item2", uri=TEST_URI, storage_name="MyDisk"
+        item_name="/my/ingest/test/item2", uri=TEST_URI, storage_name="local"
     )
     assert len(uid) == 36
-    dest = "testfile_copy"
+    dest = f"{ROOT_DIRECTORY2}/testfile_copy"
     copy_item_record = env.migration_requests.copy_data_item(
         uid=uid, destination_id=dest_id, path=dest
     )
@@ -285,37 +249,15 @@ def test_copy_failed(env: DlmTestClient):
     if isinstance(env, DlmTestClientLocal):
         pytest.skip("Unprocessable Entity")
 
-    __initialise_storage_config(env)
-
-    location = env.storage_requests.query_location("MyHost")
-    if location:
-        location_id = location[0]["location_id"]
-    else:
-        location_id = env.storage_requests.init_location("MyHost", "low-integration")
-
-    # setup remote storage endpoint that does not exist so rclone can fail
-    config = {
-        "name": "MyDisk4",
-        "type": "sftp",
-        "parameters": {"type": "sftp", "host": "localhost"},
-    }
-    uuid = env.storage_requests.init_storage(
-        storage_name="MyDisk4",
-        root_directory=ROOT_DIRECTORY2,
-        location_id=location_id,
-        storage_type="filesystem",
-        storage_interface="posix",
-        storage_capacity=100000000,
-    )
-    env.storage_requests.create_storage_config(storage_id=uuid, config=config)
-
-    dest_id = env.storage_requests.query_storage("MyDisk4")[0]["storage_id"]
+    dest_id = env.storage_requests.query_storage("dlm-archive")[0]["storage_id"]
 
     uid = env.ingest_requests.register_data_item(
-        item_name="/my/ingest/test/item2", uri=TEST_URI, storage_name="MyDisk"
+        item_name="/my/ingest/test/item2", uri=TEST_URI, storage_name="local"
     )
+    # Copy to an invalid path to trigger a failure in rclone
+    # and check the data item is removed from the database
     assert len(uid) == 36
-    dest = "testfile_copy"
+    dest = "/root/testfile_copy"
     copy_item_record = env.migration_requests.copy_data_item(
         uid=uid, destination_id=dest_id, path=dest
     )
@@ -339,8 +281,6 @@ def test_copy_container(env):
     if isinstance(env, DlmTestClientLocal):
         pytest.skip("Unprocessable Entity")
 
-    __initialise_storage_config(env)
-
     file1_data = "Some data"
     file2_data = "More data"
 
@@ -348,45 +288,45 @@ def test_copy_container(env):
     env.write_rclone_file_content(f"{ROOT_DIRECTORY1}/container/file1", file1_data)
     env.write_rclone_file_content(f"{ROOT_DIRECTORY1}/container/dir1/file2", file2_data)
 
-    dest_id = env.storage_requests.query_storage("MyDisk2")[0]["storage_id"]
+    dest_id = env.storage_requests.query_storage("dlm-archive")[0]["storage_id"]
 
     uid_root = env.ingest_requests.register_data_item(
         item_name="container",
-        uri="container/",
+        uri=f"{ROOT_DIRECTORY1}/container/",
         item_type=ItemType.CONTAINER,
-        storage_name="MyDisk",
+        storage_name="local",
         parents=None,
     )
     assert len(uid_root) == 36
 
     dir1_uid = env.ingest_requests.register_data_item(
         item_name="container/dir1",
-        uri="container/dir1",
+        uri=f"{ROOT_DIRECTORY1}/container/dir1",
         item_type=ItemType.CONTAINER,
-        storage_name="MyDisk",
+        storage_name="local",
         parents=uid_root,
     )
     assert len(dir1_uid) == 36
 
     file1_uid = env.ingest_requests.register_data_item(
         item_name="container/file1",
-        uri="container/file1",
+        uri=f"{ROOT_DIRECTORY1}/container/file1",
         item_type=ItemType.FILE,
-        storage_name="MyDisk",
+        storage_name="local",
         parents=uid_root,
     )
     assert len(file1_uid) == 36
 
     file2_uid = env.ingest_requests.register_data_item(
         item_name="container/dir1/file2",
-        uri="container/dir1/file2",
+        uri=f"{ROOT_DIRECTORY1}/container/dir1/file2",
         item_type=ItemType.FILE,
-        storage_name="MyDisk",
+        storage_name="local",
         parents=dir1_uid,
     )
     assert len(file2_uid) == 36
 
-    dest = "container"
+    dest = f"{ROOT_DIRECTORY2}"
     result = env.migration_requests.copy_data_item(uid=uid_root, destination_id=dest_id, path=dest)
 
     # trigger manual update of migrations status
@@ -406,7 +346,7 @@ def test_copy_container(env):
 def test_update_item_tags(env):
     """Update the item_tags field of a data_item."""
     _ = env.ingest_requests.register_data_item(
-        item_name="/my/ingest/test/item2", uri=TEST_URI, storage_name="MyDisk"
+        item_name="/my/ingest/test/item2", uri=TEST_URI, storage_name="local"
     )
     res = env.data_item_requests.update_item_tags(
         "/my/ingest/test/item2", item_tags={"a": "SKA", "b": "DLM", "c": "dummy"}
@@ -426,7 +366,7 @@ def test_update_item_tags(env):
 def test_update_item_tags_exception(env):
     """Update the item_tags field of a data_item."""
     _ = env.ingest_requests.register_data_item(
-        item_name="/my/ingest/test/item2", uri=TEST_URI, storage_name="MyDisk"
+        item_name="/my/ingest/test/item2", uri=TEST_URI, storage_name="local"
     )
     with pytest.raises(InvalidQueryParameters):
         data_item.update_item_tags(
@@ -449,7 +389,7 @@ def test_expired_by_storage_daemon(env):
     assert len(result) == 0
 
     # add an item, and expire immediately
-    uid = env.ingest_requests.register_data_item(item_name=fname, uri=fname, storage_name="MyDisk")
+    uid = env.ingest_requests.register_data_item(item_name=fname, uri=fname, storage_name="local")
     data_item.set_state(uid=uid, state="READY")
     data_item.set_uid_expiration(uid, "2000-01-01")
 
@@ -470,42 +410,13 @@ def test_expired_by_storage_daemon(env):
 
 
 @pytest.mark.integration_test
-def test_query_new(env):
-    """Test for newly created data_items."""
-    check_time = "2024-01-01"
-    _ = env.ingest_requests.register_data_item(
-        item_name="/my/ingest/test/item", uri=TEST_URI, storage_name="MyDisk"
-    )
-    result = env.request_requests.query_new(check_time)
-    assert len(result) == 1
-
-
-@pytest.mark.integration_test
-def test_persist_new_data_items(env):
-    """Test making new data items persistent."""
-    check_time = "2024-01-01"
-    _ = env.ingest_requests.register_data_item(
-        item_name="/my/ingest/test/item", uri=TEST_URI, storage_name="MyDisk"
-    )
-    result = persist_new_data_items(check_time)
-    # negative test, since there is only a single volume registered
-    assert result == {"/my/ingest/test/item": False}
-
-    # configure additional storage volume
-    __initialise_storage_config(env)
-    # and run again...
-    result = persist_new_data_items(check_time)
-    assert result == {"/my/ingest/test/item": True}
-
-
-@pytest.mark.integration_test
 def test_populate_metadata_col(env):
     """Test that the metadata is correctly saved to the metadata column."""
     # Register data item with metadata
     uid = env.ingest_requests.register_data_item(
         item_name="/my/metadata/test/item",  # item_name
         uri=TEST_URI,  # uri
-        storage_name="MyDisk",  # storage_name
+        storage_name="local",  # storage_name
         metadata=METADATA_RECEIVED,  # metadata
     )
 

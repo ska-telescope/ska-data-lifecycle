@@ -5,14 +5,15 @@
 
 import pytest
 
-from ska_dlm import dlm_storage
+from ska_dlm import CONFIG, dlm_storage
+from ska_dlm.dlm_db.db_access import DB
 from ska_dlm.exceptions import InvalidQueryParameters
 
 
-def test_location_init():
+def test_location_init(request):
     """Test initialisation on a location."""
     # Successful initialisation
-    dlm_storage.init_location("TestLocation1", "low-integration")
+    location_id = dlm_storage.init_location("TestLocation1", "low-integration")
     location = dlm_storage.query_location(location_name="TestLocation1")[0]
     assert location["location_type"] == "low-integration"
 
@@ -23,8 +24,13 @@ def test_location_init():
     with pytest.raises(InvalidQueryParameters):
         dlm_storage.init_location(location_name="", location_type="low-integration")
 
+    def cleanup():
+        DB.delete(CONFIG.DLM.location_table, params={"location_id": f"eq.{location_id}"})
 
-def test_initialise_storage_config():
+    request.addfinalizer(cleanup)
+
+
+def test_initialise_storage_config(request):
     """Add a new location, storage and configuration to the rclone server."""
     location = dlm_storage.query_location("MyHost")
     if location:
@@ -47,8 +53,15 @@ def test_initialise_storage_config():
     # configure rclone
     assert dlm_storage.create_rclone_config(config) is True
 
+    def cleanup():
+        DB.delete(CONFIG.DLM.storage_config_table, params={"config_id": f"eq.{config_id}"})
+        DB.delete(CONFIG.DLM.storage_table, params={"storage_id": f"eq.{uuid}"})
+        DB.delete(CONFIG.DLM.location_table, params={"location_id": f"eq.{location_id}"})
 
-def test_invalid_storage_type():
+    request.addfinalizer(cleanup)
+
+
+def test_invalid_storage_type(request):
     """Test that an invalid storage_type raises a ValueError."""
     location_id = dlm_storage.init_location("MyHostInvalid", "low-integration")
 
@@ -63,3 +76,8 @@ def test_invalid_storage_type():
         )
     assert "Invalid storage type disk" in str(exc_info.value)
     assert "filesystem" in str(exc_info.value)
+
+    def cleanup():
+        DB.delete(CONFIG.DLM.location_table, params={"location_id": f"eq.{location_id}"})
+
+    request.addfinalizer(cleanup)

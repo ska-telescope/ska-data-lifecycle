@@ -41,17 +41,23 @@ logger = logging.getLogger(__name__)
 async def lifespan(_: FastAPI):
     """Startup function."""
     location_config_path = os.getenv("LOCATION_CONFIG", None)
+    logger.info("Location config path: %s", location_config_path)
     if location_config_path:
         with open(location_config_path, "r", encoding="utf-8") as json_file:
             location_json_config = json.loads(json_file.read())
+
+        logger.info("Setting up location from config: %s", location_json_config)
 
         for location in location_json_config:
             _setup_location(location)
 
     storage_config_path = os.getenv("STORAGE_CONFIG", None)
+    logger.info("Storage config path: %s", storage_config_path)
     if storage_config_path:
         with open(storage_config_path, "r", encoding="utf-8") as json_file:
             storage_json_config = json.loads(json_file.read())
+
+        logger.info("Setting up storage from config: %s", storage_json_config)
 
         for storage in storage_json_config:
             _setup_storage(storage)

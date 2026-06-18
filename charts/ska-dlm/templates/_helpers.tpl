@@ -188,3 +188,14 @@ This must match the ska-db-migrations subchart naming convention.
 {{- define "ska-dlm.db-migrations.name" -}}
 ska-dlm-db-migrations-{{ .Release.Name }}
 {{- end -}}
+
+
+{{/*
+Archive labels
+*/}}
+{{- define "ska-dlm.archive.labels" -}}
+{{- include "ska-dlm.labels" . }}
+component: {{ .Values.archive.component }}
+subsystem: {{ .Values.archive.subsystem }}
+intent: production
+{{- end -}}

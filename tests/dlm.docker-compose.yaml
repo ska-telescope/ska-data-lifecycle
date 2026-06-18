@@ -1,5 +1,5 @@
 include:
-- path: services.docker-compose.yaml
+  - path: services.docker-compose.yaml
 
 services:
   dlm_migration:
@@ -7,8 +7,8 @@ services:
     image: dlm_migration
     container_name: dlm_migration
     build:
-       context: ..
-       dockerfile: tests/Dockerfile-dlm-compose
+      context: ..
+      dockerfile: tests/Dockerfile-dlm-compose
     entrypoint: uvicorn ska_dlm.dlm_migration.dlm_migration_requests:rest --host 0.0.0.0 --port 8004
     ports:
       - 8004:8004
@@ -29,19 +29,25 @@ services:
     image: dlm_storage
     container_name: dlm_storage
     build:
-       context: ..
-       dockerfile: tests/Dockerfile-dlm-compose
+      context: ..
+      dockerfile: tests/Dockerfile-dlm-compose
     environment:
       SSH_PUBLIC_KEY_PATH: "/dlm/.ssh/id_rsa.pub"
+      LOCATION_CONFIG: "/home/ska-dlm/.dlm/location-config.json"
+      STORAGE_CONFIG: "/home/ska-dlm/.dlm/storage-config.json"
     entrypoint: uvicorn ska_dlm.dlm_storage.dlm_storage_requests:rest --host 0.0.0.0 --port 8003
     ports:
       - 8003:8003
     volumes:
+      # SKA Gitlab runner is unable to mount shared volumes on a DinD container
+      # https://jira.skatelescope.org/browse/STS-1082
+      #- ${CI_PROJECT_DIR:-..}/tests/storage-config.json:/mnt/storage-config.json
+      #- ${CI_PROJECT_DIR:-..}/tests/location-config.json:/mnt/location-config.json
       - shared-tmpfs:/dlm
     depends_on:
       - dlm_gateway
       - dlm_postgrest
-      - dlm_rclone
+      - dlm_archive
     healthcheck:
       test: ["CMD-SHELL", "ska-dlm --help || exit 1"]
       interval: 10s
@@ -55,8 +61,8 @@ services:
     container_name: dlm_request
     platform: linux/amd64
     build:
-       context: ..
-       dockerfile: tests/Dockerfile-dlm-compose
+      context: ..
+      dockerfile: tests/Dockerfile-dlm-compose
     entrypoint: uvicorn ska_dlm.dlm_request.dlm_request_requests:rest --host 0.0.0.0 --port 8002
     ports:
       - 8002:8002
@@ -77,8 +83,8 @@ services:
     image: dlm_ingest
     container_name: dlm_ingest
     build:
-       context: ..
-       dockerfile: tests/Dockerfile-dlm-compose
+      context: ..
+      dockerfile: tests/Dockerfile-dlm-compose
     entrypoint: uvicorn ska_dlm.dlm_ingest.dlm_ingest_requests:rest --host 0.0.0.0 --port 8001
     ports:
       - 8001:8001

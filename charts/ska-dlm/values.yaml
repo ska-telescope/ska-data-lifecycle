@@ -64,14 +64,29 @@ storage:
       location: local
       storage_type: filesystem
       interface: posix
+      storage_phase: SOLID
+      root_directory: /
+      config:
+        name: dlm-archive
+        type: sftp
+        parameters:
+          host: ska-dlm-archive
+          port: 22
+          user: root
+          key_file: "/root/.ssh/id_rsa"
+
+    - name: local
+      location: local
+      storage_type: filesystem
+      interface: posix
       root_directory: /
       storage_phase: SOLID
       config:
         name: local
         type: alias
-        parameters: {
-            "remote": "/data",
-          }
+        parameters:
+          remote: "/data"
+
 migration:
   component: migration
   subsystem: data-lifecycle-management
@@ -237,3 +252,14 @@ kubectl:
   image: rancher/kubectl
   version: "v1.28.15-amd64"
   imagePullPolicy: Always
+
+# ------------------------------------------------
+# dlm-archive configuration (openssh-server)
+# ------------------------------------------------
+archive:
+  component: archive
+  subsystem: data-lifecycle-management
+  image: linuxserver/openssh-server
+  version: "latest"
+  imagePullPolicy: Always
+  replicas: 1

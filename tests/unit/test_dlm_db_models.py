@@ -2,9 +2,10 @@
 
 import os
 import uuid
+from collections.abc import AsyncGenerator
 
 import pytest
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
 from ska_dlm.dlm_db import (
@@ -35,41 +36,44 @@ def test_table_names():
     assert Migration.__tablename__ == "migration"
 
 
-@pytest.fixture
-async def engine():
-    """Create an async engine for testing, using DATABASE_URL."""
-    # pylint: disable=invalid-name, too-few-public-methods, not-callable, useless-suppression
+@pytest.fixture(name="engine")
+async def engine_fixture() -> AsyncGenerator[AsyncEngine, None]:
+    """Create test suite scope async engine.
+
+    Uses env DATABASE_URL to configure alternative engines.
+    """
     db_url = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///:memory:")
     if db_url.startswith("postgresql://"):
         db_url = db_url.replace("postgresql://", "postgresql+asyncpg://")
-    _engine = create_async_engine(db_url, echo=False)
-    yield _engine
-    await _engine.dispose()
+
+    engine = create_async_engine(db_url)
+    try:
+        yield engine
+    finally:
+        await engine.dispose()
 
 
-# pylint: disable=redefined-outer-name
-@pytest.fixture
-async def session(engine):
+@pytest.fixture(name="connection")
+async def connection_fixture(engine):
+    """Create test suite scope db connection."""
+    async with engine.connect() as connection:
+        yield connection
+
+
+@pytest.fixture(scope="function", name="session")
+async def session(connection) -> AsyncGenerator[AsyncSession, None]:
     """Create an async session for testing."""
-    async_session_factory = sessionmaker(
-        engine,
-        class_=AsyncSession,
-        expire_on_commit=False,
-        future=True,
-    )
+    # pylint: disable=redefined-outer-name
+    async with connection.begin() as outer_txn:
+        async with connection.begin_nested():
+            async with sessionmaker(
+                bind=connection,
+                class_=AsyncSession,
+                expire_on_commit=False,
+            )() as session:  # type: ignore
+                yield session
 
-    async with async_session_factory() as async_session:
-        yield async_session
-
-    async with async_session_factory() as async_session:
-        # cleanup rows, keep table schema
-        await async_session.execute(Migration.__table__.delete())
-        await async_session.execute(DataItem.__table__.delete())
-        await async_session.execute(StorageConfig.__table__.delete())
-        await async_session.execute(Storage.__table__.delete())
-        await async_session.execute(Location.__table__.delete())
-        await async_session.execute(LocationFacility.__table__.delete())
-        await async_session.commit()
+        await outer_txn.rollback()
 
 
 # pylint: disable=too-few-public-methods, redefined-outer-name

@@ -1,0 +1,32 @@
+[
+  {
+    "name": "local",
+    "location": "local",
+    "storage_type": "filesystem",
+    "interface": "posix",
+    "storage_phase": "SOLID",
+    "root_directory": "/",
+    "config": {
+      "name": "local",
+      "type": "alias","parameters": {"remote":"/"}
+    }
+  },
+  {
+    "name": "dlm-archive",
+    "location": "local",
+    "storage_type": "filesystem",
+    "interface": "posix",
+    "storage_phase": "SOLID",
+    "root_directory": "/",
+    "config": {
+      "name": "dlm-archive",
+      "type": "sftp",
+      "parameters": {
+        "host": "dlm_archive",
+        "port": 2222,
+        "user": "dlm",
+        "key_file": "/root/.ssh/id_rsa"
+      }
+    }
+  }
+]

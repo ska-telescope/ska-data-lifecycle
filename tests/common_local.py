@@ -98,10 +98,11 @@ class DlmTestClientLocal(DlmTestClient):
         container = self.client.containers.get(RCLONE_DEPLOYMENT)
         container.exec_run(["/bin/sh", "-c", f"rm -rf {path}/*"])
 
-    def create_rclone_directory(self, path: str):
+    def create_rclone_directory(self, path: str, mode: int = 0o777):
         """Create rclone directory."""
         container = self.client.containers.get(RCLONE_DEPLOYMENT)
         container.exec_run(f"mkdir -p {path}")
+        container.exec_run(f"chmod {oct(mode)} {path}")
 
     @override
     def get_gateway_url(self) -> str:
