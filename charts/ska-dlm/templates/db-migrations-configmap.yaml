@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ska-dlm-db-migrations-{{ .Release.Name }}
+  name: db-migrations-{{ .Release.Name }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "ska-dlm.postgrest.labels" . | nindent 4 }}
@@ -9,9 +9,7 @@ data:
   changelog.yaml: |-
 {{ .Files.Get "changelog.yaml" | indent 4 }}
 {{ (.Files.Glob "initdb-scripts/*.sql").AsConfig | indent 2 }}
-
 ---
-
 # --- initdb ConfigMap (for Postgres startup) ---
 {{- if .Values.postgresql.enabled }}
 apiVersion: v1
