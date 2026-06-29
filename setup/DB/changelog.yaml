@@ -9,3 +9,5 @@ databaseChangeLog:
       file: 05_create_enum_types.sql
   - include:
       file: 10_create_tables.sql
+  - include:
+      file: 11_create_eb_trigger.sql

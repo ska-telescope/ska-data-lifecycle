@@ -1,0 +1,1 @@
+../../../setup/DB/create-eb-data-item-trigger.sql
