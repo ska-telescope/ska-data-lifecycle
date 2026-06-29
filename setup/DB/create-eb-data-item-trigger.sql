@@ -8,8 +8,7 @@ BEGIN
         SELECT 1 FROM information_schema.tables 
         WHERE table_schema = 'execution' AND table_name = 'execution_blocks'
     ) THEN
-        RAISE WARNING 'WARN: Table execution.execution_blocks does not exist. Skipping trigger installation.';
-        RETURN;
+        RAISE EXCEPTION 'ERROR: Table execution.execution_blocks does not exist. Skipping trigger installation.';
     END IF;
 END $$;
 
