@@ -11,8 +11,6 @@ BEGIN
         RAISE WARNING 'WARN: Table execution.execution_blocks does not exist. Skipping trigger installation.';
         RETURN;
     END IF;
-    EXECUTE 'DROP TRIGGER IF EXISTS trg_insert_eb_data_item ON execution.execution_blocks';
-    EXECUTE 'DROP FUNCTION IF EXISTS fn_insert_eb_data_item()';
 END $$;
 
 
@@ -51,7 +49,7 @@ BEGIN
         SELECT 1 FROM information_schema.tables 
         WHERE table_schema = 'execution' AND table_name = 'execution_blocks'
     ) THEN
-        EXECUTE 'CREATE TRIGGER trg_insert_eb_data_item AFTER INSERT ON execution.execution_blocks FOR EACH ROW EXECUTE FUNCTION fn_insert_eb_data_item()';
+        EXECUTE 'CREATE OR REPLACE TRIGGER trg_insert_eb_data_item AFTER INSERT ON execution.execution_blocks FOR EACH ROW EXECUTE FUNCTION fn_insert_eb_data_item()';
         EXECUTE 'GRANT EXECUTE ON FUNCTION fn_insert_eb_data_item() TO ' || quote_ident(current_user);
     END IF;
 END $$;
