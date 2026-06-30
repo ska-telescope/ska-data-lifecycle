@@ -2,6 +2,7 @@
 
 ## Development
 
+* Add ODA trigger that inserts a dlm.data_item when an execution block is added.
 * Added dlm-archive stfp endpoint. 
 * Added pg_sphere to local db build.
 * Add default dlm-archive storage endpoint. 

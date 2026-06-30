@@ -148,7 +148,9 @@ ska-db-migrations:
   dbCredentialsSecretName: "{{ .Release.Name }}-ska-dlm-postgrest-secret"
   configMapName: "ska-dlm-db-migrations-{{ .Release.Name }}"
   liquibase:
-    contextFilter: "create-db,create-schema" # "default" or a combination of "create-roles,create-db,create-schema"
+    # Note: the ODA schema execution.execution_blocks must exist before create-external-triggers is specified in the contextFilter below.
+    # This is because create-external-triggers SQL reference the execution.execution_blocks table. If specified and the table doesn't exist, it will throw an exception.
+    contextFilter: "create-db,create-schema" # "default" or a combination of "create-roles,create-db,create-schema,create-external-triggers"
     changelogFile: changelog.yaml
     ttlSecondsAfterFinished: 300
 
