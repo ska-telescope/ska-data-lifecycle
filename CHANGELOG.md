@@ -2,10 +2,16 @@
 
 ## Development
 
-* Add ODA trigger that inserts a dlm.data_item when an execution block is added.
-* Added dlm-archive stfp endpoint. 
-* Added pg_sphere to local db build.
-* Add default dlm-archive storage endpoint. 
+### Removed
+
+* All references to previous DB name `ska_dlm_meta`.
+
+### Added
+
+* ODA trigger that inserts a dlm.data_item when an execution block is added.
+* dlm-archive stfp endpoint.
+* pg_sphere to local db build.
+* default dlm-archive storage endpoint.
 
 ## 2.1.0
 

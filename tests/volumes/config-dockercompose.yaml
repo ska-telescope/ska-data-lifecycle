@@ -2,7 +2,7 @@
 # This is a YAML-formatted file.
 
 DLM:
-  dlm_db: "ska_dlm_meta"
+  dlm_db: "ska_dlm"
   dlm_table: "data_item"
   storage_table: "storage"
   storage_config_table: "storage_config"
