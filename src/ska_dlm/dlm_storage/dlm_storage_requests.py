@@ -621,8 +621,8 @@ def rclone_access(volume: str, remote_file_path: str = "", config: dict | None =
     return True
 
 
-def rclone_delete(volume: str, fpath: str) -> bool:
-    """Delete a file, referred to by fpath from a volume using rclone.
+def rclone_delete(volume: str, fpath: str, item_type:str="file") -> bool:
+    """Delete a file or whole directory tree, referred to by fpath from a volume using rclone.
 
     Parameters
     ----------
@@ -640,7 +640,10 @@ def rclone_delete(volume: str, fpath: str) -> bool:
         logger.error("Can't access %s on %s!", fpath, volume)
         return False
     url = random.choice(CONFIG.RCLONE)
-    request_url = f"{url}/operations/deletefile"
+    if item_type.lower() == "container":
+        request_url = f"{url}/operations/purge"
+    else:
+        request_url = f"{url}/operations/deletefile"
     post_data = {
         "fs": volume,
         "remote": fpath,
@@ -780,13 +783,15 @@ def check_item_on_storage(
     return storages
 
 
-def delete_data_item_payload(uid: str) -> bool:
+def delete_data_item_payload(uid: str, item_type: str="file") -> bool:
     """Delete the payload of a data_item referred to by the provided UID.
 
     Parameters
     ----------
     uid
         The UID of the data_item whose payload should be deleted.
+    item_type
+        The type of the item [file/container]
 
     Returns
     -------
@@ -811,8 +816,8 @@ def delete_data_item_payload(uid: str) -> bool:
             f"Unable to get source storage: {storage['storage_id']}."
         )
     delete_path = f"{source_storage[0]['root_directory']}/{storage['uri']}".replace("//", "/")
-    if not rclone_delete(volume_name, delete_path):
-        logger.warning("rclone unable to delete data item payload: %s", uid)
+    if not rclone_delete(volume_name, delete_path, item_type):
+        logger.warning("rclone unable to delete data item payload: %s of type %s", uid, item_type)
         return False
     set_state(uid, "DELETED")
     logger.info("Deleted %s from %s", uid, volume_name)
@@ -828,8 +833,9 @@ def delete_uids():
 
     for data_item in expired_data_items:
         uid = data_item["uid"]
+        item_type = data_item["item_type"]
 
-        success = delete_data_item_payload(uid)
+        success = delete_data_item_payload(uid, item_type)
 
         if not success:
             logger.warning("Unable to delete data item payload: %s", uid)

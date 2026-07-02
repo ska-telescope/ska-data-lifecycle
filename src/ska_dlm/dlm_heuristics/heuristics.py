@@ -17,6 +17,7 @@ class for heuristics and the OID Phase heuristics as one implementation.
 # pylint: disable=too-many-return-statements
 
 from abc import ABC, abstractmethod
+import logging
 from typing import List, Optional
 from uuid import UUID
 
@@ -27,6 +28,8 @@ from ska_dlm.common_types import ItemState, PhaseType
 from ska_dlm.dlm_db.models import DataItem, Storage
 from ska_dlm.dlm_migration import copy_data_item
 from ska_dlm.dlm_storage import dlm_storage_requests
+
+logger = logging.getLogger(__name__)
 
 PHASE_ORDER = {v: p for p, v in enumerate(PhaseType)}
 PHASE_ORDER[PhaseType.SOLID] = 4
@@ -300,6 +303,35 @@ class DeleteUidHeuristic(BaseHeuristic):
         super().__init__(session)
         self.combine_heuristic = CombineUidPhasesHeuristic(session)
 
+    async def _mark_uid_as_deleted(self, uid: UUID) -> None:
+        """Mark a UID as deleted in the database."""
+        update_uid_stmt = (
+            update(DataItem)
+            .where(DataItem.UID == uid)
+            .values(
+                item_state=ItemState.DELETED,
+                deleted=True,
+                UID_deletion=func.now(),  # pylint: disable=not-callable
+            )
+        )
+        await self.session.execute(update_uid_stmt)
+
+    async def _check_parent_deleted(self, uid: UUID) -> bool:
+        """Return True when the parent DataItem is already marked as deleted."""
+        stmt = select(DataItem.parents).where(
+            DataItem.UID == uid,
+            DataItem.parents.is_not(None),
+        )
+        result = await self.session.execute(stmt)
+        parent_uid = result.scalar_one_or_none()
+        if parent_uid is None:
+            return False
+
+        stmt = select(DataItem.item_state).where(DataItem.UID == parent_uid)
+        result = await self.session.execute(stmt)
+        parent_state = result.scalar_one_or_none()
+        return parent_state == ItemState.DELETED
+
     async def execute(self, uid: UUID) -> HeuristicResult:
         """Execute UID deletion heuristic according to deletion sequence diagram.
 
@@ -335,6 +367,7 @@ class DeleteUidHeuristic(BaseHeuristic):
 
             oid = data_item.OID
             target_phase = data_item.target_phase
+            item_type = data_item.item_type
 
             # Step 2: Fetch other UIDs for same OID that are not already deleted
             uid_stmt = select(Storage.storage_phase, DataItem.UID).where(
@@ -372,20 +405,22 @@ class DeleteUidHeuristic(BaseHeuristic):
                 )
 
             # Step 5: Delete payload from storage manager
-            if not dlm_storage_requests.delete_data_item_payload(str(uid)):
-                return HeuristicResult(False, f"Failed to delete payload for UID {uid}")
+            if not dlm_storage_requests.delete_data_item_payload(str(uid), item_type=item_type):
+                if await self._check_parent_deleted(child_uid):
+                    await self._mark_uid_as_deleted(child_uid)
+                return HeuristicResult(False, f"Failed to delete payload for UID {uid} of type {item_type}")
 
             # Step 6: Update UID metadata
-            update_uid_stmt = (
-                update(DataItem)
-                .where(DataItem.UID == uid)
-                .values(
-                    item_state=ItemState.DELETED,
-                    deleted=True,
-                    UID_deletion=func.now(),  # pylint: disable=not-callable
-                )
-            )
-            await self.session.execute(update_uid_stmt)
+            await self._mark_uid_as_deleted(uid)
+
+            # All children need to be marked as DELETED as well
+            if item_type.lower() == "container":
+                stmt = select(DataItem.UID).where(DataItem.parents == uid)
+                result = await self.session.execute(stmt)
+                child_uids = result.scalars().all()
+                for child_uid in child_uids:
+                    if await self._check_parent_deleted(child_uid):
+                        await self._mark_uid_as_deleted(child_uid)
 
             # Update OID phase for the OID group
             update_oid_stmt = (
@@ -446,6 +481,8 @@ class UidExpiryHeuristic(BaseHeuristic):
                         "message": delete_result.message,
                     }
                 )
+                if not delete_result.success:
+                    logger.info("Deletion of UID %s failed: %s", uid, delete_result.message)
 
             success = all(item["success"] for item in deletion_results)
             message = "Deleted expired UIDs" if success else "Some expired UID deletions failed"
