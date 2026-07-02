@@ -621,7 +621,7 @@ def rclone_access(volume: str, remote_file_path: str = "", config: dict | None =
     return True
 
 
-def rclone_delete(volume: str, fpath: str, item_type:str="file") -> bool:
+def rclone_delete(volume: str, fpath: str, item_type: str = "file") -> bool:
     """Delete a file or whole directory tree, referred to by fpath from a volume using rclone.
 
     Parameters
@@ -630,6 +630,8 @@ def rclone_delete(volume: str, fpath: str, item_type:str="file") -> bool:
         the configured volume name hosting <fpath>.
     fpath
         the file path.
+    item_type
+        the type of the data_item [file|container]
 
     Returns
     -------
@@ -783,7 +785,7 @@ def check_item_on_storage(
     return storages
 
 
-def delete_data_item_payload(uid: str, item_type: str="file") -> bool:
+def delete_data_item_payload(uid: str, item_type: str = "file") -> bool:
     """Delete the payload of a data_item referred to by the provided UID.
 
     Parameters

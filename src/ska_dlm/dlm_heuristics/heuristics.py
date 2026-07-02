@@ -1,5 +1,6 @@
 # pylint: disable=R0912
 # pylint: disable=W0612
+# pylint: disable=C0302
 # flake8: noqa: RST201
 """Heuristic implementations for DLM data lifecycle management.
 
@@ -16,8 +17,8 @@ class for heuristics and the OID Phase heuristics as one implementation.
 # pylint: disable=broad-exception-caught
 # pylint: disable=too-many-return-statements
 
-from abc import ABC, abstractmethod
 import logging
+from abc import ABC, abstractmethod
 from typing import List, Optional
 from uuid import UUID
 
@@ -406,7 +407,9 @@ class DeleteUidHeuristic(BaseHeuristic):
 
             # Step 5: Delete payload from storage manager
             if not dlm_storage_requests.delete_data_item_payload(str(uid), item_type=item_type):
-                return HeuristicResult(False, f"Failed to delete payload for UID {uid} of type {item_type}")
+                return HeuristicResult(
+                    False, f"Failed to delete payload for UID {uid} of type {item_type}"
+                )
 
             # Step 6: Update UID metadata
             await self._mark_uid_as_deleted(uid)
