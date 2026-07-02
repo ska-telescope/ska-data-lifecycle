@@ -833,7 +833,7 @@ def delete_uids():
 
     for data_item in expired_data_items:
         uid = data_item["uid"]
-        item_type = data_item["item_type"]
+        item_type = data_item.get("item_type", "file")
 
         success = delete_data_item_payload(uid, item_type)
 

@@ -1124,7 +1124,11 @@ class TestDeleteUidHeuristic:
             mock_query_exists_and_ready,
         ]
 
-        monkeypatch.setattr(dlm_storage_requests, "delete_data_item_payload", lambda x: True)
+        monkeypatch.setattr(
+            dlm_storage_requests,
+            "delete_data_item_payload",
+            lambda x, item_type=None: True,
+        )
 
         result = await heuristic.execute(uid)
 
@@ -1151,7 +1155,11 @@ class TestDeleteUidHeuristic:
 
         mock_session.execute.side_effect = [mock_oid_result, mock_uid_result]
 
-        monkeypatch.setattr(dlm_storage_requests, "delete_data_item_payload", lambda x: False)
+        monkeypatch.setattr(
+            dlm_storage_requests,
+            "delete_data_item_payload",
+            lambda x, item_type=None: False,
+        )
 
         result = await heuristic.execute(uid)
 

@@ -406,8 +406,6 @@ class DeleteUidHeuristic(BaseHeuristic):
 
             # Step 5: Delete payload from storage manager
             if not dlm_storage_requests.delete_data_item_payload(str(uid), item_type=item_type):
-                if await self._check_parent_deleted(child_uid):
-                    await self._mark_uid_as_deleted(child_uid)
                 return HeuristicResult(False, f"Failed to delete payload for UID {uid} of type {item_type}")
 
             # Step 6: Update UID metadata

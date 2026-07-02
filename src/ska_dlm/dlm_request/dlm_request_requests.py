@@ -62,7 +62,7 @@ def query_expired(offset: timedelta | None = None) -> list[dict]:
         now += offset
     iso_now = now.replace(tzinfo=None).isoformat()
     params = {
-        "select": "uid,uid_expiration",
+        "select": "uid,uid_expiration,item_type",
         "uid_expiration": f"lt.{iso_now}",
         "item_state": f"eq.{ItemState.READY.value}",
     }
