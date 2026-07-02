@@ -22,3 +22,4 @@ services:
       - dlm_storage
       - dlm_ingest
       - dlm_migration
+      - dlm_outbox
