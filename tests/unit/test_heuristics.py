@@ -1,6 +1,7 @@
 # pylint: disable=C0302
 # pylint: disable=W0612
 # pylint: disable=E1129
+# pylint: disable=W0212
 # flake8: noqa: F841
 """Unit tests for DLM heuristics."""
 
@@ -1168,7 +1169,9 @@ class TestDeleteUidHeuristic:
         mock_session.commit.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_inaccessible_storage_marks_uid_deleted(self, heuristic, mock_session, monkeypatch):
+    async def test_inaccessible_storage_marks_uid_deleted(
+        self, heuristic, mock_session, monkeypatch
+    ):
         """Unreachable storage or item should be treated as already deleted."""
         uid = uuid.uuid4()
         oid = uuid.uuid4()

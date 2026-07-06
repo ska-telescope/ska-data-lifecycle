@@ -37,10 +37,17 @@ export KUBE_NAMESPACE K8S_HOST_URL SHARED_VOLUMES_DIR
 docs-pre-build: ## setup the document build environment.
 	poetry install --only main,docs
 
+# Need to fix the python-tests to not depend on local services
+python-test: python-pre-test python-do-test python-post-test
+
 python-pre-test:
-	docker compose --file tests/services.docker-compose.yaml -p dlm-test-services up --detach --wait
+	docker compose --file tests/testrunner.docker-compose.yaml -p dlm-test-services build
+
+python-do-test:
+	docker compose --file tests/testrunner.docker-compose.yaml -p dlm-test-services run dlm_testrunner
+
 python-post-test:
-	docker compose --file tests/services.docker-compose.yaml -p dlm-test-services down
+	docker compose --file tests/testrunner.docker-compose.yaml -p dlm-test-services down
 
 docker-test: docker-pre-test docker-do-test docker-post-test
 docker-pre-test:

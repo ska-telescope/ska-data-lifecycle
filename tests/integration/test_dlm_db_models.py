@@ -42,7 +42,9 @@ async def engine_fixture() -> AsyncGenerator[AsyncEngine, None]:
 
     Uses env DATABASE_URL to configure alternative engines.
     """
-    db_url = os.getenv("DATABASE_URL", "postgresql+asyncpg://ska_dlm_admin:password@localhost:5432/ska_dlm")
+    db_url = os.getenv(
+        "DATABASE_URL", "postgresql+asyncpg://ska_dlm_admin:password@dlm_db:5432/ska_dlm"
+    )
 
     # db_url = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///:memory:")
     if db_url.startswith("postgresql://"):

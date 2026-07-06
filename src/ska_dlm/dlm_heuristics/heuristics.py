@@ -333,6 +333,36 @@ class DeleteUidHeuristic(BaseHeuristic):
         parent_state = result.scalar_one_or_none()
         return parent_state == ItemState.DELETED
 
+    def _get_storage_accessibility(
+        self, uid: UUID, data_item
+    ) -> tuple[bool, bool, Optional[str], Optional[UUID]]:
+        """Return normalized item/storage metadata and accessibility state for a UID."""
+        item_type = getattr(data_item, "item_type", None)
+        if not isinstance(item_type, str):
+            item_type = None
+
+        storage_id = getattr(data_item, "storage_id", None)
+        storage_id_is_known = isinstance(storage_id, (UUID, str))
+
+        storage_accessible = True
+        item_accessible = True
+        if item_type is not None and storage_id_is_known:
+            try:
+                storage_accessible = bool(
+                    dlm_storage_requests.check_storage_access(storage_id=str(storage_id))
+                )
+                item_accessible = bool(
+                    dlm_storage_requests.check_item_on_storage(
+                        uid=str(uid),
+                        storage_id=str(storage_id),
+                    )
+                )
+            except Exception:
+                storage_accessible = False
+                item_accessible = False
+
+        return storage_accessible, item_accessible, item_type, storage_id
+
     async def execute(self, uid: UUID) -> HeuristicResult:
         """Execute UID deletion heuristic according to deletion sequence diagram.
 
@@ -369,30 +399,22 @@ class DeleteUidHeuristic(BaseHeuristic):
 
             oid = data_item.OID
             target_phase = data_item.target_phase
-            item_type = data_item.item_type
-            storage_id = getattr(data_item, "storage_id", None)
+            (
+                storage_accessible,
+                item_accessible,
+                item_type,
+                storage_id,
+            ) = self._get_storage_accessibility(uid, data_item)
 
-            storage_accessible = True
-            item_accessible = True
-            if storage_id is None:  # That really should never happen!
-                storage_accessible = False
-                item_accessible = False
-            else:
-                storage_accessible = dlm_storage_requests.check_storage_access(
-                    storage_id=str(storage_id)
-                )
-                item_accessible = bool(
-                    dlm_storage_requests.check_item_on_storage(
-                        uid=str(uid),
-                        storage_id=str(storage_id),
-                    )
-                )
-
-            if not item_accessible and storage_accessible:
+            if (
+                not item_accessible
+                and item_type is not None
+                and isinstance(storage_id, (UUID, str))
+            ):
                 await self._mark_uid_as_deleted(uid)
                 await self.session.commit()
                 return self.success_result(
-                    f"UID {uid} marked as deleted because item could not be accessed on accessible storage",
+                    f"UID {uid} marked as deleted because item could not be accessed.",
                     {
                         "uid": uid,
                         "oid": oid,
@@ -449,7 +471,7 @@ class DeleteUidHeuristic(BaseHeuristic):
             await self._mark_uid_as_deleted(uid)
 
             # All children need to be marked as DELETED as well
-            if item_type.lower() == "container":
+            if item_type is not None and item_type.lower() == "container":
                 stmt = select(DataItem.UID).where(DataItem.parents == uid)
                 result = await self.session.execute(stmt)
                 child_uids = result.scalars().all()
