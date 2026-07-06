@@ -584,7 +584,6 @@ def check_storage_access(
             "No valid configuration for storage found!", storage_name
         )
     volume_name = f"{config[0]['name']}:{config[0].get('root_path', '/')}"
-    remote_file_path = remote_file_path.lstrip("/")  # need to remove leading /
     return rclone_remote_check(volume_name)
 
 
@@ -611,7 +610,7 @@ def rclone_remote_check(volume: str, config: dict | None = None) -> bool:
         post_data = {
             "fs": volume,
         }
-    logger.debug("rclone remote test: %s, %s", request_url, post_data)
+    logger.debug("rclone remote check: %s, %s", request_url, post_data)
     request = requests.post(request_url, post_data, timeout=10, verify=False)
     if request.status_code != 200:
         logger.warning("rclone can not reach: %s, %s", request.status_code, request.json())
@@ -783,7 +782,7 @@ def check_item_on_storage(
     uid: str = "",
     storage_name: str = "",
     storage_id: str = "",
-) -> bool:
+) -> list:
     """Check whether item is on storage.
 
     Parameters
@@ -801,24 +800,25 @@ def check_item_on_storage(
 
     Returns
     -------
-    bool
+    list
     """
     storages = query_item_storage(item_name, oid, uid)
     if not storages:
-        logger.error("Unable to identify a storage volume for this data_item!")
+        logger.error("Unable to identify a storage volume holding this data_item!")
         return []
     # additional check if a storage_name or id is provided
-    for storage in storages:
-        if (storage_name and storage["storage_name"] == storage_name) or (
-            storage_id and storage["storage_id"] == storage_id
-        ):
-            logger.error(
-                "data_item '%s' '%s' already exists on destination storage: %s",
-                storage["item_name"],
-                storage["uid"],
-                storage_id,
-            )
-            return []
+    if storage_name or storage_id:
+        for storage in storages:
+            if (storage_name and storage["storage_name"] == storage_name) or (
+                storage_id and storage["storage_id"] == storage_id
+            ):
+                logger.info(
+                    "data_item '%s' '%s' exists on destination storage: %s",
+                    storage["item_name"],
+                    storage["uid"],
+                    storage_id,
+                )
+                return [storage]
     return storages
 
 

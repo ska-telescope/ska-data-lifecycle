@@ -183,7 +183,7 @@ def query_exists_and_ready(item_name: str = "", oid: str = "", uid: str = "") ->
 @rest.get("/request/query_item_storage", response_model=list[dict])
 def query_item_storage(item_name: str = "", oid: str = "", uid: str = "") -> list[dict]:
     """
-    Query for the storage_ids of all backends holding a copy of a data_item.
+    Query for the storage info of all backends holding a copy of a data_item.
 
     Either an item_name or a OID have to be provided.
 
@@ -199,7 +199,7 @@ def query_item_storage(item_name: str = "", oid: str = "", uid: str = "") -> lis
     Returns
     -------
     list[dict]
-        list of storage_ids
+        list of storage infos
     """
     if not query_exists_and_ready(item_name, oid, uid):
         logger.warning("data_item does not exists or is not READY.")

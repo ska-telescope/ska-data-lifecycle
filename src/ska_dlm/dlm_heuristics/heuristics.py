@@ -348,12 +348,11 @@ class DeleteUidHeuristic(BaseHeuristic):
                 storage_accessible = bool(
                     dlm_storage_requests.check_storage_access(storage_id=str(storage_id))
                 )
-                item_accessible = bool(
+                item_accessible = (str(storage_id) ==
                     dlm_storage_requests.check_item_on_storage(
                         uid=str(uid),
-                        storage_id=str(storage_id),
-                    )
-                )
+                        storage_id=str(storage_id)
+                )[0]["storage_id"])
             except Exception:
                 storage_accessible = False
                 item_accessible = False
