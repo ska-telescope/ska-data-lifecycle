@@ -337,6 +337,7 @@ class DeleteUidHeuristic(BaseHeuristic):
         """Execute UID deletion heuristic according to deletion sequence diagram.
 
         Steps:
+        0. Verify that the target storage is accessible and the item is accessible there
         1. Query UID entry and resolve OID
         2. Query other UID phases for OID
         3. Determine result phase if UID removed
@@ -355,7 +356,7 @@ class DeleteUidHeuristic(BaseHeuristic):
             HeuristicResult
         """
         try:
-            # Step 1: Fetch target UID to get OID
+            # Step 0: Verify target storage/item accessibility before deleting anything
             stmt = select(DataItem).where(DataItem.UID == uid)
             result = await self.session.execute(stmt)
             data_item = result.scalar()
@@ -369,6 +370,39 @@ class DeleteUidHeuristic(BaseHeuristic):
             oid = data_item.OID
             target_phase = data_item.target_phase
             item_type = data_item.item_type
+            storage_id = getattr(data_item, "storage_id", None)
+
+            storage_accessible = True
+            item_accessible = True
+            if storage_id is None:  # That really should never happen!
+                storage_accessible = False
+                item_accessible = False
+            else:
+                storage_accessible = dlm_storage_requests.check_storage_access(
+                    storage_id=str(storage_id)
+                )
+                item_accessible = bool(
+                    dlm_storage_requests.check_item_on_storage(
+                        uid=str(uid),
+                        storage_id=str(storage_id),
+                    )
+                )
+
+            if not item_accessible and storage_accessible:
+                await self._mark_uid_as_deleted(uid)
+                await self.session.commit()
+                return self.success_result(
+                    f"UID {uid} marked as deleted because item could not be accessed on accessible storage",
+                    {
+                        "uid": uid,
+                        "oid": oid,
+                        "storage_id": storage_id,
+                        "storage_accessible": storage_accessible,
+                        "item_accessible": item_accessible,
+                    },
+                )
+
+            # Step 1: Fetch target UID to get OID
 
             # Step 2: Fetch other UIDs for same OID that are not already deleted
             uid_stmt = select(Storage.storage_phase, DataItem.UID).where(

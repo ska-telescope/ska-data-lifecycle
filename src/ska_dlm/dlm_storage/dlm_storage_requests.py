@@ -588,7 +588,7 @@ def check_storage_access(
 
 
 def rclone_access(volume: str, remote_file_path: str = "", config: dict | None = None) -> bool:
-    """Check whether a configured backend is accessible.
+    """Check whether a configured backend or explicit filepath is accessible.
 
     Parameters
     ----------
@@ -613,10 +613,10 @@ def rclone_access(volume: str, remote_file_path: str = "", config: dict | None =
             "fs": volume,
             "remote": remote_file_path,
         }
-    logger.info("rclone access check: %s, %s", request_url, post_data)
+    logger.debug("rclone access check: %s, %s", request_url, post_data)
     request = requests.post(request_url, post_data, timeout=10, verify=False)
     if request.status_code != 200 or not request.json()["item"]:
-        logger.warning("rclone does not have access: %s, %s", request.status_code, request.json())
+        logger.warning("rclone can not access: %s, %s", request.status_code, request.json())
         return False
     return True
 

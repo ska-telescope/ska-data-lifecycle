@@ -42,7 +42,9 @@ async def engine_fixture() -> AsyncGenerator[AsyncEngine, None]:
 
     Uses env DATABASE_URL to configure alternative engines.
     """
-    db_url = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///:memory:")
+    db_url = os.getenv("DATABASE_URL", "postgresql+asyncpg://ska_dlm_admin:password@localhost:5432/ska_dlm")
+
+    # db_url = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///:memory:")
     if db_url.startswith("postgresql://"):
         db_url = db_url.replace("postgresql://", "postgresql+asyncpg://")
 
@@ -77,6 +79,7 @@ async def session(connection) -> AsyncGenerator[AsyncSession, None]:
 
 
 # pylint: disable=too-few-public-methods, redefined-outer-name
+@pytest.mark.integration_test
 class TestLocation:
     """Test Location model."""
 
@@ -100,6 +103,7 @@ class TestLocation:
 
 
 # pylint: disable=too-few-public-methods
+@pytest.mark.integration_test
 class TestStorage:
     """Test Storage model."""
 
@@ -134,6 +138,7 @@ class TestStorage:
 
 
 # pylint: disable=too-few-public-methods
+@pytest.mark.integration_test
 class TestStorageConfig:
     """Test StorageConfig model."""
 
@@ -171,6 +176,7 @@ class TestStorageConfig:
 
 
 # pylint: disable=too-few-public-methods
+@pytest.mark.integration_test
 class TestDataItem:
     """Test DataItem model."""
 
@@ -215,6 +221,7 @@ class TestDataItem:
 
 
 # pylint: disable=too-few-public-methods
+@pytest.mark.integration_test
 class TestMigration:
     """Test Migration model."""
 
@@ -259,6 +266,7 @@ class TestMigration:
         assert migration.destination_storage_id == dest_storage.storage_id
 
 
+@pytest.mark.integration_test
 class TestRelationships:
     """Test relationships between models."""
 

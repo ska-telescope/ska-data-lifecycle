@@ -1167,6 +1167,46 @@ class TestDeleteUidHeuristic:
         assert "Failed to delete payload" in result.message
         mock_session.commit.assert_not_called()
 
+    @pytest.mark.asyncio
+    async def test_inaccessible_storage_marks_uid_deleted(self, heuristic, mock_session, monkeypatch):
+        """Unreachable storage or item should be treated as already deleted."""
+        uid = uuid.uuid4()
+        oid = uuid.uuid4()
+        storage_id = uuid.uuid4()
+
+        data_item = MagicMock()
+        data_item.OID = oid
+        data_item.UID = uid
+        data_item.target_phase = PhaseType.GAS
+        data_item.storage_id = storage_id
+        data_item.item_type = "file"
+
+        mock_result = MagicMock()
+        mock_result.scalar.return_value = data_item
+        mock_session.execute.return_value = mock_result
+
+        monkeypatch.setattr(
+            "ska_dlm.dlm_heuristics.heuristics.dlm_storage_requests.check_storage_access",
+            lambda *args, **kwargs: False,
+        )
+        monkeypatch.setattr(
+            "ska_dlm.dlm_heuristics.heuristics.dlm_storage_requests.check_item_on_storage",
+            lambda *args, **kwargs: [],
+        )
+
+        delete_payload = MagicMock(side_effect=AssertionError("delete should not be attempted"))
+        monkeypatch.setattr(dlm_storage_requests, "delete_data_item_payload", delete_payload)
+
+        mark_deleted = AsyncMock()
+        heuristic._mark_uid_as_deleted = mark_deleted
+
+        result = await heuristic.execute(uid)
+
+        assert result.success is True
+        assert "marked as deleted" in result.message
+        mark_deleted.assert_awaited_once_with(uid)
+        mock_session.commit.assert_called_once()
+
 
 class TestIdentifyTargetStorageHeuristic:
     """Test IdentifyTargetStorageHeuristic class."""
