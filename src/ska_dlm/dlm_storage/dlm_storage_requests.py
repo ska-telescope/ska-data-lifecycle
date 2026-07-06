@@ -584,7 +584,39 @@ def check_storage_access(
             "No valid configuration for storage found!", storage_name
         )
     volume_name = f"{config[0]['name']}:{config[0].get('root_path', '/')}"
-    return rclone_access(volume_name, remote_file_path)
+    remote_file_path = remote_file_path.lstrip("/")  # need to remove leading /
+    return rclone_remote_check(volume_name)
+
+
+def rclone_remote_check(volume: str, config: dict | None = None) -> bool:
+    """Check whether a configured rclone remote is alive and responding.
+
+    Parameters
+    ----------
+    volume
+        The rclone volume name or remote path to test.
+    config
+        Optional explicit rclone config payload to use instead of the volume.
+
+    Returns
+    -------
+    bool
+        True if the remote responds successfully, False otherwise.
+    """
+    url = random.choice(CONFIG.RCLONE)
+    request_url = f"{url}/operations/about"
+    if config:
+        post_data = config
+    else:
+        post_data = {
+            "fs": volume,
+        }
+    logger.debug("rclone remote test: %s, %s", request_url, post_data)
+    request = requests.post(request_url, post_data, timeout=10, verify=False)
+    if request.status_code != 200:
+        logger.warning("rclone can not reach: %s, %s", request.status_code, request.json())
+        return False
+    return True
 
 
 def rclone_access(volume: str, remote_file_path: str = "", config: dict | None = None) -> bool:
@@ -782,8 +814,10 @@ def check_item_on_storage(
         ):
             logger.error(
                 "data_item '%s' '%s' already exists on destination storage: %s",
-                storage["item_name"], storage["uid"], storage_id
-                )
+                storage["item_name"],
+                storage["uid"],
+                storage_id,
+            )
             return []
     return storages
 

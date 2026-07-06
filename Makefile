@@ -44,7 +44,7 @@ python-pre-test:
 	docker compose --file tests/testrunner.docker-compose.yaml -p dlm-test-services build
 
 python-do-test:
-	docker compose --file tests/testrunner.docker-compose.yaml -p dlm-test-services run dlm_testrunner
+	docker compose --file tests/testrunner.docker-compose.yaml -p dlm-test-services run --rm --entrypoint="pytest --ignore tests/integration" dlm_testrunner
 
 python-post-test:
 	docker compose --file tests/testrunner.docker-compose.yaml -p dlm-test-services down

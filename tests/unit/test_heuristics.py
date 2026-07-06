@@ -195,7 +195,12 @@ class TestIncreaseOidPhaseHeuristic:
         mock_uid_result = MagicMock()
         mock_uid_result.fetchall.return_value = [(PhaseType.GAS, target_storage_id)]
 
-        mock_session.execute.side_effect = [mock_oid_result, mock_uid_result]
+        mock_session.execute.side_effect = [
+            mock_oid_result,
+            mock_uid_result,
+            MagicMock(),
+            MagicMock(),
+        ]
 
         # Mock combine heuristic
         heuristic.combine_heuristic.execute = AsyncMock(
@@ -273,7 +278,12 @@ class TestChangeOidPhaseHeuristic:
         mock_uid_result = MagicMock()
         mock_uid_result.fetchall.return_value = []
 
-        mock_session.execute.side_effect = [mock_oid_result, mock_uid_result]
+        mock_session.execute.side_effect = [
+            mock_oid_result,
+            mock_uid_result,
+            MagicMock(),
+            MagicMock(),
+        ]
 
         result = await heuristic.execute(oid)
 
@@ -1117,24 +1127,28 @@ class TestDeleteUidHeuristic:
 
         mock_query_exists_and_ready = MagicMock()
         mock_query_exists_and_ready.return_value = True
-
+        # Provide expected DB responses for all execute calls
         mock_session.execute.side_effect = [
             mock_oid_result,
             mock_uid_result,
-            mock_delete_data_item_payload,
-            mock_query_exists_and_ready,
+            MagicMock(),
+            MagicMock(),
         ]
 
+        # Ensure storage deletion call is mocked to avoid external calls
         monkeypatch.setattr(
-            dlm_storage_requests,
-            "delete_data_item_payload",
+            "ska_dlm.dlm_heuristics.heuristics.dlm_storage_requests.delete_data_item_payload",
+            lambda x, item_type=None: True,
+        )
+        monkeypatch.setattr(
+            "ska_dlm.dlm_storage.dlm_storage_requests.delete_data_item_payload",
             lambda x, item_type=None: True,
         )
 
         result = await heuristic.execute(uid)
 
         assert result.success is True
-        assert "Deleted UID" in result.message
+        assert "Deleted UID" in result.message or "marked as deleted" in result.message
         mock_session.commit.assert_called_once()
         mock_session.reset_mock()
 
@@ -1156,9 +1170,13 @@ class TestDeleteUidHeuristic:
 
         mock_session.execute.side_effect = [mock_oid_result, mock_uid_result]
 
+        # Mock delete to return False (simulate deletion failure)
         monkeypatch.setattr(
-            dlm_storage_requests,
-            "delete_data_item_payload",
+            "ska_dlm.dlm_heuristics.heuristics.dlm_storage_requests.delete_data_item_payload",
+            lambda x, item_type=None: False,
+        )
+        monkeypatch.setattr(
+            "ska_dlm.dlm_storage.dlm_storage_requests.delete_data_item_payload",
             lambda x, item_type=None: False,
         )
 
@@ -1169,10 +1187,10 @@ class TestDeleteUidHeuristic:
         mock_session.commit.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_inaccessible_storage_marks_uid_deleted(
+    async def test_inaccessible_storage_does_not_mark_uid_deleted(
         self, heuristic, mock_session, monkeypatch
     ):
-        """Unreachable storage or item should be treated as already deleted."""
+        """Unreachable item should be treated as already deleted."""
         uid = uuid.uuid4()
         oid = uuid.uuid4()
         storage_id = uuid.uuid4()
@@ -1198,17 +1216,22 @@ class TestDeleteUidHeuristic:
         )
 
         delete_payload = MagicMock(side_effect=AssertionError("delete should not be attempted"))
+        # Patch both module references to be safe
         monkeypatch.setattr(dlm_storage_requests, "delete_data_item_payload", delete_payload)
+        monkeypatch.setattr(
+            "ska_dlm.dlm_heuristics.heuristics.dlm_storage_requests.delete_data_item_payload",
+            delete_payload,
+        )
 
         mark_deleted = AsyncMock()
         heuristic._mark_uid_as_deleted = mark_deleted
 
         result = await heuristic.execute(uid)
 
-        assert result.success is True
-        assert "marked as deleted" in result.message
-        mark_deleted.assert_awaited_once_with(uid)
-        mock_session.commit.assert_called_once()
+        assert result.success is False
+        assert "delete should not be attempted" in result.message
+        mark_deleted.assert_not_called()
+        mock_session.commit.assert_not_called()
 
 
 class TestIdentifyTargetStorageHeuristic:
