@@ -4,6 +4,6 @@ dependencies:
   version: 0.1.9
 - name: ska-db-migrations
   repository: https://artefact.skao.int/repository/helm-internal
-  version: 0.9.0
-digest: sha256:ef5c7402164537e3cef91ae0eaf2193c23ccb61dad7ba9e93c8a277a3a3e4352
-generated: "2026-06-18T15:22:53.626449+08:00"
+  version: 0.9.1
+digest: sha256:515a16773c4afe23e9a8814a3d6ae98cec9e7902c8474873af8536b9ad8b0778
+generated: "2026-07-06T12:38:57.749803+08:00"

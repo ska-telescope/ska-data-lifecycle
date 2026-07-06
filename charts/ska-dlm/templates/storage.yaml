@@ -36,6 +36,17 @@ spec:
         {{- include "ska-dlm.storage.labels" . | nindent 8 }}
     spec:
       initContainers:
+        - name: wait-for-job
+          image: "bitnami/kubectl:latest"
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Waiting for job job/db-migrations-{{ .Release.Name }} to finish..."
+              # Polls the API server until the specific job status is complete
+              kubectl wait --namespace={{ .Release.Namespace }} --for=condition=complete --timeout=3000s job/db-migrations-{{ .Release.Name }}
+
+      initContainers:
         - name: wait-for-postgrest
           image: curlimages/curl
           command: ["/bin/sh", "-c"]

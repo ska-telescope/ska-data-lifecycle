@@ -36,6 +36,17 @@ spec:
     spec:
       serviceAccountName: {{ printf "%s-postgrest" .Release.Name }}
       initContainers:
+        - name: wait-for-job
+          image: "bitnami/kubectl:latest"
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Waiting for job job/db-migrations-{{ .Release.Name }} to finish..."
+              # Polls the API server until the specific job status is complete
+              kubectl wait --namespace={{ .Release.Namespace }} --for=condition=complete --timeout=3000s job/db-migrations-{{ .Release.Name }}
+
+      initContainers:
         - name: wait-for-postgres
           image: postgres:17.4
           command:
