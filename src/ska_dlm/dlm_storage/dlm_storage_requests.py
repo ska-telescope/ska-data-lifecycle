@@ -780,7 +780,10 @@ def check_item_on_storage(
         if (storage_name and storage["storage_name"] == storage_name) or (
             storage_id and storage["storage_id"] == storage_id
         ):
-            logger.error("data_item '%s' already exists on destination storage!", item_name)
+            logger.error(
+                "data_item '%s' '%s' already exists on destination storage: %s",
+                storage["item_name"], storage["uid"], storage_id
+                )
             return []
     return storages
 
