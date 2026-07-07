@@ -145,12 +145,12 @@ def query_exists(item_name: str = "", oid: str = "", uid: str = "", ready: bool 
     if not item_name and not oid and not uid:
         raise InvalidQueryParameters("Either an item_name or an OID or an UID have to be provided")
     params = {}
-    if item_name:
-        params["item_name"] = f"eq.{item_name}"
+    if uid:
+        params["uid"] = f"eq.{uid}"
     elif oid:
         params["oid"] = f"eq.{oid}"
-    elif uid:
-        params["uid"] = f"eq.{uid}"
+    elif item_name:
+        params["item_name"] = f"eq.{item_name}"
     if ready:
         params["item_state"] = f"eq.{ItemState.READY.value}"
     # TODO: select COUNT(*) only instead of all data columns

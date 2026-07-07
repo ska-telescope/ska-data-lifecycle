@@ -26,7 +26,7 @@ def query_data_item(
     oid: str = "",
     uid: str = "",
     storage_id: str = "",
-    params: str | None = None,  # TODO: meant to be dict | None
+    params: dict | None = None,
 ) -> list[dict]:
     """Query a data_item.
 
@@ -50,16 +50,16 @@ def query_data_item(
     list[dict]
         data item ids.
     """
-    if bool(params) == (item_name or oid or uid):
+    if not (params or item_name or oid or uid):
         raise InvalidQueryParameters("give either params or item_name/oid/uid")
     params = dict(params) if params else {}
     params["limit"] = 1000
-    if item_name:
-        params["item_name"] = f"eq.{item_name}"
+    if uid:
+        params["uid"] = f"eq.{uid}"
     elif oid:
         params["oid"] = f"eq.{oid}"
-    elif uid:
-        params["uid"] = f"eq.{uid}"
+    elif item_name:
+        params["item_name"] = f"eq.{item_name}"
 
     if storage_id:
         params["storage_id"] = f"eq.{storage_id}"
@@ -104,12 +104,12 @@ def update_data_item(
     if not (item_name or oid or uid):
         raise InvalidQueryParameters("Either item_name, oid or uid must be given")
     params = {}
-    if item_name:
-        params["item_name"] = f"eq.{item_name}"
+    if uid:
+        params["uid"] = f"eq.{uid}"
     elif oid:
         params["oid"] = f"eq.{oid}"
-    elif uid:
-        params["uid"] = f"eq.{uid}"
+    elif item_name:
+        params["item_name"] = f"eq.{item_name}"
     return DB.update(CONFIG.DLM.dlm_table, params=params, json=post_data)[0]
 
 
