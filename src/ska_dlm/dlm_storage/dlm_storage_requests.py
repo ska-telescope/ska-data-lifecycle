@@ -678,11 +678,7 @@ def rclone_delete(volume: str, fpath: str, item_type: str = "file") -> bool:
         request_url = f"{url}/operations/purge"
     else:
         request_url = f"{url}/operations/deletefile"
-    post_data = {
-        "fs": volume,
-        "remote": fpath,
-        "_async": True
-    }
+    post_data = {"fs": volume, "remote": fpath, "_async": True}
     logger.info("rclone deletion: %s, %s", request_url, post_data)
     request = requests.post(request_url, data=post_data, timeout=10, verify=False)
     if request.status_code != 200:
@@ -828,10 +824,7 @@ def check_item_on_storage(
     return storages
 
 
-def delete_data_item_payload(
-        uid: str,
-        item_type: str = "file",
-        item_name: str = "") -> bool:
+def delete_data_item_payload(uid: str, item_type: str = "file", item_name: str = "") -> bool:
     """Delete the payload of a data_item referred to by the provided UID.
 
     Parameters
@@ -867,8 +860,12 @@ def delete_data_item_payload(
         )
     delete_path = f"{source_storage[0]['root_directory']}/{storage['uri']}".replace("//", "/")
     if not rclone_delete(volume_name, delete_path, item_type):
-        logger.warning("rclone unable to delete data item payload: %s %s of type %s",
-                       item_name, uid, item_type)
+        logger.warning(
+            "rclone unable to delete data item payload: %s %s of type %s",
+            item_name,
+            uid,
+            item_type,
+        )
         return False
     set_state(uid, "DELETED")
     logger.info("Deleted %s %s from %s", item_name, uid, volume_name)
