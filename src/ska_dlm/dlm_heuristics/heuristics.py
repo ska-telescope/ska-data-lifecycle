@@ -386,6 +386,8 @@ class DeleteUidHeuristic(BaseHeuristic):
             # Step 0: Verify target storage/item accessibility before deleting anything
             # This makes sure that items which had been deleted as part of a container will
             # be marked as deleted.
+
+            # Get full data_item information
             stmt = select(DataItem).where(DataItem.UID == uid)
             result = await self.session.execute(stmt)
             data_item = result.scalar()
@@ -420,7 +422,6 @@ class DeleteUidHeuristic(BaseHeuristic):
                     },
                 )
 
-            # Step 1: Fetch target UID to get OID
 
             # Step 2: Fetch other UIDs for same OID that are not already deleted
             uid_stmt = select(Storage.storage_phase, DataItem.UID).where(
