@@ -341,8 +341,8 @@ class DeleteUidHeuristic(BaseHeuristic):
         storage_id = getattr(data_item, "storage_id", None)
         storage_id_is_known = isinstance(storage_id, (UUID, str))
 
-        storage_accessible = False
-        item_accessible = False
+        storage_accessible = True
+        item_accessible = True
         if storage_id_is_known:
             try:
                 storage_accessible = bool(

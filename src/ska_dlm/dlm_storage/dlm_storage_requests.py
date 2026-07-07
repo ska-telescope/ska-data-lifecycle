@@ -20,6 +20,7 @@ from ska_dlm.common_types import (
     StorageType,
 )
 from ska_dlm.dlm_db.db_access import DB
+from ska_dlm.dlm_request.dlm_request_requests import query_exists
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
 from ska_dlm.fastapi_utils import fastapi_auto_annotate
 from ska_dlm.typer_types import JsonObjectArg, JsonObjectOption
@@ -680,6 +681,7 @@ def rclone_delete(volume: str, fpath: str, item_type: str = "file") -> bool:
     post_data = {
         "fs": volume,
         "remote": fpath,
+        "_async": True
     }
     logger.info("rclone deletion: %s, %s", request_url, post_data)
     request = requests.post(request_url, data=post_data, timeout=10, verify=False)
@@ -804,7 +806,11 @@ def check_item_on_storage(
     """
     storages = query_item_storage(item_name, oid, uid)
     if not storages:
-        logger.error("Unable to identify a storage volume holding this data_item!")
+        if not uid:
+            logger.error("Unable to identify a storage volume holding this data_item!")
+        else:
+            if not query_exists(uid, ready=False):
+                logger.error("UID does not seem to exist anywhere: %s", uid)
         return []
     # additional check if a storage_name or id is provided
     if storage_name or storage_id:
@@ -822,7 +828,10 @@ def check_item_on_storage(
     return storages
 
 
-def delete_data_item_payload(uid: str, item_type: str = "file") -> bool:
+def delete_data_item_payload(
+        uid: str,
+        item_type: str = "file",
+        item_name: str = "") -> bool:
     """Delete the payload of a data_item referred to by the provided UID.
 
     Parameters
@@ -831,6 +840,8 @@ def delete_data_item_payload(uid: str, item_type: str = "file") -> bool:
         The UID of the data_item whose payload should be deleted.
     item_type
         The type of the item [file/container]
+    item_name
+        The name of the data_item (optional, only used for logging)
 
     Returns
     -------
@@ -856,10 +867,11 @@ def delete_data_item_payload(uid: str, item_type: str = "file") -> bool:
         )
     delete_path = f"{source_storage[0]['root_directory']}/{storage['uri']}".replace("//", "/")
     if not rclone_delete(volume_name, delete_path, item_type):
-        logger.warning("rclone unable to delete data item payload: %s of type %s", uid, item_type)
+        logger.warning("rclone unable to delete data item payload: %s %s of type %s",
+                       item_name, uid, item_type)
         return False
     set_state(uid, "DELETED")
-    logger.info("Deleted %s from %s", uid, volume_name)
+    logger.info("Deleted %s %s from %s", item_name, uid, volume_name)
     return True
 
 
