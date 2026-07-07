@@ -1,5 +1,9 @@
 # Version History
 
+## Development
+
+* Upgraded ska-db-migrations to 0.9.1
+
 ## 2.1.0
 
 ### Added
