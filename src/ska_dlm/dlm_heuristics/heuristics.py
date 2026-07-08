@@ -1,4 +1,5 @@
 # pylint: disable=R0912
+# pylint: disable=R0915
 # pylint: disable=W0612
 # pylint: disable=C0302
 # flake8: noqa: RST201
