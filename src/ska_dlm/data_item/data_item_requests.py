@@ -51,7 +51,7 @@ def query_data_item(
     list[dict]
         data item ids.
     """
-    if not (params or item_name or oid or uid):
+    if bool(params) == (item_name or oid or uid):
         raise InvalidQueryParameters("give either params or item_name/oid/uid")
     params = dict(params) if params else {}
     params["limit"] = 1000

@@ -678,7 +678,7 @@ def rclone_delete(volume: str, fpath: str, item_type: str = "file") -> bool:
         request_url = f"{url}/operations/purge"
     else:
         request_url = f"{url}/operations/deletefile"
-    post_data = {"fs": volume, "remote": fpath, "_async": "true"}
+    post_data = {"fs": volume, "remote": fpath, "_async": True}
     logger.info("rclone deletion: %s, %s", request_url, post_data)
     request = requests.post(request_url, data=post_data, timeout=10, verify=False)
     if request.status_code != 200:
