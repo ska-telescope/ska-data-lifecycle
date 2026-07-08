@@ -422,7 +422,6 @@ class DeleteUidHeuristic(BaseHeuristic):
                     },
                 )
 
-
             # Step 2: Fetch other UIDs for same OID that are not already deleted
             uid_stmt = select(Storage.storage_phase, DataItem.UID).where(
                 DataItem.OID == oid,
@@ -459,12 +458,25 @@ class DeleteUidHeuristic(BaseHeuristic):
                 )
 
             # Step 5: Delete payload from storage manager
-            if not dlm_storage_requests.delete_data_item_payload(
-                str(uid), item_type=data_item.item_type, item_name=data_item.item_name
-            ):
-                return HeuristicResult(
-                    False, f"Failed to delete payload for {data_item.item_name} {uid}"
-                )
+            delete_kwargs = {}
+            item_type = getattr(data_item, "item_type", None)
+            item_name = getattr(data_item, "item_name", None)
+            if isinstance(item_type, str) and item_type:
+                delete_kwargs["item_type"] = item_type
+            if isinstance(item_name, str) and item_name:
+                delete_kwargs["item_name"] = item_name
+
+            try:
+                delete_result = dlm_storage_requests.delete_data_item_payload(str(uid), **delete_kwargs)
+            except TypeError as exc:
+                if "item_name" not in str(exc) and "unexpected keyword argument" not in str(exc):
+                    raise
+                delete_kwargs.pop("item_name", None)
+                delete_result = dlm_storage_requests.delete_data_item_payload(str(uid), **delete_kwargs)
+
+            if not delete_result:
+                item_name = item_name or str(uid)
+                return HeuristicResult(False, f"Failed to delete payload for {item_name} {uid}")
 
             # Step 6: Update UID metadata
             await self._mark_uid_as_deleted(uid)
