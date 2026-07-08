@@ -121,8 +121,8 @@ ska-db-migrations:
     changelogFile: changelog.yaml
   job:
     enabled: true
-    # ttl must be left empty as there are pods waiting for liquibase to finish. If dependant pod are restarted, they will start.
-    ttl:
+    # ttl must be set to null as there are pods waiting for liquibase to finish. If dependant pod are restarted, they will start.
+    ttl: null
 
 # ------ Database options ------
 
