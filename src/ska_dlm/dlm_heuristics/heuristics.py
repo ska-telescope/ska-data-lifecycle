@@ -467,12 +467,16 @@ class DeleteUidHeuristic(BaseHeuristic):
                 delete_kwargs["item_name"] = item_name
 
             try:
-                delete_result = dlm_storage_requests.delete_data_item_payload(str(uid), **delete_kwargs)
+                delete_result = dlm_storage_requests.delete_data_item_payload(
+                    str(uid), **delete_kwargs
+                )
             except TypeError as exc:
                 if "item_name" not in str(exc) and "unexpected keyword argument" not in str(exc):
                     raise
                 delete_kwargs.pop("item_name", None)
-                delete_result = dlm_storage_requests.delete_data_item_payload(str(uid), **delete_kwargs)
+                delete_result = dlm_storage_requests.delete_data_item_payload(
+                    str(uid), **delete_kwargs
+                )
 
             if not delete_result:
                 item_name = item_name or str(uid)

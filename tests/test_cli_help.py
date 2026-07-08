@@ -1,4 +1,8 @@
-import importlib
+# flake8: noqa:D103
+# pylint: disable=C0116
+# pylint: disable=C0415
+# pylint: disable=R0402
+"""Helper for testing CLI."""
 
 from typer.testing import CliRunner
 
