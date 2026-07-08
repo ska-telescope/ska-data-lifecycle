@@ -35,9 +35,9 @@ spec:
         {{- include "ska-dlm.heuristics.labels" . | nindent 8 }}
     spec:
       serviceAccountName: {{ printf "%s-postgrest" .Release.Name }}
+      initContainers:
       # Have to use index as ska-db-migrations has a "-" which throws an error when using the dot notation
       {{- if index .Values "ska-db-migrations" "job" "enabled" }}
-      initContainers:
         - name: wait-for-job
           image: "bitnami/kubectl:latest"
           command:
@@ -48,7 +48,6 @@ spec:
               # Polls the API server until the specific job status is complete
               kubectl wait --namespace={{ .Release.Namespace }} --for=condition=complete --timeout=3000s job/db-migrations-{{ .Release.Name }}
       {{- end }}
-      initContainers:
         - name: wait-for-postgres
           image: postgres:17.4
           command:
