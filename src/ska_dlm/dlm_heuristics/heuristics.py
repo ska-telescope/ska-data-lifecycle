@@ -336,7 +336,7 @@ class DeleteUidHeuristic(BaseHeuristic):
 
     def _get_storage_accessibility(
         self, uid: UUID, data_item
-    ) -> tuple[bool, bool, Optional[str], Optional[UUID]]:
+    ) -> tuple[bool, bool, Optional[UUID]]:
         """Return normalized item/storage metadata and accessibility state for a UID."""
 
         storage_id = getattr(data_item, "storage_id", None)
@@ -495,6 +495,7 @@ class DeleteUidHeuristic(BaseHeuristic):
                 for child_uid in child_uids:
                     if await self._check_parent_deleted(child_uid):
                         await self._mark_uid_as_deleted(child_uid)
+                        logger.debug("Marked child_uid as deleted: %s", child_uid)
 
             # Update OID phase for the OID group
             update_oid_stmt = (

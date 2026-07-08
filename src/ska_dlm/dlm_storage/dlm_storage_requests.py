@@ -678,7 +678,7 @@ def rclone_delete(volume: str, fpath: str, item_type: str = "file") -> bool:
         request_url = f"{url}/operations/purge"
     else:
         request_url = f"{url}/operations/deletefile"
-    post_data = {"fs": volume, "remote": fpath, "_async": True}
+    post_data = {"fs": volume, "remote": fpath}
     logger.info("rclone deletion: %s, %s", request_url, post_data)
     request = requests.post(request_url, data=post_data, timeout=10, verify=False)
     if request.status_code != 200:
@@ -805,7 +805,7 @@ def check_item_on_storage(
         if not uid:
             logger.error("Unable to identify a storage volume holding this data_item!")
         else:
-            if not query_exists(uid, ready=False):
+            if not query_exists(uid=uid, ready=False):
                 logger.error("UID does not seem to exist anywhere: %s", uid)
         return []
     # additional check if a storage_name or id is provided
@@ -844,10 +844,11 @@ def delete_data_item_payload(uid: str, item_type: str = "file", item_name: str =
     storages = query_item_storage(uid=uid)
     logger.info("Storage for this uid: %s", storages)
     if not storages:
-        logger.error("Unable to identify a storage volume for: %s, %s", item_name, uid)
+        logger.error("No storage found keeping a READY version of UID: %s, %s", uid, item_name)
         return False
     if len(storages) > 1:
-        logger.error("More than one storage volume keeping: %s, %s", item_name, uid)
+        # This is a really bad place to be in!
+        logger.error("More than one storage volume keeping UID: %s, %s", uid, item_name)
     storage = storages[0]
     config = get_storage_config(storage["storage_id"])[0]
     volume_name = f"{config['name']}:{config.get('root_path', '/')}"
