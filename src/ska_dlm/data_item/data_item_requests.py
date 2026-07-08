@@ -27,7 +27,6 @@ def query_data_item(
     uid: str = "",
     storage_id: str = "",
     params: str | None = None,
-    # params: JsonObjectOption = None,
 ) -> list[dict]:
     """Query a data_item.
 

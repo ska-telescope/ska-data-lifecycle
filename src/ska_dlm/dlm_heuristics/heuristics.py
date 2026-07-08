@@ -399,6 +399,7 @@ class DeleteUidHeuristic(BaseHeuristic):
             if not data_item.OID:
                 return HeuristicResult(False, f"UID {uid} has no associated OID")
 
+            # Step 1: resolve OID
             oid = data_item.OID
             target_phase = data_item.target_phase
             (

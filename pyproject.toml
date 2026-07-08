@@ -22,7 +22,7 @@ ska-dlm-sm-service = "ska_dlm.dlm_storage.main:main"
 ska-dlm-heuristics = "ska_dlm.dlm_heuristics:main"
 
 [[tool.poetry.source]]
-name = 'PyPI'
+name = 'pypi'
 priority = 'primary'
 
 [[tool.poetry.source]]
