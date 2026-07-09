@@ -465,6 +465,7 @@ def copy_data_item(  # noqa: C901
             f"Unable to get ID of destination storage: {destination_name}."
         )
     dest_id = destination[0]["storage_id"]
+    dest_phase = destination[0]["storage_phase"]
 
     d_config = get_storage_config(storage_id=dest_id)
     if not d_config:
@@ -488,6 +489,7 @@ def copy_data_item(  # noqa: C901
         "target_phase": orig_item["target_phase"],
         "uid_expiration": orig_item["uid_expiration"],
         "oid_expiration": orig_item["oid_expiration"],
+        "uid_phase": dest_phase,
         "metadata": orig_item["metadata"],
         "uri": path,
     }

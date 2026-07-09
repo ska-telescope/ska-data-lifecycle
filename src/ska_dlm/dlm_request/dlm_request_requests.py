@@ -62,7 +62,7 @@ def query_expired(offset: timedelta | None = None) -> list[dict]:
         now += offset
     iso_now = now.replace(tzinfo=None).isoformat()
     params = {
-        "select": "uid,uid_expiration",
+        "select": "uid,uid_expiration,item_type",
         "uid_expiration": f"lt.{iso_now}",
         "item_state": f"eq.{ItemState.READY.value}",
     }
@@ -145,12 +145,12 @@ def query_exists(item_name: str = "", oid: str = "", uid: str = "", ready: bool 
     if not item_name and not oid and not uid:
         raise InvalidQueryParameters("Either an item_name or an OID or an UID have to be provided")
     params = {}
-    if item_name:
-        params["item_name"] = f"eq.{item_name}"
+    if uid:
+        params["uid"] = f"eq.{uid}"
     elif oid:
         params["oid"] = f"eq.{oid}"
-    elif uid:
-        params["uid"] = f"eq.{uid}"
+    elif item_name:
+        params["item_name"] = f"eq.{item_name}"
     if ready:
         params["item_state"] = f"eq.{ItemState.READY.value}"
     # TODO: select COUNT(*) only instead of all data columns
@@ -183,7 +183,7 @@ def query_exists_and_ready(item_name: str = "", oid: str = "", uid: str = "") ->
 @rest.get("/request/query_item_storage", response_model=list[dict])
 def query_item_storage(item_name: str = "", oid: str = "", uid: str = "") -> list[dict]:
     """
-    Query for the storage_ids of all backends holding a copy of a data_item.
+    Query for the storage info of all backends holding a copy of a data_item.
 
     Either an item_name or a OID have to be provided.
 
@@ -199,7 +199,7 @@ def query_item_storage(item_name: str = "", oid: str = "", uid: str = "") -> lis
     Returns
     -------
     list[dict]
-        list of storage_ids
+        list of storage infos
     """
     if not query_exists_and_ready(item_name, oid, uid):
         logger.warning("data_item does not exists or is not READY.")

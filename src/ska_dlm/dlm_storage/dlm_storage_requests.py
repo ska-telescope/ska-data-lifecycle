@@ -20,6 +20,7 @@ from ska_dlm.common_types import (
     StorageType,
 )
 from ska_dlm.dlm_db.db_access import DB
+from ska_dlm.dlm_request.dlm_request_requests import query_exists
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
 from ska_dlm.fastapi_utils import fastapi_auto_annotate
 from ska_dlm.typer_types import JsonObjectArg, JsonObjectOption
@@ -584,11 +585,42 @@ def check_storage_access(
             "No valid configuration for storage found!", storage_name
         )
     volume_name = f"{config[0]['name']}:{config[0].get('root_path', '/')}"
-    return rclone_access(volume_name, remote_file_path)
+    return rclone_remote_check(volume_name)
+
+
+def rclone_remote_check(volume: str, config: dict | None = None) -> bool:
+    """Check whether a configured rclone remote is alive and responding.
+
+    Parameters
+    ----------
+    volume
+        The rclone volume name or remote path to test.
+    config
+        Optional explicit rclone config payload to use instead of the volume.
+
+    Returns
+    -------
+    bool
+        True if the remote responds successfully, False otherwise.
+    """
+    url = random.choice(CONFIG.RCLONE)
+    request_url = f"{url}/operations/about"
+    if config:
+        post_data = config
+    else:
+        post_data = {
+            "fs": volume,
+        }
+    logger.debug("rclone remote check: %s, %s", request_url, post_data)
+    request = requests.post(request_url, post_data, timeout=10, verify=False)
+    if request.status_code != 200:
+        logger.warning("rclone can not reach: %s, %s", request.status_code, request.json())
+        return False
+    return True
 
 
 def rclone_access(volume: str, remote_file_path: str = "", config: dict | None = None) -> bool:
-    """Check whether a configured backend is accessible.
+    """Check whether a configured backend or explicit filepath is accessible.
 
     Parameters
     ----------
@@ -613,16 +645,16 @@ def rclone_access(volume: str, remote_file_path: str = "", config: dict | None =
             "fs": volume,
             "remote": remote_file_path,
         }
-    logger.info("rclone access check: %s, %s", request_url, post_data)
+    logger.debug("rclone access check: %s, %s", request_url, post_data)
     request = requests.post(request_url, post_data, timeout=10, verify=False)
     if request.status_code != 200 or not request.json()["item"]:
-        logger.warning("rclone does not have access: %s, %s", request.status_code, request.json())
+        logger.warning("rclone can not access: %s, %s", request.status_code, request.json())
         return False
     return True
 
 
-def rclone_delete(volume: str, fpath: str) -> bool:
-    """Delete a file, referred to by fpath from a volume using rclone.
+def rclone_delete(volume: str, fpath: str, item_type: str = "file") -> bool:
+    """Delete a file or whole directory tree, referred to by fpath from a volume using rclone.
 
     Parameters
     ----------
@@ -630,6 +662,8 @@ def rclone_delete(volume: str, fpath: str) -> bool:
         the configured volume name hosting <fpath>.
     fpath
         the file path.
+    item_type
+        the type of the data_item [file|container]
 
     Returns
     -------
@@ -640,11 +674,11 @@ def rclone_delete(volume: str, fpath: str) -> bool:
         logger.error("Can't access %s on %s!", fpath, volume)
         return False
     url = random.choice(CONFIG.RCLONE)
-    request_url = f"{url}/operations/deletefile"
-    post_data = {
-        "fs": volume,
-        "remote": fpath,
-    }
+    if item_type.lower() == "container":
+        request_url = f"{url}/operations/purge"
+    else:
+        request_url = f"{url}/operations/deletefile"
+    post_data = {"fs": volume, "remote": fpath}
     logger.info("rclone deletion: %s, %s", request_url, post_data)
     request = requests.post(request_url, data=post_data, timeout=10, verify=False)
     if request.status_code != 200:
@@ -746,7 +780,7 @@ def check_item_on_storage(
     uid: str = "",
     storage_name: str = "",
     storage_id: str = "",
-) -> bool:
+) -> list:
     """Check whether item is on storage.
 
     Parameters
@@ -764,29 +798,43 @@ def check_item_on_storage(
 
     Returns
     -------
-    bool
+    list
     """
     storages = query_item_storage(item_name, oid, uid)
     if not storages:
-        logger.error("Unable to identify a storage volume for this data_item!")
+        if not uid:
+            logger.error("Unable to identify a storage volume holding this data_item!")
+        else:
+            if not query_exists(uid=uid, ready=False):
+                logger.error("UID does not seem to exist anywhere: %s", uid)
         return []
     # additional check if a storage_name or id is provided
-    for storage in storages:
-        if (storage_name and storage["storage_name"] == storage_name) or (
-            storage_id and storage["storage_id"] == storage_id
-        ):
-            logger.error("data_item '%s' already exists on destination storage!", item_name)
-            return []
+    if storage_name or storage_id:
+        for storage in storages:
+            if (storage_name and storage["storage_name"] == storage_name) or (
+                storage_id and storage["storage_id"] == storage_id
+            ):
+                logger.info(
+                    "data_item '%s' '%s' exists on destination storage: %s",
+                    storage["item_name"],
+                    storage["uid"],
+                    storage_id,
+                )
+                return [storage]
     return storages
 
 
-def delete_data_item_payload(uid: str) -> bool:
+def delete_data_item_payload(uid: str, item_type: str = "file", item_name: str = "") -> bool:
     """Delete the payload of a data_item referred to by the provided UID.
 
     Parameters
     ----------
     uid
         The UID of the data_item whose payload should be deleted.
+    item_type
+        The type of the item [file/container]
+    item_name
+        The name of the data_item (optional, only used for logging)
 
     Returns
     -------
@@ -796,10 +844,11 @@ def delete_data_item_payload(uid: str) -> bool:
     storages = query_item_storage(uid=uid)
     logger.info("Storage for this uid: %s", storages)
     if not storages:
-        logger.error("Unable to identify a storage volume for this UID: %s", uid)
+        logger.error("No storage found keeping a READY version of UID: %s, %s", uid, item_name)
         return False
     if len(storages) > 1:
-        logger.error("More than one storage volume keeping this UID: %s", uid)
+        # This is a really bad place to be in!
+        logger.error("More than one storage volume keeping UID: %s, %s", uid, item_name)
     storage = storages[0]
     config = get_storage_config(storage["storage_id"])[0]
     volume_name = f"{config['name']}:{config.get('root_path', '/')}"
@@ -811,11 +860,16 @@ def delete_data_item_payload(uid: str) -> bool:
             f"Unable to get source storage: {storage['storage_id']}."
         )
     delete_path = f"{source_storage[0]['root_directory']}/{storage['uri']}".replace("//", "/")
-    if not rclone_delete(volume_name, delete_path):
-        logger.warning("rclone unable to delete data item payload: %s", uid)
+    if not rclone_delete(volume_name, delete_path, item_type):
+        logger.warning(
+            "rclone unable to delete data item payload: %s %s of type %s",
+            item_name,
+            uid,
+            item_type,
+        )
         return False
     set_state(uid, "DELETED")
-    logger.info("Deleted %s from %s", uid, volume_name)
+    logger.info("Deleted %s %s from %s", item_name, uid, volume_name)
     return True
 
 
@@ -828,8 +882,9 @@ def delete_uids():
 
     for data_item in expired_data_items:
         uid = data_item["uid"]
+        item_type = data_item.get("item_type", "file")
 
-        success = delete_data_item_payload(uid)
+        success = delete_data_item_payload(uid, item_type)
 
         if not success:
             logger.warning("Unable to delete data item payload: %s", uid)

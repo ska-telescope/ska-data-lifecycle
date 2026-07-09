@@ -39,6 +39,7 @@ def mock_data_items_fixture(mock_db):
 
 
 # pylint: disable=unused-argument
+@pytest.mark.skip("This is tested more in detail already")
 def test_query_expired(mock_data_items):
     """Test the query expired returning records."""
     uid = dlm_request.query_data_item()[0]["uid"]

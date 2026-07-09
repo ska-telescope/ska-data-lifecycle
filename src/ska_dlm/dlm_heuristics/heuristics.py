@@ -1,5 +1,7 @@
 # pylint: disable=R0912
+# pylint: disable=R0915
 # pylint: disable=W0612
+# pylint: disable=C0302
 # flake8: noqa: RST201
 """Heuristic implementations for DLM data lifecycle management.
 
@@ -16,6 +18,7 @@ class for heuristics and the OID Phase heuristics as one implementation.
 # pylint: disable=broad-exception-caught
 # pylint: disable=too-many-return-statements
 
+import logging
 from abc import ABC, abstractmethod
 from typing import List, Optional
 from uuid import UUID
@@ -27,6 +30,8 @@ from ska_dlm.common_types import ItemState, PhaseType
 from ska_dlm.dlm_db.models import DataItem, Storage
 from ska_dlm.dlm_migration import copy_data_item
 from ska_dlm.dlm_storage import dlm_storage_requests
+
+logger = logging.getLogger(__name__)
 
 PHASE_ORDER = {v: p for p, v in enumerate(PhaseType)}
 PHASE_ORDER[PhaseType.SOLID] = 4
@@ -300,10 +305,67 @@ class DeleteUidHeuristic(BaseHeuristic):
         super().__init__(session)
         self.combine_heuristic = CombineUidPhasesHeuristic(session)
 
+    async def _mark_uid_as_deleted(self, uid: UUID) -> None:
+        """Mark a UID as deleted in the database."""
+        update_uid_stmt = (
+            update(DataItem)
+            .where(DataItem.UID == uid)
+            .values(
+                item_state=ItemState.DELETED,
+                deleted=True,
+                UID_deletion=func.now(),  # pylint: disable=not-callable
+            )
+        )
+        await self.session.execute(update_uid_stmt)
+
+    async def _check_parent_deleted(self, uid: UUID) -> bool:
+        """Return True when the parent DataItem is already marked as deleted."""
+        stmt = select(DataItem.parents).where(
+            DataItem.UID == uid,
+            DataItem.parents.is_not(None),
+        )
+        result = await self.session.execute(stmt)
+        parent_uid = result.scalar_one_or_none()
+        if parent_uid is None:
+            return False
+
+        stmt = select(DataItem.item_state).where(DataItem.UID == parent_uid)
+        result = await self.session.execute(stmt)
+        parent_state = result.scalar_one_or_none()
+        return parent_state == ItemState.DELETED
+
+    def _get_storage_accessibility(
+        self, uid: UUID, data_item
+    ) -> tuple[bool, bool, Optional[UUID]]:
+        """Return normalized item/storage metadata and accessibility state for a UID."""
+
+        storage_id = getattr(data_item, "storage_id", None)
+        storage_id_is_known = isinstance(storage_id, (UUID, str))
+
+        storage_accessible = True
+        item_accessible = True
+        if storage_id_is_known:
+            try:
+                storage_accessible = bool(
+                    dlm_storage_requests.check_storage_access(storage_id=str(storage_id))
+                )
+                item_accessible = (
+                    str(storage_id)
+                    == dlm_storage_requests.check_item_on_storage(
+                        uid=str(uid), storage_id=str(storage_id)
+                    )[0]["storage_id"]
+                )
+            except Exception:
+                storage_accessible = False
+                item_accessible = False
+
+        return storage_accessible, item_accessible, storage_id
+
     async def execute(self, uid: UUID) -> HeuristicResult:
         """Execute UID deletion heuristic according to deletion sequence diagram.
 
         Steps:
+        0. Verify that the target storage is accessible and the item is accessible there
         1. Query UID entry and resolve OID
         2. Query other UID phases for OID
         3. Determine result phase if UID removed
@@ -322,7 +384,11 @@ class DeleteUidHeuristic(BaseHeuristic):
             HeuristicResult
         """
         try:
-            # Step 1: Fetch target UID to get OID
+            # Step 0: Verify target storage/item accessibility before deleting anything
+            # This makes sure that items which had been deleted as part of a container will
+            # be marked as deleted.
+
+            # Get full data_item information
             stmt = select(DataItem).where(DataItem.UID == uid)
             result = await self.session.execute(stmt)
             data_item = result.scalar()
@@ -333,8 +399,30 @@ class DeleteUidHeuristic(BaseHeuristic):
             if not data_item.OID:
                 return HeuristicResult(False, f"UID {uid} has no associated OID")
 
+            # Step 1: resolve OID
             oid = data_item.OID
             target_phase = data_item.target_phase
+            (
+                storage_accessible,
+                item_accessible,
+                storage_id,
+            ) = self._get_storage_accessibility(uid, data_item)
+
+            # If the item is not accessible on storage,
+            # mark the UID as deleted to keep DB state consistent.
+            if not item_accessible and isinstance(storage_id, (UUID, str)) and storage_accessible:
+                await self._mark_uid_as_deleted(uid)
+                await self.session.commit()
+                return self.success_result(
+                    f"UID {uid} marked as deleted.",
+                    {
+                        "uid": uid,
+                        "oid": oid,
+                        "storage_id": storage_id,
+                        "storage_accessible": storage_accessible,
+                        "item_accessible": item_accessible,
+                    },
+                )
 
             # Step 2: Fetch other UIDs for same OID that are not already deleted
             uid_stmt = select(Storage.storage_phase, DataItem.UID).where(
@@ -372,20 +460,42 @@ class DeleteUidHeuristic(BaseHeuristic):
                 )
 
             # Step 5: Delete payload from storage manager
-            if not dlm_storage_requests.delete_data_item_payload(str(uid)):
-                return HeuristicResult(False, f"Failed to delete payload for UID {uid}")
+            delete_kwargs = {}
+            item_type = getattr(data_item, "item_type", None)
+            item_name = getattr(data_item, "item_name", None)
+            if isinstance(item_type, str) and item_type:
+                delete_kwargs["item_type"] = item_type
+            if isinstance(item_name, str) and item_name:
+                delete_kwargs["item_name"] = item_name
+
+            try:
+                delete_result = dlm_storage_requests.delete_data_item_payload(
+                    str(uid), **delete_kwargs
+                )
+            except TypeError as exc:
+                if "item_name" not in str(exc) and "unexpected keyword argument" not in str(exc):
+                    raise
+                delete_kwargs.pop("item_name", None)
+                delete_result = dlm_storage_requests.delete_data_item_payload(
+                    str(uid), **delete_kwargs
+                )
+
+            if not delete_result:
+                item_name = item_name or str(uid)
+                return HeuristicResult(False, f"Failed to delete payload for {item_name} {uid}")
 
             # Step 6: Update UID metadata
-            update_uid_stmt = (
-                update(DataItem)
-                .where(DataItem.UID == uid)
-                .values(
-                    item_state=ItemState.DELETED,
-                    deleted=True,
-                    UID_deletion=func.now(),  # pylint: disable=not-callable
-                )
-            )
-            await self.session.execute(update_uid_stmt)
+            await self._mark_uid_as_deleted(uid)
+
+            # All children need to be marked as DELETED as well
+            if data_item.item_type is not None and data_item.item_type.lower() == "container":
+                stmt = select(DataItem.UID).where(DataItem.parents == uid)
+                result = await self.session.execute(stmt)
+                child_uids = result.scalars().all()
+                for child_uid in child_uids:
+                    if await self._check_parent_deleted(child_uid):
+                        await self._mark_uid_as_deleted(child_uid)
+                        logger.debug("Marked child_uid as deleted: %s", child_uid)
 
             # Update OID phase for the OID group
             update_oid_stmt = (
@@ -446,6 +556,8 @@ class UidExpiryHeuristic(BaseHeuristic):
                         "message": delete_result.message,
                     }
                 )
+                if not delete_result.success:
+                    logger.info("Deletion of UID %s failed: %s", uid, delete_result.message)
 
             success = all(item["success"] for item in deletion_results)
             message = "Deleted expired UIDs" if success else "Some expired UID deletions failed"
