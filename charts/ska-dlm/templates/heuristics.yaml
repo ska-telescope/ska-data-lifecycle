@@ -36,6 +36,18 @@ spec:
     spec:
       serviceAccountName: {{ printf "%s-postgrest" .Release.Name }}
       initContainers:
+      # Have to use index as ska-db-migrations has a "-" which throws an error when using the dot notation
+      {{- if index .Values "ska-db-migrations" "job" "enabled" }}
+        - name: wait-for-job
+          image: "bitnami/kubectl:latest"
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Waiting for job job/db-migrations-{{ .Release.Name }} to finish..."
+              # Polls the API server until the specific job status is complete
+              kubectl wait --namespace={{ .Release.Namespace }} --for=condition=complete --timeout=3000s job/db-migrations-{{ .Release.Name }}
+      {{- end }}
         - name: wait-for-postgres
           image: postgres:17.4
           command:
@@ -63,43 +75,6 @@ spec:
                   name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
                   key: PGPORT
                   optional: true
-
-        {{- if (index $.Values "ska-db-migrations" "runMigrations") }}
-        - name: wait-for-db-migrations
-          image: rancher/shell:v0.7.1-rc.1
-          command:
-            - sh
-            - -c
-            - |
-              set -eu
-
-              JOB_NAME="{{ include "ska-dlm.db-migrations.name" . }}"
-              NAMESPACE="{{ .Release.Namespace }}"
-
-              echo "Looking for migrations Job: ${JOB_NAME} in namespace ${NAMESPACE}"
-              kubectl get job "$JOB_NAME" -n "$NAMESPACE" -o wide
-
-              echo "Waiting for migrations Job ${JOB_NAME} to complete..."
-
-              while true; do
-                SUCCEEDED="$(kubectl get job "$JOB_NAME" -n "$NAMESPACE" -o jsonpath='{.status.succeeded}')"
-                FAILED="$(kubectl get job "$JOB_NAME" -n "$NAMESPACE" -o jsonpath='{.status.failed}')"
-
-                if [ "$SUCCEEDED" = "1" ]; then
-                  echo "Migrations Job completed successfully."
-                  break
-                fi
-
-                if [ -n "$FAILED" ] && [ "$FAILED" != "0" ]; then
-                  echo "Migrations Job failed."
-                  exit 1
-                fi
-
-                echo "Waiting for migrations Job ${JOB_NAME} to complete..."
-                sleep 2
-              done
-        {{- end }}
-
         - name: wait-for-dlm-schema
           image: postgres:17.4
           command:

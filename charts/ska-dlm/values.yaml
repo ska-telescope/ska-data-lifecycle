@@ -113,14 +113,16 @@ heuristics:
   replicas: 1
 
 ska-db-migrations:
-  runMigrations: true
   engine: liquibase
   dbCredentialsSecretName: "{{ .Release.Name }}-ska-dlm-postgrest-secret"
-  configMapName: "ska-dlm-db-migrations-{{ .Release.Name }}"
+  configMapName: "db-migrations-{{ .Release.Name }}"
   liquibase:
     contextFilter: "create-db,create-schema" # "default" or a combination of "create-roles,create-db,create-schema"
     changelogFile: changelog.yaml
-    ttlSecondsAfterFinished: 300
+  job:
+    enabled: true
+    # ttl must be set to null as there are pods waiting for liquibase to finish. If dependant pod are restarted, they will start.
+    ttl: null
 
 # ------ Database options ------
 
