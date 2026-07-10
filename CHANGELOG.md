@@ -6,8 +6,13 @@
 
 * All references to previous DB name `ska_dlm_meta`.
 
+### Updated
+
+* Upgraded ska-db-migrations to 0.9.1
+
 ### Added
 
+* Support to delete container tree hierarchies
 * ODA trigger that inserts a dlm.data_item when an execution block is added.
 * dlm-archive stfp endpoint.
 * pg_sphere to local db build.
