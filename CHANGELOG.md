@@ -2,6 +2,7 @@
 
 ## Development
 
+* Upgraded ska-db-migrations to 0.9.1
 * Added support to delete container tree hierarchies
 * Add ODA trigger that inserts a dlm.data_item when an execution block is added.
 * Added dlm-archive stfp endpoint. 
