@@ -22,5 +22,5 @@ dependencies:
   repository: https://charts.ectobit.com
   condition: pgweb.enabled
 - name: ska-db-migrations
-  version: 0.5.1
+  version: 0.9.1
   repository: https://artefact.skao.int/repository/helm-internal
