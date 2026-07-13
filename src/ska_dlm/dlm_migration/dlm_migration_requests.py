@@ -4,6 +4,7 @@ import asyncio
 import logging
 import os
 import random
+import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime
 from functools import partial
@@ -120,9 +121,26 @@ def _parse_date_filter(value: str) -> datetime:
     return datetime.fromisoformat(value)
 
 
+def _serialize_value(val):
+    if val is None:
+        return None
+    if isinstance(val, uuid.UUID):
+        return str(val)
+    if isinstance(val, datetime):
+        return val.isoformat()
+    if isinstance(val, dict):
+        return {k: _serialize_value(v) for k, v in val.items()}
+    if isinstance(val, (list, tuple)):
+        return [_serialize_value(v) for v in val]
+    return val
+
+
 def _migration_to_dict(migration: Migration) -> dict:
-    """Convert a SQLAlchemy Migration model into a plain dictionary."""
-    return {column.name: getattr(migration, column.name) for column in migration.__table__.columns}
+    """Convert a SQLAlchemy Migration model into a plain dictionary with JSON-safe values."""
+    return {
+        column.name: _serialize_value(getattr(migration, column.name))
+        for column in migration.__table__.columns
+    }
 
 
 def _open_migration_session() -> AsyncSession:
