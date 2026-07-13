@@ -297,7 +297,7 @@ async def _update_migration_statuses(session: AsyncSession):
             )
             migration_obj = await session.scalar(stmt)
 
-            add_outbox_event(
+            await add_outbox_event(
                 session=session,
                 event_type="dlm.migration.update",
                 payload=_migration_to_dict(migration_obj),
