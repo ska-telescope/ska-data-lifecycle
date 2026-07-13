@@ -9,6 +9,18 @@ The main configuration options are:
  * `postgresql.primary.persistence.enabled`: If enabled, PostgreSQL will persist data between executions, otherwise it will start from scratch each time.
  * `ska-db-migrations.runMigrations`: True by default. When enabled, a Liquibase job is run to apply database migrations during deployment.
 
+## RabbitMQ and Outbox
+
+The chart can deploy a RabbitMQ broker and an outbox relay that publishes database outbox events to RabbitMQ.
+
+* `rabbitmq.enabled`: Set to `true` to deploy a local RabbitMQ service. The default is `true`.
+* `rabbitmq.auth.username` and `rabbitmq.auth.password`: Credentials for the RabbitMQ broker. The defaults are `guest` / `guest`.
+* `rabbitmq.port` and `rabbitmq.management.port`: AMQP and management interface ports. The defaults are `5672` and `15672`.
+* `outbox.enabled`: Set to `true` to deploy the outbox relay. The default is `true`.
+* `outbox.rabbitmq.url`: Optional custom RabbitMQ connection URL. If left empty, the outbox relay uses the in-cluster RabbitMQ service URL.
+* `outbox.rabbitmq.exchange`: RabbitMQ exchange used by the outbox relay. The default is `dlm.outbox`.
+* `outbox.rabbitmq.pollInterval`: How often the outbox relay checks for pending messages, in seconds. The default is `10`.
+* `outbox.rabbitmq.batchSize`: Number of outbox events to process per poll. The default is `50`.
 
 ## Authentication
 

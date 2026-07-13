@@ -223,15 +223,13 @@ outbox:
   enabled: true
   component: outbox
   subsystem: data-lifecycle-management
-  image: artefact.skao.int/ska-data-lifecycle
-  version: "2.1.0"
+  image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
+  version: "09f2e7a9"
   imagePullPolicy: Always
   replicas: 1
-  databaseUrl: ""
   rabbitmq:
     url: ""
     exchange: dlm.outbox
-    exchangeType: topic
     pollInterval: 10
     batchSize: 50
 

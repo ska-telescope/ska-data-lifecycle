@@ -1,0 +1,104 @@
+{{- if .Values.outbox.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ska-dlm.fullname" . }}-outbox
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ska-dlm.outbox.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.outbox.replicas }}
+  selector:
+    matchLabels:
+      component: {{ .Values.outbox.component }}
+      subsystem: {{ .Values.outbox.subsystem }}
+  template:
+    metadata:
+      labels:
+        {{- include "ska-dlm.outbox.labels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: outbox
+          image: {{ .Values.outbox.image }}:{{ .Values.outbox.version }}
+          imagePullPolicy: {{ .Values.outbox.imagePullPolicy }}
+          command:
+            - python
+            - -m
+            - ska_dlm.dlm_outbox.relay
+          env:
+             {{- range $envvar_name := tuple "PGUSER" "PGPASSWORD" "PGHOST" "PGDATABASE" }}
+            - name: {{ $envvar_name }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
+                  key: {{ $envvar_name }}
+            {{- end }}
+            - name: PGPORT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
+                  key: PGPORT
+                  optional: true
+
+            - name: DLM_OUTBOX_DATABASE_URL
+              value: "postgresql+asyncpg://$(PGUSER):$(PGPASSWORD)@$(PGHOST)/$(PGDATABASE)"
+            - name: DLM_OUTBOX_RABBITMQ_URL
+              value: {{ if .Values.outbox.rabbitmq.url }}{{ .Values.outbox.rabbitmq.url | quote }}{{ else }}{{ printf "amqp://guest:guest@%s-rabbitmq:%d/" (include "ska-dlm.fullname" . ) (int .Values.rabbitmq.port) | quote }}{{ end }}
+            - name: DLM_OUTBOX_EXCHANGE
+              value: {{ .Values.outbox.rabbitmq.exchange | quote }}
+            - name: DLM_OUTBOX_POLL_INTERVAL
+              value: {{ .Values.outbox.rabbitmq.pollInterval | quote }}
+            - name: DLM_OUTBOX_BATCH_SIZE
+              value: {{ .Values.outbox.rabbitmq.batchSize | quote }}
+          volumeMounts:
+            - name: dlm-configmap
+              mountPath: "/home/ska-dlm/.dlm"
+              readOnly: true
+      volumes:
+      - name: dlm-configmap
+        configMap:
+          name: {{ include "ska-dlm.fullname" . }}-configmap
+      initContainers:
+        - name: wait-for-postgres
+          image: postgres:17.4
+          command:
+            - sh
+            - -c
+            - |
+              until pg_isready -h "$PGHOST" -p "${PGPORT:-5432}" -U "$PGUSER" -d "$PGDATABASE"; do
+                echo "waiting for database"
+                sleep 2
+              done
+
+              echo "Database is reachable."
+          env:
+          {{- range $envvar_name := tuple "PGUSER" "PGPASSWORD" "PGHOST" "PGDATABASE" }}
+          - name: {{ $envvar_name }}
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
+                key: {{ $envvar_name }}
+          {{- end }}
+          - name: PGPORT
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
+                key: PGPORT
+                optional: true
+      {{- if .Values.rabbitmq.enabled }}
+        - name: wait-for-rabbitmq
+          image: busybox:latest
+          command:
+            - sh
+            - -c
+            - >
+              until nc -z {{ include "ska-dlm.fullname" . }}-rabbitmq {{ .Values.rabbitmq.port }}; do
+                echo waiting for rabbitmq;
+                sleep 2;
+              done;
+      {{- end }}
+      volumes:
+      - name: dlm-configmap
+        configMap:
+          name: {{ include "ska-dlm.fullname" . }}-configmap
+{{- end }}
