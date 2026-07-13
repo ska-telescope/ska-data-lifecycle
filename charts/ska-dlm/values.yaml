@@ -202,6 +202,39 @@ rclone:
       type: kv-v2
       path: ""
 
+rabbitmq:
+  enabled: true
+  component: rabbitmq
+  subsystem: data-lifecycle-management
+  image: rabbitmq
+  version: "3-management"
+  imagePullPolicy: Always
+  replicas: 1
+  serviceType: ClusterIP
+  auth:
+    username: guest
+    password: guest
+  management:
+    enabled: true
+    port: 15672
+  port: 5672
+
+outbox:
+  enabled: true
+  component: outbox
+  subsystem: data-lifecycle-management
+  image: artefact.skao.int/ska-data-lifecycle
+  version: "2.1.0"
+  imagePullPolicy: Always
+  replicas: 1
+  databaseUrl: ""
+  rabbitmq:
+    url: ""
+    exchange: dlm.outbox
+    exchangeType: topic
+    pollInterval: 10
+    batchSize: 50
+
 gateway:
   enabled: false  # true if you need AAA for DLM
   component: gateway

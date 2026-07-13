@@ -11,6 +11,7 @@ from .models import (
     LocationType,
     Migration,
     MimeType,
+    Outbox,
     PhaseChange,
     PhaseType,
     Storage,
@@ -46,6 +47,7 @@ __all__ = [
     "Storage",
     "StorageConfig",
     "DataItem",
+    "Outbox",
     "PhaseChange",
     "Migration",
 ]
