@@ -2,6 +2,7 @@
 
 ## Development
 
+* Add a reverse proxy to the docker-compose deployment and changed default ports to 80
 * Upgraded ska-db-migrations to 0.9.1
 * Added support to delete container tree hierarchies
 * Add ODA trigger that inserts a dlm.data_item when an execution block is added.

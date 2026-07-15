@@ -35,7 +35,12 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-origins = ["http://localhost", "http://localhost:5000", "http://localhost:8004", "http://dlm_migration.localhost"]
+origins = [
+    "http://localhost",
+    "http://localhost:5000",
+    "http://localhost:8004",
+    "http://dlm_migration.localhost",
+]
 
 
 @asynccontextmanager
