@@ -9,10 +9,13 @@ services:
     build:
       context: ..
       dockerfile: tests/Dockerfile-dlm-compose
-    entrypoint: uvicorn ska_dlm.dlm_migration.dlm_migration_requests:rest --host 0.0.0.0 --port 8004
+    entrypoint: uvicorn ska_dlm.dlm_migration.dlm_migration_requests:rest --host 0.0.0.0 --port 80
+    environment:
+      - VIRTUAL_HOST=dlm_migration.localhost
     ports:
-      - 8004:8004
+      - 8004:80
     depends_on:
+      - nginx-proxy
       - dlm_postgrest
       - dlm_rclone
       - dlm_gateway
@@ -32,12 +35,13 @@ services:
       context: ..
       dockerfile: tests/Dockerfile-dlm-compose
     environment:
+      VIRTUAL_HOST: "dlm_storage.localhost"
       SSH_PUBLIC_KEY_PATH: "/dlm/.ssh/id_rsa.pub"
       LOCATION_CONFIG: "/home/ska-dlm/.dlm/location-config.json"
       STORAGE_CONFIG: "/home/ska-dlm/.dlm/storage-config.json"
-    entrypoint: uvicorn ska_dlm.dlm_storage.dlm_storage_requests:rest --host 0.0.0.0 --port 8003
+    entrypoint: uvicorn ska_dlm.dlm_storage.dlm_storage_requests:rest --host 0.0.0.0 --port 80
     ports:
-      - 8003:8003
+      - 8003:80
     volumes:
       # SKA Gitlab runner is unable to mount shared volumes on a DinD container
       # https://jira.skatelescope.org/browse/STS-1082
@@ -45,6 +49,7 @@ services:
       #- ${CI_PROJECT_DIR:-..}/tests/location-config.json:/mnt/location-config.json
       - shared-tmpfs:/dlm
     depends_on:
+      - nginx-proxy
       - dlm_gateway
       - dlm_postgrest
       - dlm_archive
@@ -63,10 +68,13 @@ services:
     build:
       context: ..
       dockerfile: tests/Dockerfile-dlm-compose
-    entrypoint: uvicorn ska_dlm.dlm_request.dlm_request_requests:rest --host 0.0.0.0 --port 8002
+    entrypoint: uvicorn ska_dlm.dlm_request.dlm_request_requests:rest --host 0.0.0.0 --port 80
+    environment:
+      - VIRTUAL_HOST=dlm_request.localhost
     ports:
-      - 8002:8002
+      - 8002:80
     depends_on:
+      - nginx-proxy
       - dlm_gateway
       - dlm_postgrest
       - dlm_rclone
@@ -85,12 +93,15 @@ services:
     build:
       context: ..
       dockerfile: tests/Dockerfile-dlm-compose
-    entrypoint: uvicorn ska_dlm.dlm_ingest.dlm_ingest_requests:rest --host 0.0.0.0 --port 8001
+    entrypoint: uvicorn ska_dlm.dlm_ingest.dlm_ingest_requests:rest --host 0.0.0.0 --port 80
+    environment:
+      - VIRTUAL_HOST=dlm_ingest.localhost
     ports:
-      - 8001:8001
+      - 8001:80
     volumes:
       - shared-tmpfs:/data
     depends_on:
+      - nginx-proxy
       - dlm_postgrest
       - dlm_rclone
       - dlm_gateway
@@ -112,7 +123,10 @@ services:
     environment:
       DLM_HEURISTIC_DATABASE_URL: "postgresql+asyncpg://ska_dlm_admin:password@dlm_db:5432/ska_dlm"
       DLM_HEURISTIC_POLL_INTERVAL: "10"
+      VIRTUAL_HOST: "dlm_heuristics.localhost"
     depends_on:
+      nginx-proxy:
+        condition: service_healthy
       dlm_db:
         condition: service_healthy
       dlm_migrations:
