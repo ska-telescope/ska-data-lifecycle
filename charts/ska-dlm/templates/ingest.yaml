@@ -10,7 +10,7 @@ spec:
   ports:
     - name: http
       port: 80
-      targetPort: 8001
+      targetPort: 80
       protocol: TCP
   selector:
     component: {{ .Values.ingest.component }}
@@ -44,9 +44,9 @@ spec:
         - --host
         - "0.0.0.0"
         - --port
-        - "8001"
+        - "80"
         ports:
-        - containerPort: 8001
+        - containerPort: 80
           name: http-port
         readinessProbe:
           tcpSocket:
