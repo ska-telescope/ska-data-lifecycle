@@ -2,17 +2,25 @@
 
 import asyncio
 import logging
+import os
 import random
+import uuid
 from contextlib import asynccontextmanager
+from datetime import datetime
 from functools import partial
 from typing import Annotated
 
 import requests
-from fastapi import FastAPI, Header, Request
+from fastapi import FastAPI, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from requests import Request
+from sqlalchemy import func, or_, select, update
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import sessionmaker
 
 import ska_dlm
+from ska_dlm.dlm_outbox.outbox import add_outbox_event
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
 from ska_dlm.exceptions import InvalidQueryParameters, ValueAlreadyInDB
 from ska_dlm.fastapi_utils import decode_bearer, fastapi_auto_annotate
@@ -20,7 +28,7 @@ from ska_dlm.typer_utils import dump_short_stacktrace
 
 from .. import CONFIG
 from ..data_item import delete_data_item_entry, set_state
-from ..dlm_db.db_access import DB
+from ..dlm_db import Migration
 from ..dlm_ingest import init_data_item
 from ..dlm_ingest.dlm_ingest_requests import ItemType
 from ..dlm_request import query_data_item
@@ -37,16 +45,40 @@ logger = logging.getLogger(__name__)
 
 origins = ["http://localhost", "http://localhost:5000", "http://localhost:8004"]
 
+MIGRATION_DATABASE_URL = os.getenv(
+    "DLM_MIGRATION_DATABASE_URL",
+    os.getenv("DATABASE_URL", "postgresql+asyncpg://ska_dlm_admin:password@dlm_db:5432/ska_dlm"),
+)
+
 
 @asynccontextmanager
-async def app_lifespan(_: FastAPI):
+async def app_lifespan(app: FastAPI):
     """Lifespan hook for startup and shutdown."""
     if len(CONFIG.RCLONE) == 0:
         raise ValueError("No Rclone URLs")
 
+    migration_engine = create_async_engine(
+        MIGRATION_DATABASE_URL,
+        future=True,
+        echo=False,
+        pool_size=10,
+        max_overflow=20,
+        pool_pre_ping=True,
+    )
+    migration_session_factory = sessionmaker(
+        bind=migration_engine,
+        class_=AsyncSession,
+        expire_on_commit=False,
+        autoflush=False,
+        future=True,
+    )
+    app.state.async_engine = migration_engine
+    app.state.async_session_factory = migration_session_factory
+
     task = asyncio.create_task(
         _poll_status_loop(
             interval=CONFIG.DLM.migration_manager.polling_interval,
+            async_session_factory=migration_session_factory,
         )
     )
     yield
@@ -58,6 +90,7 @@ async def app_lifespan(_: FastAPI):
         pass
     except Exception:  # pylint: disable=broad-except
         logger.exception("Unexpected error shutting down")
+    await migration_engine.dispose()
 
 
 rest = fastapi_auto_annotate(
@@ -79,6 +112,42 @@ rest.add_middleware(
 
 cli = ExceptionHandlingTyper()
 cli.exception_handler(ValueAlreadyInDB)(dump_short_stacktrace)
+
+
+def _parse_date_filter(value: str) -> datetime:
+    """Parse optional date filter values into a datetime object."""
+    if len(value) == 8 and value.isdigit():
+        value = f"{value[:4]}-{value[4:6]}-{value[6:]}"
+    return datetime.fromisoformat(value)
+
+
+def _serialize_value(val):
+    if val is None:
+        return None
+    if isinstance(val, uuid.UUID):
+        return str(val)
+    if isinstance(val, datetime):
+        return val.isoformat()
+    if isinstance(val, dict):
+        return {k: _serialize_value(v) for k, v in val.items()}
+    if isinstance(val, (list, tuple)):
+        return [_serialize_value(v) for v in val]
+    return val
+
+
+def _migration_to_dict(migration: Migration) -> dict:
+    """Convert a SQLAlchemy Migration model into a plain dictionary with JSON-safe values."""
+    return {
+        column.name: _serialize_value(getattr(migration, column.name))
+        for column in migration.__table__.columns
+    }
+
+
+def _open_migration_session() -> AsyncSession:
+    """Open a new async SQLAlchemy session from the FastAPI app state."""
+    if rest.state.async_session_factory is None:  # type: ignore[attr-defined]
+        raise RuntimeError("Migration session factory is not initialized")
+    return rest.state.async_session_factory()  # type: ignore[attr-defined]
 
 
 async def _query_job_status(url: str, job_id: int):
@@ -105,11 +174,12 @@ async def _query_core_stats(url: str, group_id: str):
     return request.json()
 
 
-async def _poll_status_loop(interval: int):
+async def _poll_status_loop(interval: int, async_session_factory: sessionmaker):
     """Periodically wake up and poll migration status."""
     while True:
         try:
-            await update_migration_statuses()
+            async with async_session_factory() as session:
+                await _update_migration_statuses(session)
         except asyncio.CancelledError:
             break
         except OSError:
@@ -172,28 +242,24 @@ def rclone_copy(
     return request.status_code, request.json(), command
 
 
-async def update_migration_statuses():
+async def _update_migration_statuses(session: AsyncSession):
     """
     Update the migration job status in the database for all pending rclone jobs.
 
     This is performed by querying the rclone service instances.
+
+    Parameters
+    ----------
+    session : AsyncSession
+        Async SQLAlchemy session used for the update.
 
     Raises
     ------
     IOError
         Error contacting database or rclone services.
     """
-    loop = asyncio.get_event_loop()
-
-    # get list of all outstanding migrations from DB
-    migrations = await loop.run_in_executor(
-        None,
-        partial(
-            DB.select,
-            CONFIG.DLM.migration_table,
-            params={"complete": "eq.false"},
-        ),
-    )
+    result = await session.execute(select(Migration).where(Migration.complete.is_(False)))
+    migrations = result.scalars().all()
 
     if len(migrations) > 0:
         logger.info("number of outstanding migrations: %s", len(migrations))
@@ -202,9 +268,9 @@ async def update_migration_statuses():
         # Want to try block so we go through each migration record to the end of the list
         try:
             # get details for this migration
-            migration_id = migration["migration_id"]
-            job_id = migration["job_id"]
-            url = migration["url"]
+            migration_id = migration.migration_id
+            job_id = migration.job_id
+            url = migration.url
             logger.info("migration %s: %s", migration_id, job_id)
 
             migration_complete = False
@@ -216,7 +282,7 @@ async def update_migration_statuses():
                 migration_complete = True
                 # Get record for remote data item
                 dest_data_item = query_data_item(
-                    oid=migration["oid"], storage_id=migration["destination_storage_id"]
+                    oid=migration.oid, storage_id=migration.destination_storage_id
                 )
 
                 if dest_data_item:
@@ -236,23 +302,33 @@ async def update_migration_statuses():
                         )
                         delete_data_item_entry(uid=dest_data_item[0]["uid"])
 
-            # update migration database
-            DB.update(
-                CONFIG.DLM.migration_table,
-                params={"migration_id": f"eq.{migration['migration_id']}"},
-                json={
-                    "job_status": status_json,
-                    "job_stats": stats_json,
-                    "complete": migration_complete,
-                },
+            stmt = (
+                update(Migration)
+                .where(Migration.migration_id == migration_id)
+                .values(
+                    job_status=status_json,
+                    job_stats=stats_json,
+                    complete=migration_complete,
+                    completion_date=func.now(),  # pylint: disable=not-callable
+                )
+                .returning(Migration)
             )
+            migration_obj = await session.scalar(stmt)
+
+            await add_outbox_event(
+                session=session,
+                event_type="dlm.migration.update",
+                payload=_migration_to_dict(migration_obj),
+            )
+
+            await session.commit()
         except Exception as e:  # pylint: disable=broad-except
             logging.exception(e)
 
 
 @cli.command()
 @rest.get("/migration/query_migrations", response_model=list[dict])
-def query_migrations(
+async def query_migrations(
     authorization: Annotated[str | None, Header()] = None,
     start_date: str | None = None,
     end_date: str | None = None,
@@ -284,36 +360,32 @@ def query_migrations(
         if username is None:
             raise ValueError("Username not found in profile")
 
-    params = {"limit": 1000}
+    stmt = select(Migration)
     if username:
-        params["user"] = f"eq.{username}"
+        stmt = stmt.where(Migration.user == username)
 
-    date_filters = []
     if start_date:
-        date_filters.append(f"gte.{start_date}")
-
+        stmt = stmt.where(Migration.date >= _parse_date_filter(start_date))
     if end_date:
-        date_filters.append(f"lte.{end_date}")
-
-    if date_filters:
-        if start_date and end_date:
-            params["and"] = f"(date.gte.{start_date},date.lte.{end_date})"  # join conditions
-        elif start_date:
-            params["date"] = f"gte.{start_date}"
-        elif end_date:
-            params["date"] = f"lte.{end_date}"
+        stmt = stmt.where(Migration.completion_date <= _parse_date_filter(end_date))
 
     if storage_id:
-        params[
-            "or"
-        ] = f"(source_storage_id.eq.{storage_id},destination_storage_id.eq.{storage_id})"
+        stmt = stmt.where(
+            or_(
+                Migration.source_storage_id == storage_id,
+                Migration.destination_storage_id == storage_id,
+            )
+        )
 
-    return DB.select(CONFIG.DLM.migration_table, params=params)
+    async with _open_migration_session() as session:
+        result = await session.execute(stmt)
+        migrations = result.scalars().all()
+    return [_migration_to_dict(item) for item in migrations]
 
 
 @cli.command()
-@rest.get("/migration/get_migration")
-def get_migration_record(migration_id: int) -> list[dict]:
+@rest.get("/migration/get_migration", response_model=list[dict])
+async def get_migration_record(migration_id: int) -> list[dict]:
     """
     Query for a specific migration.
 
@@ -326,27 +398,33 @@ def get_migration_record(migration_id: int) -> list[dict]:
     -------
     list[dict]
     """
-    return _get_migration_record(migration_id)
+    async with _open_migration_session() as session:
+        return await _get_migration_record(migration_id, session)
 
 
-def _get_migration_record(migration_id: int) -> list[dict]:
+async def _get_migration_record(migration_id: int, session: AsyncSession) -> list[dict]:
     """
     Query for a specific migration.
 
     Parameters
     ----------
-    migration_id
+    migration_id : int
         Migration id of migration
+    session : AsyncSession
+        Async SQLAlchemy session used for the update.
 
     Returns
     -------
     list[dict]
     """
-    params = {"migration_id": f"eq.{migration_id}"}
-    return DB.select(CONFIG.DLM.migration_table, params=params)
+    stmt = select(Migration).where(Migration.migration_id == migration_id)
+    result = await session.execute(stmt)
+    migrations = result.scalars().all()
+    return [_migration_to_dict(item) for item in migrations]
 
 
-def _create_migration_record(
+async def _create_migration_record(
+    session: AsyncSession,
     job_id,
     oid,
     url,
@@ -365,22 +443,26 @@ def _create_migration_record(
             raise ValueError("Username not found in profile")
 
     # add migration to DB
-    json_data = {
-        "job_id": job_id,
-        "oid": oid,
-        "url": url,
-        "source_storage_id": source_storage_id,
-        "destination_storage_id": destination_storage_id,
-        "user": username,
-        "command": command,
-    }
-    return DB.insert(CONFIG.DLM.migration_table, json=json_data)
+    record = Migration(
+        job_id=job_id,
+        oid=oid,
+        url=url,
+        source_storage_id=source_storage_id,
+        destination_storage_id=destination_storage_id,
+        user=username,
+        command=command,
+    )
+    session.add(record)
+    await session.flush()
+    await session.refresh(record)
+    await session.commit()
+    return _migration_to_dict(record)
 
 
 @cli.command()
 @rest.post("/migration/copy_data_item", response_model=dict)
-def copy_data_item(  # noqa: C901
-    # pylint: disable=too-many-arguments,too-many-locals,too-many-positional-arguments,too-many-branches,too-many-statements
+async def copy_data_item(  # noqa: C901
+    # pylint: disable=too-many-arguments,too-many-positional-arguments
     item_name: str = "",
     oid: str = "",
     uid: str = "",
@@ -428,6 +510,31 @@ def copy_data_item(  # noqa: C901
     UnmetPreconditionForOperation
         No data item found for copying.
     """
+    async with _open_migration_session() as session:
+        return await _copy_data_item(
+            session=session,
+            item_name=item_name,
+            oid=oid,
+            uid=uid,
+            destination_name=destination_name,
+            destination_id=destination_id,
+            path=path,
+            authorization=authorization,
+        )
+
+
+async def _copy_data_item(  # noqa: C901
+    # pylint: disable=too-many-arguments,too-many-locals,too-many-positional-arguments,too-many-branches,too-many-statements
+    session: AsyncSession,
+    item_name: str = "",
+    oid: str = "",
+    uid: str = "",
+    destination_name: str = "",
+    destination_id: str = "",
+    path: str = "",
+    authorization: Annotated[str | None, Header()] = None,
+) -> dict:
+    """Copy a data_item from source to destination."""
     if not item_name and not oid and not uid:
         raise InvalidQueryParameters("Either item_name or OID or UID has to be provided!")
     orig_item = query_data_item(item_name, oid, uid)
@@ -527,7 +634,8 @@ def copy_data_item(  # noqa: C901
 
         # (5) add row to migration table
         # NOTE: temporarily use server_id='rclone0' until we actually have multiple rclone servers
-        record = _create_migration_record(
+        record = await _create_migration_record(
+            session,
             content["jobid"],
             orig_item["oid"],
             url,
@@ -536,8 +644,9 @@ def copy_data_item(  # noqa: C901
             authorization,
             command,
         )
+        session.commit()
 
-        return {"uid": new_item_uid, "migration_id": record[0]["migration_id"]}
+        return {"uid": new_item_uid, "migration_id": record["migration_id"]}
     except Exception:
         # if there is any error, delete data item and raise exception
         delete_data_item_entry(uid=new_item_uid)
