@@ -199,3 +199,23 @@ component: {{ .Values.archive.component }}
 subsystem: {{ .Values.archive.subsystem }}
 intent: production
 {{- end -}}
+
+{{/*
+RabbitMQ labels
+*/}}
+{{- define "ska-dlm.rabbitmq.labels" -}}
+{{- include "ska-dlm.labels" . }}
+component: {{ .Values.rabbitmq.component }}
+subsystem: {{ .Values.rabbitmq.subsystem }}
+intent: production
+{{- end -}}
+
+{{/*
+Outbox labels
+*/}}
+{{- define "ska-dlm.outbox.labels" -}}
+{{- include "ska-dlm.labels" . }}
+component: {{ .Values.outbox.component }}
+subsystem: {{ .Values.outbox.subsystem }}
+intent: production
+{{- end -}}

@@ -1,0 +1,85 @@
+{{- if .Values.rabbitmq.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ska-dlm.fullname" . }}-rabbitmq
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ska-dlm.rabbitmq.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.rabbitmq.serviceType }}
+  ports:
+    - name: amqp
+      port: {{ .Values.rabbitmq.port }}
+      targetPort: {{ .Values.rabbitmq.port }}
+      protocol: TCP
+    - name: management
+      port: {{ .Values.rabbitmq.management.port }}
+      targetPort: {{ .Values.rabbitmq.management.port }}
+      protocol: TCP
+  selector:
+    component: {{ .Values.rabbitmq.component }}
+    subsystem: {{ .Values.rabbitmq.subsystem }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ska-dlm.fullname" . }}-rabbitmq
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ska-dlm.rabbitmq.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.rabbitmq.replicas }}
+  selector:
+    matchLabels:
+      component: {{ .Values.rabbitmq.component }}
+      subsystem: {{ .Values.rabbitmq.subsystem }}
+  template:
+    metadata:
+      labels:
+        {{- include "ska-dlm.rabbitmq.labels" . | nindent 8 }}
+    spec:
+      initContainers:
+        - name: setup-rabbitmq-volume
+          image: busybox:latest
+          # Creates the folder and transfers ownership to rabbitmq (UID 999)
+          command: ["sh", "-c", "mkdir -p /dlm/rabbitmq-data/ && chown -R 999:999 /dlm/rabbitmq-data"]
+          volumeMounts:
+          - name: shared-storage
+            mountPath: /dlm
+      containers:
+        - name: rabbitmq
+          image: {{ .Values.rabbitmq.image }}:{{ .Values.rabbitmq.version }}
+          imagePullPolicy: {{ .Values.rabbitmq.imagePullPolicy }}
+          ports:
+            - containerPort: {{ .Values.rabbitmq.port }}
+              name: amqp
+            - containerPort: {{ .Values.rabbitmq.management.port }}
+              name: management
+          env:
+            - name: RABBITMQ_DEFAULT_USER
+              value: {{ .Values.rabbitmq.auth.username | quote }}
+            - name: RABBITMQ_DEFAULT_PASS
+              value: {{ .Values.rabbitmq.auth.password | quote }}
+            - name: RABBITMQ_NODENAME
+              value: rabbit@localhost
+            - name: RABBITMQ_MNESIA_BASE
+              value: "/dlm/rabbitmq-data/"
+          readinessProbe:
+            tcpSocket:
+              port: amqp
+            periodSeconds: 10
+            initialDelaySeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: amqp
+            periodSeconds: 10
+            initialDelaySeconds: 10
+          volumeMounts:
+          - name: shared-storage
+            mountPath: /dlm
+      volumes:
+      - name: shared-storage
+        persistentVolumeClaim:
+          claimName: {{ .Values.global.sharedpvc.pvc.name }}
+{{- end }}

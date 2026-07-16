@@ -1,6 +1,6 @@
 """SQLAlchemy models for DLM database tables."""
 
-from sqlalchemy import BigInteger, Boolean, Column, DateTime
+from sqlalchemy import JSON, BigInteger, Boolean, Column, DateTime
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy import ForeignKey, Integer, Numeric, String, Text, func, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -13,6 +13,7 @@ from ska_dlm.common_types import (
     LocationCountry,
     LocationType,
     MimeType,
+    OutboxStatus,
     PhaseType,
     StorageInterface,
     StorageType,
@@ -348,3 +349,22 @@ class Migration(Base):
 
     source_storage = relationship("Storage", foreign_keys=[source_storage_id])
     destination_storage = relationship("Storage", foreign_keys=[destination_storage_id])
+
+
+class Outbox(Base):
+    """Represents transactional outbox events to be sent to RabbitMQ."""
+
+    # pylint: disable=too-few-public-methods, not-callable
+    __tablename__ = "outbox"
+    __table_args__ = {"schema": "dlm"}
+
+    outbox_id = Column(UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid())
+    event_type = Column(String, nullable=False)
+    payload = Column(JSON, nullable=False)
+    destination = Column(String, nullable=True)
+    routing_key = Column(String, nullable=True)
+    status = Column(String, nullable=False, default=OutboxStatus.PENDING.value)
+    attempts = Column(Integer, nullable=False, default=0)
+    created_at = Column(DateTime(timezone=False), nullable=False, server_default=func.now())
+    last_attempt = Column(DateTime(timezone=False), nullable=True)
+    sent_at = Column(DateTime(timezone=False), nullable=True)

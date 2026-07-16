@@ -28,7 +28,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ska_dlm.common_types import ItemState, PhaseType
 from ska_dlm.dlm_db.models import DataItem, Storage
-from ska_dlm.dlm_migration import copy_data_item
+from ska_dlm.dlm_migration import _copy_data_item
 from ska_dlm.dlm_storage import dlm_storage_requests
 
 logger = logging.getLogger(__name__)
@@ -807,10 +807,11 @@ class IncreaseOidPhaseHeuristic(BaseHeuristic):
 
             target_storage_id = storage_result.data["storage_id"]
 
-            # Step 3: Copy the data item using dlm_migration.copy_data_item
-            # copy_data_item can use either destination_id or destination_name
+            # Step 3: Copy the data item using dlm_migration._copy_data_item
+            # _copy_data_item can use either destination_id or destination_name
             try:
-                copy_result = copy_data_item(
+                copy_result = await _copy_data_item(
+                    self.session,
                     oid=str(oid),
                     destination_id=str(target_storage_id),
                     path=source_data_item.uri,

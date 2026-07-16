@@ -1,5 +1,8 @@
 """SQLAlchemy ORM base and session helpers for DLM."""
 
+import contextlib
+import logging
+
 from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
@@ -17,9 +20,15 @@ def create_sql_session(engine, **kwargs):
     return sessionmaker(bind=engine, future=True, autoflush=False, autocommit=False, **kwargs)()
 
 
-def create_async_sql_engine(database_url: str, **kwargs):
+@contextlib.asynccontextmanager
+async def create_async_sql_engine(database_url: str, **kwargs):
     """Create an async SQLAlchemy engine."""
-    return create_async_engine(database_url, future=True, **kwargs)
+    engine = create_async_engine(database_url, future=True, **kwargs)
+    yield engine
+    try:
+        await engine.dispose()
+    except Exception:  # pylint: disable=broad-exception-caught
+        logging.exception("Failed to dispose sql engine to %s", database_url)
 
 
 def create_async_sql_session(engine, **kwargs):
