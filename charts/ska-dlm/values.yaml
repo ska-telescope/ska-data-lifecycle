@@ -207,7 +207,7 @@ rabbitmq:
   component: rabbitmq
   subsystem: data-lifecycle-management
   image: rabbitmq
-  version: "3-management"
+  version: "4-management"
   imagePullPolicy: Always
   replicas: 1
   serviceType: ClusterIP
