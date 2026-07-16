@@ -26,12 +26,11 @@ from ska_dlm.dlm_outbox.outbox import (
 logger = logging.getLogger(__name__)
 
 OUTBOX_DATABASE_URL = os.getenv(
-    "DLM_OUTBOX_DATABASE_URL",
-    os.getenv("DATABASE_URL", "postgresql+asyncpg://ska_dlm_admin:password@dlm_db:5432/ska_dlm"),
+    "DLM_OUTBOX_DATABASE_URL", "postgresql+asyncpg://ska_dlm_admin:password@dlm_db:5432/ska_dlm"
 )
 RABBITMQ_URL = os.getenv(
     "DLM_OUTBOX_RABBITMQ_URL",
-    os.getenv("RABBITMQ_URL", "amqp://guest:guest@localhost/"),
+    "amqp://guest:guest@localhost/",
 )
 OUTBOX_POLL_INTERVAL = int(os.getenv("DLM_OUTBOX_POLL_INTERVAL", "10"))
 OUTBOX_BATCH_SIZE = int(os.getenv("DLM_OUTBOX_BATCH_SIZE", "50"))
@@ -135,43 +134,39 @@ async def outbox_relay_loop(stop_event: asyncio.Event) -> None:
     if RABBITMQ_URL is None:
         raise RuntimeError("RABBITMQ URL is required for the outbox relay")
 
-    engine = create_async_sql_engine(OUTBOX_DATABASE_URL)
-    connection = await connect_robust(RABBITMQ_URL)
+    async with create_async_sql_engine(OUTBOX_DATABASE_URL) as engine:
+        connection = await connect_robust(RABBITMQ_URL)
 
-    async with connection.channel() as channel:
-        exchange = await channel.declare_exchange(
-            DEFAULT_OUTBOX_EXCHANGE,
-            ExchangeType.TOPIC,
-            durable=True,
-        )
+        async with connection.channel() as channel:
+            exchange = await channel.declare_exchange(
+                DEFAULT_OUTBOX_EXCHANGE,
+                ExchangeType.TOPIC,
+                durable=True,
+            )
 
-        loop_counter = 0
-        while not stop_event.is_set():
-            start = datetime.now(timezone.utc)
-            loop_counter += 1
-            logger.debug("Outbox relay loop %s starting at %s", loop_counter, start.isoformat())
-            try:
-                async_session = create_async_sql_session(engine)
-                async with async_session as session:
-                    processed = await _process_pending_events(exchange, session)
+            loop_counter = 0
+            while not stop_event.is_set():
+                start = datetime.now(timezone.utc)
+                loop_counter += 1
+                logger.debug(
+                    "Outbox relay loop %s starting at %s", loop_counter, start.isoformat()
+                )
+                try:
+                    async with create_async_sql_session(engine) as session:
+                        processed = await _process_pending_events(exchange, session)
 
-                elapsed = (datetime.now(timezone.utc) - start).total_seconds()
-                sleep_time = max(0, OUTBOX_POLL_INTERVAL - elapsed)
-                if processed > 0:
-                    logger.info("Published %s outbox event(s)", processed)
-                await asyncio.wait_for(stop_event.wait(), timeout=sleep_time)
-            except asyncio.TimeoutError:
-                continue
-            except asyncio.CancelledError:
-                logger.info("Outbox relay cancelled")
-                break
-            except Exception:  # pylint: disable=broad-exception-caught
-                logger.exception("Outbox relay iteration failed; continuing")
-
-    try:
-        await engine.dispose()
-    except Exception:  # pylint: disable=broad-exception-caught
-        logger.exception("Failed to dispose outbox DB engine")
+                    elapsed = (datetime.now(timezone.utc) - start).total_seconds()
+                    sleep_time = max(0, OUTBOX_POLL_INTERVAL - elapsed)
+                    if processed > 0:
+                        logger.info("Published %s outbox event(s)", processed)
+                    await asyncio.wait_for(stop_event.wait(), timeout=sleep_time)
+                except asyncio.TimeoutError:
+                    continue
+                except asyncio.CancelledError:
+                    logger.info("Outbox relay cancelled")
+                    break
+                except Exception:  # pylint: disable=broad-exception-caught
+                    logger.exception("Outbox relay iteration failed; continuing")
 
 
 def _configure_signals(stop_event: asyncio.Event):
