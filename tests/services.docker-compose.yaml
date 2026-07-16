@@ -33,6 +33,35 @@ services:
     networks:
       - dlm_network
 
+  dlm_outbox:
+    platform: linux/amd64
+    image: dlm_outbox
+    container_name: dlm_outbox
+    build:
+      context: ..
+      dockerfile: tests/Dockerfile-dlm-compose
+    environment:
+      DLM_OUTBOX_DATABASE_URL: "postgresql+asyncpg://ska_dlm_admin:password@dlm_db:5432/ska_dlm"
+      DLM_OUTBOX_RABBITMQ_URL: "amqp://guest:guest@rabbitmq/"
+      DLM_OUTBOX_POLL_INTERVAL: "10"
+      DLM_OUTBOX_BATCH_SIZE: "50"
+      DLM_OUTBOX_EXCHANGE: "dlm.outbox"
+    entrypoint: ["python", "-m", "ska_dlm.dlm_outbox.relay"]
+    depends_on:
+      dlm_db:
+        condition: service_healthy
+      dlm_migrations:
+        condition: service_completed_successfully
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "ska-dlm --help || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dlm_network
+
   dlm_rclone:
     image: dlm_rclone
     container_name: dlm_rclone
@@ -128,7 +157,7 @@ services:
       - --search-path=/changelog
       - update
       - --changelog-file=changelog.yaml
-      - --context-filter=!create-db,!create-roles,create-schema,!create-external-triggers
+      - --context-filter=!create-db,!create-roles,create-schema,!create-external-triggers,2.3-release
     depends_on:
       dlm_db:
         condition: service_healthy
@@ -157,6 +186,23 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - 5672:5672
+      - 15672:15672
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - dlm_network
 
   keycloak:
     build:
