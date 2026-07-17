@@ -2,7 +2,6 @@
 
 """Tests for `ska_data_lifecycle` module."""
 
-import asyncio
 import datetime
 import time
 
@@ -12,13 +11,10 @@ import pytest
 from ska_dlm import CONFIG, data_item
 from ska_dlm.dlm_db.db_access import DB
 from ska_dlm.dlm_ingest.dlm_ingest_requests import ItemType
-from ska_dlm.dlm_migration.dlm_migration_requests import (
-    _get_migration_record,
-    update_migration_statuses,
-)
 from ska_dlm.exceptions import DatabaseOperationError, InvalidQueryParameters, ValueAlreadyInDB
 from tests.common_local import DlmTestClientLocal
 from tests.integration.client.dlm_gateway_client import get_token
+from tests.integration.client.dlm_migration_client import get_migration_record
 from tests.test_env import DlmTestClient
 
 ROOT = "/dlm/"
@@ -186,7 +182,7 @@ def __get_migration(record, count=100):
     total_count = 0
     while True:
         # check that a query for all migrations returns the details of this single migration
-        migration_record = _get_migration_record(record["migration_id"])
+        migration_record = get_migration_record(record["migration_id"])
         if (
             migration_record[0]["job_status"] is None
             or migration_record[0]["job_status"]["finished"] is False
@@ -223,9 +219,6 @@ def test_copy(env: DlmTestClient):
     )
     assert RCLONE_TEST_FILE_CONTENT == env.get_rclone_local_file_content(RCLONE_TEST_FILE_PATH)
 
-    # trigger manual update of migrations status
-    asyncio.run(update_migration_statuses())
-
     migration_record = __get_migration(copy_item_record)
 
     assert len(migration_record) == 1
@@ -239,6 +232,25 @@ def test_copy(env: DlmTestClient):
         oid=migration_record[0]["oid"], storage_id=migration_record[0]["source_storage_id"]
     )
     assert source_data_item[0]["item_state"] == "READY"
+
+    # Test the filter on query migrations
+    destination_storage_id = migration_record[0]["destination_storage_id"]
+    migrations = env.migration_requests.query_migrations(storage_id=destination_storage_id)
+    assert len(migrations) == 1
+
+    yesterday = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+    migrations = env.migration_requests.query_migrations(start_date=yesterday)
+    assert len(migrations) == 1
+
+    tomorrow = (datetime.datetime.now() + datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+    migrations = env.migration_requests.query_migrations(start_date=tomorrow)
+    assert len(migrations) == 0
+
+    migrations = env.migration_requests.query_migrations(end_date=yesterday)
+    assert len(migrations) == 0
+
+    migrations = env.migration_requests.query_migrations(end_date=tomorrow)
+    assert len(migrations) == 1
 
 
 @pytest.mark.integration_test
@@ -262,9 +274,6 @@ def test_copy_failed(env: DlmTestClient):
         uid=uid, destination_id=dest_id, path=dest
     )
     assert RCLONE_TEST_FILE_CONTENT == env.get_rclone_local_file_content(RCLONE_TEST_FILE_PATH)
-
-    # trigger manual update of migrations status
-    asyncio.run(update_migration_statuses())
 
     __get_migration(copy_item_record)
 
@@ -328,9 +337,6 @@ def test_copy_container(env):
 
     dest = f"{ROOT_DIRECTORY2}"
     result = env.migration_requests.copy_data_item(uid=uid_root, destination_id=dest_id, path=dest)
-
-    # trigger manual update of migrations status
-    asyncio.run(update_migration_statuses())
 
     # check that a query for all migrations returns the details of this single migration
     result = __get_migration(result)

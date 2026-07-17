@@ -15,3 +15,6 @@ databaseChangeLog:
   - include:
       file: 11_create_eb_trigger.sql
       context: create-external-triggers
+  - include:
+      file: 12_2.3_release.sql
+      context: 2.3-release

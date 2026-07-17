@@ -79,6 +79,14 @@ class ItemState(str, Enum):
     DELETED = "DELETED"
 
 
+class OutboxStatus(str, Enum):
+    """Outbox event delivery state."""
+
+    PENDING = "PENDING"
+    SENT = "SENT"
+    FAILED = "FAILED"
+
+
 class ChecksumMethod(str, Enum):
     """Allowed checksum algorithms for data objects."""
 
