@@ -598,6 +598,8 @@ async def _copy_data_item(  # noqa: C901
         "oid_expiration": orig_item["oid_expiration"],
         "uid_phase": dest_phase,
         "metadata": orig_item["metadata"],
+        "item_size": orig_item["item_size"],
+        "decompressed_size": orig_item["decompressed_size"],
         "uri": path,
     }
 

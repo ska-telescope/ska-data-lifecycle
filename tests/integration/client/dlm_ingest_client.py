@@ -52,7 +52,7 @@ def init_data_item(
     return response.json()
 
 
-# pylint: disable=unused-argument,too-many-arguments,too-many-positional-arguments
+# pylint: disable=unused-argument,too-many-arguments,too-many-positional-arguments, too-many-locals
 def register_data_item(
     item_name: str,
     uri: str,
@@ -62,6 +62,8 @@ def register_data_item(
     oid_expiration: datetime | None = None,
     storage_name: str = "",
     storage_id: str = "",
+    item_size: int | None = None,
+    decompressed_size: int | None = None,
     parents: str | None = None,
     metadata: JsonObjectOption = None,
     do_storage_access_check: bool = True,
@@ -100,6 +102,10 @@ def register_data_item(
         the name of the configured storage volume (name or ID required).
     storage_id
         the ID of the configured storage.
+    item_size
+        size of the data item in bytes.
+    decompressed_size
+        size of the data item in bytes after decompression.
     parents
         uuid of parent item.
     metadata
