@@ -128,10 +128,10 @@ def register_data_item(  # noqa: C901
     oid_expiration: datetime | None = None,
     storage_name: str = "",
     storage_id: str = "",
-    item_size: int | None = None,
-    decompressed_size: int | None = None,
     parents: str | None = None,
     metadata: JsonObjectOption = None,
+    item_size: int | None = None,
+    decompressed_size: int | None = None,
     do_storage_access_check: bool = True,
     authorization: Annotated[str | None, Header()] = None,
 ) -> str:
