@@ -17,9 +17,9 @@ from ska_dlm.dlm_outbox import add_outbox_event
 @pytest.fixture(name="engine")
 async def engine_fixture() -> AsyncGenerator[AsyncEngine, None]:
     """Create an async engine for outbox database access."""
-    database_url = os.getenv("DATABASE_URL", "")
+    database_url = os.getenv("DLM_OUTBOX_DATABASE_URL", "")
     if not database_url:
-        pytest.skip("DATABASE_URL is not configured")
+        pytest.skip("DLM_OUTBOX_DATABASE_URL is not configured")
 
     if database_url.startswith("postgresql://"):
         database_url = database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
@@ -44,9 +44,9 @@ async def outbox_session_fixture(engine: AsyncEngine) -> AsyncGenerator[AsyncSes
 @pytest.mark.asyncio
 async def test_outbox_event_is_published_to_exchange(outbox_session: AsyncSession):
     """A published outbox event should reach a RabbitMQ subscriber with the same payload."""
-    rabbitmq_url = os.getenv("RABBITMQ_URL", "")
+    rabbitmq_url = os.getenv("DLM_OUTBOX_RABBITMQ_URL", "")
     if not rabbitmq_url:
-        pytest.skip("RABBITMQ_URL is not configured")
+        pytest.skip("DLM_OUTBOX_RABBITMQ_URL is not configured")
 
     exchange_name = os.getenv("DLM_OUTBOX_EXCHANGE", "dlm.outbox")
     event_type = "test-output-event"
@@ -62,7 +62,8 @@ async def test_outbox_event_is_published_to_exchange(outbox_session: AsyncSessio
             exchange = await channel.declare_exchange(
                 exchange_name, ExchangeType.TOPIC, durable=True
             )
-            queue = await channel.declare_queue(name="test_queue", durable=True)
+            # Let RabbitMQ generate a unique queue name:
+            queue = await channel.declare_queue(exclusive=True, auto_delete=True)
             await queue.bind(exchange, routing_key=event_type)
 
             outbox_event = await add_outbox_event(
@@ -73,7 +74,8 @@ async def test_outbox_event_is_published_to_exchange(outbox_session: AsyncSessio
             )
             await outbox_session.commit()
 
-            count = 0
+            loop = asyncio.get_running_loop()
+            deadline = loop.time() + 30
             while True:
                 try:
                     message = await queue.get(fail=True)  # fail=True raises exception if empty
@@ -83,11 +85,10 @@ async def test_outbox_event_is_published_to_exchange(outbox_session: AsyncSessio
                         assert message.headers["outbox_id"] == str(outbox_event.outbox_id)
                         assert message.headers["event_type"] == event_type
                         assert message.headers["created_at"] == outbox_event.created_at.isoformat()
-                        break
+                    break
                 except QueueEmpty:
-                    count += 1
-                    if count >= 20:
-                        raise
+                    if loop.time() >= deadline:
+                        pytest.fail("Outbox event was not published within 30 seconds")
                     await asyncio.sleep(1)  # Block manually before checking again
     finally:
         await connection.close()
