@@ -167,7 +167,7 @@ postgresql:
   # Used for local PostgreSQL bootstrap when postgresql.enabled=true
     username: ska_dlm_admin
     password: password
-    database: dlm
+    database: dlm_testing
 
   primary:
     containerSecurityContext:

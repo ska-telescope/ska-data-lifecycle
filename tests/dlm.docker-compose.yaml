@@ -110,7 +110,7 @@ services:
       context: ..
       dockerfile: tests/Dockerfile-heuristics
     environment:
-      DLM_HEURISTIC_DATABASE_URL: "postgresql+asyncpg://ska_dlm_admin:password@dlm_db:5432/ska_dlm"
+      DLM_HEURISTIC_DATABASE_URL: "postgresql+asyncpg://ska_dlm_admin:password@dlm_db:5432/ska_dlm_testing"
       DLM_HEURISTIC_POLL_INTERVAL: "10"
     depends_on:
       dlm_db:
