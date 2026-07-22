@@ -1,14 +1,19 @@
 # Version History
 
-## Development
+## 2.2.0
 
-* Add a reverse proxy to the docker-compose deployment and changed default ports to 80
+### Updated
+
 * Upgraded ska-db-migrations to 0.9.1
-* Added support to delete container tree hierarchies
-* Add ODA trigger that inserts a dlm.data_item when an execution block is added.
-* Added dlm-archive stfp endpoint. 
-* Added pg_sphere to local db build.
-* Add default dlm-archive storage endpoint. 
+
+### Added
+
+* Transactional Outbox Pattern with RabbitMQ
+* Support to delete container tree hierarchies
+* ODA trigger that inserts a dlm.data_item when an execution block is added.
+* dlm-archive stfp endpoint.
+* pg_sphere to local db build.
+* default dlm-archive storage endpoint.
 
 ## 2.1.0
 
