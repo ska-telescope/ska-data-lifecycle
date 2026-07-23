@@ -8,6 +8,7 @@
 
 ### Added
 
+* A reverse proxy to the docker-compose deployment and changed default ports to 80
 * Transactional Outbox Pattern with RabbitMQ
 * Support to delete container tree hierarchies
 * ODA trigger that inserts a dlm.data_item when an execution block is added.
