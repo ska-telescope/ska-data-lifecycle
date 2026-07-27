@@ -14,7 +14,9 @@ logger = logging.getLogger(__name__)
 
 HEURISTIC_DATABASE_URL = os.getenv(
     "DLM_HEURISTIC_DATABASE_URL",
-    os.getenv("DATABASE_URL", "postgresql+asyncpg://ska_dlm_admin:password@dlm_db:5432/ska_dlm"),
+    os.getenv(
+        "DATABASE_URL", "postgresql+asyncpg://ska_dlm_admin:password@dlm_db:5432/ska_dlm_testing"
+    ),
 )
 HEURISTIC_POLL_INTERVAL = int(os.getenv("DLM_HEURISTIC_POLL_INTERVAL", "10"))
 
