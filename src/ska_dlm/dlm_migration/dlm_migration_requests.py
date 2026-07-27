@@ -52,7 +52,9 @@ origins = [
 
 MIGRATION_DATABASE_URL = os.getenv(
     "DLM_MIGRATION_DATABASE_URL",
-    os.getenv("DATABASE_URL", "postgresql+asyncpg://ska_dlm_admin:password@dlm_db:5432/ska_dlm"),
+    os.getenv(
+        "DATABASE_URL", "postgresql+asyncpg://ska_dlm_admin:password@dlm_db:5432/ska_dlm_testing"
+    ),
 )
 
 

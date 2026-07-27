@@ -249,7 +249,7 @@ With public network access to the development k8s cluster:
 
 * navigate a browser to `http://<minikube ip>/pgweb/` (or with minikube tunneling, `http://localhost/pgweb/`)
 * Select the scheme option
-* Enter the URL `postgres://ska_dlm_admin:password@<helm-release>-postgresql.<host>:<port>/ska_dlm?sslmode=disable`.
+* Enter the URL `postgres://ska_dlm_admin:password@<helm-release>-postgresql.<host>:<port>/ska_dlm_testing?sslmode=disable`.
 Example of `<host>` on the DP cluster: *dp-shared.svc.cluster.local*
 
 ### Running Helm Chart Tests

@@ -12,7 +12,7 @@ services:
     volumes:
       - shared-tmpfs:/dlm
     environment:
-      DATABASE_URL: "postgresql+asyncpg://ska_dlm_admin:password@dlm_db:5432/ska_dlm"
+      DATABASE_URL: "postgresql+asyncpg://ska_dlm_admin:password@dlm_db:5432/ska_dlm_testing"
       RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672/"
       DO_AUTH: "1"
     networks:
