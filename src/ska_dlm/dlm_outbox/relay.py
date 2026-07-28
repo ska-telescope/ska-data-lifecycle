@@ -26,7 +26,8 @@ from ska_dlm.dlm_outbox.outbox import (
 logger = logging.getLogger(__name__)
 
 OUTBOX_DATABASE_URL = os.getenv(
-    "DLM_OUTBOX_DATABASE_URL", "postgresql+asyncpg://ska_dlm_admin:password@dlm_db:5432/ska_dlm"
+    "DLM_OUTBOX_DATABASE_URL",
+    "postgresql+asyncpg://ska_dlm_admin:password@dlm_db:5432/ska_dlm_testing",
 )
 RABBITMQ_URL = os.getenv(
     "DLM_OUTBOX_RABBITMQ_URL",

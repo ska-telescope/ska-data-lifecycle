@@ -123,6 +123,10 @@ oci-image-build-db:
   script:
     make oci-build-db CAR_OCI_REGISTRY_HOST=${CI_REGISTRY}/${CI_PROJECT_NAMESPACE}/${CI_PROJECT_NAME}
 
+oci-image-build:
+  tags:
+    - ska-default # force the job onto the ska-default runners
+
 python-test:
   image: docker:27.0.2
   services:
