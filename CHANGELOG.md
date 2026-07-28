@@ -2,6 +2,7 @@
 
 ## Development
 
+* Add sizes to `register_data_item`
 * Upgraded ska-db-migrations to 0.9.1
 * Added support to delete container tree hierarchies
 * Add Transactional Outbox Pattern with RabbitMQ
