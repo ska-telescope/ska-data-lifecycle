@@ -130,6 +130,8 @@ def register_data_item(  # noqa: C901
     storage_id: str = "",
     parents: str | None = None,
     metadata: JsonObjectOption = None,
+    item_size: int | None = None,
+    decompressed_size: int | None = None,
     do_storage_access_check: bool = True,
     authorization: Annotated[str | None, Header()] = None,
 ) -> str:
@@ -166,6 +168,10 @@ def register_data_item(  # noqa: C901
         the name of the configured storage volume (name or ID required).
     storage_id
         the ID of the configured storage.
+    item_size
+        size of the data item in bytes.
+    decompressed_size
+        size of the data item in bytes after decompression.
     parents
         uuid of parent item.
     metadata
@@ -229,6 +235,8 @@ def register_data_item(  # noqa: C901
         "target_phase": target_phase,
         "item_type": item_type,
         "item_owner": username,
+        "item_size": item_size,
+        "decompressed_size": decompressed_size,
         "parents": parents,
     }
 

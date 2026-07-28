@@ -210,7 +210,11 @@ def test_copy(env: DlmTestClient):
 
     dest_id = env.storage_requests.query_storage("dlm-archive")[0]["storage_id"]
     uid = env.ingest_requests.register_data_item(
-        item_name="/my/ingest/test/item2", uri=TEST_URI, storage_name="local"
+        item_name="/my/ingest/test/item2",
+        uri=TEST_URI,
+        storage_name="local",
+        item_size=RCLONE_TEST_FILE_SIZE,
+        decompressed_size=RCLONE_TEST_FILE_SIZE,
     )
     assert len(uid) == 36
     dest = f"{ROOT_DIRECTORY2}/testfile_copy"
@@ -228,10 +232,12 @@ def test_copy(env: DlmTestClient):
     assert migration_record[0]["job_stats"]["bytes"] == RCLONE_TEST_FILE_SIZE
 
     # Check the data item has been set to READY
-    source_data_item = env.data_item_requests.query_data_item(
-        oid=migration_record[0]["oid"], storage_id=migration_record[0]["source_storage_id"]
+    dest_data_item = env.data_item_requests.query_data_item(
+        oid=migration_record[0]["oid"], storage_id=migration_record[0]["destination_storage_id"]
     )
-    assert source_data_item[0]["item_state"] == "READY"
+    assert dest_data_item[0]["item_state"] == "READY"
+    assert dest_data_item[0]["item_size"] == RCLONE_TEST_FILE_SIZE
+    assert dest_data_item[0]["decompressed_size"] == RCLONE_TEST_FILE_SIZE
 
     # Test the filter on query migrations
     destination_storage_id = migration_record[0]["destination_storage_id"]

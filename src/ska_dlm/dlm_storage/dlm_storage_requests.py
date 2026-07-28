@@ -619,8 +619,10 @@ def rclone_remote_check(volume: str, config: dict | None = None) -> bool:
     return True
 
 
-def rclone_access(volume: str, remote_file_path: str = "", config: dict | None = None) -> bool:
-    """Check whether a configured backend or explicit filepath is accessible.
+def rclone_access(
+    volume: str, remote_file_path: str = "", config: dict | None = None
+) -> tuple[bool, str]:
+    """Check configured backend or explicit filepath is accessible and return its file stats.
 
     Parameters
     ----------
@@ -633,8 +635,8 @@ def rclone_access(volume: str, remote_file_path: str = "", config: dict | None =
 
     Returns
     -------
-    bool
-        True if access is allowed.
+    tuple[bool, str]
+        True if accessable, and the rclone file stats as a string.
     """
     url = random.choice(CONFIG.RCLONE)
     request_url = f"{url}/operations/stat"
@@ -649,8 +651,8 @@ def rclone_access(volume: str, remote_file_path: str = "", config: dict | None =
     request = requests.post(request_url, post_data, timeout=10, verify=False)
     if request.status_code != 200 or not request.json()["item"]:
         logger.warning("rclone can not access: %s, %s", request.status_code, request.json())
-        return False
-    return True
+        return False, None
+    return True, request.json()["item"]
 
 
 def rclone_delete(volume: str, fpath: str, item_type: str = "file") -> bool:
@@ -670,7 +672,8 @@ def rclone_delete(volume: str, fpath: str, item_type: str = "file") -> bool:
     bool
         True if successful
     """
-    if not rclone_access(volume, fpath):
+    has_access, _ = rclone_access(volume, fpath)
+    if not has_access:
         logger.error("Can't access %s on %s!", fpath, volume)
         return False
     url = random.choice(CONFIG.RCLONE)
@@ -766,7 +769,7 @@ def query_storage(storage_name: str = "", storage_id: str = "") -> list[dict]:
     list[dict]
         A list of storage locations matching the query criteria.
     """
-    params = {"limit": 1000}
+    params = {"limit": 1000, "select": "*,storage_config(config)"}
     if storage_name:
         params["storage_name"] = f"eq.{storage_name}"
     elif storage_id:
@@ -852,7 +855,9 @@ def delete_data_item_payload(uid: str, item_type: str = "file", item_name: str =
     storage = storages[0]
     config = get_storage_config(storage["storage_id"])[0]
     volume_name = f"{config['name']}:{config.get('root_path', '/')}"
-    if not rclone_access(volume_name):
+
+    has_access, _ = rclone_access(volume_name)
+    if not has_access:
         return False
     source_storage = query_storage(storage_id=storage["storage_id"])
     if not source_storage:

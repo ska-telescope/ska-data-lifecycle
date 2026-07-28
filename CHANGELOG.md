@@ -2,6 +2,8 @@
 
 ## Development
 
+* Add sizes to `register_data_item`
+
 ### Removed
 
 * All references to previous DB name `ska_dlm_meta`.
