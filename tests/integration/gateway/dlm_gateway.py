@@ -287,11 +287,11 @@ elif ENV_PROVIDER == "ENTRA":
 else:
     raise ValueError("Unknown Provider")
 
-ingest_client = httpx.AsyncClient(base_url=os.getenv("INGEST_CLIENT", "http://localhost:8001"))
-requests_client = httpx.AsyncClient(base_url=os.getenv("REQUESTS_CLIENT", "http://localhost:8002"))
-storage_client = httpx.AsyncClient(base_url=os.getenv("STORAGE_CLIENT", "http://localhost:8003"))
+ingest_client = httpx.AsyncClient(base_url=os.getenv("INGEST_CLIENT", "http://dlm_ingest"))
+requests_client = httpx.AsyncClient(base_url=os.getenv("REQUESTS_CLIENT", "http://dlm_request"))
+storage_client = httpx.AsyncClient(base_url=os.getenv("STORAGE_CLIENT", "http://dlm_storage"))
 migration_client = httpx.AsyncClient(
-    base_url=os.getenv("MIGRATION_CLIENT", "http://localhost:8004")
+    base_url=os.getenv("MIGRATION_CLIENT", "http://dlm_migration")
 )
 
 logger = logging.getLogger(__name__)

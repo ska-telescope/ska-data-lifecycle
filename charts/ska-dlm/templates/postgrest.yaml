@@ -78,15 +78,17 @@ spec:
       serviceAccountName: {{ printf "%s-postgrest" .Release.Name }}
       initContainers:
       {{- if index .Values "ska-db-migrations" "job" "enabled" }}
-        - name: wait-for-job
-          image: "bitnami/kubectl:latest"
+        - name: wait-for-migrations
+          image: "rancher/kubectl:v1.35.5"
+          imagePullPolicy: IfNotPresent
           command:
-            - /bin/sh
-            - -c
-            - |
-              echo "Waiting for job job/db-migrations-{{ .Release.Name }} to finish..."
-              # Polls the API server until the specific job status is complete
-              kubectl wait --namespace={{ .Release.Namespace }} --for=condition=complete --timeout=3000s job/db-migrations-{{ .Release.Name }}
+            - kubectl
+          args:
+            - wait
+            - --namespace={{ .Release.Namespace }}
+            - --for=condition=complete
+            - --timeout=3000s
+            - job/db-migrations-{{ .Release.Name }}
       {{- end }}
         - name: wait-for-postgres # works for either local or external PostgreSQL
           image: postgres:17.4

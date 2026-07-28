@@ -43,7 +43,12 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-origins = ["http://localhost", "http://localhost:5000", "http://localhost:8004"]
+origins = [
+    "http://localhost",
+    "http://localhost:5000",
+    "http://localhost:8004",
+    "http://dlm_migration.localhost",
+]
 
 MIGRATION_DATABASE_URL = os.getenv(
     "DLM_MIGRATION_DATABASE_URL",

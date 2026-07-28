@@ -38,15 +38,17 @@ spec:
       initContainers:
       # Have to use index as ska-db-migrations has a "-" which throws an error when using the dot notation
       {{- if index .Values "ska-db-migrations" "job" "enabled" }}
-        - name: wait-for-job
-          image: "bitnami/kubectl:latest"
+        - name: wait-for-migrations
+          image: "rancher/kubectl:v1.35.5"
+          imagePullPolicy: IfNotPresent
           command:
-            - /bin/sh
-            - -c
-            - |
-              echo "Waiting for job job/db-migrations-{{ .Release.Name }} to finish..."
-              # Polls the API server until the specific job status is complete
-              kubectl wait --namespace={{ .Release.Namespace }} --for=condition=complete --timeout=3000s job/db-migrations-{{ .Release.Name }}
+            - kubectl
+          args:
+            - wait
+            - --namespace={{ .Release.Namespace }}
+            - --for=condition=complete
+            - --timeout=3000s
+            - job/db-migrations-{{ .Release.Name }}
       {{- end }}
         - name: wait-for-postgres
           image: postgres:17.4
@@ -108,33 +110,33 @@ spec:
                   optional: true
 
       containers:
-      - name: heuristics
-        image: {{ .Values.heuristics.image}}:{{ .Values.heuristics.version }}
-        imagePullPolicy: {{ .Values.heuristics.imagePullPolicy }}
-        command:
-        - ska-dlm-heuristics
-        env:
-        {{- range $envvar_name := tuple "PGUSER" "PGPASSWORD" "PGHOST" "PGDATABASE" }}
-        - name: {{ $envvar_name }}
-          valueFrom:
-            secretKeyRef:
-              name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
-              key: {{ $envvar_name }}
-        {{- end }}
-        - name: PGPORT
-          valueFrom:
-            secretKeyRef:
-              name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
-              key: PGPORT
-              optional: true
-        - name: DATABASE_URL
-          value: "postgresql+asyncpg://$(PGUSER):$(PGPASSWORD)@$(PGHOST)/$(PGDATABASE)"
-        - name: DLM_HEURISTIC_POLL_INTERVAL
-          value: {{ .Values.heuristics.pollInterval | default 10 | quote}}
-        volumeMounts:
-        - name: dlm-configmap
-          mountPath: "/home/ska-dlm/.dlm"
-          readOnly: true
+        - name: heuristics
+          image: "{{ .Values.heuristics.image }}:{{ .Values.heuristics.version }}"
+          imagePullPolicy: {{ .Values.heuristics.imagePullPolicy }}
+          command:
+            - ska-dlm-heuristics
+          env:
+            {{- range $envvar_name := tuple "PGUSER" "PGPASSWORD" "PGHOST" "PGDATABASE" }}
+            - name: {{ $envvar_name }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
+                  key: {{ $envvar_name }}
+            {{- end }}
+            - name: PGPORT
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
+                  key: PGPORT
+                  optional: true
+            - name: DATABASE_URL
+              value: "postgresql+asyncpg://$(PGUSER):$(PGPASSWORD)@$(PGHOST)/$(PGDATABASE)"
+            - name: DLM_HEURISTIC_POLL_INTERVAL
+              value: {{ .Values.heuristics.pollInterval | default 10 | quote }}
+          volumeMounts:
+            - name: dlm-configmap
+              mountPath: "/home/ska-dlm/.dlm"
+              readOnly: true
       volumes:
         - name: dlm-configmap
           configMap:

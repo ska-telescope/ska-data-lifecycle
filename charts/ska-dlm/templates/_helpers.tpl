@@ -186,7 +186,7 @@ Database migrations job/configmap name.
 This must match the ska-db-migrations subchart naming convention.
 */}}
 {{- define "ska-dlm.db-migrations.name" -}}
-ska-dlm-db-migrations-{{ .Release.Name }}
+db-migrations-{{ .Release.Name }}
 {{- end -}}
 
 
