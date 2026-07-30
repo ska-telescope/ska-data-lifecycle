@@ -1,5 +1,5 @@
 include:
-- path: dlm.docker-compose.yaml
+  - path: dlm.docker-compose.yaml
 
 services:
   dlm_testrunner:
@@ -11,6 +11,7 @@ services:
        dockerfile: tests/Dockerfile-testrunner
     volumes:
       - shared-tmpfs:/dlm
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
       DATABASE_URL: "postgresql+asyncpg://ska_dlm_admin:password@dlm_db:5432/ska_dlm_testing"
       RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672/"
