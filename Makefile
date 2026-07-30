@@ -63,6 +63,9 @@ docker-post-test:
 
 # TODO: integration-test: # run only integration tests (...--entrypoint="pytest -m integration" ...)
 
+# keep containers running, for dev purposes
+all-tests-keep: docker-pre-test docker-do-test
+
 oci-build-gateway:
 	make oci-build OCI_IMAGE=ska-data-lifecycle-test-gateway \
 	OCI_IMAGE_FILE_PATH=tests/Dockerfile-gateway
