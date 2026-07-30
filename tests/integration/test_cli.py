@@ -8,7 +8,7 @@ from ska_dlm.cli import app
 runner = CliRunner()
 
 
-@pytest.mark.integration
+@pytest.mark.integration_test
 def test_cli_help():
     """Test CLI help loads."""
     runner.invoke(app, ["--help"])

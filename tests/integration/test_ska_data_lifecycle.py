@@ -78,7 +78,7 @@ def __initialise_data_item(env):
     assert success
 
 
-@pytest.mark.integration
+@pytest.mark.integration_test
 def test_register_data_item_with_metadata(env):
     """Test the register_data_item function with provided metadata."""
     uid = env.ingest_requests.register_data_item(
@@ -97,14 +97,14 @@ def test_register_data_item_with_metadata(env):
         )
 
 
-@pytest.mark.integration
+@pytest.mark.integration_test
 def test_query_expired_empty(env):
     """Test the query expired returning an empty set."""
     result = env.request_requests.query_expired()
     assert len(result) == 0
 
 
-@pytest.mark.integration
+@pytest.mark.integration_test
 def test_query_expired(env):
     """Test the query expired returning records."""
     if not isinstance(env, DlmTestClientLocal):
@@ -118,7 +118,7 @@ def test_query_expired(env):
     assert len(result) != 0
 
 
-@pytest.mark.integration
+@pytest.mark.integration_test
 def test_location_init(env, request):
     """Test initialisation on a location."""
     location_id = env.storage_requests.init_location("TestLocation", "low-integration")
@@ -131,7 +131,7 @@ def test_location_init(env, request):
     request.addfinalizer(cleanup)
 
 
-@pytest.mark.integration
+@pytest.mark.integration_test
 def test_location_init_with_invalid_facility(env):
     """Test that invalid location_facility raises a DatabaseOperationError."""
     with pytest.raises(DatabaseOperationError) as exc_info:
@@ -141,7 +141,7 @@ def test_location_init_with_invalid_facility(env):
     assert "foreign key" in str(exc_info.value).lower()
 
 
-@pytest.mark.integration
+@pytest.mark.integration_test
 def test_set_uri_state_phase(env):
     """Update a data_item record with the pointer to a file."""
     uid = env.ingest_requests.init_data_item(item_name="this/is/the/first/test/item")
@@ -157,7 +157,7 @@ def test_set_uri_state_phase(env):
 
 
 # TODO: We don't want RCLONE_TEST_FILE_PATH to disappear after one test run.
-@pytest.mark.integration
+@pytest.mark.integration_test
 def test_delete_item_payload(env):
     """Delete the payload of a data_item."""
     fpath = TEST_URI
@@ -198,7 +198,7 @@ def __get_migration(record, count=100):
     return migration_record
 
 
-@pytest.mark.integration
+@pytest.mark.integration_test
 def test_copy(env: DlmTestClient):
     """Copy a test file from one storage to another."""
     # Integration tests like test_copy relies on the DLM manager services running
@@ -259,7 +259,7 @@ def test_copy(env: DlmTestClient):
     assert len(migrations) == 1
 
 
-@pytest.mark.integration
+@pytest.mark.integration_test
 def test_copy_failed(env: DlmTestClient):
     """Check the data item is removed from db on rclone failure."""
     # NOTE: this test will not work without requests being made via a gateway
@@ -288,7 +288,7 @@ def test_copy_failed(env: DlmTestClient):
     assert not data_item_record
 
 
-@pytest.mark.integration
+@pytest.mark.integration_test
 def test_copy_container(env):
     """Copy a container from one storage to another."""
     # NOTE: this test will not work without requests being made via a gateway
@@ -354,7 +354,7 @@ def test_copy_container(env):
     assert result[0]["job_stats"]["bytes"] == len(file1_data) + len(file2_data)
 
 
-@pytest.mark.integration
+@pytest.mark.integration_test
 def test_update_item_tags(env):
     """Update the item_tags field of a data_item."""
     _ = env.ingest_requests.register_data_item(
@@ -374,7 +374,7 @@ def test_update_item_tags(env):
     assert tags == {"a": "SKA", "b": "DLM", "c": "Hello", "d": "World"}
 
 
-@pytest.mark.integration
+@pytest.mark.integration_test
 def test_update_item_tags_exception(env):
     """Update the item_tags field of a data_item."""
     _ = env.ingest_requests.register_data_item(
@@ -388,7 +388,7 @@ def test_update_item_tags_exception(env):
     assert [] == env.data_item_requests.query_data_item(item_name="/my/ingest/test/missing")
 
 
-@pytest.mark.integration
+@pytest.mark.integration_test
 def test_expired_by_storage_daemon(env):
     """Test an expired data item is deleted by the storage manager."""
     fname = TEST_URI
@@ -421,7 +421,7 @@ def test_expired_by_storage_daemon(env):
     assert result[0]["uid"] == uid
 
 
-@pytest.mark.integration
+@pytest.mark.integration_test
 def test_populate_metadata_col(env):
     """Test that the metadata is correctly saved to the metadata column."""
     # Register data item with metadata
@@ -443,7 +443,7 @@ def test_populate_metadata_col(env):
     assert isinstance(metadata_dict_from_db["execution_block"], str)
 
 
-@pytest.mark.integration
+@pytest.mark.integration_test
 def test_query_migration(env: DlmTestClient):
     """Test that query migration returns an empty set."""
     result = env.migration_requests.query_migrations()
