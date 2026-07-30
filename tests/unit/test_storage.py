@@ -1,11 +1,10 @@
 #!/usr/bin/env python
-
 """Unit tests for dlm_storage."""
-
 
 import pytest
 
 from ska_dlm import CONFIG, dlm_storage
+from ska_dlm.common_types import LocationType, StorageInterface, StorageType
 from ska_dlm.dlm_db.db_access import DB
 from ska_dlm.exceptions import InvalidQueryParameters
 
@@ -13,7 +12,7 @@ from ska_dlm.exceptions import InvalidQueryParameters
 def test_location_init(request):
     """Test initialisation on a location."""
     # Successful initialisation
-    location_id = dlm_storage.init_location("TestLocation1", "low-integration")
+    location_id = dlm_storage.init_location("TestLocation1", LocationType.LOW_INTEGRATION)
     location = dlm_storage.query_location(location_name="TestLocation1")[0]
     assert location["location_type"] == "low-integration"
 
@@ -22,7 +21,7 @@ def test_location_init(request):
         dlm_storage.init_location(location_name="TestLocation2", location_type="")
 
     with pytest.raises(InvalidQueryParameters):
-        dlm_storage.init_location(location_name="", location_type="low-integration")
+        dlm_storage.init_location(location_name="", location_type=LocationType.LOW_INTEGRATION)
 
     def cleanup():
         DB.delete(CONFIG.DLM.location_table, params={"location_id": f"eq.{location_id}"})
@@ -36,15 +35,15 @@ def test_initialise_storage_config(request):
     if location:
         location_id = location[0]["location_id"]
     else:
-        location_id = dlm_storage.init_location("MyHost", "low-integration")
+        location_id = dlm_storage.init_location("MyHost", LocationType.LOW_INTEGRATION)
     assert len(location_id) == 36
     config = {"name": "MyDisk2", "type": "local", "root_path": "", "parameters": {}}
     uuid = dlm_storage.init_storage(
         storage_name="MyDisk2",
         location_id=location_id,
         root_directory="/dlm/MyDisk2/",
-        storage_type="filesystem",
-        storage_interface="posix",
+        storage_type=StorageType.FILESYSTEM,
+        storage_interface=StorageInterface.POSIX,
         storage_capacity=100000000,
     )
     assert len(uuid) == 36
@@ -63,15 +62,15 @@ def test_initialise_storage_config(request):
 
 def test_invalid_storage_type(request):
     """Test that an invalid storage_type raises a ValueError."""
-    location_id = dlm_storage.init_location("MyHostInvalid", "low-integration")
+    location_id = dlm_storage.init_location("MyHostInvalid", LocationType.LOW_INTEGRATION)
 
     with pytest.raises(ValueError) as exc_info:
         dlm_storage.init_storage(
             storage_name="MyDiskInvalid",
             location_id=location_id,
             root_directory="/dlm/",
-            storage_type="disk",  # Invalid enum
-            storage_interface="posix",
+            storage_type="disk",  # Invalid enum (intentional)
+            storage_interface=StorageInterface.POSIX,
             storage_capacity=100000000,
         )
     assert "Invalid storage type disk" in str(exc_info.value)

@@ -9,6 +9,7 @@ import inflect
 import pytest
 
 from ska_dlm import CONFIG, data_item
+from ska_dlm.common_types import ItemState, PhaseType
 from ska_dlm.dlm_db.db_access import DB
 from ska_dlm.dlm_ingest.dlm_ingest_requests import ItemType
 from ska_dlm.exceptions import DatabaseOperationError, InvalidQueryParameters, ValueAlreadyInDB
@@ -113,7 +114,7 @@ def test_query_expired(env):
     __initialise_data_item(env)
     uid = env.data_item_requests.query_data_item()[0]["uid"]
     offset = datetime.timedelta(days=1)
-    data_item.set_state(uid=uid, state="READY")
+    data_item.set_state(uid=uid, state=ItemState.READY)
     result = env.request_requests.query_expired(offset)
     assert len(result) != 0
 
@@ -148,8 +149,8 @@ def test_set_uri_state_phase(env):
     storage_id = env.storage_requests.query_storage(storage_name="local")[0]["storage_id"]
     data_item.set_uri(uid, TEST_URI, storage_id)
     assert env.data_item_requests.query_data_item(uid=uid)[0]["uri"] == TEST_URI
-    data_item.set_state(uid, "READY")
-    data_item.set_phase(uid, "PLASMA")
+    data_item.set_state(uid, ItemState.READY)
+    data_item.set_phase(uid, PhaseType.PLASMA)
     items = env.data_item_requests.query_data_item(uid=uid)
     assert len(items) == 1
     assert items[0]["item_state"] == "READY"
@@ -163,7 +164,7 @@ def test_delete_item_payload(env):
     fpath = TEST_URI
     storage_id = env.storage_requests.query_storage(storage_name="local")[0]["storage_id"]
     uid = env.ingest_requests.register_data_item(item_name=fpath, uri=fpath, storage_name="local")
-    data_item.set_state(uid, "READY")
+    data_item.set_state(uid, ItemState.READY)
     data_item.set_uri(uid, fpath, storage_id)
     queried_uid = env.data_item_requests.query_data_item(item_name=fpath)[0]["uid"]
     assert uid == queried_uid
@@ -402,15 +403,14 @@ def test_expired_by_storage_daemon(env):
 
     # add an item, and expire immediately
     uid = env.ingest_requests.register_data_item(item_name=fname, uri=fname, storage_name="local")
-    data_item.set_state(uid=uid, state="READY")
+    data_item.set_state(uid=uid, state=ItemState.READY)
     data_item.set_uid_expiration(uid, "2000-01-01")
 
     # check the expired item was found
     result = env.request_requests.query_expired()
     assert len(result) == 1
 
-    # run storage daemon code
-    # TODO: not a client endpoint
+    # TODO: expire uid's and let heuristics delete it
     # pylint: disable-next=import-outside-toplevel
     from ska_dlm.dlm_storage.dlm_storage_requests import delete_uids
 
