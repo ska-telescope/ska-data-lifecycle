@@ -37,25 +37,31 @@ export KUBE_NAMESPACE K8S_HOST_URL SHARED_VOLUMES_DIR
 docs-pre-build: ## setup the document build environment.
 	poetry install --only main,docs
 
-# Need to fix the python-tests to not depend on local services
+# make python-test runs only unit tests
 python-test: python-pre-test python-do-test python-post-test
 
 python-pre-test:
-	docker compose --file tests/testrunner.docker-compose.yaml -p dlm-test-services build
+	docker compose --file tests/testrunner.docker-compose.yaml -p tests build
 
 python-do-test:
-	docker compose --file tests/testrunner.docker-compose.yaml -p dlm-test-services run --rm --entrypoint="pytest --ignore tests/integration" dlm_testrunner
+	docker compose --file tests/testrunner.docker-compose.yaml -p tests run --rm --entrypoint="pytest --ignore tests/integration" dlm_testrunner
 
 python-post-test:
-	docker compose --file tests/testrunner.docker-compose.yaml -p dlm-test-services down
+	docker compose --file tests/testrunner.docker-compose.yaml -p tests down
 
+# make docker-test runs all tests
 docker-test: docker-pre-test docker-do-test docker-post-test
+
 docker-pre-test:
-	docker compose --file tests/testrunner.docker-compose.yaml -p dlm-test-services build
+	docker compose --file tests/testrunner.docker-compose.yaml -p tests build
+
 docker-do-test:
-	docker compose --file tests/testrunner.docker-compose.yaml -p dlm-test-services run dlm_testrunner
+	docker compose --file tests/testrunner.docker-compose.yaml -p tests run dlm_testrunner
+
 docker-post-test:
-	docker compose --file tests/testrunner.docker-compose.yaml -p dlm-test-services down
+	docker compose --file tests/testrunner.docker-compose.yaml -p tests down
+
+# TODO: integration-test: # run only integration tests (...--entrypoint="pytest -m integration" ...)
 
 oci-build-gateway:
 	make oci-build OCI_IMAGE=ska-data-lifecycle-test-gateway \
