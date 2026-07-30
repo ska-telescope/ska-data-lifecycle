@@ -82,9 +82,8 @@ myst-parser = "^4.0.0"
 sphinxcontrib-openapi = ">=0.8.4"
 
 [tool.pytest.ini_options]
-addopts = [
-    "--integration-cover",
-    "-v",
+markers = [
+    "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
 ]
 asyncio_mode = "auto"
 log_cli_level = "INFO"

@@ -80,7 +80,7 @@ async def session(connection) -> AsyncGenerator[AsyncSession, None]:
 
 
 # pylint: disable=too-few-public-methods, redefined-outer-name
-@pytest.mark.integration_test
+@pytest.mark.integration
 class TestLocation:
     """Test Location model."""
 
@@ -104,7 +104,7 @@ class TestLocation:
 
 
 # pylint: disable=too-few-public-methods
-@pytest.mark.integration_test
+@pytest.mark.integration
 class TestStorage:
     """Test Storage model."""
 
@@ -139,7 +139,7 @@ class TestStorage:
 
 
 # pylint: disable=too-few-public-methods
-@pytest.mark.integration_test
+@pytest.mark.integration
 class TestStorageConfig:
     """Test StorageConfig model."""
 
@@ -177,7 +177,7 @@ class TestStorageConfig:
 
 
 # pylint: disable=too-few-public-methods
-@pytest.mark.integration_test
+@pytest.mark.integration
 class TestDataItem:
     """Test DataItem model."""
 
@@ -222,7 +222,7 @@ class TestDataItem:
 
 
 # pylint: disable=too-few-public-methods
-@pytest.mark.integration_test
+@pytest.mark.integration
 class TestMigration:
     """Test Migration model."""
 
@@ -267,7 +267,7 @@ class TestMigration:
         assert migration.destination_storage_id == dest_storage.storage_id
 
 
-@pytest.mark.integration_test
+@pytest.mark.integration
 class TestRelationships:
     """Test relationships between models."""
 
