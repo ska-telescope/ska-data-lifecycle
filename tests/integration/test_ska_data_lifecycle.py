@@ -41,7 +41,7 @@ def _clear_database():
 def setup_auth(env, request):
     """Initialise Auth per session."""
     # this should only run once per test suite
-    if request.config.getoption("--auth"):
+    if request.config.getoption("--auth") == "1":
         token = get_token("admin", "admin", env.get_gateway_url())
         token = token["access_token"]
         env.request_requests.TOKEN = token

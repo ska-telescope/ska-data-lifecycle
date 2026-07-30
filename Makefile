@@ -61,7 +61,17 @@ docker-do-test:
 docker-post-test:
 	docker compose --file tests/testrunner.docker-compose.yaml -p tests down
 
-# TODO: integration-test: # run only integration tests (...--entrypoint="pytest -m integration" ...)
+integration-test: integration-pre-test integration-do-test integration-post-test
+
+integration-pre-test:
+	docker compose --file tests/testrunner.docker-compose.yaml -p tests build
+
+integration-do-test:
+	docker compose --file tests/testrunner.docker-compose.yaml -p tests \
+		run --rm --entrypoint="pytest --env docker --auth 1 tests/integration" dlm_testrunner
+
+integration-post-test:
+	docker compose --file tests/testrunner.docker-compose.yaml -p tests down
 
 # keep containers running, for dev purposes
 all-tests-keep: docker-pre-test docker-do-test
