@@ -298,3 +298,5 @@ archive:
   version: "latest"
   imagePullPolicy: Always
   replicas: 1
+  storage_pvc_name: "shared"
+  storage_pvc_mount_path: "/dlm"
