@@ -18,18 +18,21 @@ In addition we have implemented an AAA API gateway to enable testing of the auth
 
 For more detailed information, see [ReadTheDocs](https://developer.skao.int/projects/ska-data-lifecycle/en/latest/?badge=latest)
 
-## Installation
-This repository contains Helm charts for deploying the DLM services, including an optional PostgreSQL database. While the DLM is designed to run in an operational environment using SKAO-managed services (e.g., a high-availability database and central authentication), the provided Helm charts support deployment in non-production contexts for evaluation and development-adjacent workflows.
+# Installation
+
+This repository contains Helm charts for deploying the DLM services, including an optional PostgreSQL database. While the DLM is designed to run in an operational environment using SKAO-managed services (for example, a high-availability database and central authentication), the provided Helm charts support deployment in non-production environments for evaluation and development.
+
 For full instructions on how to deploy the DLM using Helm see [charts/README.md](./charts/ska-dlm/README.md).
 
-## SKA-DLM evaluation environment
+# Evaluation environment
 
 If you want to start all the services locally for evaluation purposes you can use the command:
 
 ```bash
 docker compose --file tests/dlm.docker-compose.yaml up
 ```
-That also enables all the REST interfaces and they can be explored on their individual ports by opening browser pages:
+
+This starts the complete DLM stack and exposes the REST APIs at:
 
 - http://localhost:8000/docs for the AAA API gateway
 - http://dlm_ingest.localhost/docs for the Ingest Manager REST API
@@ -37,17 +40,17 @@ That also enables all the REST interfaces and they can be explored on their indi
 - http://dlm_storage.localhost/docs for the Storage Manager service REST API
 - http://dlm_migration.localhost/docs for the Migration Manager REST API
 
- To stop that environment again use the command:
+To stop the evaluation environment:
 
- ```bash
- docker compose --file tests/dlm.docker-compose.yaml down
- ```
+```bash
+docker compose --file tests/dlm.docker-compose.yaml down
+```
 
-## Testing
+# Development and testing
 
-For local development, the full test suite can be executed using Docker Compose, without requiring a Kubernetes environment.
+For local development, the full test suite can be executed using Docker Compose without requiring a Kubernetes environment.
 
-### Local setup
+## Local setup
 
 Clone the repository, including its submodules:
 
@@ -63,43 +66,40 @@ poetry install
 poetry shell
 ```
 
-### Run unit tests
+## Run unit tests
 
-Run the unit test suite using the command:
+Run the unit test suite (no integration tests):
 
 ```bash
 make python-test
 ```
 
-### Run the full test suite
 
-Run both the unit and integration test suites using the Docker Compose test environment:
+## Run the full test suite
 
 ```bash
 make docker-test
 ```
 
-This will build the required Docker images, start the test services, execute all tests, and then tear the test environment down.
+Builds the Docker test environment, runs both the unit and integration tests, and then tears the environment down.
 
-### Run integration tests only
-
-To execute only the integration tests:
+## Run integration tests
 
 ```bash
 make integration-test
 ```
 
-This will build the required Docker images, start the test services, execute only the integration tests, and then tear the test environment down.
+Builds the Docker test environment, runs only the integration tests, and then tears the environment down.
 
-### Manual Docker Compose
+## Manual Docker Compose
 
-The Make targets above are the recommended way to run the test suite. However, the Docker Compose environment can also be started manually during development:
+The Make targets above are the recommended way to run the test suite. The underlying Docker Compose environment can also be started manually during development:
 
 ```bash
-docker compose -f tests/testrunner.docker-compose.yaml -p tests up -d
+docker compose --file tests/testrunner.docker-compose.yaml -p tests up -d
 ```
 
-This command starts all services required for the integration test environment, including the test PostgreSQL database. During startup, the Storage Manager automatically creates the `SKA-DEV` location endpoint and the `dlm-archive` storage endpoint from the supplied configuration files.
+This starts all services required for the integration test environment, including the test PostgreSQL database. During startup, the Storage Manager automatically creates the `SKA-DEV` location endpoint and the `dlm-archive` storage endpoint from the supplied configuration files.
 
 The test suite can then be executed manually:
 
@@ -107,10 +107,10 @@ The test suite can then be executed manually:
 docker compose --file tests/testrunner.docker-compose.yaml -p tests run dlm_testrunner
 ```
 
-When finished, the environment can be stopped with:
+When finished, tear the environment down with:
 
 ```bash
-docker compose -f tests/testrunner.docker-compose.yaml -p tests down
+docker compose --file tests/testrunner.docker-compose.yaml -p tests down
 ```
 
 #### FastAPI and Authentication

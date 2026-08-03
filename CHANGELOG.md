@@ -2,8 +2,9 @@
 
 ## Development
 
-* Add appropriate Pod dependencies.
-* Add sizes to `register_data_item`
+### Changed
+
+* The test stack name from `dlm-test-services` to `tests`.
 
 ### Removed
 
@@ -11,10 +12,13 @@
 
 ### Updated
 
-* Upgraded ska-db-migrations to 0.9.1
+* Upgraded ska-db-migrations to 0.9.1.
 
 ### Added
 
+* Make targets `integration-test` and `all-tests-keep`.
+* Appropriate Pod dependencies.
+* Sizes to `register_data_item`.
 * A reverse proxy to the docker-compose deployment and changed default ports to 80
 * Transactional Outbox Pattern with RabbitMQ
 * Support to delete container tree hierarchies
