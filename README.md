@@ -44,20 +44,18 @@ That also enables all the REST interfaces and they can be explored on their indi
  ```
 
 ## Testing
-In order to support mutiple test environments, the DLM can be build and deployed in a variety of ways, depending on the use case and scenario.
 
-### Test against Docker Compose
-For code developers all tests can be executed without having to rely on the complexity of the Kubernetes environment.
+For local development, the full test suite can be executed using Docker Compose, without requiring a Kubernetes environment.
 
-#### Run full test suite locally
+### Local setup
 
-Python testing is available on the local machine using poetry virtual environments. First clone the repo:
+Clone the repository, including its submodules:
 
 ```bash
 git clone --recurse-submodules https://gitlab.com/ska-telescope/ska-data-lifecycle.git
 ```
 
-Then install the package and enter a poetry shell:
+Install the project and its dependencies using Poetry:
 
 ```bash
 cd ska-data-lifecycle
@@ -65,36 +63,54 @@ poetry install
 poetry shell
 ```
 
-Subsequently, the tests can be executed using the command:
+### Run unit tests
+
+Run the unit test suite using the command:
 
 ```bash
 make python-test
 ```
 
-#### Run tests using a Docker Testrunner
+### Run the full test suite
 
-A test runner Dockerfile is provided to support local development with packages that may be difficult to install. The following command will run the same python tests inside docker containers:
-```sh
+Run both the unit and integration test suites using the Docker Compose test environment:
+
+```bash
 make docker-test
 ```
 
-#### Manual
+This will build the required Docker images, start the test services, execute all tests, and then tear the test environment down.
 
-Alternatively, the following relevant docker compose commands can be mixed and matched to achieve the same result as the above make targets:
+### Run integration tests only
 
+To execute only the integration tests:
 
-```sh
-# Rebuild any changed Dockerfile dependencies
-docker compose -f tests/testrunner.docker-compose.yaml -p dlm-test-services build
+```bash
+make integration-test
+```
 
-# Run the test runner
-docker compose -f tests/testrunner.docker-compose.yaml -p dlm-test-services run dlm_testrunner
+This will build the required Docker images, start the test services, execute only the integration tests, and then tear the test environment down.
 
-# Or run tests locally
-pytest --env local
+### Manual Docker Compose
 
-# Teardown any remaining services
-docker compose -f tests/testrunner.docker-compose.yaml -p dlm-test-services down
+The Make targets above are the recommended way to run the test suite. However, the Docker Compose environment can also be started manually during development:
+
+```bash
+docker compose -f tests/testrunner.docker-compose.yaml -p tests up -d
+```
+
+This command starts all services required for the integration test environment, including the test PostgreSQL database. During startup, the Storage Manager automatically creates the `SKA-DEV` location endpoint and the `dlm-archive` storage endpoint from the supplied configuration files.
+
+The test suite can then be executed manually:
+
+```bash
+docker compose --file tests/testrunner.docker-compose.yaml -p tests run dlm_testrunner
+```
+
+When finished, the environment can be stopped with:
+
+```bash
+docker compose -f tests/testrunner.docker-compose.yaml -p tests down
 ```
 
 #### FastAPI and Authentication
