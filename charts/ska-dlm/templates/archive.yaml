@@ -75,7 +75,7 @@ spec:
           value: "/dlm/.ssh/id_rsa.pub"
         volumeMounts:
           - name: shared-storage
-            mountPath: /dlm
+            mountPath: {{ .Values.archive.storage_pvc_mount_path }}
         lifecycle:
             postStart:
               exec:
@@ -93,4 +93,4 @@ spec:
       volumes:
       - name: shared-storage
         persistentVolumeClaim:
-          claimName: {{ .Values.global.sharedpvc.pvc.name }}
+          claimName: {{ .Values.archive.storage_pvc_name }}

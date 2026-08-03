@@ -2,6 +2,7 @@
 
 ## Development
 
+* Add appropriate Pod dependencies.
 * Add sizes to `register_data_item`
 
 ### Removed
