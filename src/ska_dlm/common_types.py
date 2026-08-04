@@ -5,6 +5,15 @@
 from enum import Enum
 
 
+class LocationName(str, Enum):
+    """Location names."""
+
+    LOCAL_DEV = "SKA-DEV"
+    INTEGRATION = "SKA-INT"
+    SKA_LOW = "SKA-low"
+    SKA_MID = "SKA-mid"
+
+
 class LocationType(str, Enum):
     """Location type."""
 

@@ -19,17 +19,20 @@ In addition we have implemented an AAA API gateway to enable testing of the auth
 For more detailed information, see [ReadTheDocs](https://developer.skao.int/projects/ska-data-lifecycle/en/latest/?badge=latest)
 
 ## Installation
-This repository contains Helm charts for deploying the DLM services, including an optional PostgreSQL database. While the DLM is designed to run in an operational environment using SKAO-managed services (e.g., a high-availability database and central authentication), the provided Helm charts support deployment in non-production contexts for evaluation and development-adjacent workflows.
+
+This repository contains Helm charts for deploying the DLM services, including an optional PostgreSQL database. While the DLM is designed to run in an operational environment using SKAO-managed services (for example, a high-availability database and central authentication), the provided Helm charts support deployment in non-production environments for evaluation and development.
+
 For full instructions on how to deploy the DLM using Helm see [charts/README.md](./charts/ska-dlm/README.md).
 
-## SKA-DLM evaluation environment
+## Evaluation environment
 
 If you want to start all the services locally for evaluation purposes you can use the command:
 
 ```bash
 docker compose --file tests/dlm.docker-compose.yaml up
 ```
-That also enables all the REST interfaces and they can be explored on their individual ports by opening browser pages:
+
+This starts the complete DLM stack and exposes the REST APIs at:
 
 - http://localhost:8000/docs for the AAA API gateway
 - http://dlm_ingest.localhost/docs for the Ingest Manager REST API
@@ -37,27 +40,25 @@ That also enables all the REST interfaces and they can be explored on their indi
 - http://dlm_storage.localhost/docs for the Storage Manager service REST API
 - http://dlm_migration.localhost/docs for the Migration Manager REST API
 
- To stop that environment again use the command:
+To stop the evaluation environment:
 
- ```bash
- docker compose --file tests/dlm.docker-compose.yaml down
- ```
+```bash
+docker compose --file tests/dlm.docker-compose.yaml down
+```
 
-## Testing
-In order to support mutiple test environments, the DLM can be build and deployed in a variety of ways, depending on the use case and scenario.
+## Development and testing
 
-### Test against Docker Compose
-For code developers all tests can be executed without having to rely on the complexity of the Kubernetes environment.
+For local development, the full test suite can be executed using Docker Compose without requiring a Kubernetes environment.
 
-#### Run full test suite locally
+### Local setup
 
-Python testing is available on the local machine using poetry virtual environments. First clone the repo:
+Clone the repository, including its submodules:
 
 ```bash
 git clone --recurse-submodules https://gitlab.com/ska-telescope/ska-data-lifecycle.git
 ```
 
-Then install the package and enter a poetry shell:
+Install the project and its dependencies using Poetry:
 
 ```bash
 cd ska-data-lifecycle
@@ -65,63 +66,67 @@ poetry install
 poetry shell
 ```
 
-Subsequently, the tests can be executed using the command:
+### Run unit tests
+
+Run the unit test suite (excluding integration tests):
 
 ```bash
 make python-test
 ```
 
-#### Run tests using a Docker Testrunner
+### Run the full test suite
 
-A test runner Dockerfile is provided to support local development with packages that may be difficult to install. The following command will run the same python tests inside docker containers:
-```sh
+```bash
 make docker-test
 ```
 
-#### Manual
+Builds the Docker test environment, runs both the unit and integration tests, and then tears the environment down.
 
-Alternatively, the following relevant docker compose commands can be mixed and matched to achieve the same result as the above make targets:
+### Run integration tests
 
-
-```sh
-# Rebuild any changed Dockerfile dependencies
-docker compose -f tests/testrunner.docker-compose.yaml -p dlm-test-services build
-
-# Run the test runner
-docker compose -f tests/testrunner.docker-compose.yaml -p dlm-test-services run dlm_testrunner
-
-# Or run tests locally
-pytest --env local
-
-# Teardown any remaining services
-docker compose -f tests/testrunner.docker-compose.yaml -p dlm-test-services down
+```bash
+make integration-test
 ```
 
-#### FastAPI and Authentication
+Builds the Docker test environment, runs only the integration tests, and then tears the environment down.
+
+### Development mode
+
+The underlying Docker test environment can be started manually without running any tests:
+
+```bash
+make all-services-up
+```
+
+This starts all services required for the integration test environment, including the test PostgreSQL database, but excluding the `dlm_testrunner` container. During startup, the Storage Manager automatically creates the `SKA-DEV` location endpoint and the `dlm-archive` storage endpoint from the supplied configuration files.
+
+Tests can then be run manually, for example:
+
+```bash
+docker compose --file tests/testrunner.docker-compose.yaml -p tests \
+  run --rm --no-deps dlm_testrunner
+```
+
+When finished, tear the environment down with:
+
+```bash
+make all-services-down
+```
+
+### FastAPI and Authentication
 
 The REST requests issued through the test environment to DLM services are proxied through the `dlm_gateway`.
 
 The `dlm_gateway` checks the destination, unpacks the token and checks the permissions based on the user profile.
 
-If the user has the correct permission then the REST call will be proxied to the correct DLM service. If unauthorised a HTTP 401 or 403 error will be returned.
+If the user is authorised, the request is proxied to the appropriate DLM service. Unauthorised requests return an HTTP 401 or 403 response.
 
-To run manually:
+Authentication is enabled by default in the test environment.
 
-```sh
-# Rebuild any changed Dockerfile dependencies
-docker compose -f tests/services.docker-compose.yaml -p dlm-test-services build
-
-# Run services
-docker compose -f tests/services.docker-compose.yaml -p dlm-test-services up
-
-# Or run tests locally
-pytest --env local --auth 1
-
-```
 
 To turn off authentication:
 * In `services.docker-compose.yaml`, section `dlm_gateway`, set `AUTH: "0"`.
-* Run tests: `pytest --env local --auth 0`
+* Rebuild the services, then run tests, e.g. manually: `pytest --env local --auth 0` (TODO: DMAN-310)
 
 
 ### Test against the Helm chart

@@ -19,7 +19,7 @@ FROM python:${PYTHON_VERSION}-slim AS dlm_runtime
 
 RUN apt-get update && apt-get install -y rclone
 
-# # Best practice not to run as root
+# Best practice not to run as root
 RUN useradd ska-dlm
 USER ska-dlm
 
@@ -30,4 +30,3 @@ ENV PATH="/app/.venv/bin:${PATH}"
 COPY ./tests/volumes/config-dockercompose.yaml /home/ska-dlm/.dlm/config.yaml
 COPY ./tests/storage-config.json /home/ska-dlm/.dlm/storage-config.json
 COPY ./tests/location-config.json /home/ska-dlm/.dlm/location-config.json
-CMD ["ska-dlm-sm-service"]

@@ -13,6 +13,7 @@ from fastapi.responses import JSONResponse
 import ska_dlm
 from ska_dlm.common_types import (
     ConfigType,
+    ItemState,
     LocationCountry,
     LocationType,
     PhaseType,
@@ -873,7 +874,7 @@ def delete_data_item_payload(uid: str, item_type: str = "file", item_name: str =
             item_type,
         )
         return False
-    set_state(uid, "DELETED")
+    set_state(uid, ItemState.DELETED)
     logger.info("Deleted %s %s from %s", item_name, uid, volume_name)
     return True
 

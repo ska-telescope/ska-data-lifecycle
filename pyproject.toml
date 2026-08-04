@@ -18,7 +18,6 @@ packages = [{include="ska_dlm", from="src"}]
 
 [tool.poetry.scripts]
 ska-dlm = "ska_dlm.cli_entrypoint:main"
-ska-dlm-sm-service = "ska_dlm.dlm_storage.main:main"
 ska-dlm-heuristics = "ska_dlm.dlm_heuristics:main"
 
 [[tool.poetry.source]]
@@ -82,10 +81,6 @@ myst-parser = "^4.0.0"
 sphinxcontrib-openapi = ">=0.8.4"
 
 [tool.pytest.ini_options]
-addopts = [
-    "--integration-cover",
-    "-v",
-]
 asyncio_mode = "auto"
 log_cli_level = "INFO"
 log_cli_format = "1|%(asctime)s.%(msecs)03dZ|%(levelname)s|%(threadName)s|%(funcName)s|%(filename)s#%(lineno)d||%(message)s"
