@@ -4,7 +4,7 @@
 
 ### Changed
 
-* The test stack name from `dlm-test-services` to `tests`.
+* Renamed the test stack from `dlm-test-services` to `tests`.
 
 ### Removed
 
@@ -12,11 +12,12 @@
 
 ### Updated
 
+* README
 * Upgraded ska-db-migrations to 0.9.1.
 
 ### Added
 
-* Make targets `integration-test` and `all-tests-keep`.
+* Make targets `integration-test`, `all-tests-keep` and `all-services-up`.
 * Appropriate Pod dependencies.
 * Sizes to `register_data_item`.
 * A reverse proxy to the docker-compose deployment and changed default ports to 80

@@ -37,7 +37,7 @@ export KUBE_NAMESPACE K8S_HOST_URL SHARED_VOLUMES_DIR
 docs-pre-build: ## setup the document build environment.
 	poetry install --only main,docs
 
-# make python-test runs only unit tests
+# `make python-test` runs only unit tests
 python-test: python-pre-test python-do-test python-post-test
 
 python-pre-test:
@@ -49,7 +49,7 @@ python-do-test:
 python-post-test:
 	docker compose --file tests/testrunner.docker-compose.yaml -p tests down
 
-# make docker-test runs all tests
+# `make docker-test` runs all tests
 docker-test: docker-pre-test docker-do-test docker-post-test
 
 docker-pre-test:
@@ -61,6 +61,7 @@ docker-do-test:
 docker-post-test:
 	docker compose --file tests/testrunner.docker-compose.yaml -p tests down
 
+# `make integration-test` runs only the integration tests
 integration-test: integration-pre-test integration-do-test integration-post-test
 
 integration-pre-test:
@@ -75,6 +76,15 @@ integration-post-test:
 
 # keep containers running, for dev purposes
 all-tests-keep: docker-pre-test docker-do-test
+
+# bring up all containers without running any tests
+all-services-up:
+	docker compose --file tests/testrunner.docker-compose.yaml -p tests \
+		up -d --scale dlm_testrunner=0
+
+all-services-down:
+	docker compose --file tests/testrunner.docker-compose.yaml -p tests down
+
 
 oci-build-gateway:
 	make oci-build OCI_IMAGE=ska-data-lifecycle-test-gateway \
