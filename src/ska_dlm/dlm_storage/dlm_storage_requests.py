@@ -590,6 +590,7 @@ def check_storage_access(
     return has_access
 
 
+@rest.get("/storage/rclone_access", response_model=tuple[bool, str])
 def rclone_access(
     volume: str, remote_file_path: str = "", config: dict | None = None
 ) -> tuple[bool, str]:
