@@ -16,8 +16,8 @@ class _MockResp:
         return self._payload
 
 
-def test_rclone_remote_check_success_no_config(monkeypatch):
-    """rclone_remote_check returns True when remote /about responds 200."""
+def test_rclone_access_success_no_config(monkeypatch):
+    """rclone_access returns True and the item payload when the remote responds 200."""
     urls = ["http://rclone-server.local"]
     monkeypatch.setattr(ds, "CONFIG", types.SimpleNamespace(RCLONE=urls))
 
@@ -29,22 +29,23 @@ def test_rclone_remote_check_success_no_config(monkeypatch):
         recorded["post_data"] = post_data
         recorded["timeout"] = timeout
         recorded["verify"] = verify
-        return _MockResp(200, {"status": "ok"})
+        return _MockResp(200, {"item": {"name": "myvolume"}})
 
     monkeypatch.setattr(ds.requests, "post", fake_post)
 
-    result = ds.rclone_remote_check("myvolume")
+    result, item = ds.rclone_access(volume="myvolume")
 
     assert result is True
-    assert recorded["url"].endswith("/operations/about")
-    # when no config is provided, the helper posts {'fs': volume}
-    assert recorded["post_data"] == {"fs": "myvolume"}
+    assert item == {"name": "myvolume"}
+    assert recorded["url"].endswith("/operations/stat")
+    # when no config is provided, the helper posts {'fs': volume, 'remote': ''}
+    assert recorded["post_data"] == {"fs": "myvolume", "remote": ""}
     assert recorded["timeout"] == 10
     assert recorded["verify"] is False
 
 
-def test_rclone_remote_check_failure_logs_warning(monkeypatch, caplog):
-    """rclone_remote_check returns False and logs when remote returns non-200."""
+def test_rclone_access_failure_logs_warning(monkeypatch, caplog):
+    """rclone_access returns False and logs when the remote returns non-200."""
     urls = ["http://rclone-server.local"]
     monkeypatch.setattr(ds, "CONFIG", types.SimpleNamespace(RCLONE=urls))
 
@@ -54,8 +55,8 @@ def test_rclone_remote_check_failure_logs_warning(monkeypatch, caplog):
     monkeypatch.setattr(ds.requests, "post", fake_post)
 
     with caplog.at_level("WARNING"):
-        result = ds.rclone_remote_check("vol", config=None)
+        result, _ = ds.rclone_access(volume="vol", config=None)
 
     assert result is False
-    # ensure a warning message was logged indicating inability to reach
-    assert any("rclone can not reach" in rec.message for rec in caplog.records)
+    # ensure a warning message was logged indicating inability to access the remote
+    assert any("rclone can not access" in rec.message for rec in caplog.records)
