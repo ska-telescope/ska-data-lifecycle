@@ -4,6 +4,8 @@
 
 ### Changed
 
+* Removed `rclone_remote_check` and replaced with `rclone_access`
+* Made `rclone_access` accessible via REST interface. 
 * Renamed the test stack from `dlm-test-services` to `tests`.
 
 ### Removed
