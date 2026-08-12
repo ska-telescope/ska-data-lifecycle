@@ -6,10 +6,9 @@ import os
 import random
 from contextlib import asynccontextmanager
 
-from pydantic import Json
 import requests
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse, PlainTextResponse
+from fastapi.responses import JSONResponse
 
 import ska_dlm
 from ska_dlm.common_types import (
@@ -231,7 +230,7 @@ def _setup_storage(storage: dict):
     create_rclone_config(config=storage["config"])
 
 
-# @cli.command() TODO: This CLI call only works on the storage container.
+@cli.command()
 @rest.get("/storage/get_ssh_public_key", response_model=str)
 def get_ssh_public_key() -> str:
     """
@@ -248,7 +247,7 @@ def get_ssh_public_key() -> str:
 
     try:
         with open(ssh_key_path, "r", encoding="utf-8") as f:
-            return PlainTextResponse(f.read().strip())
+            return f.read().strip()
     except Exception as e:
         logging.exception(e)
         # pylint: disable=raise-missing-from
@@ -556,8 +555,6 @@ def create_rclone_config(config: JsonObjectArg) -> bool:
     return True
 
 
-@cli.command()
-@rest.get("/storage/check_storage_access", response_model=tuple)
 def check_storage_access(
     storage_name: str = "", storage_id: str = "", remote_file_path: str = ""
 ) -> bool:
@@ -595,7 +592,7 @@ def check_storage_access(
 
 @rest.get("/storage/rclone_access", response_model=tuple[bool, str])
 def rclone_access(
-    volume: str, remote_file_path: str = ""
+    volume: str, remote_file_path: str = "", config: dict | None = None
 ) -> tuple[bool, str]:
     """Check configured backend or explicit filepath is accessible and return its file stats.
 
@@ -605,6 +602,8 @@ def rclone_access(
         Volume name
     remote_file_path
         Remote file path, by default ""
+    config
+        override rclone config values, by default None
 
     Returns
     -------
@@ -613,11 +612,13 @@ def rclone_access(
     """
     url = random.choice(CONFIG.RCLONE)
     request_url = f"{url}/operations/stat"
-    post_data = {
-        "fs": volume,
-        "remote": remote_file_path,
-        "s3-no-check-bucket": True, 
-    }
+    if config:
+        post_data = config
+    else:
+        post_data = {
+            "fs": volume,
+            "remote": remote_file_path,
+        }
     logger.debug("rclone access check: %s, %s", request_url, post_data)
     request = requests.post(request_url, post_data, timeout=10, verify=False)
     if request.status_code != 200 or not request.json()["item"]:

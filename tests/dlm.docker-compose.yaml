@@ -20,8 +20,7 @@ services:
       - dlm_rclone
       - dlm_gateway
     healthcheck:
-      # test: ["CMD-SHELL", "ska-dlm --help || exit 1"]
-      test: ["CMD-SHELL", "curl -fsS http://localhost:80/ || exit 1"]
+      test: ["CMD-SHELL", "ska-dlm --help || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
