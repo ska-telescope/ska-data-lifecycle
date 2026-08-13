@@ -16,6 +16,7 @@
 
 * README
 * Upgraded ska-db-migrations to 0.9.1.
+* Fixed heuristics to avoid errorneously deleting source data_items if target is not accessible.
 
 ### Added
 
