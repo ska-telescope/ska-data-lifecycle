@@ -38,8 +38,12 @@ def test_rclone_access_success_no_config(monkeypatch):
     assert result is True
     assert item == {"name": "myvolume"}
     assert recorded["url"].endswith("/operations/stat")
-    # when no config is provided, the helper posts {'fs': volume, 'remote': ''}
-    assert recorded["post_data"] == {"fs": "myvolume", "remote": ""}
+    # the helper posts fs/remote and enables s3 bucket check bypass
+    assert recorded["post_data"] == {
+        "fs": "myvolume",
+        "remote": "",
+        "s3-no-check-bucket": True,
+    }
     assert recorded["timeout"] == 10
     assert recorded["verify"] is False
 
@@ -55,7 +59,7 @@ def test_rclone_access_failure_logs_warning(monkeypatch, caplog):
     monkeypatch.setattr(ds.requests, "post", fake_post)
 
     with caplog.at_level("WARNING"):
-        result, _ = ds.rclone_access(volume="vol", config=None)
+        result, _ = ds.rclone_access(volume="vol")
 
     assert result is False
     # ensure a warning message was logged indicating inability to access the remote
