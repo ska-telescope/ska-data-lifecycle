@@ -203,7 +203,7 @@ rclone:
       path: ""
 
 rabbitmq:
-  enabled: true
+  enabled: false # Don't enable. WIP.
   component: rabbitmq
   subsystem: data-lifecycle-management
   image: rabbitmq
@@ -220,7 +220,7 @@ rabbitmq:
   port: 5672
 
 outbox:
-  enabled: true
+  enabled: false # Don't enable. WIP.
   component: outbox
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
