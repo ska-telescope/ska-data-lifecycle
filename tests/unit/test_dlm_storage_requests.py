@@ -44,7 +44,7 @@ def test_rclone_access_success_no_config(monkeypatch):
         "remote": "",
         "s3-no-check-bucket": True,
     }
-    assert recorded["timeout"] == 10
+    assert recorded["timeout"] == 1
     assert recorded["verify"] is False
 
 
