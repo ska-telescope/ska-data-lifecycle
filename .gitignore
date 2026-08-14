@@ -74,3 +74,5 @@ LICENSE_copy
 .postgrest.pid
 .rclone.pid
 scripts/postgrest
+
+.github/
