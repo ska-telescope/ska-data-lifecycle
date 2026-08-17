@@ -604,7 +604,7 @@ def rclone_access(volume: str, remote_file_path: str = "", timeout=1) -> tuple[b
     remote_file_path
         Remote file path, by default ""
     timeout
-        Number of seconds for the ssh connection to wait deafult 1s
+        Number of seconds for the ssh connection to wait default 1s
 
     Returns
     -------
