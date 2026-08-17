@@ -30,7 +30,7 @@ url = 'https://artefact.skao.int/repository/pypi-internal/simple'
 
 [tool.poetry.dependencies]
 python = ">=3.10, <3.13"
-sqlalchemy = "^2.0.48"
+sqlalchemy = { version="^2.0.48", extras=["postgresql-asyncpg"] }
 ska-ser-logging = "^0.4.1"
 requests = "^2.32.3"
 pyyaml = "^6.0.1"
@@ -47,7 +47,6 @@ msal = "1.31.0"
 ska-sdp-dataproduct-metadata = "^0.7.0"
 locust = "^2.37.11"
 click = "<=8.1.7"
-asyncpg = "^0.31.0"
 aio-pika = "^9.6.2"
 pytest = "^8.4.2"
 pytest-asyncio = "^1.2.0"

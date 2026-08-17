@@ -8,7 +8,8 @@ from contextlib import asynccontextmanager
 
 import requests
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
+from httpx import ReadTimeout
 
 import ska_dlm
 from ska_dlm.common_types import (
@@ -230,7 +231,7 @@ def _setup_storage(storage: dict):
     create_rclone_config(config=storage["config"])
 
 
-@cli.command()
+# @cli.command() TODO: This CLI call only works on the storage container.
 @rest.get("/storage/get_ssh_public_key", response_model=str)
 def get_ssh_public_key() -> str:
     """
@@ -247,7 +248,7 @@ def get_ssh_public_key() -> str:
 
     try:
         with open(ssh_key_path, "r", encoding="utf-8") as f:
-            return f.read().strip()
+            return PlainTextResponse(f.read().strip())
     except Exception as e:
         logging.exception(e)
         # pylint: disable=raise-missing-from
@@ -555,6 +556,8 @@ def create_rclone_config(config: JsonObjectArg) -> bool:
     return True
 
 
+@cli.command()
+@rest.get("/storage/check_storage_access", response_model=tuple)
 def check_storage_access(
     storage_name: str = "", storage_id: str = "", remote_file_path: str = ""
 ) -> bool:
@@ -586,14 +589,12 @@ def check_storage_access(
             "No valid configuration for storage found!", storage_name
         )
     volume_name = f"{config[0]['name']}:{config[0].get('root_path', '/')}"
-    has_access, _ = rclone_access(volume=volume_name)
+    has_access, _ = rclone_access(volume=volume_name, remote_file_path=remote_file_path)
     return has_access
 
 
-@rest.get("/storage/rclone_access", response_model=tuple[bool, str])
-def rclone_access(
-    volume: str, remote_file_path: str = "", config: dict | None = None
-) -> tuple[bool, str]:
+@rest.get("/storage/rclone_access", response_model=tuple[bool, dict | None])
+def rclone_access(volume: str, remote_file_path: str = "", timeout=1) -> tuple[bool, dict | None]:
     """Check configured backend or explicit filepath is accessible and return its file stats.
 
     Parameters
@@ -602,25 +603,30 @@ def rclone_access(
         Volume name
     remote_file_path
         Remote file path, by default ""
-    config
-        override rclone config values, by default None
+    timeout
+        Number of seconds for the ssh connection to wait default 1s
 
     Returns
     -------
-    tuple[bool, str]
-        True if accessable, and the rclone file stats as a string.
+    tuple[bool, dict | None]
+        True if accessable, and the rclone file stats as json.
     """
     url = random.choice(CONFIG.RCLONE)
     request_url = f"{url}/operations/stat"
-    if config:
-        post_data = config
-    else:
-        post_data = {
-            "fs": volume,
-            "remote": remote_file_path,
-        }
+    post_data = {
+        "fs": volume,
+        "remote": remote_file_path,
+        "s3-no-check-bucket": True,
+    }
     logger.debug("rclone access check: %s, %s", request_url, post_data)
-    request = requests.post(request_url, post_data, timeout=10, verify=False)
+    try:
+        request = requests.post(request_url, post_data, timeout=timeout, verify=False)
+    except ReadTimeout:
+        logger.warning(
+            "rclone unable to access url %s. Please check rclone container logs.", request_url
+        )
+        return False, None
+
     if request.status_code != 200 or not request.json()["item"]:
         logger.warning("rclone can not access: %s, %s", request.status_code, request.json())
         return False, None

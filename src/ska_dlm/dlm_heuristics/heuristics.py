@@ -425,21 +425,64 @@ class DeleteUidHeuristic(BaseHeuristic):
                 )
 
             # Step 2: Fetch other UIDs for same OID that are not already deleted
-            uid_stmt = select(Storage.storage_phase, DataItem.UID).where(
+            uid_stmt = select(DataItem, Storage.storage_phase).where(
                 DataItem.OID == oid,
                 DataItem.deleted.is_(False),
                 DataItem.storage_id == Storage.storage_id,
             )
             uid_result = await self.session.execute(uid_stmt)
-            remaining_rows = [r for r in uid_result.fetchall() if r[1] != uid]
-            remaining_phases = [r[0] for r in remaining_rows]
+            remaining_rows = []
+            for row in uid_result.fetchall():
+                # Backward-compatible parsing for mocks that still return
+                # (phase, uid) tuples instead of (DataItem, phase).
+                if hasattr(row[0], "UID"):
+                    remaining_item = row[0]
+                    remaining_phase = row[1]
+                else:
+                    remaining_phase = row[0]
+                    remaining_uid = row[1]
+                    remaining_item = type(
+                        "RemainingItem",
+                        (),
+                        {"UID": remaining_uid, "storage_id": None},
+                    )()
 
-            if remaining_phases:
-                combine_result = await self.combine_heuristic.execute(remaining_phases)
+                if remaining_item.UID == uid:
+                    continue
+
+                remaining_rows.append((remaining_item, remaining_phase))
+
+            accessible_remaining_phases: list[PhaseType] = []
+            inaccessible_replicas: list[dict] = []
+            for remaining_item, remaining_phase in remaining_rows:
+                (
+                    remaining_storage_accessible,
+                    remaining_item_accessible,
+                    remaining_storage_id,
+                ) = self._get_storage_accessibility(remaining_item.UID, remaining_item)
+
+                if remaining_storage_accessible and remaining_item_accessible:
+                    accessible_remaining_phases.append(remaining_phase)
+                else:
+                    inaccessible_replicas.append(
+                        {
+                            "uid": remaining_item.UID,
+                            "storage_id": remaining_storage_id,
+                            "storage_accessible": remaining_storage_accessible,
+                            "item_accessible": remaining_item_accessible,
+                        }
+                    )
+
+            if accessible_remaining_phases:
+                combine_result = await self.combine_heuristic.execute(accessible_remaining_phases)
                 if not combine_result.success:
                     return combine_result
                 # Step 3: Get resulting phase after deletion
                 result_phase = combine_result.data["actual_phase"]
+            elif remaining_rows:
+                # Remaining replicas exist, but none are currently accessible.
+                # Treat effective resilience as PLASMA for policy checks.
+                result_phase = PhaseType.PLASMA
             else:
                 # No remaining replicas; resilience phase reduces to GAS
                 result_phase = PhaseType.GAS
@@ -456,6 +499,8 @@ class DeleteUidHeuristic(BaseHeuristic):
                         "uid": uid,
                         "result_phase": result_phase,
                         "target_phase": target_phase,
+                        "accessible_replica_count": len(accessible_remaining_phases),
+                        "inaccessible_replicas": inaccessible_replicas,
                     },
                 )
 

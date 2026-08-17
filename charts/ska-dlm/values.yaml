@@ -40,7 +40,7 @@ ingest:
   component: ingest
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: "50d5a97e"
+  version: "f99fcb9f"
   imagePullPolicy: Always
   replicas: 1
 
@@ -48,7 +48,7 @@ storage:
   component: storage
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: "50d5a97e"
+  version: "f99fcb9f"
   imagePullPolicy: Always
   replicas: 1
 
@@ -91,7 +91,7 @@ migration:
   component: migration
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: "50d5a97e"
+  version: "f99fcb9f"
   imagePullPolicy: Always
   replicas: 1
 
@@ -99,7 +99,7 @@ request:
   component: request
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: "50d5a97e"
+  version: "f99fcb9f"
   imagePullPolicy: Always
   replicas: 1
 
@@ -138,7 +138,7 @@ heuristics:
   component: heuristics
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: "50d5a97e"
+  version: "f99fcb9f"
   imagePullPolicy: Always
   replicas: 1
 
@@ -187,7 +187,7 @@ rclone:
   component: rclone
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-rclone
-  version: "50d5a97e"
+  version: "f99fcb9f"
   imagePullPolicy: Always
   replicas: 1
   secret:
@@ -203,7 +203,7 @@ rclone:
       path: ""
 
 rabbitmq:
-  enabled: true
+  enabled: true # WIP (DMAN-213)
   component: rabbitmq
   subsystem: data-lifecycle-management
   image: rabbitmq
@@ -220,11 +220,11 @@ rabbitmq:
   port: 5672
 
 outbox:
-  enabled: true
+  enabled: true # WIP (DMAN-213)
   component: outbox
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: "50d5a97e"
+  version: "f99fcb9f"
   imagePullPolicy: Always
   replicas: 1
   rabbitmq:
@@ -238,7 +238,7 @@ gateway:
   component: gateway
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-test-gateway
-  version: "50d5a97e"
+  version: "f99fcb9f"
   imagePullPolicy: Always
   replicas: 1
   secret:
@@ -249,7 +249,7 @@ keycloak:
   component: keycloak
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-test-keycloak
-  version: "50d5a97e"
+  version: "f99fcb9f"
   imagePullPolicy: Always
   replicas: 1
   use_https: true
@@ -273,7 +273,7 @@ benchmark:
   component: benchmark
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-benchmark
-  version: "50d5a97e"
+  version: "f99fcb9f"
   imagePullPolicy: Always
   name: register  # register or migrate
   config:
