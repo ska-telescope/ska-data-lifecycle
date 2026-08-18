@@ -8,6 +8,7 @@ from .heuristics import (
     IdentifyTargetStorageHeuristic,
     IncreaseOidPhaseHeuristic,
     OidPhaseEnforceHeuristic,
+    UpdateStorageUsageHeuristic,
 )
 
 __all__ = [
@@ -18,4 +19,5 @@ __all__ = [
     "DeleteUidHeuristic",
     "OidPhaseEnforceHeuristic",
     "IdentifyTargetStorageHeuristic",
+    "UpdateStorageUsageHeuristic",
 ]

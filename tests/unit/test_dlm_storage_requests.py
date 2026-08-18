@@ -60,3 +60,25 @@ def test_rclone_access_failure_logs_warning(monkeypatch, caplog):
     assert result is False
     # ensure a warning message was logged indicating inability to access the remote
     assert any("rclone can not access" in rec.message for rec in caplog.records)
+
+
+def test_rclone_about_success(monkeypatch):
+    """rclone_about posts the endpoint filesystem and returns its response."""
+    monkeypatch.setattr(ds, "CONFIG", types.SimpleNamespace(RCLONE=["http://rclone-server.local"]))
+    recorded = {}
+
+    def fake_post(url, post_data=None, timeout=None, verify=None):
+        recorded.update(url=url, post_data=post_data, timeout=timeout, verify=verify)
+        return _MockResp(200, {"total": 100, "used": 25, "objects": 4})
+
+    monkeypatch.setattr(ds.requests, "post", fake_post)
+
+    result = ds.rclone_about("myvolume:/")
+
+    assert result == {"total": 100, "used": 25, "objects": 4}
+    assert recorded == {
+        "url": "http://rclone-server.local/operations/about",
+        "post_data": {"fs": "myvolume:/"},
+        "timeout": 10,
+        "verify": False,
+    }

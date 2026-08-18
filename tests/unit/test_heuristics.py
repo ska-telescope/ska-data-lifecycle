@@ -23,6 +23,7 @@ from ska_dlm.dlm_heuristics.heuristics import (
     OidExpiryHeuristic,
     OidPhaseEnforceHeuristic,
     UidExpiryHeuristic,
+    UpdateStorageUsageHeuristic,
 )
 from ska_dlm.dlm_storage import dlm_storage_requests
 
@@ -36,6 +37,125 @@ class TestHeuristicResult:
         assert result.success is True
         assert result.message == ""
         assert result.data == {}
+
+
+class TestUpdateStorageUsageHeuristic:
+    """Test UpdateStorageUsageHeuristic class."""
+
+    @pytest.fixture
+    def mock_session(self):
+        """Mock session."""
+        return AsyncMock()
+
+    @pytest.fixture
+    def heuristic(self, mock_session):
+        """Heuristic fixture."""
+        return UpdateStorageUsageHeuristic(mock_session)
+
+    @pytest.mark.asyncio
+    async def test_updates_storage_usage(self, heuristic, mock_session, monkeypatch):
+        """Usage and capacity are persisted for a registered storage."""
+        storage_id = uuid.uuid4()
+        storage = MagicMock(storage_id=storage_id, storage_capacity=None)
+        storage_result = MagicMock()
+        used_result = MagicMock()
+        used_result.scalar_one.return_value = 250
+        objects_result = MagicMock()
+        objects_result.scalar_one.return_value = 7
+        storage_result.scalars.return_value.all.return_value = [storage]
+        mock_session.execute.side_effect = [
+            storage_result,
+            used_result,
+            objects_result,
+            MagicMock(),
+        ]
+
+        monkeypatch.setattr(
+            "ska_dlm.dlm_heuristics.heuristics.dlm_storage_requests.get_storage_config",
+            lambda storage_id: [{"name": "remote", "root_path": "/data"}],
+        )
+        monkeypatch.setattr(
+            "ska_dlm.dlm_heuristics.heuristics.dlm_storage_requests.rclone_about",
+            lambda volume: {"total": 1000, "used": 250, "objects": 12},
+        )
+
+        result = await heuristic.execute()
+
+        assert result.success is True
+        assert result.message == "Updated storage usage"
+        assert result.data["storages"] == [
+            {
+                "storage_id": storage_id,
+                "success": True,
+                "capacity": 1000,
+                "used": 250,
+                "objects": 7,
+            }
+        ]
+        update_statement = mock_session.execute.call_args_list[3].args[0]
+        assert update_statement.compile().params["storage_capacity"] == 1000
+        assert update_statement.compile().params["storage_use_pct"] == 25.0
+        assert update_statement.compile().params["storage_num_objects"] == 7
+        mock_session.commit.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_preserves_existing_storage_capacity(
+        self, heuristic, mock_session, monkeypatch
+    ):
+        """An existing database capacity is not overwritten by rclone total."""
+        storage_id = uuid.uuid4()
+        storage = MagicMock(storage_id=storage_id, storage_capacity=500)
+        storage_result = MagicMock()
+        used_result = MagicMock()
+        used_result.scalar_one.return_value = 250
+        objects_result = MagicMock()
+        objects_result.scalar_one.return_value = 7
+        storage_result.scalars.return_value.all.return_value = [storage]
+        mock_session.execute.side_effect = [
+            storage_result,
+            used_result,
+            objects_result,
+            MagicMock(),
+        ]
+
+        monkeypatch.setattr(
+            "ska_dlm.dlm_heuristics.heuristics.dlm_storage_requests.get_storage_config",
+            lambda storage_id: [{"name": "remote", "root_path": "/data"}],
+        )
+        monkeypatch.setattr(
+            "ska_dlm.dlm_heuristics.heuristics.dlm_storage_requests.rclone_about",
+            lambda volume: {"total": 1000, "used": 250, "objects": 12},
+        )
+
+        result = await heuristic.execute()
+
+        assert result.success is True
+        update_statement = mock_session.execute.call_args_list[3].args[0]
+        assert "storage_capacity" not in update_statement.compile().params
+        assert update_statement.compile().params["storage_use_pct"] == 50.0
+
+    @pytest.mark.asyncio
+    async def test_partial_failure(self, heuristic, mock_session, monkeypatch):
+        """A failed endpoint is reported while other endpoints remain successful."""
+        storage_id = uuid.uuid4()
+        storage = MagicMock(storage_id=storage_id)
+        storage_result = MagicMock()
+        storage_result.scalars.return_value.all.return_value = [storage]
+        mock_session.execute.return_value = storage_result
+        monkeypatch.setattr(
+            "ska_dlm.dlm_heuristics.heuristics.dlm_storage_requests.get_storage_config",
+            lambda storage_id: [],
+        )
+
+        result = await heuristic.execute()
+
+        assert result.success is False
+        assert result.message == "Some storage usage updates failed"
+        assert result.data["storages"][0]["success"] is False
+        assert mock_session.execute.await_count == 2
+        unavailable_statement = mock_session.execute.call_args_list[1].args[0]
+        assert unavailable_statement.compile().params["storage_available"] is False
+        mock_session.commit.assert_awaited_once()
 
     def test_init_with_message(self):
         """Test HeuristicResult initialization with message."""
@@ -793,9 +913,13 @@ class TestOidExpiryHeuristic:
         mock_uid_result_2 = MagicMock()
         mock_uid_result_2.fetchall.return_value = [(uid3,)]
 
+        mock_update_result = MagicMock()
+
         mock_session.execute.side_effect = [
             mock_oid_result,
+            mock_update_result,
             mock_uid_result_1,
+            mock_update_result,
             mock_uid_result_2,
         ]
 
@@ -815,6 +939,16 @@ class TestOidExpiryHeuristic:
         assert len(result.data["deletion_results"]) == 3
         assert result.data["deletion_results"][0]["oid"] == oid1
         assert result.data["deletion_results"][2]["oid"] == oid2
+        target_phase_updates = [
+            call.args[0]
+            for call in mock_session.execute.call_args_list
+            if "target_phase" in str(call.args[0])
+        ]
+        assert len(target_phase_updates) == 2
+        assert all(
+            statement.compile().params["target_phase"] == PhaseType.PLASMA
+            for statement in target_phase_updates
+        )
 
     @pytest.mark.asyncio
     async def test_partial_failure(self, heuristic, mock_session):
@@ -828,7 +962,7 @@ class TestOidExpiryHeuristic:
         mock_uid_result_1 = MagicMock()
         mock_uid_result_1.fetchall.return_value = [(uid1,)]
 
-        mock_session.execute.side_effect = [mock_oid_result, mock_uid_result_1]
+        mock_session.execute.side_effect = [mock_oid_result, MagicMock(), mock_uid_result_1]
 
         heuristic.delete_heuristic.execute = AsyncMock(
             return_value=HeuristicResult(False, "Delete failed")

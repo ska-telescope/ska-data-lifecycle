@@ -5,7 +5,7 @@ sequenceDiagram
     participant Heuristic as OID Expiry Heuristics
     participant DB as DLM Database
     box rgb(200, 220, 255)
-        participant Delete as Delete UID Heuristic
+        participant Delete as Delete OID Heuristic
     end
     
     Admin->>Controller: Ask to Delete Expired data_items (OID)
@@ -16,6 +16,7 @@ sequenceDiagram
     DB-->>Heuristic: Return Expirations (OID_expiration)
     loop OIDs:
             Heuristic->>DB: Query UIDs (OID)
+            Heuristic->>DB: Set target_phase for all UIDs to PLASMA
             loop UIDs:
                 rect rgb(200, 220, 255)
                     Heuristic->>Delete: Delete UID payload

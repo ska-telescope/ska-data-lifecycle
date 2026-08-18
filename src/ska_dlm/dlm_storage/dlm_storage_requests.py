@@ -627,6 +627,21 @@ def rclone_access(
     return True, request.json()["item"]
 
 
+def rclone_about(volume: str) -> dict:
+    """Return usage and capacity information for an rclone backend."""
+    url = random.choice(CONFIG.RCLONE)
+    request_url = f"{url}/operations/about"
+    post_data = {"fs": volume}
+    logger.debug("rclone usage query: %s, %s", request_url, post_data)
+    request = requests.post(request_url, post_data, timeout=10, verify=False)
+    if request.status_code != 200:
+        raise RuntimeError(f"rclone about request failed with status code {request.status_code}")
+    response = request.json()
+    if not isinstance(response, dict):
+        raise RuntimeError("rclone about response was not an object")
+    return response
+
+
 def rclone_delete(volume: str, fpath: str, item_type: str = "file") -> bool:
     """Delete a file or whole directory tree, referred to by fpath from a volume using rclone.
 

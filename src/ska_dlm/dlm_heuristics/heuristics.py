@@ -87,6 +87,94 @@ class BaseHeuristic(ABC):
         return HeuristicResult(True, message, data)
 
 
+class UpdateStorageUsageHeuristic(BaseHeuristic):
+    """Update registered storage endpoints with their current rclone usage."""
+
+    async def execute(self) -> HeuristicResult:
+        """Query rclone usage for every registered storage endpoint."""
+        try:
+            result = await self.session.execute(select(Storage))
+            storages = result.scalars().all()
+            if not storages:
+                return self.success_result("No storage endpoints found", {"storages": []})
+
+            storage_results = []
+            for storage in storages:
+                storage_id = storage.storage_id
+                try:
+                    config = dlm_storage_requests.get_storage_config(storage_id=str(storage_id))
+                    if not config:
+                        raise RuntimeError("No rclone configuration found")
+                    volume = f"{config[0]['name']}:{config[0].get('root_path', '/')}"
+                    about = dlm_storage_requests.rclone_about(volume)
+                    total = int(about.get("total", -1))
+                    used_stmt = select(func.coalesce(func.sum(DataItem.item_size), 0)).where(
+                        DataItem.storage_id == storage_id,
+                        DataItem.deleted.is_(False),
+                    )
+                    used_result = await self.session.execute(used_stmt)
+                    used = int(used_result.scalar_one() or 0)
+                    objects_stmt = select(func.count(DataItem.UID)).where(
+                        DataItem.storage_id == storage_id,
+                        DataItem.deleted.is_(False),
+                    )
+                    objects_result = await self.session.execute(objects_stmt)
+                    objects = int(objects_result.scalar_one() or 0)
+                    capacity_for_pct = (
+                        storage.storage_capacity
+                        if storage.storage_capacity not in [None, 0, -1]
+                        else total
+                    )
+                    use_pct = (used / capacity_for_pct * 100) if capacity_for_pct > 0 else 0.0
+                    update_values = {
+                        "storage_use_pct": round(use_pct, 1),
+                        "storage_num_objects": objects,
+                        "storage_available": True,
+                        "storage_checked": True,
+                        "storage_last_checked": func.now(),
+                    }
+                    if storage.storage_capacity in [None, -1]:
+                        update_values["storage_capacity"] = total
+                    update_stmt = (
+                        update(Storage)
+                        .where(Storage.storage_id == storage_id)
+                        .values(**update_values)
+                    )
+                    await self.session.execute(update_stmt)
+                    storage_results.append(
+                        {
+                            "storage_id": storage_id,
+                            "success": True,
+                            "capacity": total,
+                            "used": used,
+                            "objects": objects,
+                        }
+                    )
+                except Exception as exc:  # pylint: disable=broad-exception-caught
+                    logger.warning("Unable to update storage usage for %s: %s", storage_id, exc)
+                    unavailable_stmt = (
+                        update(Storage)
+                        .where(Storage.storage_id == storage_id)
+                        .values(
+                            storage_available=False,
+                            storage_checked=True,
+                            storage_last_checked=func.now(),
+                        )
+                    )
+                    await self.session.execute(unavailable_stmt)
+                    storage_results.append(
+                        {"storage_id": storage_id, "success": False, "message": str(exc)}
+                    )
+
+            await self.session.commit()
+            success = all(item["success"] for item in storage_results)
+            message = "Updated storage usage" if success else "Some storage usage updates failed"
+            return HeuristicResult(success, message, {"storages": storage_results})
+        except Exception as exc:
+            await self.session.rollback()
+            return HeuristicResult(False, f"Error updating storage usage: {str(exc)}")
+
+
 class CombineUidPhasesHeuristic(BaseHeuristic):
     """Heuristic to combine UID phases into a single actual phase."""
 
@@ -610,6 +698,13 @@ class OidExpiryHeuristic(BaseHeuristic):
 
             deletion_results = []
             for oid in expired_oids:
+                update_target_phase_stmt = (
+                    update(DataItem)
+                    .where(DataItem.OID == oid, DataItem.deleted.is_(False))
+                    .values(target_phase=PhaseType.PLASMA)
+                )
+                await self.session.execute(update_target_phase_stmt)
+
                 uid_stmt = select(DataItem.UID).where(
                     DataItem.OID == oid,
                     DataItem.deleted.is_(False),
