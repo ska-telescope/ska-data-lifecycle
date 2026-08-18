@@ -1,3 +1,4 @@
+# pylint: disable=R0914
 """Heuristic engine daemon using SQLAlchemy ORM (asyncio)."""
 
 import asyncio

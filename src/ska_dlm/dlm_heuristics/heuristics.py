@@ -2,6 +2,7 @@
 # pylint: disable=R0915
 # pylint: disable=W0612
 # pylint: disable=C0302
+# pylint: disable=E1102
 # flake8: noqa: RST201
 """Heuristic implementations for DLM data lifecycle management.
 

@@ -2,6 +2,7 @@
 # pylint: disable=W0612
 # pylint: disable=E1129
 # pylint: disable=W0212
+# pylint: disable=R0903
 # flake8: noqa: F841
 """Unit tests for DLM heuristics."""
 
@@ -99,9 +100,7 @@ class TestUpdateStorageUsageHeuristic:
         mock_session.commit.assert_awaited_once()
 
     @pytest.mark.asyncio
-    async def test_preserves_existing_storage_capacity(
-        self, heuristic, mock_session, monkeypatch
-    ):
+    async def test_preserves_existing_storage_capacity(self, heuristic, mock_session, monkeypatch):
         """An existing database capacity is not overwritten by rclone total."""
         storage_id = uuid.uuid4()
         storage = MagicMock(storage_id=storage_id, storage_capacity=500)
