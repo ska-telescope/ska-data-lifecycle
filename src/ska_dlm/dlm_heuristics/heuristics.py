@@ -128,7 +128,7 @@ class UpdateStorageUsageHeuristic(BaseHeuristic):
                     )
                     use_pct = (used / capacity_for_pct * 100) if capacity_for_pct > 0 else 0.0
                     update_values = {
-                        "storage_use_pct": round(use_pct, 1),
+                        "storage_use_pct": round(use_pct, 1) if use_pct < 100 else 99.9,
                         "storage_num_objects": objects,
                         "storage_available": True,
                         "storage_checked": True,
@@ -423,7 +423,7 @@ class DeleteUidHeuristic(BaseHeuristic):
         parent_state = result.scalar_one_or_none()
         return parent_state == ItemState.DELETED
 
-    def _get_storage_accessibility(
+    async def _get_storage_accessibility(
         self, uid: UUID, data_item
     ) -> tuple[bool, bool, Optional[UUID]]:
         """Return normalized item/storage metadata and accessibility state for a UID."""
@@ -495,7 +495,7 @@ class DeleteUidHeuristic(BaseHeuristic):
                 storage_accessible,
                 item_accessible,
                 storage_id,
-            ) = self._get_storage_accessibility(uid, data_item)
+            ) = await self._get_storage_accessibility(uid, data_item)
 
             # If the item is not accessible on storage,
             # mark the UID as deleted to keep DB state consistent.
