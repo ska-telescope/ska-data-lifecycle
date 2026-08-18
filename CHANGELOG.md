@@ -1,11 +1,11 @@
 # Version History
 
-## Development
+## 2.3.0
 
 ### Changed
 
 * Removed `rclone_remote_check` and replaced with `rclone_access`
-* Made `rclone_access` accessible via REST interface. 
+* Made `rclone_access` accessible via REST interface.
 * Renamed the test stack from `dlm-test-services` to `tests`.
 
 ### Removed
@@ -15,7 +15,6 @@
 ### Updated
 
 * README
-* Upgraded ska-db-migrations to 0.9.1.
 * Fixed heuristics to avoid erroneously deleting source data_items if target is not accessible.
 
 ### Added
@@ -23,8 +22,17 @@
 * Make targets `integration-test`, `all-tests-keep` and `all-services-up`.
 * Appropriate Pod dependencies.
 * Sizes to `register_data_item`.
-* A reverse proxy to the docker-compose deployment and changed default ports to 80
 * Transactional Outbox Pattern with RabbitMQ
+
+## 2.2.0
+
+### Updated
+
+* Upgraded ska-db-migrations to 0.9.1
+
+### Added
+
+* A reverse proxy to the docker-compose deployment and changed default ports to 80
 * Support to delete container tree hierarchies
 * ODA trigger that inserts a dlm.data_item when an execution block is added.
 * dlm-archive stfp endpoint.
