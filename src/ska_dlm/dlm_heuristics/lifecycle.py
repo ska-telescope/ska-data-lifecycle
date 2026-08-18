@@ -81,7 +81,7 @@ class DeleteUidHeuristic(BaseHeuristic):
             update(Storage)
             .where(Storage.storage_id == storage_id)
             .values(
-                storage_use_pct=round(new_use_pct, 1),
+                storage_use_pct=round(new_use_pct, 1) if new_use_pct < 100 else 99.9,
                 storage_num_objects=object_count,
                 storage_checked=True,
                 storage_last_checked=func.now(),

@@ -557,7 +557,7 @@ def create_rclone_config(config: JsonObjectArg) -> bool:
 
 
 @cli.command()
-@rest.get("/storage/check_storage_access", response_model=tuple)
+@rest.get("/storage/check_storage_access", response_model=bool)
 def check_storage_access(
     storage_name: str = "", storage_id: str = "", remote_file_path: str = ""
 ) -> bool:

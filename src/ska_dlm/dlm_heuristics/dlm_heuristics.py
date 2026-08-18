@@ -54,7 +54,6 @@ async def heuristic_process_loop(stop_event: asyncio.Event):
                     oid_expiry_result = await oid_expiry_heuristics.execute()
                     await session.commit()
                 logger.info("OID expiry heuristics returned: %s", oid_expiry_result.message)
-                logger.info("Storage usage heuristics returned: %s", storage_usage_result.message)
                 if not oid_expiry_result.success:
                     logger.debug("OID expiry data: %s", oid_expiry_result.data)
 
@@ -62,6 +61,9 @@ async def heuristic_process_loop(stop_event: asyncio.Event):
                     storage_usage_heuristics = UpdateStorageUsageHeuristic(session)
                     storage_usage_result = await storage_usage_heuristics.execute()
                     await session.commit()
+                logger.info("Storage usage heuristics returned: %s", storage_usage_result.message)
+                if not storage_usage_result.success:
+                    logger.debug("Storage usage result data: %s", storage_usage_result.data)
 
                 async with async_session as session:
                     enforce_storage_usage_heuristics = EnforceStorageUsageHeuristic(session)

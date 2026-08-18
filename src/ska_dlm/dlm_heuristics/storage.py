@@ -56,10 +56,8 @@ class UpdateStorageUsageHeuristic(BaseHeuristic):
                         else total
                     )
                     use_pct = (used / capacity_for_pct * 100) if capacity_for_pct > 0 else 0.0
-                    # could be above 100, if set manually
-                    use_pct = round(use_pct,1) if use_pct < 100 else 100
                     update_values = {
-                        "storage_use_pct": round(use_pct, 1),
+                        "storage_use_pct": round(use_pct, 1) if use_pct < 100 else 99.9,
                         "storage_num_objects": objects,
                         "storage_available": True,
                         "storage_checked": True,
