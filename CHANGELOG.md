@@ -1,5 +1,12 @@
 # Version History
 
+### Updated
+* OID expiration heuristic
+* Heuristics loop is now running UID and OID expiration as well as UpdateStorage
+
+### Added
+* New UpdateStorageHeuristic
+
 ## 2.3.0
 
 ### Changed
