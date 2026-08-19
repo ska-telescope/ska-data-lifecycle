@@ -247,17 +247,17 @@ class EnforceStorageUsageHeuristic(BaseHeuristic):
                 )
                 used_result = await self.session.execute(used_stmt)
                 used = int(used_result.scalar_one() or 0)
-                stored_use_pct = storage.storage_use_pct
-                if not isinstance(stored_use_pct, (int, float)) or stored_use_pct < 0:
+                storage_use_pct = storage.storage_use_pct
+                if storage_use_pct in [None, -1]:
                     storage_results.append(
                         {
                             "storage_id": storage_id,
                             "success": False,
-                            "message": "No valid storage_use_pct",
+                            "message": f"No valid storage_use_pct: {storage_use_pct}",
                         }
                     )
                     continue
-                use_pct = float(stored_use_pct)
+                use_pct = float(storage_use_pct)
                 target_use_pct = max(0.0, self.threshold_pct - 10.0)
                 should_enforce = use_pct >= self.threshold_pct
 

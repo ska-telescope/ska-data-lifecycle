@@ -7,9 +7,11 @@ import random
 from contextlib import asynccontextmanager
 
 import requests
+import urllib3
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, PlainTextResponse
 from httpx import ReadTimeout
+from urllib3.exceptions import InsecureRequestWarning
 
 import ska_dlm
 from ska_dlm.common_types import (
@@ -38,6 +40,8 @@ from ..exceptions import (
 )
 
 logger = logging.getLogger(__name__)
+
+urllib3.disable_warnings(InsecureRequestWarning)
 
 
 @asynccontextmanager
@@ -633,18 +637,39 @@ def rclone_access(volume: str, remote_file_path: str = "", timeout=1) -> tuple[b
     return True, request.json()["item"]
 
 
+@rest.get("/storage/rclone_about", response_model=dict | None)
 def rclone_about(volume: str) -> dict:
-    """Return usage and capacity information for an rclone backend."""
+    """
+    Return usage and capacity information for an rclone backend.
+
+    Parameters
+    ----------
+    volume
+        The configured rclone volume to query.
+
+    Returns
+    -------
+    dict
+        The rclone usage and capacity response. Returns ``None`` when the
+        response is not a dictionary.
+
+    Raises
+    ------
+    RuntimeError
+        If the rclone server returns a non-success HTTP status code.
+    """
     url = random.choice(CONFIG.RCLONE)
     request_url = f"{url}/operations/about"
     post_data = {"fs": volume}
     logger.debug("rclone usage query: %s, %s", request_url, post_data)
     request = requests.post(request_url, post_data, timeout=10, verify=False)
     if request.status_code != 200:
-        raise RuntimeError(f"rclone about request failed with status code {request.status_code}")
+        logger.warning("rclone about request failed with status code %s",request.status_code)
+        response = None
     response = request.json()
     if not isinstance(response, dict):
-        raise RuntimeError("rclone about response was not an object")
+        logger.warning("rclone about response was not a dict")
+        response = None
     return response
 
 
@@ -810,7 +835,7 @@ def check_item_on_storage(
             if (storage_name and storage["storage_name"] == storage_name) or (
                 storage_id and storage["storage_id"] == storage_id
             ):
-                logger.info(
+                logger.debug(
                     "data_item '%s' '%s' exists on destination storage: %s",
                     storage["item_name"],
                     storage["uid"],
@@ -840,7 +865,8 @@ def delete_data_item_payload(uid: str, item_type: str = "file", item_name: str =
     storages = query_item_storage(uid=uid)
     logger.info("Storage for this uid: %s", storages)
     if not storages:
-        logger.error("No storage found keeping a READY version of UID: %s, %s", uid, item_name)
+        logger.error("No storage found keeping a READY version of UID: %s, %s. Marking as deleted!", uid, item_name)
+        set_state(uid, ItemState.DELETED)
         return False
     if len(storages) > 1:
         # This is a really bad place to be in!

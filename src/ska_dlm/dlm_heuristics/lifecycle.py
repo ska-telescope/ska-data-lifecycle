@@ -54,28 +54,23 @@ class DeleteUidHeuristic(BaseHeuristic):
         if not isinstance(storage_row, (tuple, list)) or len(storage_row) != 2:
             return
 
-        storage_use_pct, storage_capacity = storage_row
-        if (
-            isinstance(storage_use_pct, (int, float))
-            and storage_use_pct >= 0
-            and isinstance(storage_capacity, (int, float))
-            and storage_capacity > 0
-            and isinstance(deleted_item_size, int)
-            and deleted_item_size > 0
-        ):
-            pct_delta = deleted_item_size / storage_capacity * 100
-            new_use_pct = max(0.0, float(storage_use_pct) - pct_delta)
-        else:
-            new_use_pct = (
-                float(storage_use_pct) if isinstance(storage_use_pct, (int, float)) else 0.0
-            )
-
-        objects_stmt = select(func.count(DataItem.UID)).where(
+        _, storage_capacity = storage_row
+        usage_stmt = select(
+            func.coalesce(func.sum(DataItem.item_size), 0),
+            func.count(DataItem.UID),
+        ).where(
             DataItem.storage_id == storage_id,
             DataItem.deleted.is_(False),
         )
-        objects_result = await self.session.execute(objects_stmt)
-        object_count = int(objects_result.scalar_one() or 0)
+        usage_result = await self.session.execute(usage_stmt)
+        total_item_size, object_count = usage_result.one()
+        total_item_size = int(total_item_size or 0)
+        object_count = int(object_count or 0)
+        new_use_pct = (
+            total_item_size / storage_capacity * 100
+            if isinstance(storage_capacity, (int, float)) and storage_capacity > 0
+            else 0.0
+        )
 
         update_storage_stmt = (
             update(Storage)
@@ -88,22 +83,6 @@ class DeleteUidHeuristic(BaseHeuristic):
             )
         )
         await self.session.execute(update_storage_stmt)
-
-    async def _check_parent_deleted(self, uid: UUID) -> bool:
-        """Return True when the parent DataItem is already marked as deleted."""
-        stmt = select(DataItem.parents).where(
-            DataItem.UID == uid,
-            DataItem.parents.is_not(None),
-        )
-        result = await self.session.execute(stmt)
-        parent_uid = result.scalar_one_or_none()
-        if parent_uid is None:
-            return False
-
-        stmt = select(DataItem.item_state).where(DataItem.UID == parent_uid)
-        result = await self.session.execute(stmt)
-        parent_state = result.scalar_one_or_none()
-        return parent_state == ItemState.DELETED
 
     def _get_storage_accessibility(
         self, uid: UUID, data_item
@@ -236,13 +215,44 @@ class DeleteUidHeuristic(BaseHeuristic):
         if data_item.item_type is None or data_item.item_type.lower() != "container":
             return
 
-        stmt = select(DataItem.UID).where(DataItem.parents == uid)
-        result = await self.session.execute(stmt)
-        child_uids = result.scalars().all()
-        for child_uid in child_uids:
-            if await self._check_parent_deleted(child_uid):
-                await self._mark_uid_as_deleted(child_uid)
-                logger.debug("Marked child_uid as deleted: %s", child_uid)
+        update_stmt = (
+            update(DataItem)
+            .where(DataItem.parents == uid)
+            .values(
+                item_state=ItemState.DELETED,
+                deleted=True,
+                UID_deletion=func.now(),  # pylint: disable=not-callable
+            )
+        )
+        await self.session.execute(update_stmt)
+        return
+
+    async def _mark_inaccessible_item_deleted(
+        self,
+        uid: UUID,
+        oid: UUID,
+        storage_id: UUID,
+        storage_accessible: bool,
+        item_accessible: bool,
+        data_item,
+    ) -> HeuristicResult:
+        """Mark an inaccessible payload as deleted and refresh its storage metadata."""
+        await self._mark_uid_as_deleted(uid)
+        await self._update_storage_after_delete(
+            storage_id,
+            getattr(data_item, "item_size", None),
+        )
+        await self.session.commit()
+        return self.success_result(
+            f"UID {uid} marked as deleted.",
+            {
+                "uid": uid,
+                "oid": oid,
+                "storage_id": storage_id,
+                "storage_accessible": storage_accessible,
+                "item_accessible": item_accessible,
+            },
+        )
 
     async def execute(self, uid: UUID) -> HeuristicResult:
         """Execute UID deletion heuristic according to deletion sequence diagram."""
@@ -266,21 +276,13 @@ class DeleteUidHeuristic(BaseHeuristic):
             ) = self._get_storage_accessibility(uid, data_item)
 
             if not item_accessible and isinstance(storage_id, (UUID, str)) and storage_accessible:
-                await self._mark_uid_as_deleted(uid)
-                await self._update_storage_after_delete(
+                return await self._mark_inaccessible_item_deleted(
+                    uid,
+                    oid,
                     storage_id,
-                    getattr(data_item, "item_size", None),
-                )
-                await self.session.commit()
-                return self.success_result(
-                    f"UID {uid} marked as deleted.",
-                    {
-                        "uid": uid,
-                        "oid": oid,
-                        "storage_id": storage_id,
-                        "storage_accessible": storage_accessible,
-                        "item_accessible": item_accessible,
-                    },
+                    storage_accessible,
+                    item_accessible,
+                    data_item,
                 )
 
             (
@@ -369,7 +371,8 @@ class UidExpiryHeuristic(BaseHeuristic):
                     }
                 )
                 if not delete_result.success:
-                    logger.info("Deletion of UID %s failed: %s", uid, delete_result.message)
+                    # logger.warning("Deletion of UID %s failed: %s", uid, delete_result.message)
+                    logger.debug("Deletion of UID %s failed: %s", uid, delete_result.message)
 
             success = all(item["success"] for item in deletion_results)
             message = "Deleted expired UIDs" if success else "Some expired UID deletions failed"

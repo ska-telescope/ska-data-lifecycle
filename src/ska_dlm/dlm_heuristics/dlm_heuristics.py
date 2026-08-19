@@ -70,9 +70,10 @@ async def heuristic_process_loop(stop_event: asyncio.Event):
                     enforce_storage_usage_result = await enforce_storage_usage_heuristics.execute()
                     await session.commit()
                 logger.info(
-                    "Enforce storage usage heuristics returned: status: %s message: %s",
+                    "Enforce storage usage heuristics returned: status: %s; message: %s",
                     enforce_storage_usage_result.success, enforce_storage_usage_result.message,
                 )
+                logger.info(">>> Temporarily output of all info: %s", enforce_storage_usage_result.data)
                 if not enforce_storage_usage_result.success:
                     logger.debug(
                         "Enforce storage usage data: %s", enforce_storage_usage_result.data
