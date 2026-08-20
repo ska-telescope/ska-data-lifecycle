@@ -20,7 +20,10 @@ class DeleteUidHeuristic(BaseHeuristic):
 
     def __init__(self, session):
         super().__init__(session)
-        from .phase_combine import CombineUidPhasesHeuristic
+        # Deferred import to avoid a circular import with phase_combine.py.
+        from .phase_combine import (  # pylint: disable=import-outside-toplevel
+            CombineUidPhasesHeuristic,
+        )
 
         self.combine_heuristic = CombineUidPhasesHeuristic(session)
 
@@ -37,9 +40,7 @@ class DeleteUidHeuristic(BaseHeuristic):
         )
         await self.session.execute(update_uid_stmt)
 
-    async def _update_storage_after_delete(
-        self, storage_id: Optional[UUID], deleted_item_size: Optional[int]
-    ) -> None:
+    async def _update_storage_after_delete(self, storage_id: Optional[UUID]) -> None:
         """Update storage use percentage and object count after a successful delete."""
         if not isinstance(storage_id, (UUID, str)):
             return
@@ -57,7 +58,7 @@ class DeleteUidHeuristic(BaseHeuristic):
         _, storage_capacity = storage_row
         usage_stmt = select(
             func.coalesce(func.sum(DataItem.item_size), 0),
-            func.count(DataItem.UID),
+            func.count(DataItem.UID),  # pylint: disable=not-callable
         ).where(
             DataItem.storage_id == storage_id,
             DataItem.deleted.is_(False),
@@ -79,7 +80,7 @@ class DeleteUidHeuristic(BaseHeuristic):
                 storage_use_pct=round(new_use_pct, 1) if new_use_pct < 100 else 99.9,
                 storage_num_objects=object_count,
                 storage_checked=True,
-                storage_last_checked=func.now(),
+                storage_last_checked=func.now(),  # pylint: disable=not-callable
             )
         )
         await self.session.execute(update_storage_stmt)
@@ -104,7 +105,7 @@ class DeleteUidHeuristic(BaseHeuristic):
                         uid=str(uid), storage_id=str(storage_id)
                     )[0]["storage_id"]
                 )
-            except Exception:
+            except Exception:  # pylint: disable=broad-exception-caught
                 storage_accessible = False
                 item_accessible = False
 
@@ -227,21 +228,17 @@ class DeleteUidHeuristic(BaseHeuristic):
         await self.session.execute(update_stmt)
         return
 
-    async def _mark_inaccessible_item_deleted(
+    async def _mark_inaccessible_item_deleted(  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self,
         uid: UUID,
         oid: UUID,
         storage_id: UUID,
         storage_accessible: bool,
         item_accessible: bool,
-        data_item,
     ) -> HeuristicResult:
         """Mark an inaccessible payload as deleted and refresh its storage metadata."""
         await self._mark_uid_as_deleted(uid)
-        await self._update_storage_after_delete(
-            storage_id,
-            getattr(data_item, "item_size", None),
-        )
+        await self._update_storage_after_delete(storage_id)
         await self.session.commit()
         return self.success_result(
             f"UID {uid} marked as deleted.",
@@ -254,7 +251,9 @@ class DeleteUidHeuristic(BaseHeuristic):
             },
         )
 
-    async def execute(self, uid: UUID) -> HeuristicResult:
+    async def execute(  # pylint: disable=arguments-differ,too-many-locals,too-many-return-statements
+        self, uid: UUID
+    ) -> HeuristicResult:
         """Execute UID deletion heuristic according to deletion sequence diagram."""
         try:
             stmt = select(DataItem).where(DataItem.UID == uid)
@@ -282,7 +281,6 @@ class DeleteUidHeuristic(BaseHeuristic):
                     storage_id,
                     storage_accessible,
                     item_accessible,
-                    data_item,
                 )
 
             (
@@ -316,10 +314,7 @@ class DeleteUidHeuristic(BaseHeuristic):
                 return delete_error
 
             await self._mark_uid_as_deleted(uid)
-            await self._update_storage_after_delete(
-                storage_id,
-                getattr(data_item, "item_size", None),
-            )
+            await self._update_storage_after_delete(storage_id)
             await self._mark_container_children_deleted(uid, data_item)
 
             update_oid_stmt = (
@@ -334,7 +329,7 @@ class DeleteUidHeuristic(BaseHeuristic):
                 {"uid": uid, "oid": oid, "result_phase": result_phase},
             )
 
-        except Exception as exc:
+        except Exception as exc:  # pylint: disable=broad-exception-caught
             await self.session.rollback()
             return HeuristicResult(False, f"Error executing UID deletion heuristic: {str(exc)}")
 
@@ -346,7 +341,7 @@ class UidExpiryHeuristic(BaseHeuristic):
         super().__init__(session)
         self.delete_heuristic = DeleteUidHeuristic(session)
 
-    async def execute(self) -> HeuristicResult:
+    async def execute(self) -> HeuristicResult:  # pylint: disable=arguments-differ
         """Execute the UID expiry heuristic."""
         try:
             stmt = select(DataItem.UID).where(
@@ -383,7 +378,7 @@ class UidExpiryHeuristic(BaseHeuristic):
                 {"expired_uids": expired_uids, "deletion_results": deletion_results},
             )
 
-        except Exception as exc:
+        except Exception as exc:  # pylint: disable=broad-exception-caught
             await self.session.rollback()
             return HeuristicResult(False, f"Error executing UID expiry heuristic: {str(exc)}")
 
@@ -395,7 +390,9 @@ class OidExpiryHeuristic(BaseHeuristic):
         super().__init__(session)
         self.delete_heuristic = DeleteUidHeuristic(session)
 
-    async def execute(self) -> HeuristicResult:
+    async def execute(  # pylint: disable=arguments-differ,too-many-locals
+        self,
+    ) -> HeuristicResult:
         """Execute the OID expiry heuristic."""
         try:
             stmt = (
@@ -450,6 +447,6 @@ class OidExpiryHeuristic(BaseHeuristic):
                 {"expired_oids": expired_oids, "deletion_results": deletion_results},
             )
 
-        except Exception as exc:
+        except Exception as exc:  # pylint: disable=broad-exception-caught
             await self.session.rollback()
             return HeuristicResult(False, f"Error executing OID expiry heuristic: {str(exc)}")

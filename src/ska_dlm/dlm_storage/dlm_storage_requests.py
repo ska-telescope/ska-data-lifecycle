@@ -8,9 +8,9 @@ from contextlib import asynccontextmanager
 
 import requests
 import urllib3
-from urllib3.exceptions import InsecureRequestWarning
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, PlainTextResponse
+from urllib3.exceptions import InsecureRequestWarning
 
 import ska_dlm
 from ska_dlm.common_types import (
@@ -664,7 +664,7 @@ def rclone_about(volume: str) -> dict:
     logger.debug("rclone usage query: %s, %s", request_url, post_data)
     request = requests.post(request_url, post_data, timeout=10, verify=False)
     if request.status_code != 200:
-        logger.warning("rclone about request failed with status code %s",request.status_code)
+        logger.warning("rclone about request failed with status code %s", request.status_code)
         response = None
     response = request.json()
     if not isinstance(response, dict):
@@ -865,7 +865,11 @@ def delete_data_item_payload(uid: str, item_type: str = "file", item_name: str =
     storages = query_item_storage(uid=uid)
     logger.info("Storage for this uid: %s", storages)
     if not storages:
-        logger.error("No storage found keeping a READY version of UID: %s, %s. Marking as deleted!", uid, item_name)
+        logger.error(
+            "No storage found keeping a READY version of UID: %s, %s. Marking as deleted!",
+            uid,
+            item_name,
+        )
         set_state(uid, ItemState.DELETED)
         return False
     if len(storages) > 1:

@@ -10,18 +10,20 @@ from .common import PHASE_ORDER, BaseHeuristic, HeuristicResult, n_PHASE_ORDER
 class CombineUidPhasesHeuristic(BaseHeuristic):
     """Heuristic to combine UID phases into a single actual phase."""
 
-    async def execute(self, uid_phases: List[PhaseType]) -> HeuristicResult:
+    async def execute(  # pylint: disable=arguments-differ
+        self, uid_phases: List[PhaseType]
+    ) -> HeuristicResult:
         """Combine UID phases to determine the actual phase for an OID."""
         if not uid_phases:
             return HeuristicResult(False, "No UID phases provided")
 
-        n_GAS = uid_phases.count(PhaseType.GAS)
-        n_LIQUID = uid_phases.count(PhaseType.LIQUID)
-        n_SOLID = uid_phases.count(PhaseType.SOLID)
+        n_gas = uid_phases.count(PhaseType.GAS)
+        n_liquid = uid_phases.count(PhaseType.LIQUID)
+        n_solid = uid_phases.count(PhaseType.SOLID)
         n_combined_phase = (
-            n_GAS * PHASE_ORDER[PhaseType.GAS]
-            + n_LIQUID * PHASE_ORDER[PhaseType.LIQUID]
-            + n_SOLID * PHASE_ORDER[PhaseType.SOLID]
+            n_gas * PHASE_ORDER[PhaseType.GAS]
+            + n_liquid * PHASE_ORDER[PhaseType.LIQUID]
+            + n_solid * PHASE_ORDER[PhaseType.SOLID]
         )
         if n_combined_phase == 3:
             n_combined_phase = 2

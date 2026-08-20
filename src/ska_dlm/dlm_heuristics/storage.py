@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 class UpdateStorageUsageHeuristic(BaseHeuristic):
     """Update registered storage endpoints with their current rclone usage."""
 
-    async def execute(self) -> HeuristicResult:
+    async def execute(self) -> HeuristicResult:  # pylint: disable=arguments-differ,too-many-locals
         """Query rclone usage for every registered storage endpoint."""
         try:
             result = await self.session.execute(select(Storage))
@@ -44,7 +44,9 @@ class UpdateStorageUsageHeuristic(BaseHeuristic):
                     )
                     used_result = await self.session.execute(used_stmt)
                     used = int(used_result.scalar_one() or 0)
-                    objects_stmt = select(func.count(DataItem.UID)).where(
+                    objects_stmt = select(
+                        func.count(DataItem.UID)  # pylint: disable=not-callable
+                    ).where(
                         DataItem.storage_id == storage_id,
                         DataItem.deleted.is_(False),
                     )
@@ -61,7 +63,7 @@ class UpdateStorageUsageHeuristic(BaseHeuristic):
                         "storage_num_objects": objects,
                         "storage_available": True,
                         "storage_checked": True,
-                        "storage_last_checked": func.now(),
+                        "storage_last_checked": func.now(),  # pylint: disable=not-callable
                     }
                     if storage.storage_capacity in [None, -1]:
                         update_values["storage_capacity"] = total
@@ -88,7 +90,7 @@ class UpdateStorageUsageHeuristic(BaseHeuristic):
                         .values(
                             storage_available=False,
                             storage_checked=True,
-                            storage_last_checked=func.now(),
+                            storage_last_checked=func.now(),  # pylint: disable=not-callable
                         )
                     )
                     await self.session.execute(unavailable_stmt)
@@ -100,7 +102,7 @@ class UpdateStorageUsageHeuristic(BaseHeuristic):
             success = all(item["success"] for item in storage_results)
             message = "Updated storage usage" if success else "Some storage usage updates failed"
             return HeuristicResult(success, message, {"storages": storage_results})
-        except Exception as exc:
+        except Exception as exc:  # pylint: disable=broad-exception-caught
             await self.session.rollback()
             return HeuristicResult(False, f"Error updating storage usage: {str(exc)}")
 
@@ -149,11 +151,7 @@ class EnforceStorageUsageHeuristic(BaseHeuristic):
             DataItem.storage_id == Storage.storage_id,
         )
         uid_result = await self.session.execute(uid_stmt)
-        remaining_phases = [
-            row[0]
-            for row in uid_result.fetchall()
-            if row[1] != uid_to_remove
-        ]
+        remaining_phases = [row[0] for row in uid_result.fetchall() if row[1] != uid_to_remove]
         if not remaining_phases:
             return PhaseType.GAS
 
@@ -170,7 +168,7 @@ class EnforceStorageUsageHeuristic(BaseHeuristic):
         if oid is None or target_phase is None or uid is None:
             return {"action": "none", "message": "Candidate missing OID/target_phase/UID"}
 
-        # we want to compare with the phase after deletion, else the increase_heuristic will not do anything.
+        # Compare with the phase after deletion, else increase_heuristic will not do anything.
         future_phase = await self._phase_after_uid_removed(oid, uid)
         increase_result = await self.increase_heuristic.execute(oid, future_phase, target_phase)
         if increase_result.success:
@@ -209,7 +207,7 @@ class EnforceStorageUsageHeuristic(BaseHeuristic):
         oid_exp = item.OID_expiration.timestamp() if item.OID_expiration else float("inf")
         return (min(uid_exp, oid_exp), oid_exp, uid_exp)
 
-    async def execute(self) -> HeuristicResult:
+    async def execute(self) -> HeuristicResult:  # pylint: disable=arguments-differ,too-many-locals
         """Apply storage pressure cleanup for all registered storages.
 
         The method validates required storage fields, decides whether
@@ -320,6 +318,6 @@ class EnforceStorageUsageHeuristic(BaseHeuristic):
                 else "Errors encountered: Some storages remain above usage threshold"
             )
             return HeuristicResult(success, message, {"storages": storage_results})
-        except Exception as exc:
+        except Exception as exc:  # pylint: disable=broad-exception-caught
             await self.session.rollback()
             return HeuristicResult(False, f"Error enforcing storage usage threshold: {str(exc)}")

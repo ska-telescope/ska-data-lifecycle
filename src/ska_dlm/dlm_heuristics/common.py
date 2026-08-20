@@ -12,7 +12,7 @@ PHASE_ORDER[PhaseType.SOLID] = 4
 n_PHASE_ORDER = {v: k for k, v in PHASE_ORDER.items()}
 
 
-class HeuristicResult:
+class HeuristicResult:  # pylint: disable=too-few-public-methods
     """Result of a heuristic execution."""
 
     def __init__(self, success: bool, message: str = "", data: Optional[dict] = None):

@@ -1,4 +1,4 @@
-# pylint: disable=R0914
+# pylint: disable=R0914,R0915
 """Heuristic engine daemon using SQLAlchemy ORM (asyncio)."""
 
 import asyncio
@@ -71,7 +71,8 @@ async def heuristic_process_loop(stop_event: asyncio.Event):
                     await session.commit()
                 logger.info(
                     "Enforce storage usage heuristics returned: status: %s; message: %s",
-                    enforce_storage_usage_result.success, enforce_storage_usage_result.message,
+                    enforce_storage_usage_result.success,
+                    enforce_storage_usage_result.message,
                 )
                 if not enforce_storage_usage_result.success:
                     logger.warning(

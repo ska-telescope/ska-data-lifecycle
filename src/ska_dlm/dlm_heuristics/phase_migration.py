@@ -20,7 +20,7 @@ class IncreaseOidPhaseHeuristic(BaseHeuristic):
         self.combine_heuristic = CombineUidPhasesHeuristic(session)
         self.identify_storage_heuristic = None
 
-    async def execute(
+    async def execute(  # pylint: disable=arguments-differ,too-many-locals,too-many-return-statements
         self, oid: UUID, current_phase: PhaseType, target_phase: PhaseType
     ) -> HeuristicResult:
         """Execute the increase OID phase heuristic."""
@@ -63,7 +63,7 @@ class IncreaseOidPhaseHeuristic(BaseHeuristic):
                     destination_id=str(target_storage_id),
                     path=source_data_item.uri,
                 )
-            except Exception as copy_exc:
+            except Exception as copy_exc:  # pylint: disable=broad-exception-caught
                 return HeuristicResult(
                     False,
                     f"Failed to copy data item for OID {oid}: {str(copy_exc)}",
@@ -107,7 +107,8 @@ class IncreaseOidPhaseHeuristic(BaseHeuristic):
                 await self.session.commit()
 
                 return self.success_result(
-                    f"Created copy of OID {oid} in storage {target_storage_id}; OID phase updated to {new_actual_phase}",
+                    f"Created copy of OID {oid} in storage {target_storage_id}; "
+                    f"OID phase updated to {new_actual_phase}",
                     {
                         "oid": oid,
                         "new_uid": new_uid,
@@ -120,7 +121,8 @@ class IncreaseOidPhaseHeuristic(BaseHeuristic):
 
             return HeuristicResult(
                 False,
-                f"Copy operation did not reach target phase {target_phase}; new actual phase is {new_actual_phase}",
+                f"Copy operation did not reach target phase {target_phase}; "
+                f"new actual phase is {new_actual_phase}",
                 {
                     "oid": oid,
                     "new_uid": new_uid,
@@ -131,7 +133,7 @@ class IncreaseOidPhaseHeuristic(BaseHeuristic):
                 },
             )
 
-        except Exception as exc:
+        except Exception as exc:  # pylint: disable=broad-exception-caught
             await self.session.rollback()
             return HeuristicResult(
                 False, f"Error executing Increase OID Phase heuristic: {str(exc)}"
@@ -145,7 +147,9 @@ class IdentifyTargetStorageHeuristic(BaseHeuristic):
         super().__init__(session)
         self.combine_heuristic = CombineUidPhasesHeuristic(session)
 
-    async def execute(self, oid: UUID, target_phase: PhaseType) -> HeuristicResult:
+    async def execute(  # pylint: disable=arguments-differ,too-many-locals
+        self, oid: UUID, target_phase: PhaseType
+    ) -> HeuristicResult:
         """Execute the identify target storage heuristic."""
         try:
             uid_stmt = select(Storage.storage_phase, DataItem.storage_id).where(
@@ -187,7 +191,8 @@ class IdentifyTargetStorageHeuristic(BaseHeuristic):
                 combined_order = PHASE_ORDER.get(actual_phase, 0) + storage_order
                 if combined_order >= target_order:
                     return self.success_result(
-                        f"Identified target storage {storage.storage_id} for OID {oid} to reach phase {target_phase}",
+                        f"Identified target storage {storage.storage_id} for OID {oid} "
+                        f"to reach phase {target_phase}",
                         {
                             "storage_id": storage.storage_id,
                             "storage_phase": storage_phase,
@@ -202,7 +207,7 @@ class IdentifyTargetStorageHeuristic(BaseHeuristic):
                 {"status": "ERROR"},
             )
 
-        except Exception as exc:
+        except Exception as exc:  # pylint: disable=broad-exception-caught
             await self.session.rollback()
             return HeuristicResult(
                 False, f"Error executing Identify Target Storage heuristic: {str(exc)}"
