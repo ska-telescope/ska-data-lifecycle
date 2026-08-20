@@ -8,6 +8,7 @@ from contextlib import asynccontextmanager
 
 import requests
 import urllib3
+from urllib3.exceptions import InsecureRequestWarning
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, PlainTextResponse
 
@@ -39,6 +40,7 @@ from ..exceptions import (
 
 logger = logging.getLogger(__name__)
 
+# disable the rclone https warnings.
 urllib3.disable_warnings(InsecureRequestWarning)
 
 
