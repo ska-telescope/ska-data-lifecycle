@@ -73,9 +73,8 @@ async def heuristic_process_loop(stop_event: asyncio.Event):
                     "Enforce storage usage heuristics returned: status: %s; message: %s",
                     enforce_storage_usage_result.success, enforce_storage_usage_result.message,
                 )
-                logger.info(">>> Temporarily output of all info: %s", enforce_storage_usage_result.data)
                 if not enforce_storage_usage_result.success:
-                    logger.debug(
+                    logger.warning(
                         "Enforce storage usage data: %s", enforce_storage_usage_result.data
                     )
                 elapsed = (datetime.now(timezone.utc) - start).total_seconds()
