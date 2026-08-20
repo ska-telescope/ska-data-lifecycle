@@ -103,9 +103,7 @@ class UpdateStorageUsageHeuristic(BaseHeuristic):
             for storage in storages:
                 storage_id = storage.storage_id
                 try:
-                    config = dlm_storage_requests.get_storage_config(
-                        storage_id=str(storage_id)
-                    )
+                    config = dlm_storage_requests.get_storage_config(storage_id=str(storage_id))
                     if not config:
                         raise RuntimeError("No rclone configuration found")
                     volume = f"{config[0]['name']}:{config[0].get('root_path', '/')}"
