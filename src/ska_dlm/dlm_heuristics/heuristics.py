@@ -548,7 +548,7 @@ class DeleteUidHeuristic(BaseHeuristic):
                     remaining_storage_accessible,
                     remaining_item_accessible,
                     remaining_storage_id,
-                ) = self._get_storage_accessibility(remaining_item.UID, remaining_item)
+                ) = await self._get_storage_accessibility(remaining_item.UID, remaining_item)
 
                 if remaining_storage_accessible and remaining_item_accessible:
                     accessible_remaining_phases.append(remaining_phase)
