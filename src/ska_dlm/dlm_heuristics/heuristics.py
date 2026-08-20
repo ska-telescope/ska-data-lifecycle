@@ -103,7 +103,7 @@ class UpdateStorageUsageHeuristic(BaseHeuristic):
             for storage in storages:
                 storage_id = storage.storage_id
                 try:
-                    config = await dlm_storage_requests.get_storage_config(
+                    config = dlm_storage_requests.get_storage_config(
                         storage_id=str(storage_id)
                     )
                     if not config:
