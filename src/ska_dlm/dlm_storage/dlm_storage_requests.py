@@ -10,8 +10,6 @@ import requests
 import urllib3
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, PlainTextResponse
-from httpx import ReadTimeout
-from urllib3.exceptions import InsecureRequestWarning
 
 import ska_dlm
 from ska_dlm.common_types import (
@@ -625,7 +623,7 @@ def rclone_access(volume: str, remote_file_path: str = "", timeout=1) -> tuple[b
     logger.debug("rclone access check: %s, %s", request_url, post_data)
     try:
         request = requests.post(request_url, post_data, timeout=timeout, verify=False)
-    except ReadTimeout:
+    except requests.exceptions.ReadTimeout:
         logger.warning(
             "rclone unable to access url %s. Please check rclone container logs.", request_url
         )
