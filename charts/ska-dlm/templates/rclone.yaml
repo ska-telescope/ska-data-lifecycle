@@ -81,7 +81,7 @@ spec:
         {{- end }}
         {{- end }}
           - name: shared-storage
-            mountPath: /dlm
+            mountPath: {{ .Values.rclone.mountPath | quote }}
           - name: rclone-configmap
             mountPath: "/rclone-start.sh"
             subPath: rclone-start.sh
@@ -89,7 +89,7 @@ spec:
       volumes:
       - name: shared-storage
         persistentVolumeClaim:
-          claimName: {{ .Values.global.sharedpvc.pvc.name }}
+          claimName: {{ .Values.rclone.pvcName }}
       - name: rclone-configmap
         configMap:
           name: {{ include "ska-dlm.fullname" . }}-rclone-configmap

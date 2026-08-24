@@ -51,6 +51,8 @@ storage:
   version: "2.3.0"
   imagePullPolicy: Always
   replicas: 1
+  pvcName: "shared"
+  mountPath: "/dlm"
 
   locations: # Location endpoints (can list multiple)
     - name: SKA-DEV
@@ -190,6 +192,9 @@ rclone:
   version: "608e5ef5"
   imagePullPolicy: Always
   replicas: 1
+  keyPath: "/dlm/users/dlm/.ssh/"
+  pvcName: "shared"
+  mountPath: "/dlm"
   secret:
     enabled: false
     name: ""
@@ -211,6 +216,9 @@ rabbitmq:
   imagePullPolicy: Always
   replicas: 1
   serviceType: ClusterIP
+  pvcName: "shared"
+  mountPath: "/dlm/"
+  mnesiaBasePath: "/dlm/users/dlm/rabbitmq-data/"
   auth:
     username: guest
     password: guest
@@ -298,5 +306,5 @@ archive:
   version: "latest"
   imagePullPolicy: Always
   replicas: 1
-  storage_pvc_name: "shared"
-  storage_pvc_mount_path: "/dlm"
+  pvcName: "shared"
+  mountPath: "/dlm"

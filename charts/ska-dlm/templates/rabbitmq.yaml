@@ -43,10 +43,10 @@ spec:
         - name: setup-rabbitmq-volume
           image: busybox:latest
           # Creates the folder and transfers ownership to rabbitmq (UID 999)
-          command: ["sh", "-c", "mkdir -p /dlm/rabbitmq-data/ && chown -R 999:999 /dlm/rabbitmq-data"]
+          command: ["sh", "-c", "mkdir -p {{ .Values.rabbitmq.mnesiaBasePath }} && chown -R 999:999 {{ .Values.rabbitmq.mnesiaBasePath }}"]
           volumeMounts:
           - name: shared-storage
-            mountPath: /dlm
+            mountPath: {{ .Values.rabbitmq.mountPath }}
       containers:
         - name: rabbitmq
           image: {{ .Values.rabbitmq.image }}:{{ .Values.rabbitmq.version }}
@@ -64,7 +64,7 @@ spec:
             - name: RABBITMQ_NODENAME
               value: rabbit@localhost
             - name: RABBITMQ_MNESIA_BASE
-              value: "/dlm/rabbitmq-data/"
+              value: {{ .Values.rabbitmq.mnesiaBasePath | quote }}
           readinessProbe:
             tcpSocket:
               port: amqp
@@ -77,9 +77,9 @@ spec:
             initialDelaySeconds: 10
           volumeMounts:
           - name: shared-storage
-            mountPath: /dlm
+            mountPath: {{ .Values.rabbitmq.mountPath }}
       volumes:
       - name: shared-storage
         persistentVolumeClaim:
-          claimName: {{ .Values.global.sharedpvc.pvc.name }}
+          claimName: {{ .Values.rabbitmq.pvcName }}
 {{- end }}
