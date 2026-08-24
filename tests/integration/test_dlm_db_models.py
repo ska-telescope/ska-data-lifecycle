@@ -38,9 +38,9 @@ def test_table_names():
 
 @pytest.fixture(name="engine")
 async def engine_fixture() -> AsyncGenerator[AsyncEngine, None]:
-    """Create test suite scope async engine.
+    """Create an async SQLAlchemy engine for the test database.
 
-    Uses env DATABASE_URL to configure alternative engines.
+    Uses the DATABASE_URL environment variable if set.
     """
     db_url = os.getenv(
         "DATABASE_URL", "postgresql+asyncpg://ska_dlm_admin:password@dlm_db:5432/ska_dlm_testing"
@@ -76,7 +76,7 @@ async def session(connection) -> AsyncGenerator[AsyncSession, None]:
             )() as session:  # type: ignore
                 yield session
 
-        await outer_txn.rollback()
+        await outer_txn.rollback()  # rolls back everything created during the test
 
 
 # pylint: disable=too-few-public-methods, redefined-outer-name

@@ -1,3 +1,4 @@
+# pylint: disable=R0914
 """Heuristic engine daemon using SQLAlchemy ORM (asyncio)."""
 
 import asyncio
@@ -8,7 +9,11 @@ import signal
 from datetime import datetime, timezone
 
 from ska_dlm.dlm_db import create_async_sql_engine, create_async_sql_session
-from ska_dlm.dlm_heuristics.heuristics import UidExpiryHeuristic
+from ska_dlm.dlm_heuristics.heuristics import (
+    OidExpiryHeuristic,
+    UidExpiryHeuristic,
+    UpdateStorageUsageHeuristic,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -37,12 +42,21 @@ async def heuristic_process_loop(stop_event: asyncio.Event):
                 # we are packing each called heuristics in it's own session
                 async with async_session as session:
                     uid_expiry_heuristics = UidExpiryHeuristic(session)
-                    result = await uid_expiry_heuristics.execute()
+                    uid_expiry_result = await uid_expiry_heuristics.execute()
+                    oid_expiry_heuristics = OidExpiryHeuristic(session)
+                    oid_expiry_result = await oid_expiry_heuristics.execute()
+                    storage_usage_heuristics = UpdateStorageUsageHeuristic(session)
+                    storage_usage_result = await storage_usage_heuristics.execute()
                     await session.commit()
-                logger.info("UID expiry heuristics returned: %s", result.message)
-                logger.debug("Heuristics data: %s", result.data)
-                if not result.success:
-                    logger.debug("Heuristics data: %s", result.data)
+                logger.info("UID expiry heuristics returned: %s", uid_expiry_result.message)
+                logger.info("OID expiry heuristics returned: %s", oid_expiry_result.message)
+                logger.info("Storage usage heuristics returned: %s", storage_usage_result.message)
+                logger.debug("UID expiry data: %s", uid_expiry_result.data)
+                logger.debug("OID expiry data: %s", oid_expiry_result.data)
+                if not uid_expiry_result.success:
+                    logger.debug("UID expiry data: %s", uid_expiry_result.data)
+                if not oid_expiry_result.success:
+                    logger.debug("OID expiry data: %s", oid_expiry_result.data)
                 elapsed = (datetime.now(timezone.utc) - start).total_seconds()
                 sleep_time = max(0, HEURISTIC_POLL_INTERVAL - elapsed)
                 total_sleep_time += sleep_time

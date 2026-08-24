@@ -27,4 +27,3 @@ USER ska-dlm
 COPY --from=buildenv /app/.venv /app/.venv/
 ENV PATH="/app/.venv/bin:${PATH}"
 
-CMD ["ska-dlm-sm-service"]

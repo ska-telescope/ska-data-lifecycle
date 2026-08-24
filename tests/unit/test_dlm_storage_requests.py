@@ -16,8 +16,8 @@ class _MockResp:
         return self._payload
 
 
-def test_rclone_remote_check_success_no_config(monkeypatch):
-    """rclone_remote_check returns True when remote /about responds 200."""
+def test_rclone_access_success_no_config(monkeypatch):
+    """rclone_access returns True and the item payload when the remote responds 200."""
     urls = ["http://rclone-server.local"]
     monkeypatch.setattr(ds, "CONFIG", types.SimpleNamespace(RCLONE=urls))
 
@@ -29,22 +29,27 @@ def test_rclone_remote_check_success_no_config(monkeypatch):
         recorded["post_data"] = post_data
         recorded["timeout"] = timeout
         recorded["verify"] = verify
-        return _MockResp(200, {"status": "ok"})
+        return _MockResp(200, {"item": {"name": "myvolume"}})
 
     monkeypatch.setattr(ds.requests, "post", fake_post)
 
-    result = ds.rclone_remote_check("myvolume")
+    result, item = ds.rclone_access(volume="myvolume")
 
     assert result is True
-    assert recorded["url"].endswith("/operations/about")
-    # when no config is provided, the helper posts {'fs': volume}
-    assert recorded["post_data"] == {"fs": "myvolume"}
-    assert recorded["timeout"] == 10
+    assert item == {"name": "myvolume"}
+    assert recorded["url"].endswith("/operations/stat")
+    # the helper posts fs/remote and enables s3 bucket check bypass
+    assert recorded["post_data"] == {
+        "fs": "myvolume",
+        "remote": "",
+        "s3-no-check-bucket": True,
+    }
+    assert recorded["timeout"] == 1
     assert recorded["verify"] is False
 
 
-def test_rclone_remote_check_failure_logs_warning(monkeypatch, caplog):
-    """rclone_remote_check returns False and logs when remote returns non-200."""
+def test_rclone_access_failure_logs_warning(monkeypatch, caplog):
+    """rclone_access returns False and logs when the remote returns non-200."""
     urls = ["http://rclone-server.local"]
     monkeypatch.setattr(ds, "CONFIG", types.SimpleNamespace(RCLONE=urls))
 
@@ -54,8 +59,30 @@ def test_rclone_remote_check_failure_logs_warning(monkeypatch, caplog):
     monkeypatch.setattr(ds.requests, "post", fake_post)
 
     with caplog.at_level("WARNING"):
-        result = ds.rclone_remote_check("vol", config=None)
+        result, _ = ds.rclone_access(volume="vol")
 
     assert result is False
-    # ensure a warning message was logged indicating inability to reach
-    assert any("rclone can not reach" in rec.message for rec in caplog.records)
+    # ensure a warning message was logged indicating inability to access the remote
+    assert any("rclone can not access" in rec.message for rec in caplog.records)
+
+
+def test_rclone_about_success(monkeypatch):
+    """rclone_about posts the endpoint filesystem and returns its response."""
+    monkeypatch.setattr(ds, "CONFIG", types.SimpleNamespace(RCLONE=["http://rclone-server.local"]))
+    recorded = {}
+
+    def fake_post(url, post_data=None, timeout=None, verify=None):
+        recorded.update(url=url, post_data=post_data, timeout=timeout, verify=verify)
+        return _MockResp(200, {"total": 100, "used": 25, "objects": 4})
+
+    monkeypatch.setattr(ds.requests, "post", fake_post)
+
+    result = ds.rclone_about("myvolume:/")
+
+    assert result == {"total": 100, "used": 25, "objects": 4}
+    assert recorded == {
+        "url": "http://rclone-server.local/operations/about",
+        "post_data": {"fs": "myvolume:/"},
+        "timeout": 10,
+        "verify": False,
+    }

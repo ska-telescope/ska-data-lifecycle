@@ -12,6 +12,7 @@ from .dlm_storage_requests import (
     init_storage,
     query_location,
     query_storage,
+    rclone_about,
     rclone_access,
 )
 
@@ -27,5 +28,6 @@ __all__ = [
     "query_location",
     "query_storage",
     "rclone_access",
+    "rclone_about",
     "create_rclone_config",
 ]

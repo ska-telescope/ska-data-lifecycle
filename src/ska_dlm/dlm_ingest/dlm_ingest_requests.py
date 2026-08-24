@@ -235,7 +235,7 @@ def register_data_item(  # noqa: C901
         "target_phase": target_phase,
         "item_type": item_type,
         "item_owner": username,
-        "item_size": item_size,
+        "item_size": item_size if item_size else decompressed_size,
         "decompressed_size": decompressed_size,
         "parents": parents,
     }

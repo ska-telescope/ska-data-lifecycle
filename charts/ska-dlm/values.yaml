@@ -40,7 +40,7 @@ ingest:
   component: ingest
   subsystem: data-lifecycle-management
   image: artefact.skao.int/ska-data-lifecycle
-  version: "2.1.0"
+  version: "2.3.0"
   imagePullPolicy: Always
   replicas: 1
 
@@ -48,12 +48,12 @@ storage:
   component: storage
   subsystem: data-lifecycle-management
   image: artefact.skao.int/ska-data-lifecycle
-  version: "2.1.0"
+  version: "2.3.0"
   imagePullPolicy: Always
   replicas: 1
 
   locations: # Location endpoints (can list multiple)
-    - name: local
+    - name: SKA-DEV
       type: local-dev
       country: AU
       city: Perth
@@ -61,7 +61,7 @@ storage:
   endpointSecretName: ""
   endpoints: # Storage endpoints (can list multiple)
     - name: dlm-archive
-      location: local
+      location: SKA-DEV
       storage_type: filesystem
       interface: posix
       storage_phase: SOLID
@@ -76,7 +76,7 @@ storage:
           key_file: "/root/.ssh/id_rsa"
 
     - name: local
-      location: local
+      location: SKA-DEV
       storage_type: filesystem
       interface: posix
       root_directory: /
@@ -91,7 +91,7 @@ migration:
   component: migration
   subsystem: data-lifecycle-management
   image: artefact.skao.int/ska-data-lifecycle
-  version: "2.1.0"
+  version: "2.3.0"
   imagePullPolicy: Always
   replicas: 1
 
@@ -99,7 +99,7 @@ request:
   component: request
   subsystem: data-lifecycle-management
   image: artefact.skao.int/ska-data-lifecycle
-  version: "2.1.0"
+  version: "2.3.0"
   imagePullPolicy: Always
   replicas: 1
 
@@ -138,7 +138,7 @@ heuristics:
   component: heuristics
   subsystem: data-lifecycle-management
   image: artefact.skao.int/ska-data-lifecycle
-  version: "2.1.0"
+  version: "2.3.0"
   imagePullPolicy: Always
   replicas: 1
 
@@ -149,7 +149,7 @@ ska-db-migrations:
   liquibase:
     # Note: the ODA schema execution.execution_blocks must exist before create-external-triggers is specified in the contextFilter below.
     # This is because create-external-triggers SQL reference the execution.execution_blocks table. If specified and the table doesn't exist, it will throw an exception.
-    contextFilter: "create-db,create-schema" # "default" or a combination of "create-roles,create-db,create-schema,create-external-triggers"
+    contextFilter: "create-db,create-schema,2.3-release" # "default" or a combination of "create-roles,create-db,create-schema,create-external-triggers"
     changelogFile: changelog.yaml
   job:
     enabled: true
@@ -187,7 +187,7 @@ rclone:
   component: rclone
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-rclone
-  version: "2.1.0-dev.c52d940eb"
+  version: "608e5ef5"
   imagePullPolicy: Always
   replicas: 1
   secret:
@@ -203,7 +203,7 @@ rclone:
       path: ""
 
 rabbitmq:
-  enabled: true
+  enabled: true # WIP (DMAN-213)
   component: rabbitmq
   subsystem: data-lifecycle-management
   image: rabbitmq
@@ -220,11 +220,11 @@ rabbitmq:
   port: 5672
 
 outbox:
-  enabled: true
+  enabled: true # WIP (DMAN-213)
   component: outbox
   subsystem: data-lifecycle-management
-  image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: "09f2e7a9"
+  image: artefact.skao.int/ska-data-lifecycle
+  version: "2.3.0"
   imagePullPolicy: Always
   replicas: 1
   rabbitmq:
@@ -238,7 +238,7 @@ gateway:
   component: gateway
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-test-gateway
-  version: "2.1.0-dev.c52d940eb"
+  version: "608e5ef5"
   imagePullPolicy: Always
   replicas: 1
   secret:
@@ -249,7 +249,7 @@ keycloak:
   component: keycloak
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-test-keycloak
-  version: "2.1.0-dev.c52d940eb"
+  version: "608e5ef5"
   imagePullPolicy: Always
   replicas: 1
   use_https: true
@@ -258,7 +258,7 @@ keycloak:
 # ------ Optional utilities ------
 
 pgweb:  # see https://github.com/ectobit/charts/tree/main/pgweb
-  enabled: false  # enable web IDE access to Postgres
+  enabled: true  # enable web IDE access to Postgres
   ingress:
     enabled: true
     annotations:
@@ -273,7 +273,7 @@ benchmark:
   component: benchmark
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-benchmark
-  version: "2.1.0-dev.c52d940eb"
+  version: "608e5ef5"
   imagePullPolicy: Always
   name: register  # register or migrate
   config:
@@ -298,3 +298,5 @@ archive:
   version: "latest"
   imagePullPolicy: Always
   replicas: 1
+  storage_pvc_name: "shared"
+  storage_pvc_mount_path: "/dlm"

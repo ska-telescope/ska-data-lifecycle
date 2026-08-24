@@ -14,7 +14,13 @@ from tests.test_env import DlmTestClient
 def pytest_addoption(parser):
     """Set up command line options."""
     parser.addoption("--env", action="store", default="local", help="local, docker, or k8s")
-    parser.addoption("--auth", action="store", default="1", help="Use OAuth flow")
+    parser.addoption(
+        "--auth",
+        action="store",
+        default="1",
+        choices=("0", "1"),
+        help="Use OAuth flow: 1 to enable, 0 to disable",
+    )
 
 
 @pytest.fixture(name="env", scope="session")
