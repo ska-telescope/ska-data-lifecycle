@@ -72,10 +72,10 @@ spec:
         - name: PUBLIC_KEY_ACCESS
           value: "true"
         - name: PUBLIC_KEY_FILE
-          value: "/dlm/.ssh/id_rsa.pub"
+          value: "{{ .Values.rclone.keyPath }}/id_rsa.pub"
         volumeMounts:
           - name: shared-storage
-            mountPath: {{ .Values.archive.storage_pvc_mount_path }}
+            mountPath: {{ .Values.archive.mountPath | quote }}
         lifecycle:
             postStart:
               exec:
@@ -84,7 +84,7 @@ spec:
                   - "-c"
                   - |
                     mkdir -p /root/.ssh
-                    cat /dlm/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys
+                    cat {{ .Values.rclone.keyPath }}/id_rsa.pub >> /root/.ssh/authorized_keys
                     chmod 700 /root/.ssh
                     chmod 600 /root/.ssh/authorized_keys
                     echo "PermitRootLogin yes" >> /etc/ssh/sshd_config
@@ -93,4 +93,4 @@ spec:
       volumes:
       - name: shared-storage
         persistentVolumeClaim:
-          claimName: {{ .Values.archive.storage_pvc_name }}
+          claimName: {{ .Values.archive.pvcName }}

@@ -4,6 +4,7 @@
 
 ### Updated
 
+* Allow shared PVC and mount points to be specified and file locations to be set.
 * OID expiration heuristic
 * Heuristics loop is now running UID and OID expiration as well as UpdateStorage
 

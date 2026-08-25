@@ -91,7 +91,7 @@ spec:
           - name: LOCATION_CONFIG
             value: "/etc/location-config.json"
           - name: SSH_PUBLIC_KEY_PATH
-            value: /dlm/.ssh/id_rsa.pub # TODO: need to make shared_data a value
+            value: {{ .Values.rclone.keyPath }}/id_rsa.pub
         ports:
         - containerPort: 80
           name: http-port
@@ -118,7 +118,7 @@ spec:
           subPath: location-config.json
           readOnly: true
         - name: shared-storage
-          mountPath: /dlm
+          mountPath: {{ .Values.storage.mountPath | quote }}
       volumes:
       - name: dlm-configmap
         configMap:
