@@ -89,7 +89,7 @@ spec:
       volumes:
       - name: shared-storage
         persistentVolumeClaim:
-          claimName: {{ .Values.rclone.pvcName }}
+          claimName: {{ .Values.global.sharedpvc.pvc.name }}
       - name: rclone-configmap
         configMap:
           name: {{ include "ska-dlm.fullname" . }}-rclone-configmap
