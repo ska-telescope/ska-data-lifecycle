@@ -7,7 +7,7 @@
 """Unit tests for DLM heuristics."""
 
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -208,7 +208,7 @@ class TestEnforceStorageUsageHeuristic:
         used_result = MagicMock()
         used_result.scalar_one.return_value = 700
 
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         item_soon = MagicMock(
             UID=uuid.uuid4(),
             item_size=150,
@@ -256,7 +256,7 @@ class TestEnforceStorageUsageHeuristic:
         used_result = MagicMock()
         used_result.scalar_one.return_value = 600
 
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         item = MagicMock(
             UID=uuid.uuid4(),
             item_size=100,
