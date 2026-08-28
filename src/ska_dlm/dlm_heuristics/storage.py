@@ -98,7 +98,7 @@ class UpdateStorageUsageHeuristic(BaseHeuristic):
                         {"storage_id": storage_id, "success": False, "message": str(exc)}
                     )
 
-            await self.session.commit()
+            # await self.session.commit()
             success = all(item["success"] for item in storage_results)
             message = "Updated storage usage" if success else "Some storage usage updates failed"
             return HeuristicResult(success, message, {"storages": storage_results})
@@ -310,7 +310,7 @@ class EnforceStorageUsageHeuristic(BaseHeuristic):
                     }
                 )
 
-            await self.session.commit()
+            # await self.session.commit()
             success = all(item["success"] for item in storage_results)
             message = (
                 "Enforced storage usage threshold"

@@ -239,7 +239,7 @@ class DeleteUidHeuristic(BaseHeuristic):
         """Mark an inaccessible payload as deleted and refresh its storage metadata."""
         await self._mark_uid_as_deleted(uid)
         await self._update_storage_after_delete(storage_id)
-        await self.session.commit()
+        # await self.session.commit()
         return self.success_result(
             f"UID {uid} marked as deleted.",
             {
@@ -322,7 +322,7 @@ class DeleteUidHeuristic(BaseHeuristic):
             )
             await self.session.execute(update_oid_stmt)
 
-            await self.session.commit()
+            # await self.session.commit()
 
             return self.success_result(
                 f"Deleted UID {uid} payload and updated OID {oid} phase to {result_phase}",
@@ -396,7 +396,7 @@ class OidExpiryHeuristic(BaseHeuristic):
         """Execute the OID expiry heuristic."""
         try:
             stmt = (
-                select(DataItem.OID)
+                select(DataItem.OID, DataItem.OID_expiration)
                 .distinct()
                 .where(
                     DataItem.OID_expiration < func.now(),  # pylint: disable=not-callable
@@ -405,20 +405,26 @@ class OidExpiryHeuristic(BaseHeuristic):
                 )
             )
             result = await self.session.execute(stmt)
-            expired_rows = result.fetchall()
-            expired_oids = [row[0] for row in expired_rows]
+            expired_oids = result.fetchall()
 
             if not expired_oids:
                 return self.success_result("No expired OIDs found", {"expired_oids": []})
 
             deletion_results = []
-            for oid in expired_oids:
-                update_target_phase_stmt = (
+            failed = []
+            for oid, oid_expiration in expired_oids:
+                update_stmt = (
                     update(DataItem)
                     .where(DataItem.OID == oid, DataItem.deleted.is_(False))
-                    .values(target_phase=PhaseType.PLASMA)
+                    .values(target_phase=PhaseType.PLASMA, OID_expiration=oid_expiration)
                 )
-                await self.session.execute(update_target_phase_stmt)
+                logger.info(
+                    "Updating records for expired OID: %s with values target_phase=%s, OID_expiration=%s",
+                    update_stmt,
+                    PhaseType.PLASMA,
+                    oid_expiration,
+                )
+                await self.session.execute(update_stmt)
 
                 uid_stmt = select(DataItem.UID).where(
                     DataItem.OID == oid,
@@ -437,9 +443,15 @@ class OidExpiryHeuristic(BaseHeuristic):
                             "message": delete_result.message,
                         }
                     )
+                    if not delete_result.success:
+                        failed.append(deletion_results[-1])
 
             success = all(item["success"] for item in deletion_results)
-            message = "Deleted expired OIDs" if success else "Some expired OID deletions failed"
+            message = (
+                "Deleted expired OIDs"
+                if success
+                else f"Some expired OID deletions failed: {failed}"
+            )
 
             return HeuristicResult(
                 success,

@@ -178,7 +178,7 @@ def set_state(uid: str, state: ItemState) -> dict:
         raise ValueError(
             f"Invalid item state {state}. Must be one of {[e.value for e in ItemState]}"
         ) from exc
-    deleted_flag = state == 'DELETED'
+    deleted_flag = state == "DELETED"
     return update_data_item(uid=uid, post_data={"item_state": state, "deleted": deleted_flag})
 
 

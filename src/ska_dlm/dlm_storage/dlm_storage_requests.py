@@ -792,7 +792,8 @@ def query_storage(storage_name: str = "", storage_id: str = "") -> list[dict]:
         params["storage_name"] = f"eq.{storage_name}"
     elif storage_id:
         params["storage_id"] = f"eq.{storage_id}"
-    return DB.select(CONFIG.DLM.storage_table, params=params)
+    result = DB.select(CONFIG.DLM.storage_table, params=params)
+    return result
 
 
 def check_item_on_storage(

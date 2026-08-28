@@ -104,7 +104,7 @@ class IncreaseOidPhaseHeuristic(BaseHeuristic):
                     update(DataItem).where(DataItem.OID == oid).values(OID_phase=new_actual_phase)
                 )
                 await self.session.execute(update_stmt)
-                await self.session.commit()
+                # await self.session.commit()
 
                 return self.success_result(
                     f"Created copy of OID {oid} in storage {target_storage_id}; "

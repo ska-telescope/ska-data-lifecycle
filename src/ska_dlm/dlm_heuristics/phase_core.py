@@ -123,7 +123,7 @@ class ChangeOidPhaseHeuristic(BaseHeuristic):
 
         update_stmt = update(DataItem).where(DataItem.OID == oid).values(OID_phase=target_phase)
         await self.session.execute(update_stmt)
-        await self.session.commit()
+        # await self.session.commit()
 
         return self.success_result(
             f"Deleted UID instances to reach OID {oid} target phase {target_phase}",
@@ -161,7 +161,7 @@ class ChangeOidPhaseHeuristic(BaseHeuristic):
                 update(DataItem).where(DataItem.OID == oid).values(OID_phase=actual_phase)
             )
             await self.session.execute(update_stmt)
-            await self.session.commit()
+            # await self.session.commit()
 
         return self.success_result(
             f"OID {oid} already at target phase {target_phase}",
@@ -267,7 +267,7 @@ class OidPhaseEnforceHeuristic(BaseHeuristic):
                     update(DataItem).where(DataItem.OID == oid).values(OID_phase=actual_phase)
                 )
                 await self.session.execute(update_stmt)
-                await self.session.commit()
+                # await self.session.commit()
                 return self.success_result(f"Updated OID {oid} phase to {actual_phase}")
 
             if PHASE_ORDER.get(target_phase, float("inf")) < PHASE_ORDER.get(
