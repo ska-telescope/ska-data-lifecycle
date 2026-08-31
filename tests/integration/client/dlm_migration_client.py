@@ -16,6 +16,7 @@ def copy_data_item(
     destination_name: str = "",
     destination_id: str = "",
     path: str = "",
+    dependency: str | None = None,
 ) -> dict:
     """Copy a data_item from source to destination.
 
@@ -40,6 +41,8 @@ def copy_data_item(
         the destination storage, by default ""
     path
         the destination path relative to storage root, by default ""
+    dependency
+        The Dependency key in the SDP Config DB. Can be Null.
 
     Returns
     -------

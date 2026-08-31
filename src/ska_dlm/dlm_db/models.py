@@ -346,6 +346,7 @@ class Migration(Base):
     date = Column(DateTime(timezone=False), nullable=False, server_default=func.now())
     completion_date = Column(DateTime(timezone=False), nullable=True)
     command = Column(String, nullable=True)
+    dependency = Column(String, nullable=True)
 
     source_storage = relationship("Storage", foreign_keys=[source_storage_id])
     destination_storage = relationship("Storage", foreign_keys=[destination_storage_id])

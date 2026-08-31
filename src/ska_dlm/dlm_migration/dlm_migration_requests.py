@@ -1,3 +1,5 @@
+# pylint: disable=too-many-arguments,too-many-locals,too-many-positional-arguments
+# pylint: disable=too-many-branches,too-many-statements
 """DLM Migration API module."""
 
 import asyncio
@@ -215,7 +217,6 @@ def rclone_copy(
     dst_remote: str,
     dest_root_dir: str,
     item_type: str,
-    # pylint: disable=too-many-arguments,too-many-positional-arguments
 ):
     """Copy a file from one place to another."""
     # if the item is a measurement set then use the copy directory command
@@ -439,7 +440,7 @@ async def _create_migration_record(
     destination_storage_id,
     authorization,
     command,
-    # pylint: disable=too-many-arguments,too-many-positional-arguments
+    dependency,
 ):
     # decode the username from the authorization
     username = None
@@ -458,6 +459,7 @@ async def _create_migration_record(
         destination_storage_id=destination_storage_id,
         user=username,
         command=command,
+        dependency=dependency,
     )
     session.add(record)
     await session.flush()
@@ -469,7 +471,6 @@ async def _create_migration_record(
 @cli.command()
 @rest.post("/migration/copy_data_item", response_model=dict)
 async def copy_data_item(  # noqa: C901
-    # pylint: disable=too-many-arguments,too-many-positional-arguments
     item_name: str = "",
     oid: str = "",
     uid: str = "",
@@ -477,6 +478,7 @@ async def copy_data_item(  # noqa: C901
     destination_id: str = "",
     path: str = "",
     authorization: Annotated[str | None, Header()] = None,
+    dependency: str | None = None,
 ) -> dict:
     """Copy a data_item from source to destination.
 
@@ -503,6 +505,8 @@ async def copy_data_item(  # noqa: C901
         the destination path relative to storage root, by default ""
     authorization
         Validated Bearer token with UserInfo
+    dependency
+        The Dependency key in the SDP Config DB. Can be Null.
 
     Returns
     -------
@@ -527,11 +531,11 @@ async def copy_data_item(  # noqa: C901
             destination_id=destination_id,
             path=path,
             authorization=authorization,
+            dependency=dependency,
         )
 
 
 async def _copy_data_item(  # noqa: C901
-    # pylint: disable=too-many-arguments,too-many-locals,too-many-positional-arguments,too-many-branches,too-many-statements
     session: AsyncSession,
     item_name: str = "",
     oid: str = "",
@@ -540,6 +544,8 @@ async def _copy_data_item(  # noqa: C901
     destination_id: str = "",
     path: str = "",
     authorization: Annotated[str | None, Header()] = None,
+    dependency: str
+    | None = None,  # forgoing the Dependency typing to avoid importing ska_sdp_config.entity.flow
 ) -> dict:
     """Copy a data_item from source to destination."""
     if not item_name and not oid and not uid:
@@ -652,6 +658,7 @@ async def _copy_data_item(  # noqa: C901
             dest_id,
             authorization,
             command,
+            dependency,
         )
         session.commit()
 

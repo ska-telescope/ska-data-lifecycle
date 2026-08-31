@@ -171,9 +171,9 @@ services:
       - --password=password
       - --driver=org.postgresql.Driver
       - --search-path=/changelog
-      - update
       - --changelog-file=changelog.yaml
-      - --context-filter=!create-db,!create-roles,create-schema,!create-external-triggers,2.3-release
+      - update
+      - --context-filter=!create-db,!create-roles,create-schema,!create-external-triggers,2.3-release,2.4-release
     depends_on:
       dlm_db:
         condition: service_healthy
