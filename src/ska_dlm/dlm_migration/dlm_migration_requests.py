@@ -15,6 +15,7 @@ from fastapi import FastAPI, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from requests import Request
+from ska_dlm.common_types import ItemState
 from sqlalchemy import func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
@@ -157,6 +158,16 @@ def _open_migration_session() -> AsyncSession:
     return rest.state.async_session_factory()  # type: ignore[attr-defined]
 
 
+async def _query_job_list(url: str):
+    request_url = f"{url}/job/list"
+    loop = asyncio.get_event_loop()
+    logger.info("rclone request: %s", request_url)
+    request = await loop.run_in_executor(
+        None, partial(requests.post, request_url, timeout=1800, verify=False)
+    )
+    return request.json()
+
+
 async def _query_job_status(url: str, job_id: int):
     request_url = f"{url}/job/status"
     post_data = {"jobid": job_id}
@@ -282,10 +293,33 @@ async def _update_migration_statuses(session: AsyncSession):
 
             migration_complete = False
             # query rclone for job/status
+            job_list = await _query_job_list(url)
             status_json = await _query_job_status(url, job_id)
             stats_json = await _query_core_stats(url, status_json["group"])
 
-            if status_json["finished"] is True:
+            rclone_executeId = job_list.get("executeId", None)
+            job_executeId = status_json.get("executeId", None)
+            # Check if the executeId from the job list matches the executeId from the job status
+            # The executeId is used to identify the rclone instance that is running the job.
+            # executeId from job/list may be different from job/status, if they are different rclone has been restarted,
+            # and we should delete the data item entry
+            if rclone_executeId is None or job_executeId is None or rclone_executeId != job_executeId:
+                logger.warning(
+                    "migration %s: executeId mismatch, rclone: %s, job: %s",
+                    migration_id,
+                    rclone_executeId,
+                    job_executeId,
+                )
+
+                dest_data_item = query_data_item(
+                    oid=migration.oid, storage_id=migration.destination_storage_id
+                )
+                if dest_data_item:
+                    delete_data_item_entry(uid=dest_data_item[0]["uid"])
+
+                migration_complete = True
+
+            if status_json["finished"] is True and migration_complete is False:
                 migration_complete = True
                 # Get record for remote data item
                 dest_data_item = query_data_item(
@@ -299,7 +333,7 @@ async def _update_migration_statuses(session: AsyncSession):
                             migration_id,
                             dest_data_item[0]["uid"],
                         )
-                        set_state(uid=dest_data_item[0]["uid"], state="READY")
+                        set_state(uid=dest_data_item[0]["uid"], state=ItemState.READY)
                     else:
                         # delete remote data item if there is a transfer problem
                         logging.info(
