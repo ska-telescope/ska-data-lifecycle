@@ -419,7 +419,7 @@ class OidExpiryHeuristic(BaseHeuristic):
                     .values(target_phase=PhaseType.PLASMA, OID_expiration=oid_expiration)
                 )
                 logger.info(
-                    "Updating records for expired OID: %s with values target_phase=%s," \
+                    "Updating records for expired OID: %s with values target_phase=%s,"
                     "OID_expiration=%s",
                     update_stmt,
                     PhaseType.PLASMA,
