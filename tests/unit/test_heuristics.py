@@ -19,8 +19,8 @@ from ska_dlm.dlm_heuristics.heuristics import (
     CombineUidPhasesHeuristic,
     DecreaseOidPhaseHeuristic,
     DeleteUidHeuristic,
-    EnforceStorageUsageHeuristic,
     HeuristicResult,
+    HighWaterMarkHeuristic,
     IdentifyTargetStorageHeuristic,
     IncreaseOidPhaseHeuristic,
     OidExpiryHeuristic,
@@ -179,8 +179,8 @@ class TestUpdateStorageUsageHeuristic:
         assert result.data == {}
 
 
-class TestEnforceStorageUsageHeuristic:
-    """Test EnforceStorageUsageHeuristic class."""
+class TestHighWaterMarkHeuristic:
+    """Test HighWaterMarkHeuristic class."""
 
     @pytest.fixture
     def mock_session(self):
@@ -190,7 +190,7 @@ class TestEnforceStorageUsageHeuristic:
     @pytest.fixture
     def heuristic(self, mock_session):
         """Heuristic fixture."""
-        return EnforceStorageUsageHeuristic(mock_session)
+        return HighWaterMarkHeuristic(mock_session)
 
     @pytest.mark.asyncio
     async def test_deletes_soonest_expiring_items_until_below_threshold(

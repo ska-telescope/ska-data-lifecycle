@@ -107,7 +107,7 @@ class UpdateStorageUsageHeuristic(BaseHeuristic):
             return HeuristicResult(False, f"Error updating storage usage: {str(exc)}")
 
 
-class EnforceStorageUsageHeuristic(BaseHeuristic):
+class HighWaterMarkHeuristic(BaseHeuristic):
     """Enforce storage pressure limits with threshold hysteresis.
 
     This heuristic evaluates each storage endpoint and uses
@@ -313,11 +313,11 @@ class EnforceStorageUsageHeuristic(BaseHeuristic):
             # await self.session.commit()
             success = all(item["success"] for item in storage_results)
             message = (
-                "Enforced storage usage threshold"
+                "Storage high-water-mark successfully enforced."
                 if success
-                else "Errors encountered: Some storages remain above usage threshold"
+                else "Errors encountered: Some storages remain above high-water-mark."
             )
             return HeuristicResult(success, message, {"storages": storage_results})
         except Exception as exc:  # pylint: disable=broad-exception-caught
             await self.session.rollback()
-            return HeuristicResult(False, f"Error enforcing storage usage threshold: {str(exc)}")
+            return HeuristicResult(False, f"Errors in high-water-mark enforcement: {str(exc)}")

@@ -19,7 +19,7 @@ from .phase import (
     IncreaseOidPhaseHeuristic,
     OidPhaseEnforceHeuristic,
 )
-from .storage import EnforceStorageUsageHeuristic, UpdateStorageUsageHeuristic
+from .storage import HighWaterMarkHeuristic, UpdateStorageUsageHeuristic
 
 __all__ = [
     "dlm_storage_requests",
@@ -28,7 +28,7 @@ __all__ = [
     "HeuristicResult",
     "BaseHeuristic",
     "UpdateStorageUsageHeuristic",
-    "EnforceStorageUsageHeuristic",
+    "HighWaterMarkHeuristic",
     "CombineUidPhasesHeuristic",
     "ChangeOidPhaseHeuristic",
     "DeleteUidHeuristic",

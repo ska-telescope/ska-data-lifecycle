@@ -110,14 +110,16 @@ class PostgRESTAccess(contextlib.AbstractContextManager):
                 raise
             match ex.response.status_code:
                 case 400:
-                    json = ex.response.json()
+                    json_error = ex.response.json()
                     logger.info(
                         "Postgrest _query failed! %s called with params: %s; result: %s",
                         url,
                         params,
                         response,
                     )
-                    raise DBQueryError(url=url, method=method, params=params, json=json) from ex
+                    raise DBQueryError(
+                        url=url, method=method, params=params, json=json_error
+                    ) from ex
                 case 409:
                     try:
                         message = ex.response.json().get("message", str(ex))
@@ -136,7 +138,7 @@ class PostgRESTAccess(contextlib.AbstractContextManager):
                     logger.info(
                         "Postgrest _query failed! Called with params: %s; result: %s",
                         params,
-                        response,
+                        ex.response.json(),
                     )
                     raise
         return response.json()

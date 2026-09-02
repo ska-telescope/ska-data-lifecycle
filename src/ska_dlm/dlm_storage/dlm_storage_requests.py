@@ -637,7 +637,7 @@ def rclone_access(volume: str, remote_file_path: str = "", timeout=1) -> tuple[b
     return True, request.json()["item"]
 
 
-@rest.get("/storage/rclone_about", response_model=dict | None)
+@rest.get("/storage/rclone_about", response_model=dict)
 def rclone_about(volume: str) -> dict:
     """
     Return usage and capacity information for an rclone backend.
@@ -650,8 +650,7 @@ def rclone_about(volume: str) -> dict:
     Returns
     -------
     dict
-        The rclone usage and capacity response. Returns ``None`` when the
-        response is not a dictionary.
+        The rclone usage and capacity response.
 
     Raises
     ------
@@ -661,15 +660,15 @@ def rclone_about(volume: str) -> dict:
     url = random.choice(CONFIG.RCLONE)
     request_url = f"{url}/operations/about"
     post_data = {"fs": volume}
+    response = {"total": -1}  # default response
     logger.debug("rclone usage query: %s, %s", request_url, post_data)
     request = requests.post(request_url, post_data, timeout=10, verify=False)
     if request.status_code != 200:
         logger.warning("rclone about request failed with status code %s", request.status_code)
-        response = None
-    response = request.json()
-    if not isinstance(response, dict):
+    elif not isinstance(response, dict):
         logger.warning("rclone about response was not a dict")
-        response = None
+    else:
+        response = request.json()
     return response
 
 

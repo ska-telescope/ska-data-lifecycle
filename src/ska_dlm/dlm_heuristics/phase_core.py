@@ -251,7 +251,9 @@ class OidPhaseEnforceHeuristic(BaseHeuristic):
             target_phase = data_item.target_phase
 
             uid_stmt = select(Storage.storage_phase).where(
-                DataItem.OID == oid, DataItem.storage_id == Storage.storage_id
+                DataItem.OID == oid,
+                DataItem.deleted.is_(False),
+                DataItem.storage_id == Storage.storage_id,
             )
             uid_result = await self.session.execute(uid_stmt)
             uid_phases = [row[0] for row in uid_result.fetchall()]

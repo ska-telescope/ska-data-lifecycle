@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 
 from ska_dlm.dlm_db import create_async_sql_engine, create_async_sql_session
 from ska_dlm.dlm_heuristics.heuristics import (
-    EnforceStorageUsageHeuristic,
+    HighWaterMarkHeuristic,
     OidExpiryHeuristic,
     UidExpiryHeuristic,
     UpdateStorageUsageHeuristic,
@@ -66,7 +66,7 @@ async def heuristic_process_loop(stop_event: asyncio.Event):
                     logger.debug("Storage usage result data: %s", storage_usage_result.data)
 
                 async with async_session as session:
-                    enforce_storage_usage_heuristics = EnforceStorageUsageHeuristic(session)
+                    enforce_storage_usage_heuristics = HighWaterMarkHeuristic(session)
                     enforce_storage_usage_result = await enforce_storage_usage_heuristics.execute()
                     await session.commit()
                 logger.info(
