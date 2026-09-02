@@ -7,8 +7,10 @@ import random
 from contextlib import asynccontextmanager
 
 import requests
+import urllib3
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, PlainTextResponse
+from urllib3.exceptions import InsecureRequestWarning
 
 import ska_dlm
 from ska_dlm.common_types import (
@@ -37,6 +39,9 @@ from ..exceptions import (
 )
 
 logger = logging.getLogger(__name__)
+
+# disable the rclone https warnings.
+urllib3.disable_warnings(InsecureRequestWarning)
 
 
 @asynccontextmanager
@@ -632,18 +637,38 @@ def rclone_access(volume: str, remote_file_path: str = "", timeout=1) -> tuple[b
     return True, request.json()["item"]
 
 
+@rest.get("/storage/rclone_about", response_model=dict)
 def rclone_about(volume: str) -> dict:
-    """Return usage and capacity information for an rclone backend."""
+    """
+    Return usage and capacity information for an rclone backend.
+
+    Parameters
+    ----------
+    volume
+        The configured rclone volume to query.
+
+    Returns
+    -------
+    dict
+        The rclone usage and capacity response.
+
+    Raises
+    ------
+    RuntimeError
+        If the rclone server returns a non-success HTTP status code.
+    """
     url = random.choice(CONFIG.RCLONE)
     request_url = f"{url}/operations/about"
     post_data = {"fs": volume}
+    response = {"total": -1}  # default response
     logger.debug("rclone usage query: %s, %s", request_url, post_data)
     request = requests.post(request_url, post_data, timeout=10, verify=False)
     if request.status_code != 200:
-        raise RuntimeError(f"rclone about request failed with status code {request.status_code}")
-    response = request.json()
-    if not isinstance(response, dict):
-        raise RuntimeError("rclone about response was not an object")
+        logger.warning("rclone about request failed with status code %s", request.status_code)
+    elif not isinstance(response, dict):
+        logger.warning("rclone about response was not a dict")
+    else:
+        response = request.json()
     return response
 
 
@@ -766,7 +791,8 @@ def query_storage(storage_name: str = "", storage_id: str = "") -> list[dict]:
         params["storage_name"] = f"eq.{storage_name}"
     elif storage_id:
         params["storage_id"] = f"eq.{storage_id}"
-    return DB.select(CONFIG.DLM.storage_table, params=params)
+    result = DB.select(CONFIG.DLM.storage_table, params=params)
+    return result
 
 
 def check_item_on_storage(
@@ -809,7 +835,7 @@ def check_item_on_storage(
             if (storage_name and storage["storage_name"] == storage_name) or (
                 storage_id and storage["storage_id"] == storage_id
             ):
-                logger.info(
+                logger.debug(
                     "data_item '%s' '%s' exists on destination storage: %s",
                     storage["item_name"],
                     storage["uid"],
@@ -839,7 +865,12 @@ def delete_data_item_payload(uid: str, item_type: str = "file", item_name: str =
     storages = query_item_storage(uid=uid)
     logger.info("Storage for this uid: %s", storages)
     if not storages:
-        logger.error("No storage found keeping a READY version of UID: %s, %s", uid, item_name)
+        logger.error(
+            "No storage found keeping a READY version of UID: %s, %s. Marking as deleted!",
+            uid,
+            item_name,
+        )
+        set_state(uid, ItemState.DELETED)
         return False
     if len(storages) > 1:
         # This is a really bad place to be in!
