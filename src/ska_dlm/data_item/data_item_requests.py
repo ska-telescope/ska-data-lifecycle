@@ -158,7 +158,7 @@ def set_metadata(uid: str, metadata_post: JsonObjectOption = None) -> dict:
 
 @cli.command()
 @rest.patch("/request/set_state", response_model=dict)
-def set_state(uid: str, state: ItemState | str) -> dict:
+def set_state(uid: str, state: ItemState) -> dict:
     """Set the state field of the uid data_item.
 
     Parameters
