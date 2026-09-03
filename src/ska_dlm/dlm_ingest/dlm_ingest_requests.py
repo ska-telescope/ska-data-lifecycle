@@ -9,7 +9,7 @@ from fastapi import FastAPI, Header, Request
 from fastapi.responses import JSONResponse
 
 import ska_dlm
-from ska_dlm.common_types import ItemType, PhaseType
+from ska_dlm.common_types import ItemState, ItemType, PhaseType
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
 from ska_dlm.fastapi_utils import decode_bearer, fastapi_auto_annotate
 from ska_dlm.typer_types import JsonObjectOption
@@ -252,7 +252,7 @@ def register_data_item(  # noqa: C901
     set_uri(uid, uri, storage_id)
 
     # (6) Set data_item state to READY
-    set_state(uid, "READY")
+    set_state(uid, ItemState.READY)
 
     # (7) Populate the metadata column in the database
     if metadata is None:

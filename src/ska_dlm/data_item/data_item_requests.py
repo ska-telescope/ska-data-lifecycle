@@ -3,6 +3,7 @@
 import logging
 
 from fastapi import APIRouter
+from pytest import Item
 
 from ska_dlm import CONFIG
 from ska_dlm.common_types import ItemState
@@ -157,7 +158,7 @@ def set_metadata(uid: str, metadata_post: JsonObjectOption = None) -> dict:
 
 @cli.command()
 @rest.patch("/request/set_state", response_model=dict)
-def set_state(uid: str, state: ItemState) -> dict:
+def set_state(uid: str, state: ItemState | str) -> dict:
     """Set the state field of the uid data_item.
 
     Parameters
@@ -173,13 +174,15 @@ def set_state(uid: str, state: ItemState) -> dict:
         the updated data item entry
     """
     try:
-        ItemState(state)  # Check that the input is a valid enum
+        state = ItemState(state)  # Convert input to a valid enum entry
     except ValueError as exc:
         raise ValueError(
             f"Invalid item state {state}. Must be one of {[e.value for e in ItemState]}"
         ) from exc
     deleted_flag = state == "DELETED"
-    return update_data_item(uid=uid, post_data={"item_state": state, "deleted": deleted_flag})
+    return update_data_item(
+        uid=uid, post_data={"item_state": state.value, "deleted": deleted_flag}
+    )
 
 
 @cli.command()

@@ -106,14 +106,24 @@ class PostgRESTAccess(contextlib.AbstractContextManager):
             response.raise_for_status()
         except requests.RequestException as ex:
             if ex.response is None:
-                logger.info("Postgrest _query failed! %s called with params: %s", url, params)
+                logger.info(
+                    "Postgrest _query failed with no response! %s called %s with params: %s %s",
+                    url,
+                    method,
+                    params,
+                    json,
+                )
                 raise
             match ex.response.status_code:
+                case 204:
+                    logger.info("Postgrest _query successful without content (e.g. UPDATE).")
+                    return [{}]
                 case 400:
                     json_error = ex.response.json()
                     logger.info(
-                        "Postgrest _query failed! %s called with params: %s; result: %s",
+                        "Postgrest _query failed! %s called using %s and params: %s; result: %s",
                         url,
+                        method,
                         params,
                         response,
                     )
@@ -126,8 +136,9 @@ class PostgRESTAccess(contextlib.AbstractContextManager):
                     except (ValueError, json.JSONDecodeError, AttributeError):
                         message = str(ex)
                     logger.info(
-                        "Postgrest _query failed! %s called with params: %s; result: %s",
+                        "Postgrest _query failed! %s called using %s and params: %s; result: %s",
                         url,
+                        method,
                         params,
                         response,
                     )
@@ -136,7 +147,9 @@ class PostgRESTAccess(contextlib.AbstractContextManager):
                     ) from ex
                 case _:
                     logger.info(
-                        "Postgrest _query failed! Called with params: %s; result: %s",
+                        "Postgrest _query failed! Called %s with %s with params: %s; result: %s",
+                        url,
+                        method,
                         params,
                         ex.response.json(),
                     )

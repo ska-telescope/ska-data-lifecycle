@@ -20,6 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
 import ska_dlm
+from ska_dlm.common_types import ItemState
 from ska_dlm.dlm_outbox.outbox import add_outbox_event
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
 from ska_dlm.exceptions import InvalidQueryParameters, ValueAlreadyInDB
@@ -299,7 +300,7 @@ async def _update_migration_statuses(session: AsyncSession):
                             migration_id,
                             dest_data_item[0]["uid"],
                         )
-                        set_state(uid=dest_data_item[0]["uid"], state="READY")
+                        set_state(uid=dest_data_item[0]["uid"], state=ItemState.READY)
                     else:
                         # delete remote data item if there is a transfer problem
                         logging.info(
