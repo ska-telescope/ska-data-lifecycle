@@ -3,7 +3,6 @@
 import logging
 
 from fastapi import APIRouter
-from pytest import Item
 
 from ska_dlm import CONFIG
 from ska_dlm.common_types import ItemState
