@@ -1,6 +1,6 @@
 # Version History
 
-## Development
+## 2.4.0
 
 ### Updated
 
@@ -52,7 +52,6 @@
 * dlm-archive stfp endpoint.
 * pg_sphere to local db build.
 * default dlm-archive storage endpoint.
-
 
 ## 2.1.0
 
