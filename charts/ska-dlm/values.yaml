@@ -40,7 +40,7 @@ ingest:
   component: ingest
   subsystem: data-lifecycle-management
   image: artefact.skao.int/ska-data-lifecycle
-  version: "2.3.0"
+  version: "2.4.0"
   imagePullPolicy: Always
   replicas: 1
 
@@ -48,7 +48,7 @@ storage:
   component: storage
   subsystem: data-lifecycle-management
   image: artefact.skao.int/ska-data-lifecycle
-  version: "2.3.0"
+  version: "2.4.0"
   imagePullPolicy: Always
   replicas: 1
   mountPath: "/dlm"
@@ -92,7 +92,7 @@ migration:
   component: migration
   subsystem: data-lifecycle-management
   image: artefact.skao.int/ska-data-lifecycle
-  version: "2.3.0"
+  version: "2.4.0"
   imagePullPolicy: Always
   replicas: 1
 
@@ -100,7 +100,7 @@ request:
   component: request
   subsystem: data-lifecycle-management
   image: artefact.skao.int/ska-data-lifecycle
-  version: "2.3.0"
+  version: "2.4.0"
   imagePullPolicy: Always
   replicas: 1
 
@@ -139,7 +139,7 @@ heuristics:
   component: heuristics
   subsystem: data-lifecycle-management
   image: artefact.skao.int/ska-data-lifecycle
-  version: "2.3.0"
+  version: "2.4.0"
   imagePullPolicy: Always
   replicas: 1
 
@@ -229,7 +229,7 @@ outbox:
   component: outbox
   subsystem: data-lifecycle-management
   image: artefact.skao.int/ska-data-lifecycle
-  version: "2.3.0"
+  version: "2.4.0"
   imagePullPolicy: Always
   replicas: 1
   rabbitmq:
