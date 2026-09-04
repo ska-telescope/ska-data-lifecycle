@@ -173,13 +173,15 @@ def set_state(uid: str, state: ItemState) -> dict:
         the updated data item entry
     """
     try:
-        ItemState(state)  # Check that the input is a valid enum
+        state = ItemState(state)  # Convert input to a valid enum entry
     except ValueError as exc:
         raise ValueError(
             f"Invalid item state {state}. Must be one of {[e.value for e in ItemState]}"
         ) from exc
     deleted_flag = state == "DELETED"
-    return update_data_item(uid=uid, post_data={"item_state": state, "deleted": deleted_flag})
+    return update_data_item(
+        uid=uid, post_data={"item_state": state.value, "deleted": deleted_flag}
+    )
 
 
 @cli.command()
