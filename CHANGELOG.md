@@ -11,6 +11,10 @@
 
 * New UpdateStorageHeuristic
 
+### Fixed
+
+* Removed a duplicate `volumes:` key from the outbox Deployment template that strict YAML parsers and kustomize reject.
+
 ## 2.3.0
 
 ### Changed
