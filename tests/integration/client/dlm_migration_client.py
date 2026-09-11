@@ -5,7 +5,7 @@ import requests
 from tests.integration.client.exception_handler import dlm_raise_for_status
 
 MIGRATION_URL = ""
-TOKEN: str = None
+TOKEN: str | None = None
 
 
 def copy_data_item(

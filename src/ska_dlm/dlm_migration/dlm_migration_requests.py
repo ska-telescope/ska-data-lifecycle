@@ -147,8 +147,8 @@ def _serialize_value(val):
 def _migration_to_dict(migration: Migration) -> dict:
     """Convert a SQLAlchemy Migration model into a plain dictionary with JSON-safe values."""
     return {
-        column.name: _serialize_value(getattr(migration, column.name))
-        for column in migration.__table__.columns
+        attr.columns[0].name: _serialize_value(getattr(migration, attr.key))
+        for attr in migration.__mapper__.column_attrs
     }
 
 
@@ -659,7 +659,7 @@ async def _copy_data_item(  # noqa: C901
             command,
             metadata,
         )
-        session.commit()
+        await session.commit()
 
         return {"uid": new_item_uid, "migration_id": record["migration_id"]}
     except Exception:
