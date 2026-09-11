@@ -440,7 +440,7 @@ async def _create_migration_record(
     destination_storage_id,
     authorization,
     command,
-    dependency,
+    metadata,
 ):
     # decode the username from the authorization
     username = None
@@ -459,7 +459,7 @@ async def _create_migration_record(
         destination_storage_id=destination_storage_id,
         user=username,
         command=command,
-        dependency=dependency,
+        metadata=metadata,
     )
     session.add(record)
     await session.flush()
@@ -478,7 +478,7 @@ async def copy_data_item(  # noqa: C901
     destination_id: str = "",
     path: str = "",
     authorization: Annotated[str | None, Header()] = None,
-    dependency: str | None = None,
+    metadata: str | None = None,
 ) -> dict:
     """Copy a data_item from source to destination.
 
@@ -505,8 +505,8 @@ async def copy_data_item(  # noqa: C901
         the destination path relative to storage root, by default ""
     authorization
         Validated Bearer token with UserInfo
-    dependency
-        The Dependency key in the SDP Config DB. Can be Null.
+    metadata
+        Metadata associated with the migration. Can be Null.
 
     Returns
     -------
@@ -531,7 +531,7 @@ async def copy_data_item(  # noqa: C901
             destination_id=destination_id,
             path=path,
             authorization=authorization,
-            dependency=dependency,
+            metadata=metadata,
         )
 
 
@@ -544,8 +544,7 @@ async def _copy_data_item(  # noqa: C901
     destination_id: str = "",
     path: str = "",
     authorization: Annotated[str | None, Header()] = None,
-    dependency: str
-    | None = None,  # forgoing the Dependency typing to avoid importing ska_sdp_config.entity.flow
+    metadata: str | None = None,  # want to avoid importing ska_sdp_config.entity.flow
 ) -> dict:
     """Copy a data_item from source to destination."""
     if not item_name and not oid and not uid:
@@ -658,7 +657,7 @@ async def _copy_data_item(  # noqa: C901
             dest_id,
             authorization,
             command,
-            dependency,
+            metadata,
         )
         session.commit()
 
