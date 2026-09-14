@@ -54,10 +54,6 @@ spec:
             - name: dlm-configmap
               mountPath: "/home/ska-dlm/.dlm"
               readOnly: true
-      volumes:
-      - name: dlm-configmap
-        configMap:
-          name: {{ include "ska-dlm.fullname" . }}-configmap
       initContainers:
         - name: wait-for-postgres
           image: postgres:17.4
