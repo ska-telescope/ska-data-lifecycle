@@ -3,6 +3,7 @@
 """DLM Migration API module."""
 
 import asyncio
+import json
 import logging
 import os
 import random
@@ -440,7 +441,7 @@ async def _create_migration_record(
     destination_storage_id,
     authorization,
     command,
-    metadata,
+    migration_metadata,
 ):
     # decode the username from the authorization
     username = None
@@ -459,7 +460,9 @@ async def _create_migration_record(
         destination_storage_id=destination_storage_id,
         user=username,
         command=command,
-        metadata=metadata,
+        migration_metadata=(
+            json.loads(migration_metadata) if migration_metadata is not None else None
+        ),
     )
     session.add(record)
     await session.flush()
@@ -531,7 +534,7 @@ async def copy_data_item(  # noqa: C901
             destination_id=destination_id,
             path=path,
             authorization=authorization,
-            metadata=metadata,
+            migration_metadata=metadata,
         )
 
 
@@ -544,7 +547,7 @@ async def _copy_data_item(  # noqa: C901
     destination_id: str = "",
     path: str = "",
     authorization: Annotated[str | None, Header()] = None,
-    metadata: str | None = None,  # want to avoid importing ska_sdp_config.entity.flow
+    migration_metadata: str | None = None,  # want to avoid importing ska_sdp_config.entity.flow
 ) -> dict:
     """Copy a data_item from source to destination."""
     if not item_name and not oid and not uid:
@@ -657,7 +660,7 @@ async def _copy_data_item(  # noqa: C901
             dest_id,
             authorization,
             command,
-            metadata,
+            migration_metadata,
         )
         await session.commit()
 
