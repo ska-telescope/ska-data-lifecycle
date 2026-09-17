@@ -3,7 +3,6 @@
 """DLM Migration API module."""
 
 import asyncio
-import json
 import logging
 import os
 import random
@@ -461,7 +460,7 @@ async def _create_migration_record(
         destination_storage_id=destination_storage_id,
         user=username,
         command=command,
-        migration_metadata=migration_metadata
+        migration_metadata=migration_metadata,
     )
     session.add(record)
     await session.flush()
