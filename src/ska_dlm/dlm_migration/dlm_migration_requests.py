@@ -461,9 +461,7 @@ async def _create_migration_record(
         destination_storage_id=destination_storage_id,
         user=username,
         command=command,
-        migration_metadata=(
-            json.loads(migration_metadata) if migration_metadata is not None else None
-        ),
+        migration_metadata=migration_metadata
     )
     session.add(record)
     await session.flush()
@@ -551,6 +549,8 @@ async def _copy_data_item(  # noqa: C901
     migration_metadata: JsonObjectOption = None,
 ) -> dict:
     """Copy a data_item from source to destination."""
+    logger.info("DEBUG _copy_data_item migration_metadata: %r", migration_metadata)
+
     if not item_name and not oid and not uid:
         raise InvalidQueryParameters("Either item_name or OID or UID has to be provided!")
     orig_item = query_data_item(item_name, oid, uid)
