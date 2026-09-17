@@ -27,6 +27,7 @@ from ska_dlm.dlm_outbox.outbox import add_outbox_event
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
 from ska_dlm.exceptions import InvalidQueryParameters, ValueAlreadyInDB
 from ska_dlm.fastapi_utils import decode_bearer, fastapi_auto_annotate
+from ska_dlm.typer_types import JsonObjectOption
 from ska_dlm.typer_utils import dump_short_stacktrace
 
 from .. import CONFIG
@@ -481,7 +482,7 @@ async def copy_data_item(  # noqa: C901
     destination_id: str = "",
     path: str = "",
     authorization: Annotated[str | None, Header()] = None,
-    metadata: str | None = None,
+    metadata: JsonObjectOption = None,
 ) -> dict:
     """Copy a data_item from source to destination.
 
@@ -524,9 +525,6 @@ async def copy_data_item(  # noqa: C901
     UnmetPreconditionForOperation
         No data item found for copying.
     """
-    if metadata is not None:
-        json.loads(metadata)  # Fail if metadata is not valid json
-
     async with _open_migration_session() as session:
         return await _copy_data_item(
             session=session,
@@ -550,7 +548,7 @@ async def _copy_data_item(  # noqa: C901
     destination_id: str = "",
     path: str = "",
     authorization: Annotated[str | None, Header()] = None,
-    migration_metadata: str | None = None,
+    migration_metadata: JsonObjectOption = None,
 ) -> dict:
     """Copy a data_item from source to destination."""
     if not item_name and not oid and not uid:

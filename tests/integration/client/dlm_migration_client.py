@@ -2,6 +2,7 @@
 
 import requests
 
+from ska_dlm.typer_types import JsonObjectOption
 from tests.integration.client.exception_handler import dlm_raise_for_status
 
 MIGRATION_URL = ""
@@ -16,7 +17,7 @@ def copy_data_item(
     destination_name: str = "",
     destination_id: str = "",
     path: str = "",
-    metadata: str | None = None,
+    metadata: JsonObjectOption = None,
 ) -> dict:
     """Copy a data_item from source to destination.
 
