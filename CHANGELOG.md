@@ -12,6 +12,7 @@
 
 ### Added
 
+* `metadata` column to dlm.migration table
 * New UpdateStorageHeuristic
 
 ## 2.3.0

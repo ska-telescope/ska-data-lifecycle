@@ -423,7 +423,7 @@ def test_expired_by_storage_daemon(env):
 
 @pytest.mark.integration_test
 def test_populate_metadata_col(env):
-    """Test that the metadata is correctly saved to the metadata column."""
+    """Test that the metadata is correctly saved to the data_item metadata column."""
     # Register data item with metadata
     uid = env.ingest_requests.register_data_item(
         item_name="/my/metadata/test/item",  # item_name

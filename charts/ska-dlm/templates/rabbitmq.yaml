@@ -43,7 +43,7 @@ spec:
         - name: setup-rabbitmq-volume
           image: busybox:latest
           # Creates the folder and transfers ownership to rabbitmq (UID 999)
-          command: ["sh", "-c", "mkdir -p {{ .Values.rabbitmq.mnesiaBasePath }} && chown -R 999:999 {{ .Values.rabbitmq.mnesiaBasePath }}"]
+          command: ["sh", "-c", "mkdir -p {{ .Values.rabbitmq.mnesiaBasePath }} && chown -R 999:999 {{ .Values.rabbitmq.mnesiaBasePath }} && echo 'RabbitMQ data volume ownership set successfully'"]
           volumeMounts:
           - name: shared-storage
             mountPath: {{ .Values.rabbitmq.mountPath }}
