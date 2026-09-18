@@ -443,6 +443,7 @@ async def _create_migration_record(
     authorization,
     command,
     migration_metadata,
+    origin,
 ):
     # decode the username from the authorization
     username = None
@@ -462,6 +463,7 @@ async def _create_migration_record(
         user=username,
         command=command,
         migration_metadata=migration_metadata,
+        origin=origin,
     )
     session.add(record)
     await session.flush()
@@ -481,6 +483,7 @@ async def copy_data_item(  # noqa: C901
     path: str = "",
     authorization: Annotated[str | None, Header()] = None,
     metadata: JsonObjectOption = None,
+    origin: str | None = None,
 ) -> dict:
     """Copy a data_item from source to destination.
 
@@ -509,6 +512,9 @@ async def copy_data_item(  # noqa: C901
         Validated Bearer token with UserInfo
     metadata
         Metadata associated with the migration. Can be Null.
+    origin
+        The service that triggered the migration request. Expected values are: configdb-watcher,
+        directory-watcher, heuristics and cli.
 
     Returns
     -------
@@ -534,6 +540,7 @@ async def copy_data_item(  # noqa: C901
             path=path,
             authorization=authorization,
             migration_metadata=metadata,
+            origin=origin,
         )
 
 
@@ -547,6 +554,7 @@ async def _copy_data_item(  # noqa: C901
     path: str = "",
     authorization: Annotated[str | None, Header()] = None,
     migration_metadata: JsonObjectOption = None,
+    origin: str | None = None,
 ) -> dict:
     """Copy a data_item from source to destination."""
     logger.info("DEBUG _copy_data_item migration_metadata: %r", migration_metadata)
@@ -662,6 +670,7 @@ async def _copy_data_item(  # noqa: C901
             authorization,
             command,
             migration_metadata,
+            origin,
         )
         await session.commit()
 

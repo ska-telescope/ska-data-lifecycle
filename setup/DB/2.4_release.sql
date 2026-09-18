@@ -5,3 +5,4 @@
 
 --- Migration changes
 ALTER TABLE dlm.migration ADD COLUMN IF NOT EXISTS metadata jsonb;
+ALTER TABLE dlm.migration ADD COLUMN IF NOT EXISTS origin varchar;

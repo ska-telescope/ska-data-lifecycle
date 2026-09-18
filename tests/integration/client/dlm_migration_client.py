@@ -18,6 +18,7 @@ def copy_data_item(
     destination_id: str = "",
     path: str = "",
     metadata: JsonObjectOption = None,
+    origin: str | None = None,
 ) -> dict:
     """Copy a data_item from source to destination.
 
@@ -44,6 +45,9 @@ def copy_data_item(
         the destination path relative to storage root, by default ""
     metadata
         Metadata associated with the migration. Can be Null.
+    origin
+        The service that triggered the migration request. Expected values are: configdb-watcher,
+        directory-watcher, heuristics and cli.
 
     Returns
     -------
