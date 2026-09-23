@@ -12,6 +12,7 @@
 
 ### Added
 
+* `origin` column to dlm.migration table
 * `metadata` column to dlm.migration table
 * New UpdateStorageHeuristic
 

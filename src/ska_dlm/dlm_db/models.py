@@ -347,6 +347,7 @@ class Migration(Base):
     completion_date = Column(DateTime(timezone=False), nullable=True)
     command = Column(String, nullable=True)
     migration_metadata = Column("metadata", JSONB, nullable=True)
+    origin = Column(String, nullable=True)
 
     source_storage = relationship("Storage", foreign_keys=[source_storage_id])
     destination_storage = relationship("Storage", foreign_keys=[destination_storage_id])

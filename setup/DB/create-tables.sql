@@ -123,6 +123,7 @@ CREATE TABLE IF NOT EXISTS dlm.data_item (
     parents           uuid DEFAULT NULL,
     children          uuid DEFAULT NULL,
     metadata          jsonb DEFAULT NULL,
+    origin            varchar DEFAULT NULL,
     CONSTRAINT fk_storage
       FOREIGN KEY (storage_id)
       REFERENCES dlm.storage(storage_id)
@@ -201,6 +202,7 @@ CREATE TABLE IF NOT EXISTS dlm.migration (
 --- Migration changes
 ALTER TABLE dlm.migration ADD COLUMN IF NOT EXISTS command varchar;
 ALTER TABLE dlm.migration ADD COLUMN IF NOT EXISTS metadata jsonb;
+ALTER TABLE dlm.migration ADD COLUMN IF NOT EXISTS origin varchar;
 
 --- Data item changes
 ALTER TABLE dlm.data_item ADD COLUMN IF NOT EXISTS target_phase phase_type DEFAULT 'SOLID';
