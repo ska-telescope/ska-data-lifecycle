@@ -123,7 +123,6 @@ CREATE TABLE IF NOT EXISTS dlm.data_item (
     parents           uuid DEFAULT NULL,
     children          uuid DEFAULT NULL,
     metadata          jsonb DEFAULT NULL,
-    origin            varchar DEFAULT NULL,
     CONSTRAINT fk_storage
       FOREIGN KEY (storage_id)
       REFERENCES dlm.storage(storage_id)
@@ -189,6 +188,7 @@ CREATE TABLE IF NOT EXISTS dlm.migration (
     completion_date         timestamp without time zone DEFAULT NULL,
     command                 varchar,
     metadata                jsonb,
+    origin                  varchar DEFAULT NULL,
     CONSTRAINT fk_source_storage
       FOREIGN KEY (source_storage_id)
       REFERENCES dlm.storage(storage_id)
