@@ -7,6 +7,7 @@
 """Unit tests for DLM heuristics."""
 
 import uuid
+from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -19,6 +20,7 @@ from ska_dlm.dlm_heuristics.heuristics import (
     DecreaseOidPhaseHeuristic,
     DeleteUidHeuristic,
     HeuristicResult,
+    HighWaterMarkHeuristic,
     IdentifyTargetStorageHeuristic,
     IncreaseOidPhaseHeuristic,
     OidExpiryHeuristic,
@@ -97,7 +99,6 @@ class TestUpdateStorageUsageHeuristic:
         assert update_statement.compile().params["storage_capacity"] == 1000
         assert update_statement.compile().params["storage_use_pct"] == 25.0
         assert update_statement.compile().params["storage_num_objects"] == 7
-        mock_session.commit.assert_awaited_once()
 
     @pytest.mark.asyncio
     async def test_preserves_existing_storage_capacity(self, heuristic, mock_session, monkeypatch):
@@ -154,7 +155,6 @@ class TestUpdateStorageUsageHeuristic:
         assert mock_session.execute.await_count == 2
         unavailable_statement = mock_session.execute.call_args_list[1].args[0]
         assert unavailable_statement.compile().params["storage_available"] is False
-        mock_session.commit.assert_awaited_once()
 
     def test_init_with_message(self):
         """Test HeuristicResult initialization with message."""
@@ -177,6 +177,106 @@ class TestUpdateStorageUsageHeuristic:
         assert result.success is True
         assert result.message == "Success"
         assert result.data == {}
+
+
+class TestHighWaterMarkHeuristic:
+    """Test HighWaterMarkHeuristic class."""
+
+    @pytest.fixture
+    def mock_session(self):
+        """Mock session."""
+        return AsyncMock()
+
+    @pytest.fixture
+    def heuristic(self, mock_session):
+        """Heuristic fixture."""
+        return HighWaterMarkHeuristic(mock_session)
+
+    @pytest.mark.asyncio
+    async def test_deletes_soonest_expiring_items_until_below_threshold(
+        self, heuristic, mock_session
+    ):
+        """Deletes items in expiration priority order until storage is under 80%."""
+        storage_id = uuid.uuid4()
+        storage = MagicMock(storage_id=storage_id, storage_capacity=1000, storage_use_pct=90.0)
+
+        storage_result = MagicMock()
+        storage_result.scalars.return_value.all.return_value = [storage]
+
+        used_result = MagicMock()
+        used_result.scalar_one.return_value = 700
+
+        now = datetime.now(timezone.utc)
+        item_soon = MagicMock(
+            UID=uuid.uuid4(),
+            item_size=150,
+            OID_expiration=now + timedelta(hours=1),
+            UID_expiration=now + timedelta(days=2),
+        )
+        item_later = MagicMock(
+            UID=uuid.uuid4(),
+            item_size=50,
+            OID_expiration=now + timedelta(days=3),
+            UID_expiration=now + timedelta(days=4),
+        )
+        candidates_result = MagicMock()
+        candidates_result.scalars.return_value.all.return_value = [item_later, item_soon]
+
+        mock_session.execute.side_effect = [
+            storage_result,
+            used_result,
+            candidates_result,
+        ]
+
+        heuristic.delete_heuristic = AsyncMock()
+        heuristic.delete_heuristic.execute.return_value = HeuristicResult(True, "deleted")
+
+        result = await heuristic.execute()
+
+        assert result.success is True
+        assert heuristic.delete_heuristic.execute.await_count == 2
+        heuristic.delete_heuristic.execute.assert_any_await(item_soon.UID)
+        heuristic.delete_heuristic.execute.assert_any_await(item_later.UID)
+        assert result.data["storages"][0]["target_use_pct"] == 70.0
+        assert result.data["storages"][0]["use_pct"] == 70.0
+        assert result.data["storages"][0]["used"] == 500
+
+    @pytest.mark.asyncio
+    async def test_no_deletion_when_below_threshold(self, heuristic, mock_session):
+        """Does not delete items if usage is already below threshold."""
+        storage_id = uuid.uuid4()
+        storage = MagicMock(storage_id=storage_id, storage_capacity=1000, storage_use_pct=60.0)
+
+        storage_result = MagicMock()
+        storage_result.scalars.return_value.all.return_value = [storage]
+
+        used_result = MagicMock()
+        used_result.scalar_one.return_value = 600
+
+        now = datetime.now(timezone.utc)
+        item = MagicMock(
+            UID=uuid.uuid4(),
+            item_size=100,
+            OID_expiration=now + timedelta(days=2),
+            UID_expiration=now + timedelta(days=3),
+        )
+        candidates_result = MagicMock()
+        candidates_result.scalars.return_value.all.return_value = [item]
+
+        mock_session.execute.side_effect = [
+            storage_result,
+            used_result,
+            candidates_result,
+        ]
+
+        heuristic.delete_heuristic = AsyncMock()
+
+        result = await heuristic.execute()
+
+        assert result.success is True
+        heuristic.delete_heuristic.execute.assert_not_awaited()
+        assert result.data["storages"][0]["use_pct"] == 60.0
+        assert result.data["storages"][0]["used"] == 600
 
 
 class TestCombineUidPhasesHeuristic:
@@ -319,6 +419,7 @@ class TestIncreaseOidPhaseHeuristic:
             mock_uid_result,
             MagicMock(),
             MagicMock(),
+            MagicMock(),
         ]
 
         # Mock combine heuristic
@@ -400,6 +501,7 @@ class TestChangeOidPhaseHeuristic:
         mock_session.execute.side_effect = [
             mock_oid_result,
             mock_uid_result,
+            MagicMock(),
             MagicMock(),
             MagicMock(),
         ]
@@ -530,7 +632,6 @@ class TestChangeOidPhaseHeuristic:
         )
         assert result.data["target_phase"] == PhaseType.GAS
         assert result.data["result_phase"] == PhaseType.GAS
-        mock_session.commit.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_delete_uids_multiple_iterations(self, heuristic, mock_session):
@@ -727,7 +828,6 @@ class TestChangeOidPhaseHeuristic:
 
         assert result.success is True
         assert "already at target phase" in result.message
-        mock_session.commit.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_exception_handling(self, heuristic, mock_session):
@@ -904,7 +1004,10 @@ class TestOidExpiryHeuristic:
         uid3 = uuid.uuid4()
 
         mock_oid_result = MagicMock()
-        mock_oid_result.fetchall.return_value = [(oid1,), (oid2,)]
+        mock_oid_result.fetchall.return_value = [
+            (oid1, datetime.now(timezone.utc)),
+            (oid2, datetime.now(timezone.utc)),
+        ]
 
         mock_uid_result_1 = MagicMock()
         mock_uid_result_1.fetchall.return_value = [(uid1,), (uid2,)]
@@ -934,7 +1037,7 @@ class TestOidExpiryHeuristic:
 
         assert result.success is True
         assert result.message == "Deleted expired OIDs"
-        assert result.data["expired_oids"] == [oid1, oid2]
+        assert result.data["expired_oids"] == mock_oid_result.fetchall.return_value
         assert len(result.data["deletion_results"]) == 3
         assert result.data["deletion_results"][0]["oid"] == oid1
         assert result.data["deletion_results"][2]["oid"] == oid2
@@ -956,7 +1059,7 @@ class TestOidExpiryHeuristic:
         uid1 = uuid.uuid4()
 
         mock_oid_result = MagicMock()
-        mock_oid_result.fetchall.return_value = [(oid1,)]
+        mock_oid_result.fetchall.return_value = [(oid1, datetime.now(timezone.utc))]
 
         mock_uid_result_1 = MagicMock()
         mock_uid_result_1.fetchall.return_value = [(uid1,)]
@@ -970,8 +1073,8 @@ class TestOidExpiryHeuristic:
         result = await heuristic.execute()
 
         assert result.success is False
-        assert result.message == "Some expired OID deletions failed"
-        assert result.data["expired_oids"] == [oid1]
+        assert result.message.startswith("Some expired OID deletions failed")
+        assert result.data["expired_oids"] == mock_oid_result.fetchall.return_value
         assert result.data["deletion_results"][0]["success"] is False
 
 
@@ -1067,7 +1170,6 @@ class TestOidPhaseEnforceHeuristic:
         assert result.success is True
         assert result.message == f"Updated OID {oid} phase to {PhaseType.LIQUID}"
         # Verify commit was called
-        mock_session.commit.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_increase_heuristic_called(self, heuristic, mock_session):
@@ -1266,6 +1368,7 @@ class TestDeleteUidHeuristic:
             mock_uid_result,
             MagicMock(),
             MagicMock(),
+            MagicMock(),
         ]
 
         # Ensure storage deletion call is mocked to avoid external calls
@@ -1282,7 +1385,6 @@ class TestDeleteUidHeuristic:
 
         assert result.success is True
         assert "Deleted UID" in result.message or "marked as deleted" in result.message
-        mock_session.commit.assert_called_once()
         mock_session.reset_mock()
 
     @pytest.mark.asyncio

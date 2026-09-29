@@ -1,14 +1,19 @@
 # Version History
 
-## Development
+## 2.4.0
 
 ### Updated
 
+* Re-factored heuristics code into several modules, instead of a single file.
+* New HighWaterMarkHeuristic and UpdateStorageUsageHeuristic and both of them added to default loop
+* Allow shared PVC and mount points to be specified and file locations to be set.
 * OID expiration heuristic
 * Heuristics loop is now running UID and OID expiration as well as UpdateStorage
 
 ### Added
 
+* `origin` column to dlm.migration table
+* `metadata` column to dlm.migration table
 * New UpdateStorageHeuristic
 
 ### Fixed
@@ -53,7 +58,6 @@
 * dlm-archive stfp endpoint.
 * pg_sphere to local db build.
 * default dlm-archive storage endpoint.
-
 
 ## 2.1.0
 
