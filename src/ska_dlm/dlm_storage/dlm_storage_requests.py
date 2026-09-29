@@ -132,6 +132,14 @@ def query_location_facility() -> list[str]:
     return [row["id"] for row in rows]
 
 
+@cli.command()
+@rest.get("/storage/get_storage_endpoints", response_model=list[dict])
+def get_storage_endpoints() -> list[dict]:
+    """Return all storage entries as JSON: [{"storage_id": ..., "storage_name": ...}]."""
+    rows = DB.select(CONFIG.DLM.storage_table, params={"select": "storage_id,storage_name"})
+    return [{"storage_id": row["storage_id"], "storage_name": row["storage_name"]} for row in rows]
+
+
 def _setup_location(location: dict):
     """# noqa
     Setup a location.
