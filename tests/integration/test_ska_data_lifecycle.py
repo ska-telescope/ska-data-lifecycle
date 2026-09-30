@@ -228,6 +228,9 @@ def test_copy(env: DlmTestClient):
 
     assert len(migration_record) == 1
     assert migration_record[0]["destination_storage_id"] == dest_id
+    assert migration_record[0]["source_storage_name"] == "local"
+    assert migration_record[0]["destination_storage_name"] == "dlm-archive"
+    assert migration_record[0]["item_name"] == "/my/ingest/test/item2"
     assert migration_record[0]["complete"] is True
     assert migration_record[0]["job_status"]["finished"] is True
     assert migration_record[0]["job_stats"]["bytes"] == RCLONE_TEST_FILE_SIZE

@@ -5,6 +5,7 @@
 import asyncio
 import logging
 import os
+import posixpath
 import random
 import uuid
 from contextlib import asynccontextmanager
@@ -19,7 +20,7 @@ from fastapi.responses import JSONResponse
 from requests import Request
 from sqlalchemy import func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import aliased, sessionmaker
 
 import ska_dlm
 from ska_dlm.common_types import ItemState
@@ -37,7 +38,7 @@ from ska_dlm.typer_utils import dump_short_stacktrace
 
 from .. import CONFIG
 from ..data_item import delete_data_item_entry, set_state
-from ..dlm_db import Migration
+from ..dlm_db import DataItem, Migration, Storage
 from ..dlm_ingest import init_data_item
 from ..dlm_ingest.dlm_ingest_requests import ItemType
 from ..dlm_request import query_data_item
@@ -227,7 +228,9 @@ def rclone_copy(
     """Copy a file from one place to another."""
     # if the item is a measurement set then use the copy directory command
 
-    dest_abs_path = f"{dest_root_dir}/{dst_remote}".replace("//", "/")
+    dest_abs_path = posixpath.normpath(
+        posixpath.join(dest_root_dir, dst_remote.lstrip("/"))
+    )
     if item_type == ItemType.CONTAINER:
         request_url = f"{url}/sync/copy"
         post_data = {
@@ -374,7 +377,28 @@ async def query_migrations(
         if username is None:
             raise ValueError("Username not found in profile")
 
-    stmt = select(Migration)
+    source_storage = aliased(Storage)
+    destination_storage = aliased(Storage)
+    data_item_names = (
+        select(DataItem.OID.label("oid"), func.max(DataItem.item_name).label("item_name"))
+        .where(DataItem.OID.is_not(None))
+        .group_by(DataItem.OID)
+        .subquery()
+    )
+    stmt = (
+        select(
+            Migration,
+            source_storage.storage_name.label("source_storage_name"),
+            destination_storage.storage_name.label("destination_storage_name"),
+            data_item_names.c.item_name.label("item_name"),
+        )
+        .join(source_storage, Migration.source_storage_id == source_storage.storage_id)
+        .join(
+            destination_storage,
+            Migration.destination_storage_id == destination_storage.storage_id,
+        )
+        .outerjoin(data_item_names, data_item_names.c.oid == Migration.oid)
+    )
     if username:
         stmt = stmt.where(Migration.user == username)
 
@@ -393,8 +417,16 @@ async def query_migrations(
 
     async with _open_migration_session() as session:
         result = await session.execute(stmt)
-        migrations = result.scalars().all()
-    return [_migration_to_dict(item) for item in migrations]
+        migrations = result.all()
+    return [
+        {
+            **_migration_to_dict(migration),
+            "source_storage_name": source_storage_name,
+            "destination_storage_name": destination_storage_name,
+            "item_name": item_name,
+        }
+        for migration, source_storage_name, destination_storage_name, item_name in migrations
+    ]
 
 
 @cli.command()
