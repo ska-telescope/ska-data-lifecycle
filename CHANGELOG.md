@@ -1,5 +1,9 @@
 # Version History
 
+## Development
+
+* Added joins to `query_migrations`to get more information about storage and data item.
+
 ## 2.4.0
 
 ### Updated
