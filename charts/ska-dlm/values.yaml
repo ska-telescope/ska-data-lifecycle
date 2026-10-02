@@ -51,6 +51,7 @@ storage:
   version: "2.3.0"
   imagePullPolicy: Always
   replicas: 1
+  securityContext: {}
 
   locations: # Location endpoints (can list multiple)
     - name: SKA-DEV
@@ -190,6 +191,7 @@ rclone:
   version: "608e5ef5"
   imagePullPolicy: Always
   replicas: 1
+  securityContext: {}
   secret:
     enabled: false
     name: ""
@@ -211,6 +213,7 @@ rabbitmq:
   imagePullPolicy: Always
   replicas: 1
   serviceType: ClusterIP
+  securityContext: {}
   auth:
     username: guest
     password: guest
@@ -298,5 +301,6 @@ archive:
   version: "latest"
   imagePullPolicy: Always
   replicas: 1
+  securityContext: {}
   storage_pvc_name: "shared"
   storage_pvc_mount_path: "/dlm"

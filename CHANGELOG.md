@@ -10,6 +10,7 @@
 ### Added
 
 * New UpdateStorageHeuristic
+* Added `securityContext` support for `rabbitmq`, `rclone`, and `storage` Deployments, and `archive` StatefulSet.
 
 ### Fixed
 

@@ -16,6 +16,7 @@ The chart can deploy a RabbitMQ broker and an outbox relay that publishes databa
 * `rabbitmq.enabled`: Set to `true` to deploy a local RabbitMQ service. The default is `true`.
 * `rabbitmq.auth.username` and `rabbitmq.auth.password`: Credentials for the RabbitMQ broker. The defaults are `guest` / `guest`.
 * `rabbitmq.port` and `rabbitmq.management.port`: AMQP and management interface ports. The defaults are `5672` and `15672`.
+* `rabbitmq.securityContext`: Pod-level security context configuration for the RabbitMQ pod.
 * `outbox.enabled`: Set to `true` to deploy the outbox relay. The default is `true`.
 * `outbox.rabbitmq.url`: Optional custom RabbitMQ connection URL. If left empty, the outbox relay uses the in-cluster RabbitMQ service URL.
 * `outbox.rabbitmq.exchange`: RabbitMQ exchange used by the outbox relay. The default is `dlm.outbox`.
@@ -45,6 +46,13 @@ Database authentication details for PostgREST are provided via a Kubernetes 'Sec
 In order for data to be shared between pods, it's important to ensure that the PVC `global.sharedpvc` is instantiated.
 
 RClone generates an SSH key pair which it shares with the Storage Manager via `global.sharedpvc` so it can be distributed to storage end points via the REST endpoint `get_ssh_public_key`.
+
+Workloads that mount this shared volume (`storage`, `rclone`, `rabbitmq`, and `archive`) can configure a pod-level `securityContext` (for example, setting `fsGroup` and `fsGroupChangePolicy`) to manage file access and permissions across pods:
+
+* `storage.securityContext`
+* `rclone.securityContext`
+* `rabbitmq.securityContext`
+* `archive.securityContext`
 
 ## Rclone Helm Chart `secret` values
 
