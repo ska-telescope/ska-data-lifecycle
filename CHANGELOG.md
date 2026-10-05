@@ -2,7 +2,7 @@
 
 ## Development
 
-* Added  `get_storage_endpoints`
+* Added  `get_storage_endpoints` to storage service.
 * Added joins to `query_migrations` to get more information about storage and data item.
 
 ## 2.4.0
