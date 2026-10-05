@@ -377,25 +377,23 @@ async def query_migrations(
 
     source_storage = aliased(Storage)
     destination_storage = aliased(Storage)
-    data_item_names = (
-        select(DataItem.OID.label("oid"), func.max(DataItem.item_name).label("item_name"))
-        .where(DataItem.OID.is_not(None))
-        .group_by(DataItem.OID)
-        .subquery()
-    )
     stmt = (
         select(
             Migration,
             source_storage.storage_name.label("source_storage_name"),
             destination_storage.storage_name.label("destination_storage_name"),
-            data_item_names.c.item_name.label("item_name"),
+            DataItem.item_name.label("item_name"),
         )
         .join(source_storage, Migration.source_storage_id == source_storage.storage_id)
         .join(
             destination_storage,
             Migration.destination_storage_id == destination_storage.storage_id,
         )
-        .outerjoin(data_item_names, data_item_names.c.oid == Migration.oid)
+        .join(
+            DataItem,
+            (DataItem.OID == Migration.oid)
+            & (DataItem.storage_id == Migration.source_storage_id),
+        )
     )
     if username:
         stmt = stmt.where(Migration.user == username)
