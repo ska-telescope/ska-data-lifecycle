@@ -391,8 +391,7 @@ async def query_migrations(
         )
         .join(
             DataItem,
-            (DataItem.OID == Migration.oid)
-            & (DataItem.storage_id == Migration.source_storage_id),
+            (DataItem.OID == Migration.oid) & (DataItem.storage_id == Migration.source_storage_id),
         )
     )
     if username:
