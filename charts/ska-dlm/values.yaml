@@ -51,6 +51,7 @@ storage:
   version: "2.4.0"
   imagePullPolicy: Always
   replicas: 1
+  securityContext: {}
   mountPath: "/dlm"
 
   locations: # Location endpoints (can list multiple)
@@ -191,8 +192,10 @@ rclone:
   version: "608e5ef5"
   imagePullPolicy: Always
   replicas: 1
+  securityContext: {}
   keyPath: "/dlm/users/dlm/.ssh/"
   mountPath: "/dlm"
+
   secret:
     enabled: false
     name: ""
@@ -214,8 +217,10 @@ rabbitmq:
   imagePullPolicy: Always
   replicas: 1
   serviceType: ClusterIP
+  securityContext: {}
   mountPath: "/dlm/"
   mnesiaBasePath: "/dlm/users/dlm/rabbitmq-data/"
+
   auth:
     username: guest
     password: guest
@@ -303,5 +308,6 @@ archive:
   version: "latest"
   imagePullPolicy: Always
   replicas: 1
+  securityContext: {}
   pvcName: "shared"
   mountPath: "/dlm"

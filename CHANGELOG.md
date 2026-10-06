@@ -15,6 +15,7 @@
 * `origin` column to dlm.migration table
 * `metadata` column to dlm.migration table
 * New UpdateStorageHeuristic
+* Added `securityContext` support for `rabbitmq`, `rclone`, and `storage` Deployments, and `archive` StatefulSet.
 
 ### Fixed
 
