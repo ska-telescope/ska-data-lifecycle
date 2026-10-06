@@ -68,10 +68,10 @@ To configure migrations:
 
 * `ska-db-migrations.runMigrations`: Set to `true` (default) to run migrations on deploy.
 * `ska-db-migrations.liquibase.contextFilter`:
-    * Set to `"create-roles,create-db,create-schema,create-external-triggers"` to run all changesets, including role creation, database creation and schema creation (if the role has permission).
-    * Set to `"default"` to run only standard application schema changes, skipping steps that require database-level privileges (like creating the roles/database/schema themselves). This is intended for use with sandboxed roles.
+    * Controls only changesets explicitly tagged for optional setup operations such as role, database, schema, or external-trigger creation.
+    * Ordinary schema migrations in the master `changelog.yaml` do not need a release context; Liquibase applies each changeset once and records it in `DATABASECHANGELOG`.
 
-SQL migration scripts are located in `initdb-scripts/` (base schema) and `patches/` (updates). These are organized by the master `changelog.yaml` file.
+SQL migration scripts are located in `initdb-scripts/` and organized by the master `changelog.yaml` file. Add new migrations there without a context to have them considered on each Liquibase update; Liquibase skips changesets it has already recorded. Use Liquibase's `runAlways` attribute only when a changeset must execute on every update.
 
 
 ## Storage Manager
