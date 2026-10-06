@@ -1,3 +1,5 @@
+# pylint: disable=too-many-arguments,too-many-locals,too-many-positional-arguments
+# pylint: disable=too-many-branches,too-many-statements
 """DLM Migration API module."""
 
 import asyncio
@@ -20,10 +22,12 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
 import ska_dlm
+from ska_dlm.common_types import ItemState
 from ska_dlm.dlm_outbox.outbox import add_outbox_event
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
 from ska_dlm.exceptions import InvalidQueryParameters, ValueAlreadyInDB
 from ska_dlm.fastapi_utils import decode_bearer, fastapi_auto_annotate
+from ska_dlm.typer_types import JsonObjectOption
 from ska_dlm.typer_utils import dump_short_stacktrace
 
 from .. import CONFIG
@@ -145,8 +149,8 @@ def _serialize_value(val):
 def _migration_to_dict(migration: Migration) -> dict:
     """Convert a SQLAlchemy Migration model into a plain dictionary with JSON-safe values."""
     return {
-        column.name: _serialize_value(getattr(migration, column.name))
-        for column in migration.__table__.columns
+        attr.columns[0].name: _serialize_value(getattr(migration, attr.key))
+        for attr in migration.__mapper__.column_attrs
     }
 
 
@@ -215,7 +219,6 @@ def rclone_copy(
     dst_remote: str,
     dest_root_dir: str,
     item_type: str,
-    # pylint: disable=too-many-arguments,too-many-positional-arguments
 ):
     """Copy a file from one place to another."""
     # if the item is a measurement set then use the copy directory command
@@ -299,7 +302,7 @@ async def _update_migration_statuses(session: AsyncSession):
                             migration_id,
                             dest_data_item[0]["uid"],
                         )
-                        set_state(uid=dest_data_item[0]["uid"], state="READY")
+                        set_state(uid=dest_data_item[0]["uid"], state=ItemState.READY)
                     else:
                         # delete remote data item if there is a transfer problem
                         logging.info(
@@ -439,7 +442,8 @@ async def _create_migration_record(
     destination_storage_id,
     authorization,
     command,
-    # pylint: disable=too-many-arguments,too-many-positional-arguments
+    migration_metadata,
+    origin,
 ):
     # decode the username from the authorization
     username = None
@@ -458,6 +462,8 @@ async def _create_migration_record(
         destination_storage_id=destination_storage_id,
         user=username,
         command=command,
+        migration_metadata=migration_metadata,
+        origin=origin,
     )
     session.add(record)
     await session.flush()
@@ -469,7 +475,6 @@ async def _create_migration_record(
 @cli.command()
 @rest.post("/migration/copy_data_item", response_model=dict)
 async def copy_data_item(  # noqa: C901
-    # pylint: disable=too-many-arguments,too-many-positional-arguments
     item_name: str = "",
     oid: str = "",
     uid: str = "",
@@ -477,6 +482,8 @@ async def copy_data_item(  # noqa: C901
     destination_id: str = "",
     path: str = "",
     authorization: Annotated[str | None, Header()] = None,
+    metadata: JsonObjectOption = None,
+    origin: str | None = None,
 ) -> dict:
     """Copy a data_item from source to destination.
 
@@ -503,6 +510,11 @@ async def copy_data_item(  # noqa: C901
         the destination path relative to storage root, by default ""
     authorization
         Validated Bearer token with UserInfo
+    metadata
+        Metadata associated with the migration. Can be Null.
+    origin
+        The service that triggered the migration request. Expected values are: configdb-watcher,
+        directory-watcher, heuristics and cli.
 
     Returns
     -------
@@ -527,11 +539,12 @@ async def copy_data_item(  # noqa: C901
             destination_id=destination_id,
             path=path,
             authorization=authorization,
+            migration_metadata=metadata,
+            origin=origin,
         )
 
 
 async def _copy_data_item(  # noqa: C901
-    # pylint: disable=too-many-arguments,too-many-locals,too-many-positional-arguments,too-many-branches,too-many-statements
     session: AsyncSession,
     item_name: str = "",
     oid: str = "",
@@ -540,8 +553,12 @@ async def _copy_data_item(  # noqa: C901
     destination_id: str = "",
     path: str = "",
     authorization: Annotated[str | None, Header()] = None,
+    migration_metadata: JsonObjectOption = None,
+    origin: str | None = None,
 ) -> dict:
     """Copy a data_item from source to destination."""
+    logger.info("DEBUG _copy_data_item migration_metadata: %r", migration_metadata)
+
     if not item_name and not oid and not uid:
         raise InvalidQueryParameters("Either item_name or OID or UID has to be provided!")
     orig_item = query_data_item(item_name, oid, uid)
@@ -652,8 +669,10 @@ async def _copy_data_item(  # noqa: C901
             dest_id,
             authorization,
             command,
+            migration_metadata,
+            origin,
         )
-        session.commit()
+        await session.commit()
 
         return {"uid": new_item_uid, "migration_id": record["migration_id"]}
     except Exception:

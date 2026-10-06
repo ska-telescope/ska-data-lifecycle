@@ -187,6 +187,8 @@ CREATE TABLE IF NOT EXISTS dlm.migration (
     "date"                  timestamp without time zone DEFAULT now(),
     completion_date         timestamp without time zone DEFAULT NULL,
     command                 varchar,
+    metadata                jsonb,
+    origin                  varchar DEFAULT NULL,
     CONSTRAINT fk_source_storage
       FOREIGN KEY (source_storage_id)
       REFERENCES dlm.storage(storage_id)
@@ -199,6 +201,8 @@ CREATE TABLE IF NOT EXISTS dlm.migration (
 
 --- Migration changes
 ALTER TABLE dlm.migration ADD COLUMN IF NOT EXISTS command varchar;
+ALTER TABLE dlm.migration ADD COLUMN IF NOT EXISTS metadata jsonb;
+ALTER TABLE dlm.migration ADD COLUMN IF NOT EXISTS origin varchar;
 
 --- Data item changes
 ALTER TABLE dlm.data_item ADD COLUMN IF NOT EXISTS target_phase phase_type DEFAULT 'SOLID';

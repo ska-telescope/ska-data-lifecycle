@@ -40,7 +40,7 @@ ingest:
   component: ingest
   subsystem: data-lifecycle-management
   image: artefact.skao.int/ska-data-lifecycle
-  version: "2.3.0"
+  version: "2.4.0"
   imagePullPolicy: Always
   replicas: 1
 
@@ -48,10 +48,11 @@ storage:
   component: storage
   subsystem: data-lifecycle-management
   image: artefact.skao.int/ska-data-lifecycle
-  version: "2.3.0"
+  version: "2.4.0"
   imagePullPolicy: Always
   replicas: 1
   securityContext: {}
+  mountPath: "/dlm"
 
   locations: # Location endpoints (can list multiple)
     - name: SKA-DEV
@@ -92,7 +93,7 @@ migration:
   component: migration
   subsystem: data-lifecycle-management
   image: artefact.skao.int/ska-data-lifecycle
-  version: "2.3.0"
+  version: "2.4.0"
   imagePullPolicy: Always
   replicas: 1
 
@@ -100,7 +101,7 @@ request:
   component: request
   subsystem: data-lifecycle-management
   image: artefact.skao.int/ska-data-lifecycle
-  version: "2.3.0"
+  version: "2.4.0"
   imagePullPolicy: Always
   replicas: 1
 
@@ -139,7 +140,7 @@ heuristics:
   component: heuristics
   subsystem: data-lifecycle-management
   image: artefact.skao.int/ska-data-lifecycle
-  version: "2.3.0"
+  version: "2.4.0"
   imagePullPolicy: Always
   replicas: 1
 
@@ -150,7 +151,7 @@ ska-db-migrations:
   liquibase:
     # Note: the ODA schema execution.execution_blocks must exist before create-external-triggers is specified in the contextFilter below.
     # This is because create-external-triggers SQL reference the execution.execution_blocks table. If specified and the table doesn't exist, it will throw an exception.
-    contextFilter: "create-db,create-schema,2.3-release" # "default" or a combination of "create-roles,create-db,create-schema,create-external-triggers"
+    contextFilter: "create-db,create-schema,2.3-release,2.4-release" # "default" or a combination of "create-roles,create-db,create-schema,create-external-triggers"
     changelogFile: changelog.yaml
   job:
     enabled: true
@@ -192,6 +193,9 @@ rclone:
   imagePullPolicy: Always
   replicas: 1
   securityContext: {}
+  keyPath: "/dlm/users/dlm/.ssh/"
+  mountPath: "/dlm"
+
   secret:
     enabled: false
     name: ""
@@ -214,6 +218,9 @@ rabbitmq:
   replicas: 1
   serviceType: ClusterIP
   securityContext: {}
+  mountPath: "/dlm/"
+  mnesiaBasePath: "/dlm/users/dlm/rabbitmq-data/"
+
   auth:
     username: guest
     password: guest
@@ -227,7 +234,7 @@ outbox:
   component: outbox
   subsystem: data-lifecycle-management
   image: artefact.skao.int/ska-data-lifecycle
-  version: "2.3.0"
+  version: "2.4.0"
   imagePullPolicy: Always
   replicas: 1
   rabbitmq:
@@ -302,5 +309,5 @@ archive:
   imagePullPolicy: Always
   replicas: 1
   securityContext: {}
-  storage_pvc_name: "shared"
-  storage_pvc_mount_path: "/dlm"
+  pvcName: "shared"
+  mountPath: "/dlm"

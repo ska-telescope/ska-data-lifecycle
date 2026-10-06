@@ -18,3 +18,6 @@ databaseChangeLog:
   - include:
       file: 12_2.3_release.sql
       context: 2.3-release
+  - include:
+      file: 13_2.4_release.sql
+      context: 2.4-release
