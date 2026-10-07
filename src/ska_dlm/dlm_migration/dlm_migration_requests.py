@@ -576,22 +576,22 @@ async def copy_data_item(  # noqa: C901
             )
     except InvalidQueryParameters as exc:
         raise HTTPException(
-            status_code=422,
+            status_code=409,
             detail={"exec": "InvalidQueryParameters", "message": str(exc)},
         ) from exc
     except UnmetPreconditionForOperation as exc:
         raise HTTPException(
-            status_code=422,
+            status_code=409,
             detail={"exec": "UnmetPreconditionForOperation", "message": str(exc)},
         ) from exc
     except ValueAlreadyInDB as exc:
         raise HTTPException(
-            status_code=422,
+            status_code=409,
             detail={"exec": "ValueAlreadyInDB", "message": str(exc)},
         ) from exc
     except DatabaseOperationError as exc:
         raise HTTPException(
-            status_code=409,
+            status_code=500,
             detail={"exec": "DatabaseOperationError", "message": str(exc)},
         ) from exc
     except (IOError, OSError) as exc:
