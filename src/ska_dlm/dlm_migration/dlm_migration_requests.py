@@ -5,6 +5,7 @@
 import asyncio
 import logging
 import os
+import posixpath
 import random
 import uuid
 from contextlib import asynccontextmanager
@@ -13,31 +14,35 @@ from functools import partial
 from typing import Annotated
 
 import requests
-from fastapi import FastAPI, Header
+from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from requests import Request
 from sqlalchemy import func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import aliased, sessionmaker
 
 import ska_dlm
 from ska_dlm.common_types import ItemState
 from ska_dlm.dlm_outbox.outbox import add_outbox_event
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
-from ska_dlm.exceptions import InvalidQueryParameters, ValueAlreadyInDB
+from ska_dlm.exceptions import (
+    DatabaseOperationError,
+    InvalidQueryParameters,
+    UnmetPreconditionForOperation,
+    ValueAlreadyInDB,
+)
 from ska_dlm.fastapi_utils import decode_bearer, fastapi_auto_annotate
 from ska_dlm.typer_types import JsonObjectOption
 from ska_dlm.typer_utils import dump_short_stacktrace
 
 from .. import CONFIG
 from ..data_item import delete_data_item_entry, set_state
-from ..dlm_db import Migration
+from ..dlm_db import DataItem, Migration, Storage
 from ..dlm_ingest import init_data_item
 from ..dlm_ingest.dlm_ingest_requests import ItemType
 from ..dlm_request import query_data_item
 from ..dlm_storage import check_item_on_storage, get_storage_config, query_storage
-from ..exceptions import UnmetPreconditionForOperation
 
 # Configure logging
 logging.basicConfig(
@@ -223,7 +228,7 @@ def rclone_copy(
     """Copy a file from one place to another."""
     # if the item is a measurement set then use the copy directory command
 
-    dest_abs_path = f"{dest_root_dir}/{dst_remote}".replace("//", "/")
+    dest_abs_path = posixpath.normpath(posixpath.join(dest_root_dir, dst_remote.lstrip("/")))
     if item_type == ItemType.CONTAINER:
         request_url = f"{url}/sync/copy"
         post_data = {
@@ -370,7 +375,25 @@ async def query_migrations(
         if username is None:
             raise ValueError("Username not found in profile")
 
-    stmt = select(Migration)
+    source_storage = aliased(Storage)
+    destination_storage = aliased(Storage)
+    stmt = (
+        select(
+            Migration,
+            source_storage.storage_name.label("source_storage_name"),
+            destination_storage.storage_name.label("destination_storage_name"),
+            DataItem.item_name.label("item_name"),
+        )
+        .join(source_storage, Migration.source_storage_id == source_storage.storage_id)
+        .join(
+            destination_storage,
+            Migration.destination_storage_id == destination_storage.storage_id,
+        )
+        .join(
+            DataItem,
+            (DataItem.OID == Migration.oid) & (DataItem.storage_id == Migration.source_storage_id),
+        )
+    )
     if username:
         stmt = stmt.where(Migration.user == username)
 
@@ -389,8 +412,16 @@ async def query_migrations(
 
     async with _open_migration_session() as session:
         result = await session.execute(stmt)
-        migrations = result.scalars().all()
-    return [_migration_to_dict(item) for item in migrations]
+        migrations = result.all()
+    return [
+        {
+            **_migration_to_dict(migration),
+            "source_storage_name": source_storage_name,
+            "destination_storage_name": destination_storage_name,
+            "item_name": item_name,
+        }
+        for migration, source_storage_name, destination_storage_name, item_name in migrations
+    ]
 
 
 @cli.command()
@@ -529,19 +560,51 @@ async def copy_data_item(  # noqa: C901
     UnmetPreconditionForOperation
         No data item found for copying.
     """
-    async with _open_migration_session() as session:
-        return await _copy_data_item(
-            session=session,
-            item_name=item_name,
-            oid=oid,
-            uid=uid,
-            destination_name=destination_name,
-            destination_id=destination_id,
-            path=path,
-            authorization=authorization,
-            migration_metadata=metadata,
-            origin=origin,
-        )
+    try:
+        async with _open_migration_session() as session:
+            return await _copy_data_item(
+                session=session,
+                item_name=item_name,
+                oid=oid,
+                uid=uid,
+                destination_name=destination_name,
+                destination_id=destination_id,
+                path=path,
+                authorization=authorization,
+                migration_metadata=metadata,
+                origin=origin,
+            )
+    except InvalidQueryParameters as exc:
+        raise HTTPException(
+            status_code=409,
+            detail={"exec": "InvalidQueryParameters", "message": str(exc)},
+        ) from exc
+    except UnmetPreconditionForOperation as exc:
+        raise HTTPException(
+            status_code=409,
+            detail={"exec": "UnmetPreconditionForOperation", "message": str(exc)},
+        ) from exc
+    except ValueAlreadyInDB as exc:
+        raise HTTPException(
+            status_code=409,
+            detail={"exec": "ValueAlreadyInDB", "message": str(exc)},
+        ) from exc
+    except DatabaseOperationError as exc:
+        raise HTTPException(
+            status_code=500,
+            detail={"exec": "DatabaseOperationError", "message": str(exc)},
+        ) from exc
+    except (IOError, OSError) as exc:
+        raise HTTPException(
+            status_code=500,
+            detail={"exec": "IOError", "message": str(exc)},
+        ) from exc
+    except Exception as exc:  # pragma: no cover - defensive fallback
+        logger.exception("Unexpected error while copying a data item")
+        raise HTTPException(
+            status_code=500,
+            detail={"exec": type(exc).__name__, "message": str(exc)},
+        ) from exc
 
 
 async def _copy_data_item(  # noqa: C901

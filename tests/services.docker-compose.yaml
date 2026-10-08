@@ -188,6 +188,7 @@ services:
        shm_size: '32gb'
     image: dlm_db
     container_name: dlm_db
+    hostname: dlm_db
     ports:
       - 5432:5432
     environment:
