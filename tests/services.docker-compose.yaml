@@ -173,7 +173,7 @@ services:
       - --search-path=/changelog
       - --changelog-file=changelog.yaml
       - update
-      - --context-filter=!create-db,!create-roles,create-schema,!create-external-triggers,2.3-release,2.4-release
+      - --context-filter=!create-db,!create-roles,create-schema,!create-external-triggers
     depends_on:
       dlm_db:
         condition: service_healthy
