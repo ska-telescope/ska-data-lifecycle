@@ -1,15 +1,27 @@
 """DLM ingest API module."""
 
 import logging
+import os
 import re
+from collections.abc import AsyncGenerator, AsyncIterator
+from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Annotated
+from uuid import UUID
 
-from fastapi import FastAPI, Header, Request
+from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.engine import URL
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import sessionmaker
 
 import ska_dlm
 from ska_dlm.common_types import ItemState, ItemType, PhaseType
+from ska_dlm.dlm_db import DataItem, DataItemChildren, create_async_sql_engine
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
 from ska_dlm.fastapi_utils import decode_bearer, fastapi_auto_annotate
 from ska_dlm.typer_types import JsonObjectOption
@@ -24,14 +36,75 @@ from ..exceptions import InvalidQueryParameters, UnmetPreconditionForOperation, 
 
 logger = logging.getLogger(__name__)
 
+
+def _get_ingest_database_url() -> str:
+    """Get the async SQLAlchemy database URL from the configured environment."""
+    database_url = os.getenv("DLM_INGEST_DATABASE_URL") or os.getenv("DATABASE_URL")
+    if database_url:
+        return database_url
+
+    required_env = ("PGUSER", "PGPASSWORD", "PGHOST", "PGDATABASE")
+    missing_env = [name for name in required_env if not os.getenv(name)]
+    if missing_env:
+        raise RuntimeError(
+            "Configure DLM_INGEST_DATABASE_URL, DATABASE_URL, or all of "
+            "PGUSER, PGPASSWORD, PGHOST, and PGDATABASE"
+        )
+
+    return URL.create(
+        "postgresql+asyncpg",
+        username=os.environ["PGUSER"],
+        password=os.environ["PGPASSWORD"],
+        host=os.environ["PGHOST"],
+        port=int(os.getenv("PGPORT") or "5432"),
+        database=os.environ["PGDATABASE"],
+    ).render_as_string(hide_password=False)
+
+
+@asynccontextmanager
+async def app_lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    """Manage the SQLAlchemy engine and request session factory."""
+    async with create_async_sql_engine(_get_ingest_database_url(), pool_pre_ping=True) as engine:
+        app.state.async_session_factory = sessionmaker(
+            bind=engine,
+            class_=AsyncSession,
+            expire_on_commit=False,
+            autoflush=False,
+        )
+        yield
+
+
 rest = fastapi_auto_annotate(
     FastAPI(
         title="SKA-DLM: Ingest Manager REST API",
         description="REST interface of the SKA-DLM Ingest Manager",
         version=ska_dlm.__version__,
         license_info={"name": "BSD-3-Clause", "identifier": "BSD-3-Clause"},
+        lifespan=app_lifespan,
     )
 )
+
+
+async def _get_ingest_session(request: Request) -> AsyncIterator[AsyncSession]:
+    """Yield a request-scoped SQLAlchemy session."""
+    async_session_factory = getattr(request.app.state, "async_session_factory", None)
+    if async_session_factory is None:
+        raise RuntimeError("Ingest SQLAlchemy session factory is not initialized")
+    async with async_session_factory() as session:
+        yield session
+
+
+class UpdateDataItemRequest(BaseModel):
+    """Request body for associating child items with a data item."""
+
+    parent_data_item_uid: UUID
+    children: list[UUID]
+
+
+class UpdateDataItemResponse(BaseModel):
+    """Response containing the number of newly inserted child associations."""
+
+    inserted_count: int
 
 
 # pylint: disable=unused-argument
@@ -114,6 +187,76 @@ def init_data_item(
     else:
         raise InvalidQueryParameters("Either item_name or json_data is required")
     return DB.insert(CONFIG.DLM.dlm_table, json=post_data)[0]["uid"]
+
+
+@rest.post("/ingest/update_data_item", response_model=UpdateDataItemResponse)
+async def update_data_item(
+    request: UpdateDataItemRequest,
+    session: Annotated[AsyncSession, Depends(_get_ingest_session)],
+) -> UpdateDataItemResponse:
+    """Add child data items to a parent without duplicating existing associations.
+
+    Parameters
+    ----------
+    request
+        Parent UUID and child UUIDs to associate.
+
+    session
+        Asynchronous database session for performing the update operations.
+
+    Returns
+    -------
+    UpdateDataItemResponse
+        Number of new associations.
+    """
+    children = list(dict.fromkeys(request.children))
+    child_rows = [
+        {
+            "parent_data_item_uid": request.parent_data_item_uid,
+            "data_item_uid": child_uuid,
+        }
+        for child_uuid in children
+    ]
+
+    inserted_count = 0
+    requested_uids = set(children)
+    requested_uids.add(request.parent_data_item_uid)
+    try:
+        async with session.begin():
+            existing_uids = set(
+                (
+                    await session.scalars(
+                        select(DataItem.UID).where(DataItem.UID.in_(requested_uids))
+                    )
+                ).all()
+            )
+            missing_uids = requested_uids - existing_uids
+            if missing_uids:
+                raise HTTPException(
+                    status_code=404,
+                    detail={
+                        "message": "One or more data items were not found",
+                        "missing_uids": sorted(str(item_uid) for item_uid in missing_uids),
+                    },
+                )
+
+            if child_rows:
+                statement = (
+                    pg_insert(DataItemChildren)
+                    .values(child_rows)
+                    .on_conflict_do_nothing(constraint="uq_data_item_children_parent_child")
+                    .returning(DataItemChildren.id)
+                )
+                result = await session.execute(statement)
+                inserted_count = len(result.scalars().all())
+    except IntegrityError as exc:
+        logger.exception("Data item children could not be updated due to an integrity conflict")
+        raise HTTPException(
+            status_code=409,
+            detail="The data item relationship changed while the request was being processed",
+        ) from exc
+
+    return UpdateDataItemResponse(inserted_count=inserted_count)
 
 
 @cli.command()

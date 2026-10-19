@@ -1,0 +1,1 @@
+../../../setup/DB/2.5_release.sql
