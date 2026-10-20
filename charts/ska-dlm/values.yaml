@@ -310,3 +310,32 @@ archive:
   securityContext: {}
   pvcName: "shared"
   mountPath: "/dlm"
+
+tango:
+  component: sdp-lmc
+  subsystem: execution-control
+  image: artefact.skao.int/ska-data-lifecycle
+  version: 1.0.0
+  imagePullPolicy: IfNotPresent
+  enabled: true
+  logLevel: info
+  nsubarray: 1
+  prefix: test
+  allCommandsHaveArgument: false
+  strictValidation: false
+  loadBalancer: false
+  loopInterval: 10
+  livenessProbe:
+    initialDelaySeconds: 30
+    periodSeconds: 30
+    maxAgeSeconds: 30
+  readinessProbe:
+    initialDelaySeconds: 2
+    periodSeconds: 10
+  metrics:
+    domain: sdp-monitoring
+    function: sdp-central-control
+    resources:
+      requests:
+        memory: 100Mi
+        cpu: 300m

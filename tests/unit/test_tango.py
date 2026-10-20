@@ -30,7 +30,7 @@ def test_dlm_metrics(tango_context):
 
     assert version_info == {
         "version": "2.4.0",
-        "image": "registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle",
+        "image": "artefact.skao.int/ska-data-lifecycle:2.4.0",
     }
     assert device.state() == DevState.ON
     assert device.rcloneHealthy is True
