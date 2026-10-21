@@ -1,7 +1,6 @@
 """DLM ingest API module."""
 
 import logging
-import os
 import re
 from collections.abc import AsyncGenerator, AsyncIterator
 from contextlib import asynccontextmanager
@@ -14,14 +13,18 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
-from sqlalchemy.engine import URL
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import sessionmaker
 
 import ska_dlm
 from ska_dlm.common_types import ItemState, ItemType, PhaseType
-from ska_dlm.dlm_db import DataItem, DataItemChildren, create_async_sql_engine
+from ska_dlm.dlm_db import (
+    DataItem,
+    DataItemChildren,
+    create_async_sql_engine,
+    get_async_database_url,
+)
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
 from ska_dlm.fastapi_utils import decode_bearer, fastapi_auto_annotate
 from ska_dlm.typer_types import JsonObjectOption
@@ -39,26 +42,7 @@ logger = logging.getLogger(__name__)
 
 def _get_ingest_database_url() -> str:
     """Get the async SQLAlchemy database URL from the configured environment."""
-    database_url = os.getenv("DLM_INGEST_DATABASE_URL") or os.getenv("DATABASE_URL")
-    if database_url:
-        return database_url
-
-    required_env = ("PGUSER", "PGPASSWORD", "PGHOST", "PGDATABASE")
-    missing_env = [name for name in required_env if not os.getenv(name)]
-    if missing_env:
-        raise RuntimeError(
-            "Configure DLM_INGEST_DATABASE_URL, DATABASE_URL, or all of "
-            "PGUSER, PGPASSWORD, PGHOST, and PGDATABASE"
-        )
-
-    return URL.create(
-        "postgresql+asyncpg",
-        username=os.environ["PGUSER"],
-        password=os.environ["PGPASSWORD"],
-        host=os.environ["PGHOST"],
-        port=int(os.getenv("PGPORT") or "5432"),
-        database=os.environ["PGDATABASE"],
-    ).render_as_string(hide_password=False)
+    return get_async_database_url("DLM_INGEST_DATABASE_URL")
 
 
 @asynccontextmanager
@@ -189,8 +173,8 @@ def init_data_item(
     return DB.insert(CONFIG.DLM.dlm_table, json=post_data)[0]["uid"]
 
 
-@rest.post("/ingest/update_data_item", response_model=UpdateDataItemResponse)
-async def update_data_item(
+@rest.post("/ingest/update_data_item_children", response_model=UpdateDataItemResponse)
+async def update_data_item_children(
     request: UpdateDataItemRequest,
     session: Annotated[AsyncSession, Depends(_get_ingest_session)],
 ) -> UpdateDataItemResponse:

@@ -14,7 +14,7 @@ from sqlalchemy.exc import IntegrityError
 from ska_dlm import dlm_ingest
 from ska_dlm.dlm_ingest.dlm_ingest_requests import UpdateDataItemRequest, _get_ingest_session
 from ska_dlm.dlm_ingest.dlm_ingest_requests import rest as ingest_rest
-from ska_dlm.dlm_ingest.dlm_ingest_requests import update_data_item
+from ska_dlm.dlm_ingest.dlm_ingest_requests import update_data_item_children
 from ska_dlm.exceptions import UnmetPreconditionForOperation, ValueAlreadyInDB
 
 
@@ -177,7 +177,7 @@ def test_register_data_item_no_rclone_access(
 
 
 @pytest.mark.asyncio
-async def test_update_data_item_inserts_unique_child_associations():
+async def test_update_data_item_children_inserts_unique_child_associations():
     """Insert the requested parent/child pairs idempotently."""
     parent_uuid = uuid.uuid4()
     first_child_uuid = uuid.uuid4()
@@ -187,7 +187,7 @@ async def test_update_data_item_inserts_unique_child_associations():
         existing_uids=[parent_uuid, first_child_uuid, second_child_uuid],
     )
 
-    result = await update_data_item(
+    result = await update_data_item_children(
         UpdateDataItemRequest(
             parent_data_item_uid=parent_uuid,
             children=[first_child_uuid, first_child_uuid, second_child_uuid],
@@ -205,12 +205,12 @@ async def test_update_data_item_inserts_unique_child_associations():
 
 
 @pytest.mark.asyncio
-async def test_update_data_item_with_no_children_does_not_execute():
+async def test_update_data_item_children_with_no_children_does_not_execute():
     """Do not issue a database insert for an empty child list."""
     parent_uuid = uuid.uuid4()
     session = _FakeSession([], existing_uids=[parent_uuid])
 
-    result = await update_data_item(
+    result = await update_data_item_children(
         UpdateDataItemRequest(parent_data_item_uid=parent_uuid, children=[]),
         session,
     )
@@ -220,14 +220,14 @@ async def test_update_data_item_with_no_children_does_not_execute():
 
 
 @pytest.mark.asyncio
-async def test_update_data_item_returns_404_for_missing_items():
+async def test_update_data_item_children_returns_404_for_missing_items():
     """Report missing parent or child UUIDs as a client error."""
     parent_uuid = uuid.uuid4()
     missing_child_uuid = uuid.uuid4()
     session = _FakeSession([], existing_uids=[parent_uuid])
 
     with pytest.raises(HTTPException) as exc_info:
-        await update_data_item(
+        await update_data_item_children(
             UpdateDataItemRequest(
                 parent_data_item_uid=parent_uuid,
                 children=[missing_child_uuid],
@@ -240,7 +240,7 @@ async def test_update_data_item_returns_404_for_missing_items():
 
 
 @pytest.mark.asyncio
-async def test_update_data_item_returns_409_for_integrity_conflict():
+async def test_update_data_item_children_returns_409_for_integrity_conflict():
     """Map a database integrity race to a conflict response."""
     parent_uuid = uuid.uuid4()
     child_uuid = uuid.uuid4()
@@ -251,7 +251,7 @@ async def test_update_data_item_returns_409_for_integrity_conflict():
     )
 
     with pytest.raises(HTTPException) as exc_info:
-        await update_data_item(
+        await update_data_item_children(
             UpdateDataItemRequest(
                 parent_data_item_uid=parent_uuid,
                 children=[child_uuid],
@@ -262,8 +262,8 @@ async def test_update_data_item_returns_409_for_integrity_conflict():
     assert exc_info.value.status_code == 409
 
 
-def test_update_data_item_is_available_as_fastapi_endpoint():
-    """Expose update_data_item as a JSON FastAPI endpoint using ORM sessions."""
+def test_update_data_item_children_is_available_as_fastapi_endpoint():
+    """Expose update_data_item_children as a JSON FastAPI endpoint using ORM sessions."""
     parent_uuid = uuid.uuid4()
     child_uuid = uuid.uuid4()
     session = _FakeSession(
@@ -278,7 +278,7 @@ def test_update_data_item_is_available_as_fastapi_endpoint():
     client = TestClient(ingest_rest)
     try:
         response = client.post(
-            "/ingest/update_data_item",
+            "/ingest/update_data_item_children",
             json={
                 "parent_data_item_uid": str(parent_uuid),
                 "children": [str(child_uuid)],

@@ -66,7 +66,12 @@ services:
       dockerfile: tests/Dockerfile-dlm-compose
     entrypoint: uvicorn ska_dlm.dlm_request.dlm_request_requests:rest --host 0.0.0.0 --port 80
     environment:
-      - VIRTUAL_HOST=dlm_request.localhost
+      VIRTUAL_HOST: "dlm_request.localhost"
+      PGHOST: "dlm_db"
+      PGPORT: "5432"
+      PGUSER: "ska_dlm_admin"
+      PGPASSWORD: "password"
+      PGDATABASE: "ska_dlm_testing"
     ports:
       - 8002:80
     depends_on:
