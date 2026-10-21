@@ -377,6 +377,16 @@ async def query_migrations(
 
     source_storage = aliased(Storage)
     destination_storage = aliased(Storage)
+    source_data_item_uid = (
+        select(DataItem.UID)
+        .where(
+            (DataItem.OID == Migration.oid) & (DataItem.storage_id == Migration.source_storage_id)
+        )
+        .order_by(DataItem.UID_creation, DataItem.UID)
+        .limit(1)
+        .correlate(Migration)
+        .scalar_subquery()
+    )
     stmt = (
         select(
             Migration,
@@ -389,10 +399,7 @@ async def query_migrations(
             destination_storage,
             Migration.destination_storage_id == destination_storage.storage_id,
         )
-        .join(
-            DataItem,
-            (DataItem.OID == Migration.oid) & (DataItem.storage_id == Migration.source_storage_id),
-        )
+        .join(DataItem, DataItem.UID == source_data_item_uid)
     )
     if username:
         stmt = stmt.where(Migration.user == username)
