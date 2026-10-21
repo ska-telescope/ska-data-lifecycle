@@ -1301,9 +1301,7 @@ class TestDeleteUidHeuristic:
         return DeleteUidHeuristic(mock_session)
 
     @pytest.mark.asyncio
-    async def test_mark_container_children_deleted(
-        self, heuristic, mock_session
-    ):
+    async def test_mark_container_children_deleted(self, heuristic, mock_session):
         """Children are selected through data_item_children, not the legacy column."""
         parent_uid = uuid.uuid4()
 
