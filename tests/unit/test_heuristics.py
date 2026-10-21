@@ -1301,6 +1301,35 @@ class TestDeleteUidHeuristic:
         return DeleteUidHeuristic(mock_session)
 
     @pytest.mark.asyncio
+    async def test_mark_container_children_deleted(
+        self, heuristic, mock_session
+    ):
+        """Children are selected through data_item_children, not the legacy column."""
+        parent_uid = uuid.uuid4()
+
+        await heuristic._mark_container_children_deleted(
+            parent_uid,
+            MagicMock(item_type="container"),
+        )
+
+        statement = mock_session.execute.await_args.args[0]
+        statement_sql = str(statement)
+        assert "data_item_children.data_item_uid" in statement_sql
+        assert "data_item_children.parent_data_item_uid" in statement_sql
+        assert "data_item.parents" not in statement_sql
+        assert parent_uid in statement.compile().params.values()
+
+    @pytest.mark.asyncio
+    async def test_mark_non_container_does_not_update_children(self, heuristic, mock_session):
+        """Non-container items have no child associations to update."""
+        await heuristic._mark_container_children_deleted(
+            uuid.uuid4(),
+            MagicMock(item_type="file"),
+        )
+
+        mock_session.execute.assert_not_awaited()
+
+    @pytest.mark.asyncio
     async def test_no_data_found(self, heuristic, mock_session):
         """No data test."""
         uid = uuid.uuid4()
