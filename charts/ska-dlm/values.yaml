@@ -6,9 +6,12 @@
 global:
   ingress:
     enabled: false
-    domainName: "sdhp.stfc.skao.int"  # required for whitelisting redirects
+    domainName: "sdhp.stfc.skao.int"  # external ingress domain; required for whitelisting redirects
   development: true  # true for local deployment (to trigger gateway & keycloak)
   storageClass: "localdisk"  # existing storage class
+  operator: true
+  cluster_domain: cluster.local # the internal Kubernetes DNS domain, used for communication between services inside the cluster
+  tango_host: databaseds-tango-base:10000 # databaseds-tango-base.<tango-namespace>.svc.cluster.local:10000
 
   sharedpvc:
     # Shared PVC that can be mounted by multiple pods.
@@ -312,19 +315,19 @@ archive:
   mountPath: "/dlm"
 
 tango:
-  component: sdp-lmc
-  subsystem: execution-control
-  image: artefact.skao.int/ska-data-lifecycle
-  version: 1.0.0
-  imagePullPolicy: IfNotPresent
   enabled: true
+  prefix: "dlm/metrics/0"
+  component: dlm-tango
+  subsystem: dlm
+  image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
+  version: 27dcce2d
+  imagePullPolicy: IfNotPresent
   logLevel: info
   nsubarray: 1
-  prefix: test
   allCommandsHaveArgument: false
   strictValidation: false
   loadBalancer: false
-  loopInterval: 10
+  loopInterval: 10 # for periodic monitoring
   livenessProbe:
     initialDelaySeconds: 30
     periodSeconds: 30
@@ -332,10 +335,16 @@ tango:
   readinessProbe:
     initialDelaySeconds: 2
     periodSeconds: 10
+  env: []
+  tolerations: []
+  affinity: {}
   metrics:
-    domain: sdp-monitoring
-    function: sdp-central-control
+    domain: ska # ?
+    function: monitoring # ?
     resources:
       requests:
         memory: 100Mi
         cpu: 300m
+      limits:
+        cpu: 500m
+        memory: 256Mi

@@ -1,17 +1,19 @@
-{{- if .Values.tango.enabled }}
-{{- if .Values.global.operator }}
+# https://gitlab.com/ska-telescope/sdp/ska-sdp-integration/-/blob/master/charts/ska-sdp/templates/lmc-operator.yaml
+{{- if and .Values.tango.enabled .Values.global.operator }}
 {{- $clusterdomain := coalesce .Values.global.cluster_domain "cluster.local" }}
 {{- $tangohost := coalesce .Values.global.tango_host "databaseds-tango-base:10000" }}
+# TANGO_HOST identifies the Tango database server that the device server will register with and connect to.
+# Only use databaseds-tango-base:10000 if that Tango database service actually exists and is reachable.
 {{- $databaseds := (split ":" $tangohost)._0 }}
 # Metrics
-{{- $tangoname := "dlm" .Values.tango.prefix }}
+{{- $tangoname := .Values.tango.prefix }}
 apiVersion: tango.tango-controls.org/v1
 kind: DeviceServer
 metadata:
   name: dlm-metrics
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "ska-sdp.labels" . | indent 4 }}
+    {{- include "ska-dlm.labels" . | nindent 4 }}
     component: {{ .Values.tango.component }}-metrics
     subsystem: {{ .Values.tango.subsystem }}
     domain: {{ .Values.tango.metrics.domain }}
@@ -20,19 +22,19 @@ metadata:
 spec:
   legacycompatibility: true
   clusterDomain: {{ $clusterdomain }}
-  enableLoadBalancer: {{ or .Values.global.exposeAllDS .Values.tango.loadBalancer }}
+  enableLoadBalancer: {{ or (.Values.global.exposeAllDS | default false) .Values.tango.loadBalancer }}
   databaseds: {{ $databaseds }}
-  image: {{ .Values.tango.image }}:{{ .Values.tango.version }}
+  image: "{{ .Values.tango.image }}:{{ .Values.tango.version }}"
   imagePullPolicy: {{ .Values.tango.imagePullPolicy }}
-  command: "DlmMetrics"
+  command: "DLMMetrics"
   args: "0"
-  dsname: "DlmMetrics"
+  dsname: "DLMMetrics"
   config: |
     {
       "servers": {
-        "DlmMetrics": {
+        "DLMMetrics": {
           "0": {
-            "DlmMetrics": {
+            "DLMMetrics": {
               {{ $tangoname | quote }}: {}
             }
           }
@@ -46,9 +48,6 @@ spec:
     value: {{ .Values.tango.loopInterval | float64 | quote }}
   - name: FEATURE_ALL_COMMANDS_HAVE_ARGUMENT
     value: {{ .Values.tango.allCommandsHaveArgument | int | quote }}
-  {{- with .Values.env }}
-  {{- toYaml . | nindent 2 }}
-  {{- end }}
   {{- with .Values.tango.env }}
   {{- toYaml . | nindent 2 }}
   {{- end }}
@@ -60,10 +59,7 @@ spec:
   {{- if .Values.tango.affinity }}
   affinity: {{ toYaml .Values.tango.affinity | nindent 4 }}
   {{- end }}
-  resources: {{ toYaml .Values.tango.metrics.resources | nindent 4 }}
-  dependsOn:
+#   dependsOn:
     # TODO: postgres
-#   - {{ include "ska-sdp.etcd-host" . }}:2379
 
-{{- end }}
 {{- end }}

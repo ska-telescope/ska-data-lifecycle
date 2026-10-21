@@ -9,7 +9,7 @@ from tango.server import Device, attribute, run
 logger = logging.getLogger(__name__)
 
 
-class DlmMetrics(Device):
+class DLMMetrics(Device):
     """Tango device exposing DLM service health information."""
 
     # pylint: disable=invalid-name
@@ -52,7 +52,7 @@ class DlmMetrics(Device):
 
 def main():
     """Start the DLM Tango device server."""
-    run(classes=(DlmMetrics,))
+    run(classes=(DLMMetrics,))
 
 
 if __name__ == "__main__":

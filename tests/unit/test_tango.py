@@ -8,14 +8,14 @@ import pytest
 from tango import DevState
 from tango.test_context import DeviceTestContext
 
-from ska_dlm.dlm_tango.dlm_metrics_device import DlmMetrics
+from ska_dlm.dlm_tango.dlm_metrics_device import DLMMetrics
 
 
 @pytest.fixture(name="tango_context")
 def tango_context_fixture():
     """Create a Tango test device."""
     with DeviceTestContext(  # composed with a test database
-        DlmMetrics,
+        DLMMetrics,
         device_name="dlm/metrics/0",
         process=False,
     ) as context:

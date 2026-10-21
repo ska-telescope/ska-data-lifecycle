@@ -19,7 +19,7 @@ packages = [{include="ska_dlm", from="src"}]
 [tool.poetry.scripts]
 ska-dlm = "ska_dlm.cli_entrypoint:main"
 ska-dlm-heuristics = "ska_dlm.dlm_heuristics:main"
-DlmMetrics = "ska_dlm.dlm_tango.dlm_metrics_device:main"
+DLMMetrics = "ska_dlm.dlm_tango.dlm_metrics_device:main"
 
 [[tool.poetry.source]]
 name = 'pypi'
