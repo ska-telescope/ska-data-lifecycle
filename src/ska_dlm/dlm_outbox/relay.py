@@ -43,9 +43,7 @@ async def _has_outbox_table(engine: AsyncEngine) -> bool:
     """Check whether the outbox table exists in the DLM schema."""
     async with engine.connect() as connection:
         return await connection.run_sync(
-            lambda sync_connection: inspect(sync_connection).has_table(
-                "outbox", schema="dlm"
-            )
+            lambda sync_connection: inspect(sync_connection).has_table("outbox", schema="dlm")
         )
 
 
