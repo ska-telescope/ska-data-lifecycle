@@ -1,8 +1,6 @@
-ARG PYTHON_VERSION=3.12
-
 FROM artefact.skao.int/ska-build-python-ubuntu26:1.1.1 AS buildenv
 ARG POETRY_VERSION=1.8.2
-RUN pip install poetry==${POETRY_VERSION}
+RUN apt-get install poetry==${POETRY_VERSION}
 
 WORKDIR /app
 
@@ -13,7 +11,7 @@ RUN poetry config virtualenvs.in-project true \
 
 COPY ./ ./
 RUN . .venv/bin/activate \
-    && pip install --no-deps .
+    && apt-get install --no-deps .
 
 FROM artefact.skao.int/ska-python-ubuntu26:1.1.1 AS runtime
 
