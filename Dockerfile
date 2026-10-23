@@ -1,8 +1,4 @@
-ARG PYTHON_VERSION=3.12
-
-FROM python:${PYTHON_VERSION} AS buildenv
-ARG POETRY_VERSION=2.5.1
-RUN pip install poetry==${POETRY_VERSION}
+FROM artefact.skao.int/ska-build-python-ubuntu26:1.1.1 AS buildenv
 
 WORKDIR /app
 
@@ -15,7 +11,7 @@ COPY ./ ./
 RUN . .venv/bin/activate \
     && pip install --no-deps .
 
-FROM python:${PYTHON_VERSION}-slim AS runtime
+FROM artefact.skao.int/ska-python-ubuntu26:1.1.1 AS runtime
 
 RUN apt-get update && apt-get install -y rclone
 
