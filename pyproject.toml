@@ -1,3 +1,7 @@
+[build-system]
+requires = ["poetry>=2"]
+build-backend = "poetry.core.masonry.api"
+
 [tool.poetry]
 include = ["MANIFEST.skao.int"]
 name = "ska_data_lifecycle"
@@ -29,7 +33,7 @@ name = 'skao'
 url = 'https://artefact.skao.int/repository/pypi-internal/simple'
 
 [tool.poetry.dependencies]
-python = ">=3.10, <3.13"
+python = ">=3.10, <4"
 sqlalchemy = { version="^2.0.48", extras=["postgresql-asyncpg"] }
 ska-ser-logging = "^0.4.1"
 requests = "^2.32.3"
@@ -133,10 +137,6 @@ enable = ["useless-suppression"]
 [tool.pylint.similarities]
 min-similarity-lines = 7
 ignore-imports = "yes"
-
-[build-system]
-requires = ["poetry>=1.8.2"]
-build-backend = "poetry.core.masonry.api"
 
 [tool.black]
 line-length = 99
