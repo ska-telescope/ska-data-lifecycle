@@ -4,7 +4,7 @@ default:
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
-  CI_POETRY_VERSION: 1.8.2
+  CI_POETRY_VERSION: 2.5.1
 
 # Enable caching for python
 cache:
