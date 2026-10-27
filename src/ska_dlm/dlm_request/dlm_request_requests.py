@@ -1,16 +1,21 @@
 """DLM Request API module."""
 
 import logging
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 
 import ska_ser_logging
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import sessionmaker
 
 import ska_dlm
 from ska_dlm.common_types import ItemState, PhaseType
 from ska_dlm.data_item.data_item_requests import query_data_item
 from ska_dlm.data_item.data_item_requests import rest as data_item_requests
+from ska_dlm.dlm_db import create_async_sql_engine, get_async_database_url
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
 from ska_dlm.fastapi_utils import fastapi_auto_annotate
 
@@ -21,12 +26,30 @@ ska_ser_logging.configure_logging(level=logging.INFO)
 
 
 cli = ExceptionHandlingTyper()
+
+
+@asynccontextmanager
+async def app_lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    """Manage the request API's SQLAlchemy engine and session factory."""
+    async with create_async_sql_engine(
+        get_async_database_url("DLM_REQUEST_DATABASE_URL"), pool_pre_ping=True
+    ) as engine:
+        app.state.async_session_factory = sessionmaker(
+            bind=engine,
+            class_=AsyncSession,
+            expire_on_commit=False,
+            autoflush=False,
+        )
+        yield
+
+
 rest = fastapi_auto_annotate(
     FastAPI(
         title="SKA-DLM: Request Manager REST API",
         description="REST interface of the SKA-DLM Request Manager",
         version=ska_dlm.__version__,
         license_info={"name": "BSD-3-Clause", "identifier": "BSD-3-Clause"},
+        lifespan=app_lifespan,
     )
 )
 rest.include_router(data_item_requests)
