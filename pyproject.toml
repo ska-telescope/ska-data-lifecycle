@@ -61,7 +61,7 @@ numpy = [
     { version="~2.4.6", python="~3.11" },
     { version="^2.5.3", python="^3.12" },
 ]
-pytango = "^9.3.6"
+pytango = "^10.3.1" # 10.x supports numpy 2.x
 
 [tool.poetry.group.test.dependencies]
 black = "^23.3.0"
