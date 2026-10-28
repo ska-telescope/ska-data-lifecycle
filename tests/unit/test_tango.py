@@ -8,7 +8,8 @@ import pytest
 from tango import DevState
 from tango.test_context import DeviceTestContext
 
-from ska_dlm.dlm_tango.dlm_metrics_device import DLMMetrics
+from ska_dlm import __version__
+from ska_dlm.dlm_tango.dlm_metrics_device import DLMMetrics, HealthState
 
 
 @pytest.fixture(name="tango_context")
@@ -27,12 +28,9 @@ def test_dlm_metrics(tango_context):
     device = tango_context
 
     version_info = json.loads(tango_context.version)
+    assert version_info == {"version": __version__}
 
-    assert version_info == {
-        "version": "2.4.0",
-        "image": "artefact.skao.int/ska-data-lifecycle:2.4.0",
-    }
+    assert device.rcloneHealthy == HealthState.UNKNOWN
+    assert device.postgrestHealthy == HealthState.UNKNOWN
+    assert device.ingestHealthy == HealthState.UNKNOWN
     assert device.state() == DevState.ON
-    assert device.rcloneHealthy is True
-    assert device.postgrestHealthy is True
-    assert device.ingestHealthy is False

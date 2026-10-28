@@ -57,6 +57,8 @@ spec:
     value: {{ .Values.tango.loopInterval | float64 | quote }}
   - name: FEATURE_ALL_COMMANDS_HAVE_ARGUMENT
     value: {{ .Values.tango.allCommandsHaveArgument | int | quote }}
+  - name: DLM_IMAGE
+    value: "{{ .Values.tango.image }}:{{ .Values.tango.version }}"
   {{- with .Values.tango.env }}
   {{- toYaml . | nindent 2 }}
   {{- end }}
