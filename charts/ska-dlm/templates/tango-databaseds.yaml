@@ -1,0 +1,17 @@
+# Source: ska-tango-examples-test-parent/charts/ska-tango-base/templates/databaseds.yaml
+apiVersion: tango.tango-controls.org/v2
+kind: DatabaseDS
+metadata:
+  name: tango-databaseds
+  namespace: {{ .Release.Namespace }}
+  labels:
+    component: databaseds
+    function: tangodb-interface
+    domain: tango-configuration
+    intent: production
+    app: {{ .Release.Name }}
+spec:
+  usePV: false
+  enableLoadBalancer: true
+  imagePullPolicy: IfNotPresent
+  tangoDBStorageClass: nfss1

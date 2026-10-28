@@ -11,7 +11,7 @@ global:
   storageClass: "localdisk"  # existing storage class
   operator: true
   cluster_domain: cluster.local # the internal Kubernetes DNS domain, used for communication between services inside the cluster
-  tango_host: databaseds-tango-base:10000 # databaseds-tango-base.<tango-namespace>.svc.cluster.local:10000
+  tango_host: tango-databaseds:10000
 
   sharedpvc:
     # Shared PVC that can be mounted by multiple pods.
@@ -43,7 +43,7 @@ ingest:
   component: ingest
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: 184dfe06
+  version: f197f553
   imagePullPolicy: Always
   replicas: 1
 
@@ -51,7 +51,7 @@ storage:
   component: storage
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: 184dfe06
+  version: f197f553
   imagePullPolicy: Always
   replicas: 1
   securityContext: {}
@@ -96,7 +96,7 @@ migration:
   component: migration
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: 184dfe06
+  version: f197f553
   imagePullPolicy: Always
   replicas: 1
 
@@ -104,7 +104,7 @@ request:
   component: request
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: 184dfe06
+  version: f197f553
   imagePullPolicy: Always
   replicas: 1
 
@@ -143,7 +143,7 @@ heuristics:
   component: heuristics
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: 184dfe06
+  version: f197f553
   imagePullPolicy: Always
   replicas: 1
 
@@ -232,11 +232,11 @@ rabbitmq:
   port: 5672
 
 outbox:
-  enabled: true # WIP (DMAN-213)
+  enabled: true
   component: outbox
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: 184dfe06
+  version: f197f553
   imagePullPolicy: Always
   replicas: 1
   rabbitmq:
@@ -320,7 +320,7 @@ tango:
   component: dlm-tango
   subsystem: dlm
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: 184dfe06
+  version: f197f553
   imagePullPolicy: IfNotPresent
   logLevel: info
   nsubarray: 1
