@@ -41,6 +41,15 @@ spec:
         }
       }
     }
+  volumeMounts:
+    - name: dlm-configmap
+      mountPath: /home/ska-dlm/.dlm
+      readOnly: true
+
+  volumes:
+    - name: dlm-configmap
+      configMap:
+        name: ska-dlm-configmap
   env:
   - name: DLM_LOG_LEVEL
     value: {{ .Values.tango.logLevel | upper | quote }}

@@ -43,7 +43,7 @@ ingest:
   component: ingest
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: f197f553
+  version: 7cf02d18
   imagePullPolicy: Always
   replicas: 1
 
@@ -51,7 +51,7 @@ storage:
   component: storage
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: f197f553
+  version: 7cf02d18
   imagePullPolicy: Always
   replicas: 1
   securityContext: {}
@@ -96,7 +96,7 @@ migration:
   component: migration
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: f197f553
+  version: 7cf02d18
   imagePullPolicy: Always
   replicas: 1
 
@@ -104,7 +104,7 @@ request:
   component: request
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: f197f553
+  version: 7cf02d18
   imagePullPolicy: Always
   replicas: 1
 
@@ -143,7 +143,7 @@ heuristics:
   component: heuristics
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: f197f553
+  version: 7cf02d18
   imagePullPolicy: Always
   replicas: 1
 
@@ -236,7 +236,7 @@ outbox:
   component: outbox
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: f197f553
+  version: 7cf02d18
   imagePullPolicy: Always
   replicas: 1
   rabbitmq:
@@ -320,7 +320,7 @@ tango:
   component: dlm-tango
   subsystem: dlm
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: f197f553
+  version: 7cf02d18
   imagePullPolicy: IfNotPresent
   logLevel: info
   nsubarray: 1
