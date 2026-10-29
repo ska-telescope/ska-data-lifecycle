@@ -11,7 +11,7 @@ global:
   storageClass: "localdisk"  # existing storage class
   operator: true
   cluster_domain: cluster.local # the internal Kubernetes DNS domain, used for communication between services inside the cluster
-  tango_host: tango-databaseds:10000
+  tango_host: tango-databaseds:10000 # the Tango database server used by the device server.
 
   sharedpvc:
     # Shared PVC that can be mounted by multiple pods.
@@ -210,8 +210,8 @@ rclone:
       type: kv-v2
       path: ""
 
-rabbitmq:
-  enabled: true # WIP (DMAN-213)
+rabbitmq: # internal message queue between DLM server and client
+  enabled: true
   component: rabbitmq
   subsystem: data-lifecycle-management
   image: rabbitmq
@@ -232,7 +232,7 @@ rabbitmq:
   port: 5672
 
 outbox:
-  enabled: true
+  enabled: true # true if rabbitmq enabled
   component: outbox
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
@@ -266,56 +266,8 @@ keycloak:
   replicas: 1
   use_https: true
 
-
-# ------ Optional utilities ------
-
-pgweb:  # see https://github.com/ectobit/charts/tree/main/pgweb
-  enabled: true  # enable web IDE access to Postgres
-  ingress:
-    enabled: true
-    annotations:
-      nginx.ingress.kubernetes.io/rewrite-target: /$2
-    hosts:
-    - paths:
-      - path: /pgweb(/|$)(.*)
-        pathType: ImplementationSpecific
-
-benchmark:
-  enabled: false  # false for regular deployment. Set to true to run the benchmarking pod (see scripts/README.md)
-  component: benchmark
-  subsystem: data-lifecycle-management
-  image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-benchmark
-  version: "608e5ef5"
-  imagePullPolicy: Always
-  name: register  # register or migrate
-  config:
-    host:
-    token:
-    sourceFile:
-    mountPath:
-
-# ------ Auxiliary utility images ------
-kubectl:
-  image: rancher/kubectl
-  version: "v1.28.15-amd64"
-  imagePullPolicy: Always
-
-# ------------------------------------------------
-# dlm-archive configuration (openssh-server)
-# ------------------------------------------------
-archive:
-  component: archive
-  subsystem: data-lifecycle-management
-  image: linuxserver/openssh-server
-  version: "latest"
-  imagePullPolicy: Always
-  replicas: 1
-  securityContext: {}
-  pvcName: "shared"
-  mountPath: "/dlm"
-
 tango:
-  enabled: true
+  enabled: true # requires global.tango_host to be configured.
   prefix: "dlm/metrics/0"
   component: dlm-tango
   subsystem: dlm
@@ -339,8 +291,8 @@ tango:
   tolerations: []
   affinity: {}
   metrics:
-    domain: ska # ?
-    function: monitoring # ?
+    domain: ska
+    function: monitoring
     resources:
       requests:
         memory: 100Mi
@@ -348,3 +300,49 @@ tango:
       limits:
         cpu: 500m
         memory: 256Mi
+
+
+# ------ Optional utilities ------
+
+pgweb:  # see https://github.com/ectobit/charts/tree/main/pgweb
+  enabled: true  # enable web IDE access to Postgres
+  ingress:
+    enabled: true
+    annotations:
+      nginx.ingress.kubernetes.io/rewrite-target: /$2
+    hosts:
+    - paths:
+      - path: /pgweb(/|$)(.*)
+        pathType: ImplementationSpecific
+
+benchmark:
+  enabled: false  # Set to true to run the benchmarking pod (see scripts/README.md)
+  component: benchmark
+  subsystem: data-lifecycle-management
+  image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-benchmark
+  version: "608e5ef5"
+  imagePullPolicy: Always
+  name: register  # register or migrate
+  config:
+    host:
+    token:
+    sourceFile:
+    mountPath:
+
+# ------ Auxiliary utility images ------
+kubectl:
+  image: rancher/kubectl
+  version: "v1.28.15-amd64"
+  imagePullPolicy: Always
+
+# ------ dlm-archive configuration (openssh-server) ------
+archive:
+  component: archive
+  subsystem: data-lifecycle-management
+  image: linuxserver/openssh-server
+  version: "latest"
+  imagePullPolicy: Always
+  replicas: 1
+  securityContext: {}
+  pvcName: "shared"
+  mountPath: "/dlm"

@@ -1,11 +1,8 @@
-# https://gitlab.com/ska-telescope/sdp/ska-sdp-integration/-/blob/master/charts/ska-sdp/templates/lmc-operator.yaml
+# source: https://gitlab.com/ska-telescope/sdp/ska-sdp-integration/-/blob/master/charts/ska-sdp/templates/lmc-operator.yaml
 {{- if and .Values.tango.enabled .Values.global.operator }}
 {{- $clusterdomain := coalesce .Values.global.cluster_domain "cluster.local" }}
 {{- $tangohost := coalesce .Values.global.tango_host "databaseds-tango-base:10000" }}
-# TANGO_HOST identifies the Tango database server that the device server will register with and connect to.
-# Only use databaseds-tango-base:10000 if that Tango database service actually exists and is reachable.
 {{- $databaseds := (split ":" $tangohost)._0 }}
-# Metrics
 {{- $tangoname := .Values.tango.prefix }}
 apiVersion: tango.tango-controls.org/v1
 kind: DeviceServer
