@@ -3,7 +3,7 @@
 import enum
 
 
-@enum.unique
+@enum.unique  # TODO: Import from ska-control-model instead
 class HealthState(enum.IntEnum):
     """Health state attribute values."""
 

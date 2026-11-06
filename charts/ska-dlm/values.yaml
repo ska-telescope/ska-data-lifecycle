@@ -10,6 +10,7 @@ global:
   development: true  # true for local deployment (to trigger gateway & keycloak)
   storageClass: "localdisk"  # existing storage class
   cluster_domain: cluster.local # the internal Kubernetes DNS domain, used for communication between services inside the cluster
+  operator: true
   tango_host: tango-databaseds:10000 # Tango database used by the DLMMetrics device server.
 
   sharedpvc:
