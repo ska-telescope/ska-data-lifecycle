@@ -10,7 +10,7 @@ global:
   development: true  # true for local deployment (to trigger gateway & keycloak)
   storageClass: "localdisk"  # existing storage class
   cluster_domain: cluster.local # the internal Kubernetes DNS domain, used for communication between services inside the cluster
-  tango_host: tango-databaseds:10000 # the Tango database server used by the device server.
+  tango_host: tango-databaseds:10000 # Tango database used by the DLMMetrics device server.
 
   sharedpvc:
     # Shared PVC that can be mounted by multiple pods.
@@ -266,9 +266,9 @@ keycloak:
   use_https: true
 
 tango:
-  enabled: true # requires global.tango_host to be configured.
+  enabled: true # Deploy the DLMMetrics Tango device server. Requires global.tango_host to be configured.
   database:
-    enabled: true # whether DLM creates its own Tango database. If false, DeviceServer must reference an existing Tango database.
+    enabled: true # Whether DLM creates its own Tango database. If false, DeviceServer must reference an existing Tango database.
   prefix: "dlm/metrics/0"
   component: metrics-device
   subsystem: dlm

@@ -18,88 +18,88 @@ class DLMMetrics(Device):
 
     # pylint: disable=invalid-name, too-many-instance-attributes
 
-    @attribute(dtype=str)
+    @attribute
     def version(self) -> str:
         """Return the DLM version."""
         return json.dumps({"version": __version__})
 
-    @attribute(dtype=str)
+    @attribute
     def image(self) -> str:
         """Return the image reference configured by Helm."""
         return json.dumps({"image": os.getenv("DLM_IMAGE", "unknown")})  # Helm image reference
 
-    @attribute(dtype=HealthState)
-    def rcloneHealthy(self) -> HealthState:
+    @attribute
+    def rcloneHealthState(self) -> HealthState:
         """Return the health of the DLM rclone service."""
-        return self._rclone_healthy
+        return self._rclone_health_state
 
-    @attribute(dtype=HealthState)
-    def postgresHealthy(self) -> HealthState:
+    @attribute
+    def postgresHealthState(self) -> HealthState:
         """Whether the PostgreSQL database is reachable."""
-        return self._postgres_healthy
+        return self._postgres_health_state
 
-    @attribute(dtype=HealthState)
-    def postgrestHealthy(self) -> HealthState:
+    @attribute
+    def postgrestHealthState(self) -> HealthState:
         """Return the health of the DLM PostgREST service."""
-        return self._postgrest_healthy
+        return self._postgrest_health_state
 
-    @attribute(dtype=HealthState)
-    def etcdHealthy(self) -> HealthState:
+    @attribute
+    def etcdHealthState(self) -> HealthState:
         """Return the health of the etcd service."""
-        return self._etcd_healthy
+        return self._etcd_health_state
 
-    @attribute(dtype=HealthState)
-    def heuristicsHealthy(self) -> HealthState:
+    @attribute
+    def heuristicsHealthState(self) -> HealthState:
         """Return the health of the DLM heuristics service."""
-        return self._heuristics_healthy
+        return self._heuristics_health_state
 
-    @attribute(dtype=HealthState)
-    def storageHealthy(self) -> HealthState:
+    @attribute
+    def storageHealthState(self) -> HealthState:
         """Return the health of the DLM storage service."""
-        return self._storage_healthy
+        return self._storage_health_state
 
-    @attribute(dtype=HealthState)
-    def migrationHealthy(self) -> HealthState:
+    @attribute
+    def migrationHealthState(self) -> HealthState:
         """Return the health of the DLM migration service."""
-        return self._migration_healthy
+        return self._migration_health_state
 
-    @attribute(dtype=HealthState)
-    def ingestHealthy(self) -> HealthState:
+    @attribute
+    def ingestHealthState(self) -> HealthState:
         """Return the health of the DLM ingest service."""
-        return self._ingest_healthy
+        return self._ingest_health_state
 
-    @attribute(dtype=HealthState)
-    def requestHealthy(self) -> HealthState:
+    @attribute
+    def requestHealthState(self) -> HealthState:
         """Return the health of the DLM request service."""
-        return self._request_healthy
+        return self._request_health_state
 
-    @attribute(dtype=HealthState)
-    def rabbitmqHealthy(self) -> HealthState:
+    @attribute
+    def rabbitmqHealthState(self) -> HealthState:
         """Return the health of the DLM RabbitMQ service."""
-        return self._rabbitmq_healthy
+        return self._rabbitmq_health_state
 
-    @attribute(dtype=HealthState)
-    def outboxHealthy(self) -> HealthState:
+    @attribute
+    def outboxHealthState(self) -> HealthState:
         """Return the health of the DLM outbox service."""
-        return self._outbox_healthy
+        return self._outbox_health_state
 
-    @attribute(dtype=HealthState)
-    def dlmHealthy(self) -> HealthState:
+    @attribute
+    def dlmHealthState(self) -> HealthState:
         """Return the overall health of the DLM subsystem."""
-        return self._dlm_healthy
+        return self._dlm_health_state
 
-    @attribute(dtype=(str,))
+    @attribute
     def storageEndPoints(self) -> list[str]:
         """Return a list of storage endpoints registered in the database."""
         return self._storage_endpoints
 
-    @attribute(dtype=(float,))
+    @attribute
     def storageUsedPct(self) -> list[float]:
         """Return the percentage of storage capacity used for each storage endpoint."""
         return self._storage_used_pct
 
-    @attribute(dtype=int)
-    def migrationsInProgress(self) -> int:
+    @attribute
+    def migrationsInProgress(self) -> float:
         """Return the number of migrations currently in progress."""
         return self._migrations_in_progress
 
@@ -108,21 +108,21 @@ class DLMMetrics(Device):
         super().init_device()
 
         # Placeholder values, TODO: DMAN-324
-        self._rclone_healthy = HealthState.UNKNOWN
-        self._postgres_healthy = HealthState.UNKNOWN
-        self._postgrest_healthy = HealthState.UNKNOWN
-        self._etcd_healthy = HealthState.UNKNOWN
-        self._heuristics_healthy = HealthState.UNKNOWN
-        self._storage_healthy = HealthState.UNKNOWN
-        self._migration_healthy = HealthState.UNKNOWN
-        self._ingest_healthy = HealthState.UNKNOWN
-        self._request_healthy = HealthState.UNKNOWN
-        self._rabbitmq_healthy = HealthState.UNKNOWN
-        self._outbox_healthy = HealthState.UNKNOWN
-        self._dlm_healthy = HealthState.UNKNOWN
+        self._rclone_health_state = HealthState.UNKNOWN
+        self._postgres_health_state = HealthState.UNKNOWN
+        self._postgrest_health_state = HealthState.UNKNOWN
+        self._etcd_health_state = HealthState.UNKNOWN
+        self._heuristics_health_state = HealthState.UNKNOWN
+        self._storage_health_state = HealthState.UNKNOWN
+        self._migration_health_state = HealthState.UNKNOWN
+        self._ingest_health_state = HealthState.UNKNOWN
+        self._request_health_state = HealthState.UNKNOWN
+        self._rabbitmq_health_state = HealthState.UNKNOWN
+        self._outbox_health_state = HealthState.UNKNOWN
+        self._dlm_health_state = HealthState.UNKNOWN
         self._storage_endpoints = ["dlm-archive", "local"]
-        self._storage_used_pct = [0.0, 0.0]
-        self._migrations_in_progress = 0
+        self._storage_used_pct = [float("nan"), float("nan")]
+        self._migrations_in_progress = float("nan")  # Use AttrQuality.ATTR_INVALID instead?
 
         self.set_state(DevState.ON)  # means the Tango device itself is operational.
 

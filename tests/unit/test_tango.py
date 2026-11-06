@@ -30,7 +30,7 @@ def test_dlm_metrics(tango_context):
     version_info = json.loads(tango_context.version)
     assert version_info == {"version": __version__}
 
-    assert device.rcloneHealthy == HealthState.UNKNOWN
-    assert device.postgrestHealthy == HealthState.UNKNOWN
-    assert device.ingestHealthy == HealthState.UNKNOWN
+    assert device.rcloneHealthState == HealthState.UNKNOWN
+    assert device.postgrestHealthState == HealthState.UNKNOWN
+    assert device.ingestHealthState == HealthState.UNKNOWN
     assert device.state() == DevState.ON
