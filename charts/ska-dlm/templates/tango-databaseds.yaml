@@ -1,5 +1,6 @@
+# This template creates the Tango database infrastructure
 # Source: ska-tango-examples-test-parent/charts/ska-tango-base/templates/databaseds.yaml
-{{- if and .Values.tango.enabled .Values.global.operator }}
+{{- if and .Values.tango.enabled .Values.tango.database.enabled }}
 apiVersion: tango.tango-controls.org/v2
 kind: DatabaseDS
 metadata:
@@ -17,4 +18,4 @@ spec:
   imagePullPolicy: IfNotPresent
   tangoDBStorageClass: nfss1
 
-  {{- end }}
+{{- end }}

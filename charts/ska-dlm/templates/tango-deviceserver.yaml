@@ -1,10 +1,8 @@
+# This template runs the DLMMetrics device
 # source: https://gitlab.com/ska-telescope/sdp/ska-sdp-integration/-/blob/master/charts/ska-sdp/templates/lmc-operator.yaml
-{{- if and .Values.tango.enabled (not .Values.global.operator) }}
-{{- fail "tango.enabled requires global.operator to be enabled" }}
-{{- end }}
-{{- if and .Values.tango.enabled .Values.global.operator }}
+{{- if .Values.tango.enabled }}
 {{- $clusterdomain := coalesce .Values.global.cluster_domain "cluster.local" }}
-{{- $tangohost := coalesce .Values.global.tango_host "databaseds-tango-base:10000" }}
+{{- $tangohost := coalesce .Values.global.tango_host "tango-databaseds:10000" }}
 {{- $databaseds := (split ":" $tangohost)._0 }}
 {{- $tangoname := .Values.tango.prefix }}
 apiVersion: tango.tango-controls.org/v1
@@ -52,11 +50,11 @@ spec:
         name: {{ include "ska-dlm.fullname" . }}-configmap
 
   env:
-  - name: DLM_IMAGE
-    value: "{{ .Values.tango.image }}:{{ .Values.tango.version }}"
-  {{- with .Values.tango.env }}
-  {{- toYaml . | nindent 2 }}
-  {{- end }}
+    - name: DLM_IMAGE
+      value: "{{ .Values.tango.image }}:{{ .Values.tango.version }}"
+    {{- with .Values.tango.env }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
   {{- if .Values.tango.tolerations }}
   tolerations: {{ toYaml .Values.tango.tolerations | nindent 4 }}
   {{- end }}
