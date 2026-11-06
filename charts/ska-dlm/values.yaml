@@ -269,17 +269,13 @@ keycloak:
 tango:
   enabled: true # requires global.tango_host to be configured.
   prefix: "dlm/metrics/0"
-  component: dlm-tango
+  component: metrics-device
   subsystem: dlm
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
   version: 7cf02d18
   imagePullPolicy: IfNotPresent
-  logLevel: info
   nsubarray: 1
-  allCommandsHaveArgument: false
-  strictValidation: false
   loadBalancer: false
-  loopInterval: 10 # for periodic monitoring
   livenessProbe:
     initialDelaySeconds: 30
     periodSeconds: 30

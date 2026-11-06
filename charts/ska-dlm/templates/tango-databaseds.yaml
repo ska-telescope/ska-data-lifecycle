@@ -1,4 +1,5 @@
 # Source: ska-tango-examples-test-parent/charts/ska-tango-base/templates/databaseds.yaml
+{{- if and .Values.tango.enabled .Values.global.operator }}
 apiVersion: tango.tango-controls.org/v2
 kind: DatabaseDS
 metadata:
@@ -15,3 +16,5 @@ spec:
   enableLoadBalancer: true
   imagePullPolicy: IfNotPresent
   tangoDBStorageClass: nfss1
+
+  {{- end }}

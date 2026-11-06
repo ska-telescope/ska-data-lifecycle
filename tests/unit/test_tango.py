@@ -18,7 +18,7 @@ def tango_context_fixture():
     with DeviceTestContext(  # composed with a test database
         DLMMetrics,
         device_name="dlm/metrics/0",
-        process=False,
+        process=True,
     ) as context:
         yield context
 

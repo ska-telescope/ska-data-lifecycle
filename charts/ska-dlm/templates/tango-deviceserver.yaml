@@ -1,4 +1,7 @@
 # source: https://gitlab.com/ska-telescope/sdp/ska-sdp-integration/-/blob/master/charts/ska-sdp/templates/lmc-operator.yaml
+{{- if and .Values.tango.enabled (not .Values.global.operator) }}
+{{- fail "tango.enabled requires global.operator to be enabled" }}
+{{- end }}
 {{- if and .Values.tango.enabled .Values.global.operator }}
 {{- $clusterdomain := coalesce .Values.global.cluster_domain "cluster.local" }}
 {{- $tangohost := coalesce .Values.global.tango_host "databaseds-tango-base:10000" }}
@@ -11,7 +14,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "ska-dlm.labels" . | nindent 4 }}
-    component: {{ .Values.tango.component }}-metrics
+    component: {{ .Values.tango.component }}
     subsystem: {{ .Values.tango.subsystem }}
     domain: {{ .Values.tango.metrics.domain }}
     function: {{ .Values.tango.metrics.function }}
@@ -46,21 +49,14 @@ spec:
   volumes:
     - name: dlm-configmap
       configMap:
-        name: ska-dlm-configmap
+        name: {{ include "ska-dlm.fullname" . }}-configmap
+
   env:
-  - name: DLM_LOG_LEVEL
-    value: {{ .Values.tango.logLevel | upper | quote }}
-  - name: DLM_METRICS_LOOP_INTERVAL
-    value: {{ .Values.tango.loopInterval | float64 | quote }}
-  - name: FEATURE_ALL_COMMANDS_HAVE_ARGUMENT
-    value: {{ .Values.tango.allCommandsHaveArgument | int | quote }}
   - name: DLM_IMAGE
     value: "{{ .Values.tango.image }}:{{ .Values.tango.version }}"
   {{- with .Values.tango.env }}
   {{- toYaml . | nindent 2 }}
   {{- end }}
-  - name: FEATURE_STRICT_VALIDATION
-    value: {{ .Values.tango.strictValidation | int | quote }}
   {{- if .Values.tango.tolerations }}
   tolerations: {{ toYaml .Values.tango.tolerations | nindent 4 }}
   {{- end }}
