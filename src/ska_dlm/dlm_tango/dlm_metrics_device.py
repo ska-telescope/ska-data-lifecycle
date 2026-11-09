@@ -1,9 +1,12 @@
 """Tango device for exposing DLM monitoring metrics."""
 
+import asyncio
 import json
 import logging
 import os
 
+from sqlalchemy.engine import URL
+from sqlalchemy.ext.asyncio import create_async_engine
 from tango import DevState
 from tango.server import Device, attribute, run
 
@@ -11,6 +14,7 @@ from ska_dlm import __version__
 from ska_dlm.dlm_tango.attributes import HealthState
 
 logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 
 class DLMMetrics(Device):
@@ -88,12 +92,12 @@ class DLMMetrics(Device):
         """Return the overall health of the DLM subsystem."""
         return self._dlm_health_state
 
-    @attribute
+    @attribute(max_dim_x=100)
     def storageEndPoints(self) -> list[str]:
         """Return a list of storage endpoints registered in the database."""
         return self._storage_endpoints
 
-    @attribute
+    @attribute(max_dim_x=100)
     def storageUsedPct(self) -> list[float]:
         """Return the percentage of storage capacity used for each storage endpoint."""
         return self._storage_used_pct
@@ -127,8 +131,31 @@ class DLMMetrics(Device):
         self.set_state(DevState.ON)  # means the Tango device itself is operational.
 
 
+async def _check_postgres_connection():
+    """Verify that the PostgreSQL connection works."""
+    url = URL.create(
+        "postgresql+asyncpg",
+        username=os.environ["PGUSER"],
+        password=os.environ["PGPASSWORD"],
+        host=os.environ["PGHOST"],
+        port=int(os.getenv("PGPORT", "5432")),
+        database=os.environ["PGDATABASE"],
+    )
+
+    engine = create_async_engine(url, connect_args={"timeout": 5})
+
+    try:
+        async with engine.connect():
+            logger.info("Successfully connected to PostgreSQL!")
+    except Exception:  # pylint: disable=broad-exception-caught
+        logger.exception("Failed to connect to PostgreSQL")
+    finally:
+        await engine.dispose()
+
+
 def main():
     """Start the DLM Tango device server."""
+    asyncio.run(_check_postgres_connection())
     run(classes=(DLMMetrics,))
 
 

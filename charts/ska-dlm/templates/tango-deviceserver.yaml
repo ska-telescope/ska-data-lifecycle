@@ -46,6 +46,22 @@ spec:
       value: "true"
     - name: DLM_IMAGE
       value: "{{ .Values.tango.image }}:{{ .Values.tango.version }}"
+
+    # PostgreSQL connection credentials.
+    {{- range $envvar_name := tuple "PGUSER" "PGPASSWORD" "PGHOST" "PGDATABASE" }}
+    - name: {{ $envvar_name }}
+      valueFrom:
+        secretKeyRef:
+          name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
+          key: {{ $envvar_name }}
+    {{- end }}
+    - name: PGPORT
+      valueFrom:
+        secretKeyRef:
+          name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
+          key: PGPORT
+          optional: true
+
     {{- with .Values.tango.env }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
@@ -55,7 +71,5 @@ spec:
   {{- if .Values.tango.affinity }}
   affinity: {{ toYaml .Values.tango.affinity | nindent 4 }}
   {{- end }}
-#   dependsOn:
-    # TODO: postgres
 
 {{- end }}
