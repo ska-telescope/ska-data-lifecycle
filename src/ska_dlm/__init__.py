@@ -6,6 +6,7 @@ to be started and deployed as well. Please refer to the README file within this
 package to learn about the options to do that.
 """
 
+import os
 import shutil
 from pathlib import Path
 
@@ -36,7 +37,8 @@ def read_config(user_config_file: Path = DLM_HOME / "config.yaml") -> benedict:
         return benedict(yaml.safe_load(file))
 
 
-CONFIG = read_config()
+# Legacy config file is being phased out
+CONFIG = None if os.getenv("DLM_SKIP_CONFIG", "").lower() == "true" else read_config()
 
 __all__ = [
     "DLM_HOME",

@@ -39,17 +39,11 @@ spec:
         }
       }
     }
-  volumeMounts:
-    - name: dlm-configmap
-      mountPath: /home/ska-dlm/.dlm
-      readOnly: true
-
-  volumes:
-    - name: dlm-configmap
-      configMap:
-        name: {{ include "ska-dlm.fullname" . }}-configmap
 
   env:
+    # Skip loading the legacy src/ska_dlm/config.yaml file, which is being phased out.
+    - name: DLM_SKIP_CONFIG
+      value: "true"
     - name: DLM_IMAGE
       value: "{{ .Values.tango.image }}:{{ .Values.tango.version }}"
     {{- with .Values.tango.env }}
