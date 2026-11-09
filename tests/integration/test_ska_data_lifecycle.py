@@ -269,7 +269,7 @@ def test_copy(env: DlmTestClient):
 
 @pytest.mark.integration_test
 @pytest.mark.asyncio
-async def test_increase_oid_phase_heuristic(env, request):
+async def test_increase_oid_phase_heuristic(env, request):  # pylint: disable=too-many-locals
     """Run the OID phase increase heuristic through a real Rclone copy."""
     local_storage = env.storage_requests.query_storage(storage_name="local")[0]
     archive_storage = env.storage_requests.query_storage(storage_name="dlm-archive")[0]
