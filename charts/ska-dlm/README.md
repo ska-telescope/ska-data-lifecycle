@@ -9,6 +9,36 @@ The main configuration options are:
  * `postgresql.primary.persistence.enabled`: If enabled, PostgreSQL will persist data between executions, otherwise it will start from scratch each time.
  * `ska-db-migrations.runMigrations`: True by default. When enabled, a Liquibase job is run to apply database migrations during deployment.
 
+## Heuristic Workers
+
+By default, one `all` worker runs the expiry and storage heuristics in their original order.
+`heuristics.replicas` controls the number of pods for this default worker. To run the two
+groups in separate deployments, configure:
+
+```yaml
+heuristics:
+  pollInterval: 10
+  workers:
+    - name: expiry
+      replicas: 2
+    - name: storage
+      replicas: 2
+```
+
+The expiry worker runs UID expiry followed by OID expiry. The storage worker updates usage
+before enforcing the high-water mark. Configure both groups to retain all default work.
+Each group elects one active worker; extra replicas are standbys. `all` cannot be combined
+with the other groups. Outside Helm, select a group with `DLM_HEURISTIC_WORKER` and set a
+positive `DLM_HEURISTIC_POLL_INTERVAL` in seconds.
+
+Workers use PostgreSQL session-level advisory locks, so they must share the same database
+and connect directly or through a session-pooling proxy. Existing instances that do not
+use these locks must be stopped before starting multiple workers. Because the heuristics
+can update the same records and delete the same payloads, a shared lock serializes their
+execution across groups. Replicas therefore provide isolation and failover, not increased
+processing throughput. A process crash can still interrupt work between an external storage
+operation and its database commit; the locks do not provide exactly-once execution.
+
 ## RabbitMQ and Outbox
 
 The chart can deploy a RabbitMQ broker and an outbox relay that publishes database outbox events to RabbitMQ.

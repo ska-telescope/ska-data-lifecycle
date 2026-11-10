@@ -91,7 +91,14 @@ The current implementation of this FastAPI based manager is limited to a number 
 
 The DLM Heuristics Engine
 -------------------------
-This service is implemented as a loop running until explicitely terminated. It executes all housekeeping, data_item management and storage management tasks. Each of those tasks is implemented as an asynchronously instantiated and executed, pluggable class exposing a standard interface for the engine. Examples of such tasks include:
+This service is implemented as a loop running until explicitely terminated. It executes all housekeeping, data_item management and storage management tasks. Each of those tasks is implemented as an asynchronously instantiated and executed, pluggable class exposing a standard interface for the engine.
+
+The engine can run as separate ``expiry`` and ``storage`` worker deployments, with standby
+replicas coordinated by PostgreSQL advisory locks. The workers serialize their execution
+because their operations overlap, so replicas provide failover rather than additional
+throughput. See the chart README for configuration and operational requirements.
+
+Examples of such tasks include:
 
   #. Treatment of expired data_items
   #. Treatment of data_item phase change events. Such phase change events could have multiple reasons, including explicit requests, degragation due to storage failure or explicit deletion from a storage volume due to capacity constraints.

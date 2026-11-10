@@ -3,10 +3,13 @@
 
 import asyncio
 import logging
-import math
 import os
+import random
 import signal
-from datetime import datetime, timezone
+import time
+from contextlib import asynccontextmanager
+
+from sqlalchemy import text
 
 from ska_dlm.dlm_db import create_async_sql_engine, create_async_sql_session
 from ska_dlm.dlm_heuristics.heuristics import (
@@ -25,92 +28,96 @@ HEURISTIC_DATABASE_URL = os.getenv(
     ),
 )
 HEURISTIC_POLL_INTERVAL = int(os.getenv("DLM_HEURISTIC_POLL_INTERVAL", "10"))
+HEURISTIC_WORKER = os.getenv("DLM_HEURISTIC_WORKER", "all")
+WORKER_LOCK_IDS = {"all": 2, "expiry": 3, "storage": 4}
+
+
+@asynccontextmanager
+async def heuristic_worker_lock(engine, lock_id=1):
+    """Hold the database-wide heuristic lock on a dedicated connection."""
+    async with engine.connect() as connection:
+        try:
+            result = await connection.execute(
+                text("SELECT pg_try_advisory_lock(:namespace, :lock_id)"),
+                {"namespace": 1397440844, "lock_id": lock_id},
+            )
+            acquired = result.scalar_one()
+            await connection.commit()
+        except BaseException:
+            await connection.invalidate()
+            raise
+        try:
+            yield acquired
+        finally:
+            if acquired:
+                try:
+                    await connection.execute(
+                        text("SELECT pg_advisory_unlock(:namespace, :lock_id)"),
+                        {"namespace": 1397440844, "lock_id": lock_id},
+                    )
+                    await connection.commit()
+                except BaseException:
+                    await connection.invalidate()
+                    raise
+
+
+async def _wait_for_stop(stop_event, timeout):
+    try:
+        await asyncio.wait_for(stop_event.wait(), timeout=timeout)
+    except asyncio.TimeoutError:
+        pass
+
+
+async def _run_heuristic_cycle(engine, worker):
+    heuristics = []
+    if worker in ("all", "expiry"):
+        heuristics.extend((UidExpiryHeuristic, OidExpiryHeuristic))
+    if worker in ("all", "storage"):
+        heuristics.extend((UpdateStorageUsageHeuristic, HighWaterMarkHeuristic))
+
+    for heuristic in heuristics:
+        async with create_async_sql_session(engine) as session:
+            result = await heuristic(session).execute()
+            await session.commit()
+        logger.info("%s returned: %s", heuristic.__name__, result.message)
+        if not result.success:
+            logger.warning("%s failed: %s", heuristic.__name__, result.data)
 
 
 async def heuristic_process_loop(stop_event: asyncio.Event):
-    """Run heuristic iteration until stop event is set."""
+    """Run the configured heuristic worker until the stop event is set."""
+    worker = HEURISTIC_WORKER
+    if worker not in WORKER_LOCK_IDS:
+        raise ValueError(
+            f"Unknown heuristic worker {worker!r}; choose from {list(WORKER_LOCK_IDS)}"
+        )
+    if HEURISTIC_POLL_INTERVAL <= 0:
+        raise ValueError("DLM_HEURISTIC_POLL_INTERVAL must be positive")
+
     async with create_async_sql_engine(HEURISTIC_DATABASE_URL) as engine:
-        async_session = create_async_sql_session(engine)
-        loop_counter = 0
-        total_sleep_time = 0
-        loop_start = datetime.now(timezone.utc)
         while not stop_event.is_set():
-            start = datetime.now(timezone.utc)
-
-            loop_counter += 1
-            logger.debug("Heuristic engine loop %s tick at %s", loop_counter, start.isoformat())
             try:
-                # we are packing each called heuristics in it's own session
-                async with async_session as session:
-                    uid_expiry_heuristics = UidExpiryHeuristic(session)
-                    uid_expiry_result = await uid_expiry_heuristics.execute()
-                    await session.commit()
-                logger.info("UID expiry heuristics returned: %s", uid_expiry_result.message)
-                if not uid_expiry_result.success:
-                    logger.debug("UID expiry data: %s", uid_expiry_result.data)
-
-                async with async_session as session:
-                    oid_expiry_heuristics = OidExpiryHeuristic(session)
-                    oid_expiry_result = await oid_expiry_heuristics.execute()
-                    await session.commit()
-                logger.info("OID expiry heuristics returned: %s", oid_expiry_result.message)
-                if not oid_expiry_result.success:
-                    logger.debug("OID expiry data: %s", oid_expiry_result.data)
-
-                async with async_session as session:
-                    storage_usage_heuristics = UpdateStorageUsageHeuristic(session)
-                    storage_usage_result = await storage_usage_heuristics.execute()
-                    await session.commit()
-                logger.info("Storage usage heuristics returned: %s", storage_usage_result.message)
-                if not storage_usage_result.success:
-                    logger.debug("Storage usage result data: %s", storage_usage_result.data)
-
-                async with async_session as session:
-                    enforce_storage_usage_heuristics = HighWaterMarkHeuristic(session)
-                    enforce_storage_usage_result = await enforce_storage_usage_heuristics.execute()
-                    await session.commit()
-                logger.info(
-                    "Enforce storage usage heuristics returned: status: %s; message: %s",
-                    enforce_storage_usage_result.success,
-                    enforce_storage_usage_result.message,
-                )
-                if not enforce_storage_usage_result.success:
-                    logger.warning(
-                        "Enforce storage usage data: %s", enforce_storage_usage_result.data
-                    )
-                elapsed = (datetime.now(timezone.utc) - start).total_seconds()
-                sleep_time = max(0, HEURISTIC_POLL_INTERVAL - elapsed)
-                total_sleep_time += sleep_time
-                await asyncio.wait_for(stop_event.wait(), timeout=sleep_time)
-            except asyncio.exceptions.TimeoutError:
-                if loop_counter % 10 == 0:
-                    average_sleep_time = total_sleep_time / loop_counter
-                    logger.info(
-                        "Heuristic engine loop number: %s; average sleep time/loop: %5.2f s",
-                        loop_counter,
-                        average_sleep_time,
-                    )
-
-                    loop_time = (
-                        datetime.now(timezone.utc) - loop_start
-                    ).total_seconds() / loop_counter
-                    if average_sleep_time < HEURISTIC_POLL_INTERVAL / 10:
-                        suggested_interval = (
-                            math.ceil(loop_time / HEURISTIC_POLL_INTERVAL)
-                            * HEURISTIC_POLL_INTERVAL
-                        )
-                        if suggested_interval > HEURISTIC_POLL_INTERVAL:
-                            logger.info(
-                                "Suggested value for HEURISTIC_POLL_INTERVAL: %5.0f",
-                                suggested_interval,
-                            )
-                continue
-            except asyncio.exceptions.CancelledError:
-                logger.info("Heuristic loop cancelled")
-                break
-            # pylint: disable=broad-exception-caught
-            except Exception:
-                logger.exception("Heuristic engine iteration %d failed; continuing", loop_counter)
+                async with heuristic_worker_lock(engine, WORKER_LOCK_IDS[worker]) as leader:
+                    if leader:
+                        logger.info("Heuristic worker %s acquired leadership", worker)
+                        while not stop_event.is_set():
+                            start = time.monotonic()
+                            async with heuristic_worker_lock(engine) as acquired:
+                                if acquired:
+                                    await _run_heuristic_cycle(engine, worker)
+                            if acquired:
+                                delay = max(
+                                    0.5, HEURISTIC_POLL_INTERVAL - (time.monotonic() - start)
+                                )
+                            else:
+                                delay = random.uniform(0.1, 0.5)
+                            await _wait_for_stop(stop_event, delay)
+            except asyncio.CancelledError:
+                raise
+            except Exception:  # pylint: disable=broad-exception-caught
+                logger.exception("Heuristic worker %s failed; retrying", worker)
+            if not stop_event.is_set():
+                await _wait_for_stop(stop_event, HEURISTIC_POLL_INTERVAL)
 
 
 def _configure_signals(stop_event: asyncio.Event):
@@ -138,6 +145,7 @@ def main() -> None:
     # pylint: disable=broad-exception-caught
     except Exception:
         logger.exception("Uncaught error in heuristic engine")
+        raise
     finally:
         logger.info("Heuristic engine stopped")
 

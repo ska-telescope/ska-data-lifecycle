@@ -143,6 +143,7 @@ heuristics:
   version: "2.4.0"
   imagePullPolicy: Always
   replicas: 1
+  workers: []
 
 ska-db-migrations:
   engine: liquibase

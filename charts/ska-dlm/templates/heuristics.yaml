@@ -15,24 +15,46 @@ spec:
   selector:
     component: {{ .Values.heuristics.component }}
     subsystem: {{ .Values.heuristics.subsystem }}
+{{- $workers := .Values.heuristics.workers | default (list (dict "name" "all" "replicas" .Values.heuristics.replicas)) }}
+{{- $names := list }}
+{{- range $worker := $workers }}
+{{- if not (has $worker.name (list "all" "expiry" "storage")) }}
+{{- fail (printf "invalid heuristic worker: %s" $worker.name) }}
+{{- end }}
+{{- if has $worker.name $names }}
+{{- fail (printf "duplicate heuristic worker: %s" $worker.name) }}
+{{- end }}
+{{- $names = append $names $worker.name }}
+{{- end }}
+{{- if and (has "all" $names) (gt (len $names) 1) }}
+{{- fail "heuristic worker 'all' cannot be combined with other workers" }}
+{{- end }}
+{{- range $worker := $workers }}
+{{- with $ }}
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "ska-dlm.fullname" . }}-heuristics
+  name: {{ include "ska-dlm.fullname" . }}-heuristics{{ if ne $worker.name "all" }}-{{ $worker.name }}{{ end }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "ska-dlm.heuristics.labels" . | nindent 4 }}
 spec:
-  replicas: {{ .Values.heuristics.replicas }}
+  replicas: {{ if hasKey $worker "replicas" }}{{ $worker.replicas }}{{ else }}1{{ end }}
   selector:
     matchLabels:
       component: {{ .Values.heuristics.component }}
       subsystem: {{ .Values.heuristics.subsystem }}
+      {{- if ne $worker.name "all" }}
+      heuristic-worker: {{ $worker.name }}
+      {{- end }}
   template:
     metadata:
       labels:
         {{- include "ska-dlm.heuristics.labels" . | nindent 8 }}
+        {{- if ne $worker.name "all" }}
+        heuristic-worker: {{ $worker.name }}
+        {{- end }}
     spec:
       serviceAccountName: {{ printf "%s-postgrest" .Release.Name }}
       initContainers:
@@ -133,6 +155,8 @@ spec:
               value: "postgresql+asyncpg://$(PGUSER):$(PGPASSWORD)@$(PGHOST)/$(PGDATABASE)"
             - name: DLM_HEURISTIC_POLL_INTERVAL
               value: {{ .Values.heuristics.pollInterval | default 10 | quote }}
+            - name: DLM_HEURISTIC_WORKER
+              value: {{ $worker.name | quote }}
           volumeMounts:
             - name: dlm-configmap
               mountPath: "/home/ska-dlm/.dlm"
@@ -141,3 +165,5 @@ spec:
         - name: dlm-configmap
           configMap:
             name: {{ include "ska-dlm.fullname" . }}-configmap
+{{- end }}
+{{- end }}
