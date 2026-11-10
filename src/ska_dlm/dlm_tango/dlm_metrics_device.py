@@ -5,13 +5,13 @@ import json
 import logging
 import os
 
+from ska_control_model import HealthState
 from sqlalchemy.engine import URL
 from sqlalchemy.ext.asyncio import create_async_engine
 from tango import DevState
 from tango.server import Device, attribute, run
 
 from ska_dlm import __version__
-from ska_dlm.dlm_tango.attributes import HealthState
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -25,7 +25,7 @@ class DLMMetrics(Device):
     @attribute
     def version(self) -> str:
         """Return the DLM version."""
-        return json.dumps({"version": __version__})
+        return json.dumps({"version": __version__})  # TODO: this is probably an oversimplification
 
     @attribute
     def image(self) -> str:
