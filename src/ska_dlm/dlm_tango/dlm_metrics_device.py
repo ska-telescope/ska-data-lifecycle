@@ -136,18 +136,17 @@ class DLMMetrics(Device):
 
 async def _check_postgres_connection():
     """Verify that the PostgreSQL connection works."""
-    url = URL.create(
-        "postgresql+asyncpg",
-        username=os.environ["PGUSER"],
-        password=os.environ["PGPASSWORD"],
-        host=os.environ["PGHOST"],
-        port=int(os.getenv("PGPORT", "5432")),
-        database=os.environ["PGDATABASE"],
-    )
-
-    engine = create_async_engine(url, connect_args={"timeout": 5})
-
     try:
+        url = URL.create(
+            "postgresql+asyncpg",
+            username=os.environ["PGUSER"],
+            password=os.environ["PGPASSWORD"],
+            host=os.environ["PGHOST"],
+            port=int(os.getenv("PGPORT", "5432")),
+            database=os.environ["PGDATABASE"],
+        )
+
+        engine = create_async_engine(url, connect_args={"timeout": 5})
         async with engine.connect():
             logger.info("Successfully connected to PostgreSQL!")
     except Exception:  # pylint: disable=broad-exception-caught
@@ -156,11 +155,11 @@ async def _check_postgres_connection():
         await engine.dispose()
 
 
-def main():
-    """Start the DLM Tango device server."""
-    asyncio.run(_check_postgres_connection())
-    run(classes=(DLMMetrics,))
+# def main():
+#     """Start the DLM Tango device server."""
+#     asyncio.run(_check_postgres_connection())
+#     run(classes=(DLMMetrics,))
 
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
