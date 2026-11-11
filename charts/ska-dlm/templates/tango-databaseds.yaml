@@ -1,5 +1,9 @@
 # This template creates the Tango database infrastructure
 # Source: ska-tango-examples-test-parent/charts/ska-tango-base/templates/databaseds.yaml
+{{- if and .Values.tango.enabled (not .Values.tango.database.enabled) (empty .Values.global.tango_host) }}
+{{- fail "When tango.enabled=true and tango.database.enabled=false, global.tango_host must be configured." }}
+{{- end }}
+
 {{- if and .Values.tango.enabled .Values.tango.database.enabled }}
 apiVersion: tango.tango-controls.org/v2
 kind: DatabaseDS
