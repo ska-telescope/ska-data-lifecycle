@@ -9,7 +9,7 @@ from ska_control_model import HealthState
 from sqlalchemy.engine import URL
 from sqlalchemy.ext.asyncio import create_async_engine
 from tango import DevState
-from tango.server import Device, attribute, run
+from tango.server import Device, attribute
 
 from ska_dlm import __version__
 
@@ -153,13 +153,3 @@ async def _check_postgres_connection():
         logger.exception("Failed to connect to PostgreSQL")
     finally:
         await engine.dispose()
-
-
-# def main():
-#     """Start the DLM Tango device server."""
-#     asyncio.run(_check_postgres_connection())
-#     run(classes=(DLMMetrics,))
-
-
-# if __name__ == "__main__":
-#     main()
