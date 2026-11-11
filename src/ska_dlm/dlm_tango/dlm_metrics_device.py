@@ -130,6 +130,9 @@ class DLMMetrics(Device):
 
         self.set_state(DevState.ON)  # means the Tango device itself is operational.
 
+        print("DLM Tango device initialised successfully!", flush=True)
+        asyncio.run(_check_postgres_connection())
+
 
 async def _check_postgres_connection():
     """Verify that the PostgreSQL connection works."""
