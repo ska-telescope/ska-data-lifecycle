@@ -6,9 +6,12 @@
 global:
   ingress:
     enabled: false
-    domainName: "sdhp.stfc.skao.int"  # required for whitelisting redirects
+    domainName: "sdhp.stfc.skao.int"  # external ingress domain; required for whitelisting redirects
   development: true  # true for local deployment (to trigger gateway & keycloak)
   storageClass: "localdisk"  # existing storage class
+  cluster_domain: cluster.local # the internal Kubernetes DNS domain, used for communication between services inside the cluster
+  operator: false # The SKA Tango operator
+  tango_host: tango-databaseds:10000 # Tango database to connect to. Must be always be configured. <service_name>.<namespace>:port
 
   sharedpvc:
     # Shared PVC that can be mounted by multiple pods.
@@ -39,16 +42,16 @@ fullnameOverride: ""
 ingest:
   component: ingest
   subsystem: data-lifecycle-management
-  image: artefact.skao.int/ska-data-lifecycle
-  version: "2.4.0"
+  image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
+  version: "07256191"
   imagePullPolicy: Always
   replicas: 1
 
 storage:
   component: storage
   subsystem: data-lifecycle-management
-  image: artefact.skao.int/ska-data-lifecycle
-  version: "2.4.0"
+  image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
+  version: "07256191"
   imagePullPolicy: Always
   replicas: 1
   securityContext: {}
@@ -92,16 +95,16 @@ storage:
 migration:
   component: migration
   subsystem: data-lifecycle-management
-  image: artefact.skao.int/ska-data-lifecycle
-  version: "2.4.0"
+  image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
+  version: "07256191"
   imagePullPolicy: Always
   replicas: 1
 
 request:
   component: request
   subsystem: data-lifecycle-management
-  image: artefact.skao.int/ska-data-lifecycle
-  version: "2.4.0"
+  image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
+  version: "07256191"
   imagePullPolicy: Always
   replicas: 1
 
@@ -139,14 +142,14 @@ postgrest:
 heuristics:
   component: heuristics
   subsystem: data-lifecycle-management
-  image: artefact.skao.int/ska-data-lifecycle
-  version: "2.4.0"
+  image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
+  version: "07256191"
   imagePullPolicy: Always
   replicas: 1
 
 ska-db-migrations:
   engine: liquibase
-  dbCredentialsSecretName: "{{ .Release.Name }}-ska-dlm-postgrest-secret"
+  dbCredentialsSecretName: "{{ .Release.Name }}-ska-dlm-postgrest-secret" # the source of truth for the PostgreSQL Secret name.
   configMapName: "db-migrations-{{ .Release.Name }}"
   liquibase:
     # The ODA schema execution.execution_blocks must exist before enabling create-external-triggers.
@@ -207,8 +210,8 @@ rclone:
       type: kv-v2
       path: ""
 
-rabbitmq:
-  enabled: true # WIP (DMAN-213)
+rabbitmq: # internal message queue between DLM server and client
+  enabled: true
   component: rabbitmq
   subsystem: data-lifecycle-management
   image: rabbitmq
@@ -229,11 +232,11 @@ rabbitmq:
   port: 5672
 
 outbox:
-  enabled: true # WIP (DMAN-213)
+  enabled: true # true if rabbitmq enabled
   component: outbox
   subsystem: data-lifecycle-management
-  image: artefact.skao.int/ska-data-lifecycle
-  version: "2.4.0"
+  image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
+  version: "07256191"
   imagePullPolicy: Always
   replicas: 1
   rabbitmq:
@@ -263,6 +266,65 @@ keycloak:
   replicas: 1
   use_https: true
 
+tango:
+  enabled: true # Deploy the DLMMetrics Tango device.
+  database:
+    enabled: true # Whether DLM creates its own Tango database. If true, set global.tango_host: tango-databaseds:10000. If false, reference an existing Tango database at global.tango_host.
+
+ska-tango-devices:
+  subsystem: ska-dlm
+  domain: dlm
+  devices:
+    DLMMetrics:
+      dlm/metrics/0: # match pattern '^[a-z0-9-]+/[a-z0-9-]+/[a-z0-9-.]+$'
+        LoggingLevelDefault: 4 # 4=INFO, 5=DEBUG
+  deviceServerTypes:
+    DLMMetrics:
+      metadata:
+        component: tango
+      image:
+        registry: registry.gitlab.com/ska-telescope/ska-data-lifecycle
+        name: ska-data-lifecycle
+        tag: 2.4.0-dev.c07256191
+        imagePullPolicy: IfNotPresent
+      device_classes:
+        - 'ska_dlm.dlm_tango.dlm_metrics_device.DLMMetrics'
+      env:
+        DLM_IMAGE: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle:07256191
+        DLM_SKIP_CONFIG: "true" # Temporary workaround while src/ska_dlm/config.yaml is being phased out
+      secrets:
+        ska-dlm-ska-dlm-postgrest-secret: # TODO (DMAN-324): figure out how to pass the PostgreSQL connection details without hard-coding
+          PGHOST:
+            key: PGHOST
+          PGPORT:
+            key: PGPORT
+          PGUSER:
+            key: PGUSER
+          PGPASSWORD:
+            key: PGPASSWORD
+          PGDATABASE:
+            key: PGDATABASE
+      resources:
+        requests:
+          memory: 100Mi
+          cpu: 300m
+        limits:
+          cpu: 500m
+          memory: 256Mi
+      livenessProbe:
+        initialDelaySeconds: 30
+        periodSeconds: 30
+        maxAgeSeconds: 30
+      readinessProbe:
+        initialDelaySeconds: 2
+        periodSeconds: 10
+  deviceServers: # if global.operator=true, ska-tango-devices will generate a DeviceServer custom resource.
+    DLMMetrics:
+      metrics-device:
+        expose: true
+        devices:
+          DLMMetrics:
+            - dlm/metrics/0 # match pattern '^[a-z0-9-]+/[a-z0-9-]+/[a-z0-9-.]+$'
 
 # ------ Optional utilities ------
 
@@ -278,7 +340,7 @@ pgweb:  # see https://github.com/ectobit/charts/tree/main/pgweb
         pathType: ImplementationSpecific
 
 benchmark:
-  enabled: false  # false for regular deployment. Set to true to run the benchmarking pod (see scripts/README.md)
+  enabled: false  # Set to true to run the benchmarking pod (see scripts/README.md)
   component: benchmark
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-benchmark
@@ -297,9 +359,7 @@ kubectl:
   version: "v1.28.15-amd64"
   imagePullPolicy: Always
 
-# ------------------------------------------------
-# dlm-archive configuration (openssh-server)
-# ------------------------------------------------
+# ------ dlm-archive configuration (openssh-server) ------
 archive:
   component: archive
   subsystem: data-lifecycle-management

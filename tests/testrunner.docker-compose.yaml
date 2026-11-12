@@ -16,6 +16,11 @@ services:
       DATABASE_URL: "postgresql+asyncpg://ska_dlm_admin:password@dlm_db:5432/ska_dlm_testing"
       RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672/"
       DO_AUTH: "1"
+      PGHOST: "dlm_db"
+      PGPORT: "5432"
+      PGUSER: "ska_dlm_admin"
+      PGPASSWORD: "password"
+      PGDATABASE: "ska_dlm_testing"
     networks:
       - dlm_network
     depends_on:

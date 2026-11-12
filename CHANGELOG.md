@@ -2,9 +2,10 @@
 
 ## Development
 
+* Add initial Tango monitoring infrastructure, including the DLMMetrics device with placeholder attributes.
 * Add data-item parent/child relationships and retrieval of container children.
 * Updated project build system to `poetry>=2`.
-* Added  `get_storage_endpoints` to storage service.
+* Added `get_storage_endpoints` to storage service.
 * Added joins to `query_migrations` to get more information about storage and data item.
 * Fixed migration service `copy_data_item` HTTP endpoint to return meaningful status codes on error.
 

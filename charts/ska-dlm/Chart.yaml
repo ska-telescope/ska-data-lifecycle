@@ -24,3 +24,6 @@ dependencies:
 - name: ska-db-migrations
   version: 0.9.1
   repository: https://artefact.skao.int/repository/helm-internal
+- name: ska-tango-devices
+  version: 0.18.1
+  repository: https://artefact.skao.int/repository/helm-internal
