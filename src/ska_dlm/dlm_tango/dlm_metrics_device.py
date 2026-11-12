@@ -4,11 +4,13 @@ import asyncio
 import json
 import logging
 import os
+from threading import Event, Thread, current_thread
 
 from ska_control_model import HealthState
+from sqlalchemy import text
 from sqlalchemy.engine import URL
 from sqlalchemy.ext.asyncio import create_async_engine
-from tango import DevState
+from tango import DevState, EnsureOmniThread
 from tango.server import Device, attribute
 
 from ska_dlm import __version__
@@ -112,7 +114,9 @@ class DLMMetrics(Device):
         super().init_device()
         print(f"Connecting to Tango database at {os.getenv('TANGO_HOST')}...", flush=True)
 
-        # Placeholder values, TODO: DMAN-324
+        self._health_check_interval = int(os.getenv("DLM_METRICS_LOOP_INTERVAL", "10"))
+
+        # initialise all attributes:
         self._rclone_health_state = HealthState.UNKNOWN
         self._postgres_health_state = HealthState.UNKNOWN
         self._postgrest_health_state = HealthState.UNKNOWN
@@ -131,12 +135,51 @@ class DLMMetrics(Device):
 
         self.set_state(DevState.ON)  # means the Tango device itself is operational.
 
-        print("DLM Tango device initialised successfully!", flush=True)
-        asyncio.run(_check_postgres_connection())
+        # Start periodic health monitoring.
+        self._health_check_interval = int(os.getenv("DLM_METRICS_LOOP_INTERVAL", "10"))
+        if self._health_check_interval <= 0:
+            raise ValueError("DLM_METRICS_LOOP_INTERVAL must be positive")
+
+        # Allow the monitoring loop to be stopped when the Tango device shuts down:
+        self._stop_event = Event()
+
+        # Run periodic health checks in a background thread without blocking the Tango device:
+        self._health_thread = Thread(
+            target=self._health_update_loop,
+            daemon=True,
+        )
+        self._health_thread.start()
+
+    def _health_update_loop(self):
+        """Periodically update the health of DLM services."""
+        with EnsureOmniThread():
+            while not self._stop_event.is_set():
+                try:
+                    asyncio.run(_check_postgres_connection())
+                    self._postgres_health_state = HealthState.OK
+                except Exception:  # pylint: disable=broad-exception-caught
+                    logger.exception("PostgreSQL health check failed")
+                    self._postgres_health_state = HealthState.FAILED
+
+                # Temporary logging for development. Delete.
+                logger.info("PostgreSQL HealthState: %s", self._postgres_health_state.name)
+
+                self._stop_event.wait(self._health_check_interval)
+
+    def delete_device(self):
+        """Stop health monitoring when the Tango device shuts down."""
+        if hasattr(self, "_stop_event"):
+            self._stop_event.set()
+
+        if hasattr(self, "_health_thread"):
+            if self._health_thread is not current_thread():
+                self._health_thread.join(timeout=10)
+
+        super().delete_device()
 
 
 async def _check_postgres_connection():
-    """Verify that the PostgreSQL connection works. WIP."""
+    """Verify that the PostgreSQL connection works (WIP)."""
     engine = None
     try:
         url = URL.create(
@@ -149,10 +192,11 @@ async def _check_postgres_connection():
         )
 
         engine = create_async_engine(url, connect_args={"timeout": 5})
-        async with engine.connect():
-            logger.info("Successfully connected to PostgreSQL!")
-    except Exception:  # pylint: disable=broad-exception-caught
-        logger.exception("Failed to connect to PostgreSQL")
+        # if the connection fails, the exception propagates to the caller.
+        async with engine.connect() as connection:
+            # verify the DB is operational without accessing or modifying any data
+            await connection.execute(text("SELECT 1"))
+
     finally:
         if engine is not None:
             await engine.dispose()
