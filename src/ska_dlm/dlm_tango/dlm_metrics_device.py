@@ -22,7 +22,7 @@ logging.basicConfig(level=logging.INFO)
 class DLMMetrics(Device):
     """Tango device exposing DLM service health information."""
 
-    # pylint: disable=invalid-name, too-many-instance-attributes
+    # pylint: disable=invalid-name, too-many-instance-attributes, attribute-defined-outside-init
 
     @attribute
     def version(self) -> str:
@@ -135,7 +135,6 @@ class DLMMetrics(Device):
 
         self.set_state(DevState.ON)  # means the Tango device itself is operational.
 
-        # Start periodic health monitoring.
         self._health_check_interval = int(os.getenv("DLM_METRICS_LOOP_INTERVAL", "10"))
         if self._health_check_interval <= 0:
             raise ValueError("DLM_METRICS_LOOP_INTERVAL must be positive")
@@ -151,7 +150,7 @@ class DLMMetrics(Device):
         self._health_thread.start()
 
     def _health_update_loop(self):
-        """Periodically update the health of DLM services."""
+        """Periodically update the health of DLM services (WIP)."""
         with EnsureOmniThread():
             while not self._stop_event.is_set():
                 try:
@@ -167,7 +166,7 @@ class DLMMetrics(Device):
                 self._stop_event.wait(self._health_check_interval)
 
     def delete_device(self):
-        """Stop health monitoring when the Tango device shuts down."""
+        """Stop background tasks when the Tango device shuts down."""
         if hasattr(self, "_stop_event"):
             self._stop_event.set()
 
