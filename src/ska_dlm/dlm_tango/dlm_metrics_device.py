@@ -108,8 +108,9 @@ class DLMMetrics(Device):
         return self._migrations_in_progress
 
     def init_device(self):
-        """Initialise the Tango device."""
+        """Initialise the Tango device. WIP."""
         super().init_device()
+        print(f"Connecting to Tango database at {os.getenv('TANGO_HOST')}...", flush=True)
 
         # Placeholder values, TODO: DMAN-324
         self._rclone_health_state = HealthState.UNKNOWN
@@ -135,7 +136,8 @@ class DLMMetrics(Device):
 
 
 async def _check_postgres_connection():
-    """Verify that the PostgreSQL connection works."""
+    """Verify that the PostgreSQL connection works. WIP."""
+    engine = None
     try:
         url = URL.create(
             "postgresql+asyncpg",
@@ -152,4 +154,5 @@ async def _check_postgres_connection():
     except Exception:  # pylint: disable=broad-exception-caught
         logger.exception("Failed to connect to PostgreSQL")
     finally:
-        await engine.dispose()
+        if engine is not None:
+            await engine.dispose()

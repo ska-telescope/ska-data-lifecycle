@@ -14,7 +14,7 @@ from ska_dlm.dlm_tango.dlm_metrics_device import DLMMetrics, HealthState
 
 @pytest.fixture(name="tango_context")
 def tango_context_fixture():
-    """Create a Tango test device."""
+    """Create a Tango test device. WIP."""
     with DeviceTestContext(  # composed with a test database
         DLMMetrics,
         device_name="dlm/metrics/0",
@@ -24,7 +24,7 @@ def tango_context_fixture():
 
 
 def test_dlm_metrics(tango_context):
-    """Test that the DLM Tango device exposes service health attributes."""
+    """Test that the DLM Tango device exposes service health attributes. WIP."""
     device = tango_context
 
     version_info = json.loads(tango_context.version)

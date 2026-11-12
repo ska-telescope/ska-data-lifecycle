@@ -11,7 +11,7 @@ global:
   storageClass: "localdisk"  # existing storage class
   cluster_domain: cluster.local # the internal Kubernetes DNS domain, used for communication between services inside the cluster
   operator: false # The SKA Tango operator
-  tango_host: databaseds-tango-base.dp-shared:10000 # Tango database to connect to. <service_name>.<namespace>:port
+  tango_host: tango-databaseds:10000 # Tango database to connect to. Must be always be configured. <service_name>.<namespace>:port
 
   sharedpvc:
     # Shared PVC that can be mounted by multiple pods.
@@ -149,7 +149,7 @@ heuristics:
 
 ska-db-migrations:
   engine: liquibase
-  dbCredentialsSecretName: "{{ .Release.Name }}-ska-dlm-postgrest-secret" # the single source of truth for the PostgreSQL Secret name.
+  dbCredentialsSecretName: "{{ .Release.Name }}-ska-dlm-postgrest-secret" # the source of truth for the PostgreSQL Secret name.
   configMapName: "db-migrations-{{ .Release.Name }}"
   liquibase:
     # The ODA schema execution.execution_blocks must exist before enabling create-external-triggers.
@@ -269,7 +269,7 @@ keycloak:
 tango:
   enabled: true # Deploy the DLMMetrics Tango device.
   database:
-    enabled: false # Whether DLM creates its own Tango database. If false, must reference an existing Tango database at global.tango_host.
+    enabled: true # Whether DLM creates its own Tango database. If true, set global.tango_host: tango-databaseds:10000. If false, reference an existing Tango database at global.tango_host.
 
 ska-tango-devices:
   subsystem: ska-dlm
