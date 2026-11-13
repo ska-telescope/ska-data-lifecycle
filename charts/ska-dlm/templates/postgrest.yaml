@@ -79,8 +79,8 @@ spec:
       initContainers:
       {{- if index .Values "ska-db-migrations" "job" "enabled" }}
         - name: wait-for-migrations
-          image: "rancher/kubectl:v1.35.5"
-          imagePullPolicy: IfNotPresent
+          image: "{{ .Values.kubectl.image }}:{{ .Values.kubectl.version }}"
+          imagePullPolicy: {{ .Values.kubectl.imagePullPolicy }}
           command:
             - kubectl
           args:
@@ -91,7 +91,8 @@ spec:
             - job/db-migrations-{{ .Release.Name }}
       {{- end }}
         - name: wait-for-postgres # works for either local or external PostgreSQL
-          image: postgres:17.4
+          image: "{{ .Values.postgres_client.image }}:{{ .Values.postgres_client.version }}"
+          imagePullPolicy: {{ .Values.postgres_client.imagePullPolicy }}
           command:
             - sh
             - -c
@@ -127,7 +128,8 @@ spec:
                   key: PGPORT
                   optional: true
         - name: wait-for-data-item-table
-          image: postgres:17.4
+          image: "{{ .Values.postgres_client.image }}:{{ .Values.postgres_client.version }}"
+          imagePullPolicy: {{ .Values.postgres_client.imagePullPolicy }}
           command:
             - sh
             - -c

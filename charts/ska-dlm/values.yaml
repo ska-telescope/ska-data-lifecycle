@@ -356,8 +356,13 @@ benchmark:
 # ------ Auxiliary utility images ------
 kubectl:
   image: rancher/kubectl
-  version: "v1.28.15-amd64"
-  imagePullPolicy: Always
+  version: "v1.35.5"
+  imagePullPolicy: IfNotPresent
+
+postgres_client:
+  image: postgres
+  version: "17.4"
+  imagePullPolicy: IfNotPresent
 
 # ------ dlm-archive configuration (openssh-server) ------
 archive:
