@@ -2,6 +2,7 @@
 
 ## Development
 
+* Make postgres client OCI image configurable
 * Add initial Tango monitoring infrastructure, including the DLMMetrics device with placeholder attributes.
 * Add data-item parent/child relationships and retrieval of container children.
 * Updated project build system to `poetry>=2`.

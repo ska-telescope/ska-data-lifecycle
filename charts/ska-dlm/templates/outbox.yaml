@@ -56,7 +56,8 @@ spec:
               readOnly: true
       initContainers:
         - name: wait-for-postgres
-          image: postgres:17.4
+          image: "{{ .Values.postgres_client.image }}:{{ .Values.postgres_client.version }}"
+          imagePullPolicy: {{ .Values.postgres_client.imagePullPolicy }}
           command:
             - sh
             - -c
