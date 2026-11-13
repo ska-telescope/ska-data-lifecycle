@@ -43,7 +43,7 @@ ingest:
   component: ingest
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: "07256191"
+  version: "c867d6a7"
   imagePullPolicy: Always
   replicas: 1
 
@@ -51,7 +51,7 @@ storage:
   component: storage
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: "07256191"
+  version: "c867d6a7"
   imagePullPolicy: Always
   replicas: 1
   securityContext: {}
@@ -96,7 +96,7 @@ migration:
   component: migration
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: "07256191"
+  version: "c867d6a7"
   imagePullPolicy: Always
   replicas: 1
 
@@ -104,7 +104,7 @@ request:
   component: request
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: "07256191"
+  version: "c867d6a7"
   imagePullPolicy: Always
   replicas: 1
 
@@ -143,7 +143,7 @@ heuristics:
   component: heuristics
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: "07256191"
+  version: "c867d6a7"
   imagePullPolicy: Always
   replicas: 1
 
@@ -236,7 +236,7 @@ outbox:
   component: outbox
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: "07256191"
+  version: "c867d6a7"
   imagePullPolicy: Always
   replicas: 1
   rabbitmq:
@@ -285,12 +285,12 @@ ska-tango-devices:
       image:
         registry: registry.gitlab.com/ska-telescope/ska-data-lifecycle
         name: ska-data-lifecycle
-        tag: 2.4.0-dev.c07256191
+        tag: 2.4.0-dev.cc867d6a7
         imagePullPolicy: IfNotPresent
       device_classes:
         - 'ska_dlm.dlm_tango.dlm_metrics_device.DLMMetrics'
       env:
-        DLM_IMAGE: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle:07256191
+        DLM_IMAGE: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle:c867d6a7
         DLM_SKIP_CONFIG: "true" # Temporary workaround while src/ska_dlm/config.yaml is being phased out
       secrets:
         ska-dlm-ska-dlm-postgrest-secret: # TODO (DMAN-324): figure out how to pass the PostgreSQL connection details without hard-coding

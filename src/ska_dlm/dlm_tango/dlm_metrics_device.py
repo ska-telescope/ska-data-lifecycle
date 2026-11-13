@@ -156,8 +156,8 @@ class DLMMetrics(Device):
                 try:
                     asyncio.run(_check_postgres_connection())
                     self._postgres_health_state = HealthState.OK
-                except Exception:  # pylint: disable=broad-exception-caught
-                    logger.exception("PostgreSQL health check failed")
+                except Exception as exc:  # pylint: disable=broad-exception-caught
+                    logger.warning("PostgreSQL health check failed: %s", exc)
                     self._postgres_health_state = HealthState.FAILED
 
                 # Temporary logging for development. Delete.
