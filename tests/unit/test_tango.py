@@ -33,7 +33,7 @@ def tango_context_fixture():
 
 
 def test_dlm_metrics(tango_context):
-    """Verify that the DLM Tango device initialises and exposes its version."""
+    """Verify that the DLM Tango device initialises, and exposes the DLM release version."""
     device = tango_context
 
     version_info = json.loads(tango_context.version)
@@ -54,3 +54,18 @@ def test_postgres_health_state(tango_context):
         time.sleep(0.5)
 
     assert tango_context.postgresHealthState == HealthState.OK
+
+
+def test_postgrest_health_state(tango_context):
+    """Verify that the Tango device reports Postgrest as healthy."""
+    timeout = time.monotonic() + 10  # allows test to finish as soon as the condition is satisfied
+
+    while time.monotonic() < timeout:
+        health_state = tango_context.postgrestHealthState
+        logger.debug("Postgrest HealthState: %s", HealthState(health_state).name)
+
+        if health_state == HealthState.OK:
+            return
+        time.sleep(0.5)
+
+    assert tango_context.postgrestHealthState == HealthState.OK
