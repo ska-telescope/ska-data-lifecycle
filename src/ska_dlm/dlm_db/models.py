@@ -2,7 +2,7 @@
 
 from sqlalchemy import JSON, BigInteger, Boolean, Column, DateTime
 from sqlalchemy import Enum as SAEnum
-from sqlalchemy import ForeignKey, Integer, Numeric, String, Text, func, text
+from sqlalchemy import ForeignKey, Integer, Numeric, String, Text, UniqueConstraint, func, text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
@@ -297,6 +297,27 @@ class DataItem(Base):
     storage = relationship("Storage", back_populates="data_items")
 
 
+class DataItemChildren(Base):
+    """Represents a child data item associated with a parent data item."""
+
+    # pylint: disable=too-few-public-methods
+    __tablename__ = "data_item_children"
+    __table_args__ = (
+        UniqueConstraint(
+            "parent_data_item_uid",
+            "data_item_uid",
+            name="uq_data_item_children_parent_child",
+        ),
+        {"schema": "dlm"},
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid())
+    parent_data_item_uid = Column(
+        UUID(as_uuid=True), ForeignKey("dlm.data_item.uid"), nullable=False
+    )
+    data_item_uid = Column(UUID(as_uuid=True), ForeignKey("dlm.data_item.uid"), nullable=False)
+
+
 class PhaseChange(Base):
     """Represents a phase-change request for a data item."""
 
@@ -346,6 +367,8 @@ class Migration(Base):
     date = Column(DateTime(timezone=False), nullable=False, server_default=func.now())
     completion_date = Column(DateTime(timezone=False), nullable=True)
     command = Column(String, nullable=True)
+    migration_metadata = Column("metadata", JSONB, nullable=True)
+    origin = Column(String, nullable=True)
 
     source_storage = relationship("Storage", foreign_keys=[source_storage_id])
     destination_storage = relationship("Storage", foreign_keys=[destination_storage_id])

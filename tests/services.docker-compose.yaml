@@ -171,9 +171,9 @@ services:
       - --password=password
       - --driver=org.postgresql.Driver
       - --search-path=/changelog
-      - update
       - --changelog-file=changelog.yaml
-      - --context-filter=!create-db,!create-roles,create-schema,!create-external-triggers,2.3-release
+      - update
+      - --context-filter=!create-db,!create-roles,create-schema,!create-external-triggers
     depends_on:
       dlm_db:
         condition: service_healthy
@@ -188,6 +188,7 @@ services:
        shm_size: '32gb'
     image: dlm_db
     container_name: dlm_db
+    hostname: dlm_db
     ports:
       - 5432:5432
     environment:

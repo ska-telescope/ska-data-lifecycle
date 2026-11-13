@@ -13,7 +13,8 @@ import signal
 from datetime import datetime, timedelta, timezone
 
 from aio_pika import DeliveryMode, Exchange, ExchangeType, Message, connect_robust
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import inspect
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
 from ska_dlm.dlm_db import Outbox, create_async_sql_engine, create_async_sql_session
 from ska_dlm.dlm_outbox.outbox import (
@@ -36,6 +37,14 @@ RABBITMQ_URL = os.getenv(
 OUTBOX_POLL_INTERVAL = int(os.getenv("DLM_OUTBOX_POLL_INTERVAL", "10"))
 OUTBOX_BATCH_SIZE = int(os.getenv("DLM_OUTBOX_BATCH_SIZE", "50"))
 DEFAULT_OUTBOX_EXCHANGE = os.getenv("DLM_OUTBOX_EXCHANGE", "dlm.outbox")
+
+
+async def _has_outbox_table(engine: AsyncEngine) -> bool:
+    """Check whether the outbox table exists in the DLM schema."""
+    async with engine.connect() as connection:
+        return await connection.run_sync(
+            lambda sync_connection: inspect(sync_connection).has_table("outbox", schema="dlm")
+        )
 
 
 async def _publish_event(exchange: Exchange, event: Outbox) -> None:
@@ -136,6 +145,13 @@ async def outbox_relay_loop(stop_event: asyncio.Event) -> None:
         raise RuntimeError("RABBITMQ URL is required for the outbox relay")
 
     async with create_async_sql_engine(OUTBOX_DATABASE_URL) as engine:
+        if not await _has_outbox_table(engine):
+            logger.error(
+                "Required table dlm.outbox does not exist; "
+                "the outbox relay will stop. Apply the database migration and restart."
+            )
+            return
+
         connection = await connect_robust(RABBITMQ_URL)
 
         async with connection.channel() as channel:

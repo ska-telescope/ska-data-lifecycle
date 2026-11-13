@@ -7,6 +7,19 @@ import types
 from ska_dlm.dlm_storage import dlm_storage_requests as ds
 
 
+def test_get_storage_endpoints_returns_models(monkeypatch):
+    """Storage endpoints are returned as validated Pydantic models."""
+    monkeypatch.setattr(
+        ds.DB,
+        "select",
+        lambda table, params: [{"storage_id": "storage-1", "storage_name": "archive"}],
+    )
+
+    result = ds.get_storage_endpoints()
+
+    assert result == [ds.StorageEndpoint(storage_id="storage-1", storage_name="archive")]
+
+
 class _MockResp:
     def __init__(self, status_code: int, payload: dict | None = None):
         self.status_code = status_code

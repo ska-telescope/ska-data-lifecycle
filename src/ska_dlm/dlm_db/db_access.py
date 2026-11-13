@@ -72,9 +72,16 @@ class PostgRESTAccess(contextlib.AbstractContextManager):
         """Close the underlying requests session."""
         self._session.close()
 
-    def insert(self, table: str, *, json: object | None) -> list[dict]:
+    def insert(
+        self,
+        table: str,
+        *,
+        json: object | None,
+        params: dict | list | None = None,
+        headers: dict | None = None,
+    ) -> list[dict]:
         """Perform an insertion query, returning the JSON-encoded result as an object."""
-        return self._query(table, "POST", json=json)
+        return self._query(table, "POST", params=params, json=json, headers=headers)
 
     def update(
         self, table: str, *, json: object | None, params: dict | list | None = None
@@ -95,7 +102,7 @@ class PostgRESTAccess(contextlib.AbstractContextManager):
         table: str,
         method: str,
         params: dict | list | None = None,
-        json: dict | None = None,
+        json: object | None = None,
         **kwargs,
     ) -> list[dict]:
         url = f"{self.api_url}/{table}"
@@ -106,20 +113,53 @@ class PostgRESTAccess(contextlib.AbstractContextManager):
             response.raise_for_status()
         except requests.RequestException as ex:
             if ex.response is None:
+                logger.info(
+                    "Postgrest _query failed with no response! %s called %s with params: %s %s",
+                    url,
+                    method,
+                    params,
+                    json,
+                )
                 raise
             match ex.response.status_code:
+                case 204:
+                    logger.info("Postgrest _query successful without content (e.g. UPDATE).")
+                    return [{}]
                 case 400:
-                    json = ex.response.json()
-                    raise DBQueryError(url=url, method=method, params=params, json=json) from ex
+                    json_error = ex.response.json()
+                    logger.info(
+                        "Postgrest _query failed! %s called using %s and params: %s; result: %s",
+                        url,
+                        method,
+                        params,
+                        response,
+                    )
+                    raise DBQueryError(
+                        url=url, method=method, params=params, json=json_error
+                    ) from ex
                 case 409:
                     try:
                         message = ex.response.json().get("message", str(ex))
                     except (ValueError, json.JSONDecodeError, AttributeError):
                         message = str(ex)
+                    logger.info(
+                        "Postgrest _query failed! %s called using %s and params: %s; result: %s",
+                        url,
+                        method,
+                        params,
+                        response,
+                    )
                     raise DatabaseOperationError(
                         f"Database conflict on {method} {url}", message
                     ) from ex
                 case _:
+                    logger.info(
+                        "Postgrest _query failed! Called %s with %s with params: %s; result: %s",
+                        url,
+                        method,
+                        params,
+                        ex.response.json(),
+                    )
                     raise
         return response.json()
 

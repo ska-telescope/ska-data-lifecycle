@@ -4,7 +4,7 @@ default:
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
-  CI_POETRY_VERSION: 1.8.2
+  CI_POETRY_VERSION: 2.5.1
 
 # Enable caching for python
 cache:
@@ -123,9 +123,9 @@ oci-image-build-db:
   script:
     make oci-build-db CAR_OCI_REGISTRY_HOST=${CI_REGISTRY}/${CI_PROJECT_NAMESPACE}/${CI_PROJECT_NAME}
 
-oci-image-build:
-  tags:
-    - ska-default # force the job onto the ska-default runners
+#oci-image-build:
+#  tags:
+#    - ska-default # force the job onto the ska-default runners
 
 python-test:
   image: docker:27.0.2

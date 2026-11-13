@@ -7,6 +7,7 @@ import pytest
 
 import ska_dlm.dlm_request.dlm_request_requests as dlm_request
 from ska_dlm import CONFIG, data_item, dlm_ingest
+from ska_dlm.common_types import ItemState
 from ska_dlm.dlm_db.db_access import DB
 
 
@@ -43,7 +44,7 @@ def mock_data_items_fixture(mock_db):
 def test_query_expired(mock_data_items):
     """Test the query expired returning records."""
     uid = dlm_request.query_data_item()[0]["uid"]
-    data_item.set_state(uid=uid, state="READY")
+    data_item.set_state(uid=uid, state=ItemState.READY)
     assert len(dlm_request.query_expired(offset=timedelta(0))) == 0
     assert len(dlm_request.query_expired(offset=timedelta(days=1))) == 1
 

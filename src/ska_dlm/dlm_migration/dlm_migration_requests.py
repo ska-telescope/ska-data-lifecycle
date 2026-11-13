@@ -1,8 +1,11 @@
+# pylint: disable=too-many-arguments,too-many-locals,too-many-positional-arguments
+# pylint: disable=too-many-branches,too-many-statements
 """DLM Migration API module."""
 
 import asyncio
 import logging
 import os
+import posixpath
 import random
 import uuid
 from contextlib import asynccontextmanager
@@ -11,29 +14,35 @@ from functools import partial
 from typing import Annotated
 
 import requests
-from fastapi import FastAPI, Header
+from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from requests import Request
 from sqlalchemy import func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import aliased, sessionmaker
 
 import ska_dlm
+from ska_dlm.common_types import ItemState
 from ska_dlm.dlm_outbox.outbox import add_outbox_event
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
-from ska_dlm.exceptions import InvalidQueryParameters, ValueAlreadyInDB
+from ska_dlm.exceptions import (
+    DatabaseOperationError,
+    InvalidQueryParameters,
+    UnmetPreconditionForOperation,
+    ValueAlreadyInDB,
+)
 from ska_dlm.fastapi_utils import decode_bearer, fastapi_auto_annotate
+from ska_dlm.typer_types import JsonObjectOption
 from ska_dlm.typer_utils import dump_short_stacktrace
 
 from .. import CONFIG
 from ..data_item import delete_data_item_entry, set_state
-from ..dlm_db import Migration
+from ..dlm_db import DataItem, Migration, Storage
 from ..dlm_ingest import init_data_item
 from ..dlm_ingest.dlm_ingest_requests import ItemType
 from ..dlm_request import query_data_item
 from ..dlm_storage import check_item_on_storage, get_storage_config, query_storage
-from ..exceptions import UnmetPreconditionForOperation
 
 # Configure logging
 logging.basicConfig(
@@ -145,8 +154,8 @@ def _serialize_value(val):
 def _migration_to_dict(migration: Migration) -> dict:
     """Convert a SQLAlchemy Migration model into a plain dictionary with JSON-safe values."""
     return {
-        column.name: _serialize_value(getattr(migration, column.name))
-        for column in migration.__table__.columns
+        attr.columns[0].name: _serialize_value(getattr(migration, attr.key))
+        for attr in migration.__mapper__.column_attrs
     }
 
 
@@ -215,12 +224,11 @@ def rclone_copy(
     dst_remote: str,
     dest_root_dir: str,
     item_type: str,
-    # pylint: disable=too-many-arguments,too-many-positional-arguments
 ):
     """Copy a file from one place to another."""
     # if the item is a measurement set then use the copy directory command
 
-    dest_abs_path = f"{dest_root_dir}/{dst_remote}".replace("//", "/")
+    dest_abs_path = posixpath.normpath(posixpath.join(dest_root_dir, dst_remote.lstrip("/")))
     if item_type == ItemType.CONTAINER:
         request_url = f"{url}/sync/copy"
         post_data = {
@@ -299,7 +307,7 @@ async def _update_migration_statuses(session: AsyncSession):
                             migration_id,
                             dest_data_item[0]["uid"],
                         )
-                        set_state(uid=dest_data_item[0]["uid"], state="READY")
+                        set_state(uid=dest_data_item[0]["uid"], state=ItemState.READY)
                     else:
                         # delete remote data item if there is a transfer problem
                         logging.info(
@@ -367,7 +375,32 @@ async def query_migrations(
         if username is None:
             raise ValueError("Username not found in profile")
 
-    stmt = select(Migration)
+    source_storage = aliased(Storage)
+    destination_storage = aliased(Storage)
+    source_data_item_uid = (
+        select(DataItem.UID)
+        .where(
+            (DataItem.OID == Migration.oid) & (DataItem.storage_id == Migration.source_storage_id)
+        )
+        .order_by(DataItem.UID_creation, DataItem.UID)
+        .limit(1)
+        .correlate(Migration)
+        .scalar_subquery()
+    )
+    stmt = (
+        select(
+            Migration,
+            source_storage.storage_name.label("source_storage_name"),
+            destination_storage.storage_name.label("destination_storage_name"),
+            DataItem.item_name.label("item_name"),
+        )
+        .join(source_storage, Migration.source_storage_id == source_storage.storage_id)
+        .join(
+            destination_storage,
+            Migration.destination_storage_id == destination_storage.storage_id,
+        )
+        .join(DataItem, DataItem.UID == source_data_item_uid)
+    )
     if username:
         stmt = stmt.where(Migration.user == username)
 
@@ -386,8 +419,16 @@ async def query_migrations(
 
     async with _open_migration_session() as session:
         result = await session.execute(stmt)
-        migrations = result.scalars().all()
-    return [_migration_to_dict(item) for item in migrations]
+        migrations = result.all()
+    return [
+        {
+            **_migration_to_dict(migration),
+            "source_storage_name": source_storage_name,
+            "destination_storage_name": destination_storage_name,
+            "item_name": item_name,
+        }
+        for migration, source_storage_name, destination_storage_name, item_name in migrations
+    ]
 
 
 @cli.command()
@@ -439,7 +480,8 @@ async def _create_migration_record(
     destination_storage_id,
     authorization,
     command,
-    # pylint: disable=too-many-arguments,too-many-positional-arguments
+    migration_metadata,
+    origin,
 ):
     # decode the username from the authorization
     username = None
@@ -458,6 +500,8 @@ async def _create_migration_record(
         destination_storage_id=destination_storage_id,
         user=username,
         command=command,
+        migration_metadata=migration_metadata,
+        origin=origin,
     )
     session.add(record)
     await session.flush()
@@ -469,7 +513,6 @@ async def _create_migration_record(
 @cli.command()
 @rest.post("/migration/copy_data_item", response_model=dict)
 async def copy_data_item(  # noqa: C901
-    # pylint: disable=too-many-arguments,too-many-positional-arguments
     item_name: str = "",
     oid: str = "",
     uid: str = "",
@@ -477,6 +520,8 @@ async def copy_data_item(  # noqa: C901
     destination_id: str = "",
     path: str = "",
     authorization: Annotated[str | None, Header()] = None,
+    metadata: JsonObjectOption = None,
+    origin: str | None = None,
 ) -> dict:
     """Copy a data_item from source to destination.
 
@@ -503,6 +548,11 @@ async def copy_data_item(  # noqa: C901
         the destination path relative to storage root, by default ""
     authorization
         Validated Bearer token with UserInfo
+    metadata
+        Metadata associated with the migration. Can be Null.
+    origin
+        The service that triggered the migration request. Expected values are: configdb-watcher,
+        directory-watcher, heuristics and cli.
 
     Returns
     -------
@@ -517,21 +567,54 @@ async def copy_data_item(  # noqa: C901
     UnmetPreconditionForOperation
         No data item found for copying.
     """
-    async with _open_migration_session() as session:
-        return await _copy_data_item(
-            session=session,
-            item_name=item_name,
-            oid=oid,
-            uid=uid,
-            destination_name=destination_name,
-            destination_id=destination_id,
-            path=path,
-            authorization=authorization,
-        )
+    try:
+        async with _open_migration_session() as session:
+            return await _copy_data_item(
+                session=session,
+                item_name=item_name,
+                oid=oid,
+                uid=uid,
+                destination_name=destination_name,
+                destination_id=destination_id,
+                path=path,
+                authorization=authorization,
+                migration_metadata=metadata,
+                origin=origin,
+            )
+    except InvalidQueryParameters as exc:
+        raise HTTPException(
+            status_code=409,
+            detail={"exec": "InvalidQueryParameters", "message": str(exc)},
+        ) from exc
+    except UnmetPreconditionForOperation as exc:
+        raise HTTPException(
+            status_code=409,
+            detail={"exec": "UnmetPreconditionForOperation", "message": str(exc)},
+        ) from exc
+    except ValueAlreadyInDB as exc:
+        raise HTTPException(
+            status_code=409,
+            detail={"exec": "ValueAlreadyInDB", "message": str(exc)},
+        ) from exc
+    except DatabaseOperationError as exc:
+        raise HTTPException(
+            status_code=500,
+            detail={"exec": "DatabaseOperationError", "message": str(exc)},
+        ) from exc
+    except (IOError, OSError) as exc:
+        raise HTTPException(
+            status_code=500,
+            detail={"exec": "IOError", "message": str(exc)},
+        ) from exc
+    except Exception as exc:  # pragma: no cover - defensive fallback
+        logger.exception("Unexpected error while copying a data item")
+        raise HTTPException(
+            status_code=500,
+            detail={"exec": type(exc).__name__, "message": str(exc)},
+        ) from exc
 
 
 async def _copy_data_item(  # noqa: C901
-    # pylint: disable=too-many-arguments,too-many-locals,too-many-positional-arguments,too-many-branches,too-many-statements
     session: AsyncSession,
     item_name: str = "",
     oid: str = "",
@@ -540,8 +623,12 @@ async def _copy_data_item(  # noqa: C901
     destination_id: str = "",
     path: str = "",
     authorization: Annotated[str | None, Header()] = None,
+    migration_metadata: JsonObjectOption = None,
+    origin: str | None = None,
 ) -> dict:
     """Copy a data_item from source to destination."""
+    logger.info("DEBUG _copy_data_item migration_metadata: %r", migration_metadata)
+
     if not item_name and not oid and not uid:
         raise InvalidQueryParameters("Either item_name or OID or UID has to be provided!")
     orig_item = query_data_item(item_name, oid, uid)
@@ -652,8 +739,10 @@ async def _copy_data_item(  # noqa: C901
             dest_id,
             authorization,
             command,
+            migration_metadata,
+            origin,
         )
-        session.commit()
+        await session.commit()
 
         return {"uid": new_item_uid, "migration_id": record["migration_id"]}
     except Exception:

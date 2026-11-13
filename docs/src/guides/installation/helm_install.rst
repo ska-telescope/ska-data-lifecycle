@@ -56,6 +56,13 @@ Shared volume
 In order for data to be shared between pods, ensure that the PVC ``global.sharedpvc`` is instantiated.
 RClone generates an SSH key pair which it shares with the Storage Manager via ``global.sharedpvc`` so it can be distributed to storage endpoints via the REST endpoint ``get_ssh_public_key``.
 
+Workloads that mount this shared volume (``storage``, ``rclone``, ``rabbitmq``, and ``archive``) can configure a pod-level ``securityContext`` (for example, setting ``fsGroup`` and ``fsGroupChangePolicy``) to manage file access and permissions across pods:
+
+* ``storage.securityContext``
+* ``rclone.securityContext``
+* ``rabbitmq.securityContext``
+* ``archive.securityContext``
+
 Rclone Helm Chart ``secret`` values
 ------------------------------------
 

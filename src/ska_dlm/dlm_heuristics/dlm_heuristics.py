@@ -1,4 +1,4 @@
-# pylint: disable=R0914
+# pylint: disable=R0914,R0915
 """Heuristic engine daemon using SQLAlchemy ORM (asyncio)."""
 
 import asyncio
@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 
 from ska_dlm.dlm_db import create_async_sql_engine, create_async_sql_session
 from ska_dlm.dlm_heuristics.heuristics import (
+    HighWaterMarkHeuristic,
     OidExpiryHeuristic,
     UidExpiryHeuristic,
     UpdateStorageUsageHeuristic,
@@ -43,20 +44,40 @@ async def heuristic_process_loop(stop_event: asyncio.Event):
                 async with async_session as session:
                     uid_expiry_heuristics = UidExpiryHeuristic(session)
                     uid_expiry_result = await uid_expiry_heuristics.execute()
+                    await session.commit()
+                logger.info("UID expiry heuristics returned: %s", uid_expiry_result.message)
+                if not uid_expiry_result.success:
+                    logger.debug("UID expiry data: %s", uid_expiry_result.data)
+
+                async with async_session as session:
                     oid_expiry_heuristics = OidExpiryHeuristic(session)
                     oid_expiry_result = await oid_expiry_heuristics.execute()
+                    await session.commit()
+                logger.info("OID expiry heuristics returned: %s", oid_expiry_result.message)
+                if not oid_expiry_result.success:
+                    logger.debug("OID expiry data: %s", oid_expiry_result.data)
+
+                async with async_session as session:
                     storage_usage_heuristics = UpdateStorageUsageHeuristic(session)
                     storage_usage_result = await storage_usage_heuristics.execute()
                     await session.commit()
-                logger.info("UID expiry heuristics returned: %s", uid_expiry_result.message)
-                logger.info("OID expiry heuristics returned: %s", oid_expiry_result.message)
                 logger.info("Storage usage heuristics returned: %s", storage_usage_result.message)
-                logger.debug("UID expiry data: %s", uid_expiry_result.data)
-                logger.debug("OID expiry data: %s", oid_expiry_result.data)
-                if not uid_expiry_result.success:
-                    logger.debug("UID expiry data: %s", uid_expiry_result.data)
-                if not oid_expiry_result.success:
-                    logger.debug("OID expiry data: %s", oid_expiry_result.data)
+                if not storage_usage_result.success:
+                    logger.debug("Storage usage result data: %s", storage_usage_result.data)
+
+                async with async_session as session:
+                    enforce_storage_usage_heuristics = HighWaterMarkHeuristic(session)
+                    enforce_storage_usage_result = await enforce_storage_usage_heuristics.execute()
+                    await session.commit()
+                logger.info(
+                    "Enforce storage usage heuristics returned: status: %s; message: %s",
+                    enforce_storage_usage_result.success,
+                    enforce_storage_usage_result.message,
+                )
+                if not enforce_storage_usage_result.success:
+                    logger.warning(
+                        "Enforce storage usage data: %s", enforce_storage_usage_result.data
+                    )
                 elapsed = (datetime.now(timezone.utc) - start).total_seconds()
                 sleep_time = max(0, HEURISTIC_POLL_INTERVAL - elapsed)
                 total_sleep_time += sleep_time

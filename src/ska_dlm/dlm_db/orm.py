@@ -2,12 +2,37 @@
 
 import contextlib
 import logging
+import os
 
 from sqlalchemy import create_engine
+from sqlalchemy.engine import URL
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 Base = declarative_base()
+
+
+def get_async_database_url(service_url_env: str) -> str:
+    """Get an async SQLAlchemy URL from service or PostgreSQL environment variables."""
+    database_url = os.getenv(service_url_env) or os.getenv("DATABASE_URL")
+    if database_url:
+        return database_url
+
+    required_env = ("PGUSER", "PGPASSWORD", "PGHOST", "PGDATABASE")
+    missing_env = [name for name in required_env if not os.getenv(name)]
+    if missing_env:
+        raise RuntimeError(
+            f"Configure {service_url_env}, DATABASE_URL, or all of " f"{', '.join(required_env)}"
+        )
+
+    return URL.create(
+        "postgresql+asyncpg",
+        username=os.environ["PGUSER"],
+        password=os.environ["PGPASSWORD"],
+        host=os.environ["PGHOST"],
+        port=int(os.getenv("PGPORT") or "5432"),
+        database=os.environ["PGDATABASE"],
+    ).render_as_string(hide_password=False)
 
 
 def create_sql_engine(database_url: str, **kwargs):

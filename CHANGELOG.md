@@ -2,14 +2,29 @@
 
 ## Development
 
+* Add initial Tango monitoring infrastructure, including the DLMMetrics device with placeholder attributes.
+* Add data-item parent/child relationships and retrieval of container children.
+* Updated project build system to `poetry>=2`.
+* Added `get_storage_endpoints` to storage service.
+* Added joins to `query_migrations` to get more information about storage and data item.
+* Fixed migration service `copy_data_item` HTTP endpoint to return meaningful status codes on error.
+
+## 2.4.0
+
 ### Updated
 
+* Re-factored heuristics code into several modules, instead of a single file.
+* New HighWaterMarkHeuristic and UpdateStorageUsageHeuristic and both of them added to default loop
+* Allow shared PVC and mount points to be specified and file locations to be set.
 * OID expiration heuristic
 * Heuristics loop is now running UID and OID expiration as well as UpdateStorage
 
 ### Added
 
+* `origin` column to dlm.migration table
+* `metadata` column to dlm.migration table
 * New UpdateStorageHeuristic
+* Added `securityContext` support for `rabbitmq`, `rclone`, and `storage` Deployments, and `archive` StatefulSet.
 
 ### Fixed
 
@@ -53,7 +68,6 @@
 * dlm-archive stfp endpoint.
 * pg_sphere to local db build.
 * default dlm-archive storage endpoint.
-
 
 ## 2.1.0
 

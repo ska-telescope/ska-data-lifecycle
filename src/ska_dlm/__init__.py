@@ -6,6 +6,7 @@ to be started and deployed as well. Please refer to the README file within this
 package to learn about the options to do that.
 """
 
+import os
 import shutil
 from pathlib import Path
 
@@ -14,7 +15,7 @@ from benedict import benedict
 
 from . import dlm_db
 
-__version__ = "2.3.0"
+__version__ = "2.4.0"
 
 DLM_LIB_DIR = Path(__file__).parent
 """The library install path of dlm."""
@@ -28,7 +29,7 @@ def read_config(user_config_file: Path = DLM_HOME / "config.yaml") -> benedict:
     if not user_config_file.exists():
         # create the default user config in DLM_HOME if it does not already exist
         print(f"DLM config file {user_config_file} not found - creating and using default")
-        user_config_file.parent.mkdir(exist_ok=True)
+        user_config_file.parent.mkdir(parents=True, exist_ok=True)
         default_user_config_file = DLM_LIB_DIR / "config.yaml"
         shutil.copy(default_user_config_file, user_config_file)
 
@@ -36,7 +37,8 @@ def read_config(user_config_file: Path = DLM_HOME / "config.yaml") -> benedict:
         return benedict(yaml.safe_load(file))
 
 
-CONFIG = read_config()
+# Legacy config file is being phased out
+CONFIG = None if os.getenv("DLM_SKIP_CONFIG", "").lower() == "true" else read_config()
 
 __all__ = [
     "DLM_HOME",

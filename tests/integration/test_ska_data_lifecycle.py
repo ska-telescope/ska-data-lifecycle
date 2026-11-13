@@ -4,13 +4,20 @@
 
 import datetime
 import time
+from uuid import UUID
 
 import inflect
 import pytest
 
 from ska_dlm import CONFIG, data_item
 from ska_dlm.common_types import ItemState, PhaseType
+from ska_dlm.dlm_db import (
+    create_async_sql_engine,
+    create_async_sql_session,
+    get_async_database_url,
+)
 from ska_dlm.dlm_db.db_access import DB
+from ska_dlm.dlm_heuristics import IncreaseOidPhaseHeuristic
 from ska_dlm.dlm_ingest.dlm_ingest_requests import ItemType
 from ska_dlm.exceptions import DatabaseOperationError, InvalidQueryParameters, ValueAlreadyInDB
 from tests.common_local import DlmTestClientLocal
@@ -261,6 +268,82 @@ def test_copy(env: DlmTestClient):
 
 
 @pytest.mark.integration_test
+@pytest.mark.asyncio
+async def test_increase_oid_phase_heuristic(env, request):  # pylint: disable=too-many-locals
+    """Run the OID phase increase heuristic through a real Rclone copy."""
+    local_storage = env.storage_requests.query_storage(storage_name="local")[0]
+    archive_storage = env.storage_requests.query_storage(storage_name="dlm-archive")[0]
+    storage_id = local_storage["storage_id"]
+    archive_storage_id = archive_storage["storage_id"]
+    original_storage_phase = local_storage["storage_phase"]
+    original_archive_root = archive_storage["root_directory"]
+
+    oid = None
+
+    def cleanup():
+        if oid:
+            DB.delete(CONFIG.DLM.migration_table, params={"oid": f"eq.{oid}"})
+            DB.delete(CONFIG.DLM.dlm_table, params={"oid": f"eq.{oid}"})
+        DB.update(
+            CONFIG.DLM.storage_table,
+            params={"storage_id": f"eq.{storage_id}"},
+            json={"storage_phase": original_storage_phase},
+        )
+        DB.update(
+            CONFIG.DLM.storage_table,
+            params={"storage_id": f"eq.{archive_storage_id}"},
+            json={"root_directory": original_archive_root},
+        )
+
+    request.addfinalizer(cleanup)
+
+    DB.update(
+        CONFIG.DLM.storage_table,
+        params={"storage_id": f"eq.{storage_id}"},
+        json={"storage_phase": PhaseType.GAS.value},
+    )
+    DB.update(
+        CONFIG.DLM.storage_table,
+        params={"storage_id": f"eq.{archive_storage_id}"},
+        json={"root_directory": "/dlm/MyDisk2"},
+    )
+    env.create_rclone_directory(f"{ROOT_DIRECTORY2}dlm/MyDisk")
+
+    uid = env.ingest_requests.register_data_item(
+        item_name="/my/ingest/test/heuristic-copy",
+        uri=TEST_URI,
+        storage_name="local",
+        item_size=RCLONE_TEST_FILE_SIZE,
+        decompressed_size=RCLONE_TEST_FILE_SIZE,
+    )
+    item = env.data_item_requests.query_data_item(uid=uid)[0]
+    oid = item["oid"]
+
+    async with create_async_sql_engine(
+        get_async_database_url("DLM_HEURISTIC_DATABASE_URL")
+    ) as engine:
+        async with create_async_sql_session(engine) as session:
+            result = await IncreaseOidPhaseHeuristic(session).execute(
+                UUID(oid), PhaseType.GAS, PhaseType.SOLID
+            )
+            assert result.success, result.message
+            await session.commit()
+
+    assert result.data["new_uid"] != uid
+    assert str(result.data["target_storage_id"]) == archive_storage_id
+    copied_items = env.data_item_requests.query_data_item(
+        oid=oid, storage_id=result.data["target_storage_id"]
+    )
+    assert [item["uid"] for item in copied_items] == [result.data["new_uid"]]
+
+    migration_record = __get_migration({"migration_id": result.data["migration_id"]})
+    assert migration_record[0]["origin"] == "IncreaseOidPhaseHeuristic"
+    assert migration_record[0]["complete"] is True
+    assert migration_record[0]["job_status"]["finished"] is True
+    assert migration_record[0]["job_stats"]["bytes"] == RCLONE_TEST_FILE_SIZE
+
+
+@pytest.mark.integration_test
 def test_copy_failed(env: DlmTestClient):
     """Check the data item is removed from db on rclone failure."""
     # NOTE: this test will not work without requests being made via a gateway
@@ -423,7 +506,7 @@ def test_expired_by_storage_daemon(env):
 
 @pytest.mark.integration_test
 def test_populate_metadata_col(env):
-    """Test that the metadata is correctly saved to the metadata column."""
+    """Test that the metadata is correctly saved to the data_item metadata column."""
     # Register data item with metadata
     uid = env.ingest_requests.register_data_item(
         item_name="/my/metadata/test/item",  # item_name

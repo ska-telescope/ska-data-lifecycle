@@ -1,8 +1,8 @@
 # https://helm.sh/docs/developing_charts/
 apiVersion: v2
 name: ska-dlm
-version: 2.3.0
-appVersion: 2.3.0
+version: 2.4.0
+appVersion: 2.4.0
 description: SKA Data Lifecycle Manager
 home: https://developer.skao.int/projects/
 sources:
@@ -23,4 +23,7 @@ dependencies:
   condition: pgweb.enabled
 - name: ska-db-migrations
   version: 0.9.1
+  repository: https://artefact.skao.int/repository/helm-internal
+- name: ska-tango-devices
+  version: 0.18.1
   repository: https://artefact.skao.int/repository/helm-internal

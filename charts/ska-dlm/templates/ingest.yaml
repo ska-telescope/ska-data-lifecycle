@@ -65,6 +65,20 @@ spec:
         - "0.0.0.0"
         - --port
         - "80"
+        env:
+          {{- range $envvar_name := tuple "PGUSER" "PGPASSWORD" "PGHOST" "PGDATABASE" }}
+          - name: {{ $envvar_name }}
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
+                key: {{ $envvar_name }}
+          {{- end }}
+          - name: PGPORT
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
+                key: PGPORT
+                optional: true
         ports:
         - containerPort: 80
           name: http-port

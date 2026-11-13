@@ -1,7 +1,7 @@
 
 -- SQL script for release 2.3
 
---changeset dlm:2.3-release context:2.3-release
+--changeset dlm:2.3-release
 
 --
 -- Table: outbox
