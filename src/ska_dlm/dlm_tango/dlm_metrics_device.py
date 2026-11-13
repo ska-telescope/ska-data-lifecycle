@@ -6,6 +6,7 @@ import logging
 import os
 from threading import Event, Thread, current_thread
 
+import requests
 from ska_control_model import HealthState
 from sqlalchemy import text
 from sqlalchemy.engine import URL
@@ -157,11 +158,21 @@ class DLMMetrics(Device):
                     asyncio.run(_check_postgres_connection())
                     self._postgres_health_state = HealthState.OK
                 except Exception as exc:  # pylint: disable=broad-exception-caught
-                    logger.warning("PostgreSQL health check failed: %s", exc)
+                    logger.warning("PostgreSQL health check failed: %s", exc)  # log only changes?
                     self._postgres_health_state = HealthState.FAILED
+
+                try:
+                    _check_postgrest_connection(
+                        os.getenv("DLM_POSTGREST_URL", "http://dlm_postgrest:3000/")
+                    )
+                    self._postgrest_health_state = HealthState.OK
+                except Exception as exc:  # pylint: disable=broad-exception-caught
+                    logger.warning("PostgREST health check failed: %s", exc)  # log only changes?
+                    self._postgrest_health_state = HealthState.FAILED
 
                 # Temporary logging for development. Delete.
                 logger.info("PostgreSQL HealthState: %s", self._postgres_health_state.name)
+                logger.info("PostgREST HealthState: %s", self._postgrest_health_state.name)
 
                 self._stop_event.wait(self._health_check_interval)
 
@@ -199,3 +210,9 @@ async def _check_postgres_connection():
     finally:
         if engine is not None:
             await engine.dispose()
+
+
+def _check_postgrest_connection(url: str) -> None:
+    """Check whether PostgREST is serving requests successfully (synchronous HTTP request)."""
+    response = requests.get(url, timeout=5)
+    response.raise_for_status()
