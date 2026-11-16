@@ -121,15 +121,17 @@ class DLMMetrics(Device):
         self._postgres_health_state = HealthState.UNKNOWN
         self._postgrest_health_state = HealthState.UNKNOWN
         self._rclone_health_state = HealthState.UNKNOWN
-        self._etcd_health_state = HealthState.UNKNOWN
+        self._etcd_health_state = HealthState.UNKNOWN  # client service
         self._heuristics_health_state = HealthState.UNKNOWN
         self._storage_health_state = HealthState.UNKNOWN
         self._migration_health_state = HealthState.UNKNOWN
+        # can migration one cover rabbitmq/outbox? migration is degraded if rabbitmq/outbox is down
         self._ingest_health_state = HealthState.UNKNOWN
         self._request_health_state = HealthState.UNKNOWN
         self._rabbitmq_health_state = HealthState.UNKNOWN
         self._outbox_health_state = HealthState.UNKNOWN
-        self._dlm_health_state = HealthState.UNKNOWN
+        # can't use _check_http_health() for Outbox, because there's no HTTP endpoint to contact
+        self._dlm_health_state = HealthState.UNKNOWN  # "degraded" if any service is down.
         self._storage_endpoints = ["dlm-archive", "local"]
         self._storage_used_pct = [float("nan"), float("nan")]
         self._migrations_in_progress = float("nan")  # Use AttrQuality.ATTR_INVALID instead?
@@ -180,6 +182,7 @@ class DLMMetrics(Device):
                 # Temporary logging for development.
                 logger.info("PostgreSQL HealthState: %s", self._postgres_health_state.name)
                 logger.info("PostgREST HealthState: %s", self._postgrest_health_state.name)
+                logger.info("")
 
                 self._stop_event.wait(self._health_check_interval)
 
