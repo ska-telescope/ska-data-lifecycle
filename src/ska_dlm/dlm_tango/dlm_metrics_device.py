@@ -23,7 +23,7 @@ logging.basicConfig(level=logging.INFO)
 class DLMMetrics(Device):
     """Tango device exposing DLM service health information."""
 
-    # pylint: disable=invalid-name, too-many-instance-attributes, attribute-defined-outside-init
+    # pylint: disable=invalid-name, too-many-instance-attributes
 
     @attribute
     def version(self) -> str:
@@ -118,9 +118,9 @@ class DLMMetrics(Device):
         self._health_check_interval = int(os.getenv("DLM_METRICS_LOOP_INTERVAL", "10"))
 
         # initialise all attributes:
-        self._rclone_health_state = HealthState.UNKNOWN
         self._postgres_health_state = HealthState.UNKNOWN
         self._postgrest_health_state = HealthState.UNKNOWN
+        self._rclone_health_state = HealthState.UNKNOWN
         self._etcd_health_state = HealthState.UNKNOWN
         self._heuristics_health_state = HealthState.UNKNOWN
         self._storage_health_state = HealthState.UNKNOWN
@@ -150,25 +150,32 @@ class DLMMetrics(Device):
         )
         self._health_thread.start()
 
+    def _update_health(self, service_name: str, check, *args):
+        """Run a health check, update the corresponding state, and log any failures."""
+        try:
+            check(*args)
+            state = HealthState.OK
+        except Exception as exc:  # pylint: disable=broad-exception-caught
+            logger.warning("%s health check failed: %s", service_name, exc)
+            state = HealthState.FAILED
+
+        setattr(self, f"_{service_name.lower()}_health_state", state)
+
     def _health_update_loop(self):
-        """Periodically update the health of DLM services (WIP)."""
+        """Periodically update the health of DLM services (WIP).
+
+        One background thread, one main loop, and separate methods for checking each service.
+        """
         with EnsureOmniThread():
             while not self._stop_event.is_set():
-                try:
-                    asyncio.run(_check_postgres_connection())
-                    self._postgres_health_state = HealthState.OK
-                except Exception as exc:  # pylint: disable=broad-exception-caught
-                    logger.warning("PostgreSQL health check failed: %s", exc)  # log only changes?
-                    self._postgres_health_state = HealthState.FAILED
+                # Make the Postgres check synchronous from the caller's perspective:
+                self._update_health("postgres", lambda: asyncio.run(_check_postgres_connection()))
 
-                try:
-                    _check_postgrest_connection(
-                        os.getenv("DLM_POSTGREST_URL", "http://dlm_postgrest:3000/")
-                    )
-                    self._postgrest_health_state = HealthState.OK
-                except Exception as exc:  # pylint: disable=broad-exception-caught
-                    logger.warning("PostgREST health check failed: %s", exc)  # log only changes?
-                    self._postgrest_health_state = HealthState.FAILED
+                self._update_health(
+                    "postgrest",
+                    _check_http_health,
+                    os.getenv("DLM_POSTGREST_URL", "http://dlm_postgrest:3000/"),
+                )
 
                 # Temporary logging for development.
                 logger.info("PostgreSQL HealthState: %s", self._postgres_health_state.name)
@@ -186,6 +193,12 @@ class DLMMetrics(Device):
                 self._health_thread.join(timeout=10)
 
         super().delete_device()
+
+
+def _check_http_health(url: str) -> None:
+    """Check whether an HTTP service is responding successfully (synchronous HTTP request)."""
+    response = requests.get(url, timeout=5)
+    response.raise_for_status()
 
 
 async def _check_postgres_connection():
@@ -208,11 +221,5 @@ async def _check_postgres_connection():
             await connection.execute(text("SELECT 1"))
 
     finally:
-        if engine is not None:
+        if engine is not None:  # Ensure the SQLAlchemy engine is disposed of
             await engine.dispose()
-
-
-def _check_postgrest_connection(url: str) -> None:
-    """Check whether PostgREST is serving requests successfully (synchronous HTTP request)."""
-    response = requests.get(url, timeout=5)
-    response.raise_for_status()
