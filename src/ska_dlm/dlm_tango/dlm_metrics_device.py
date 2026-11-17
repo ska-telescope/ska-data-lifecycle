@@ -51,11 +51,6 @@ class DLMMetrics(Device):
         return self._postgrest_health_state
 
     @attribute
-    def etcdHealthState(self) -> HealthState:
-        """Return the health of the etcd service."""
-        return self._etcd_health_state
-
-    @attribute
     def heuristicsHealthState(self) -> HealthState:
         """Return the health of the DLM heuristics service."""
         return self._heuristics_health_state
@@ -121,11 +116,10 @@ class DLMMetrics(Device):
         self._postgres_health_state = HealthState.UNKNOWN
         self._postgrest_health_state = HealthState.UNKNOWN
         self._rclone_health_state = HealthState.UNKNOWN
-        self._etcd_health_state = HealthState.UNKNOWN  # client service
         self._heuristics_health_state = HealthState.UNKNOWN
         self._storage_health_state = HealthState.UNKNOWN
         self._migration_health_state = HealthState.UNKNOWN
-        # can migration one cover rabbitmq/outbox? migration is degraded if rabbitmq/outbox is down
+        # can migration cover rabbitmq/outbox? migration is degraded if rabbitmq/outbox is down
         self._ingest_health_state = HealthState.UNKNOWN
         self._request_health_state = HealthState.UNKNOWN
         self._rabbitmq_health_state = HealthState.UNKNOWN
@@ -155,7 +149,7 @@ class DLMMetrics(Device):
     def _update_health(self, service_name: str, check, *args):
         """Run a health check, update the corresponding state, and log any failures."""
         try:
-            check(*args)
+            check(*args)  # calls the function passed in as check, using any args passed in
             state = HealthState.OK
         except Exception as exc:  # pylint: disable=broad-exception-caught
             logger.warning("%s health check failed: %s", service_name, exc)
@@ -166,7 +160,9 @@ class DLMMetrics(Device):
     def _health_update_loop(self):
         """Periodically update the health of DLM services (WIP).
 
-        One background thread, one main loop, and separate methods for checking each service.
+        Run health checks in a single background thread. Service URLs are read
+        from environment variables supplied via Helm, falling back to Docker
+        Compose service names when the variables are not set.
         """
         with EnsureOmniThread():
             while not self._stop_event.is_set():
