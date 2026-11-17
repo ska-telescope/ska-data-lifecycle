@@ -16,6 +16,7 @@ The chart can deploy a RabbitMQ broker and an outbox relay that publishes databa
 * `rabbitmq.enabled`: Set to `true` to deploy a local RabbitMQ service. The default is `true`.
 * `rabbitmq.auth.username` and `rabbitmq.auth.password`: Credentials for the RabbitMQ broker. The defaults are `guest` / `guest`.
 * `rabbitmq.port` and `rabbitmq.management.port`: AMQP and management interface ports. The defaults are `5672` and `15672`.
+* `rabbitmq.securityContext`: Pod-level security context configuration for the RabbitMQ pod.
 * `outbox.enabled`: Set to `true` to deploy the outbox relay. The default is `true`.
 * `outbox.rabbitmq.url`: Optional custom RabbitMQ connection URL. If left empty, the outbox relay uses the in-cluster RabbitMQ service URL.
 * `outbox.rabbitmq.exchange`: RabbitMQ exchange used by the outbox relay. The default is `dlm.outbox`.
@@ -46,6 +47,13 @@ In order for data to be shared between pods, it's important to ensure that the P
 
 RClone generates an SSH key pair which it shares with the Storage Manager via `global.sharedpvc` so it can be distributed to storage end points via the REST endpoint `get_ssh_public_key`.
 
+Workloads that mount this shared volume (`storage`, `rclone`, `rabbitmq`, and `archive`) can configure a pod-level `securityContext` (for example, setting `fsGroup` and `fsGroupChangePolicy`) to manage file access and permissions across pods:
+
+* `storage.securityContext`
+* `rclone.securityContext`
+* `rabbitmq.securityContext`
+* `archive.securityContext`
+
 ## Rclone Helm Chart `secret` values
 
  * `secret`:
@@ -68,10 +76,10 @@ To configure migrations:
 
 * `ska-db-migrations.runMigrations`: Set to `true` (default) to run migrations on deploy.
 * `ska-db-migrations.liquibase.contextFilter`:
-    * Set to `"create-roles,create-db,create-schema,create-external-triggers"` to run all changesets, including role creation, database creation and schema creation (if the role has permission).
-    * Set to `"default"` to run only standard application schema changes, skipping steps that require database-level privileges (like creating the roles/database/schema themselves). This is intended for use with sandboxed roles.
+    * Controls only changesets explicitly tagged for optional setup operations such as role, database, schema, or external-trigger creation.
+    * Ordinary schema migrations in the master `changelog.yaml` do not need a release context; Liquibase applies each changeset once and records it in `DATABASECHANGELOG`.
 
-SQL migration scripts are located in `initdb-scripts/` (base schema) and `patches/` (updates). These are organized by the master `changelog.yaml` file.
+SQL migration scripts are located in `initdb-scripts/` and organized by the master `changelog.yaml` file. Add new migrations there without a context to have them considered on each Liquibase update; Liquibase skips changesets it has already recorded. Use Liquibase's `runAlways` attribute only when a changeset must execute on every update.
 
 
 ## Storage Manager

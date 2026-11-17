@@ -10,6 +10,7 @@ import requests
 import urllib3
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, PlainTextResponse
+from pydantic import BaseModel
 from urllib3.exceptions import InsecureRequestWarning
 
 import ska_dlm
@@ -84,6 +85,13 @@ rest = fastapi_auto_annotate(
 )
 
 
+class StorageEndpoint(BaseModel):
+    """Storage endpoint fields exposed by the storage API."""
+
+    storage_id: str
+    storage_name: str
+
+
 # pylint: disable=unused-argument
 @rest.exception_handler(ValueAlreadyInDB)
 def valuealreadyindb_exception_handler(request: Request, exc: ValueAlreadyInDB):
@@ -130,6 +138,17 @@ def query_location_facility() -> list[str]:
     params = {"select": "id"}
     rows = DB.select("location_facility", params=params)
     return [row["id"] for row in rows]
+
+
+@cli.command()
+@rest.get("/storage/get_storage_endpoints", response_model=list[StorageEndpoint])
+def get_storage_endpoints() -> list[StorageEndpoint]:
+    """Return all storage entries as typed endpoint models."""
+    rows = DB.select(CONFIG.DLM.storage_table, params={"select": "storage_id,storage_name"})
+    return [
+        StorageEndpoint(storage_id=row["storage_id"], storage_name=row["storage_name"])
+        for row in rows
+    ]
 
 
 def _setup_location(location: dict):

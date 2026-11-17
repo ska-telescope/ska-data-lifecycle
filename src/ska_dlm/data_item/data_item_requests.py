@@ -1,11 +1,17 @@
 """Convenience functions to update data_item records."""
 
 import logging
+from collections.abc import AsyncIterator
+from typing import Annotated
+from uuid import UUID
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException, Request
+from sqlalchemy import inspect, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ska_dlm import CONFIG
-from ska_dlm.common_types import ItemState
+from ska_dlm.common_types import ItemState, ItemType
+from ska_dlm.dlm_db import DataItem, DataItemChildren
 from ska_dlm.dlm_db.db_access import DB
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
 from ska_dlm.exceptions import InvalidQueryParameters
@@ -17,6 +23,30 @@ logger = logging.getLogger(__name__)
 cli = ExceptionHandlingTyper()
 
 rest = fastapi_auto_annotate(APIRouter())
+
+
+async def _get_data_item_session(request: Request) -> AsyncIterator[AsyncSession]:
+    """Yield a request-scoped SQLAlchemy session."""
+    session_factory = getattr(request.app.state, "async_session_factory", None)
+    if session_factory is None:
+        logger.error("Request API SQLAlchemy session factory is not initialized")
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "exec": "DatabaseUnavailable",
+                "message": "SQLAlchemy session factory is not initialized",
+            },
+        )
+    async with session_factory() as session:
+        yield session
+
+
+def _data_item_to_dict(data_item: DataItem) -> dict[str, object]:
+    """Convert a data-item ORM object to its database column names and values."""
+    return {
+        prop.columns[0].name: getattr(data_item, prop.key)
+        for prop in inspect(DataItem).mapper.column_attrs
+    }
 
 
 @cli.command()
@@ -65,6 +95,69 @@ def query_data_item(
         params["storage_id"] = f"eq.{storage_id}"
 
     return DB.select(CONFIG.DLM.dlm_table, params=params)
+
+
+@rest.get("/request/get_data_item", response_model=dict)
+async def get_data_item(
+    oid: UUID, session: Annotated[AsyncSession, Depends(_get_data_item_session)]
+) -> dict[str, object]:
+    """Get the first data item matching an OID, including immediate container children.
+
+    Parameters
+    ----------
+    oid
+        The OID of the data item to retrieve.
+
+    session
+        Asynchronous database session for performing the retrieval operation.
+
+    Returns
+    -------
+    dict
+        The matching data item. For containers, children contains immediate child
+        data items with only their UID, OID, and item name.
+
+    Raises
+    ------
+    HTTPException
+        If no data item matches the OID or a database operation fails.
+    """
+    try:
+        result = await session.execute(select(DataItem).where(DataItem.OID == oid).limit(1))
+        data_item_record = result.scalars().first()
+        if data_item_record is None:
+            raise HTTPException(
+                status_code=404,
+                detail={
+                    "exec": "DataItemNotFound",
+                    "message": f"No data item found for OID {oid}",
+                },
+            )
+
+        data_item = _data_item_to_dict(data_item_record)
+        if data_item_record.item_type == ItemType.CONTAINER.value:
+            data_item["children"] = []
+            children_query = (
+                select(
+                    DataItem.UID.label("uid"),
+                    DataItem.OID.label("oid"),
+                    DataItem.item_name.label("item_name"),
+                )
+                .join(DataItemChildren, DataItem.UID == DataItemChildren.data_item_uid)
+                .where(DataItemChildren.parent_data_item_uid == data_item_record.UID)
+            )
+            children_result = await session.execute(children_query)
+            data_item["children"] = [dict(child) for child in children_result.mappings().all()]
+
+        return data_item
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Failed to retrieve data item for OID %s", oid)
+        raise HTTPException(
+            status_code=500,
+            detail={"exec": type(exc).__name__, "message": "Unable to retrieve data item"},
+        ) from exc
 
 
 @cli.command()

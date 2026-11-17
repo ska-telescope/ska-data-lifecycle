@@ -1,10 +1,19 @@
 # Version History
 
-## 2.5.0
+<<<<<<< CHANGELOG.md
 
-### Removed
+=======
+## Development
 
+* Make postgres client OCI image configurable
+* Add initial Tango monitoring infrastructure, including the DLMMetrics device with placeholder attributes.
+* Add data-item parent/child relationships and retrieval of container children.
+* Updated project build system to `poetry>=2`.
+* Added `get_storage_endpoints` to storage service.
+* Added joins to `query_migrations` to get more information about storage and data item.
+* Fixed migration service `copy_data_item` HTTP endpoint to return meaningful status codes on error.
 * Removed changes made to create-tables.sql after introduction of Liquibase, as already-executed changesets cannot be modified (MD5 mismatch)
+>>>>>>> CHANGELOG.md
 
 ## 2.4.0
 
@@ -21,6 +30,11 @@
 * `origin` column to dlm.migration table
 * `metadata` column to dlm.migration table
 * New UpdateStorageHeuristic
+* Added `securityContext` support for `rabbitmq`, `rclone`, and `storage` Deployments, and `archive` StatefulSet.
+
+### Fixed
+
+* Removed a duplicate `volumes:` key from the outbox Deployment template that some YAML parsers reject.
 
 ## 2.3.0
 

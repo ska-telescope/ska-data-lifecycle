@@ -11,6 +11,7 @@ from sqlalchemy.orm import sessionmaker
 from ska_dlm.dlm_db import (
     ConfigType,
     DataItem,
+    DataItemChildren,
     ItemState,
     Location,
     LocationCountry,
@@ -33,6 +34,7 @@ def test_table_names():
     assert Storage.__tablename__ == "storage"
     assert StorageConfig.__tablename__ == "storage_config"
     assert DataItem.__tablename__ == "data_item"
+    assert DataItemChildren.__tablename__ == "data_item_children"
     assert Migration.__tablename__ == "migration"
 
 

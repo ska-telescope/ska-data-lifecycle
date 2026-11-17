@@ -39,6 +39,10 @@ spec:
       labels:
         {{- include "ska-dlm.rabbitmq.labels" . | nindent 8 }}
     spec:
+      {{- with .Values.rabbitmq.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       initContainers:
         - name: setup-rabbitmq-volume
           image: busybox:latest

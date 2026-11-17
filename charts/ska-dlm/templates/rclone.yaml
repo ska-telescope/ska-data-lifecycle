@@ -55,6 +55,10 @@ spec:
       labels:
         {{- include "ska-dlm.rclone.labels" . | nindent 8 }}
     spec:
+      {{- with .Values.rclone.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
       - name: rclone
         image: {{ .Values.rclone.image}}:{{ .Values.rclone.version }}

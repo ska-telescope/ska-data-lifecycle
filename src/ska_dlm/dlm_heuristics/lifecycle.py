@@ -7,7 +7,7 @@ from uuid import UUID
 from sqlalchemy import func, select, update
 
 from ska_dlm.common_types import ItemState, PhaseType
-from ska_dlm.dlm_db.models import DataItem, Storage
+from ska_dlm.dlm_db.models import DataItem, DataItemChildren, Storage
 from ska_dlm.dlm_storage import dlm_storage_requests
 
 from .common import PHASE_ORDER, BaseHeuristic, HeuristicResult
@@ -218,7 +218,13 @@ class DeleteUidHeuristic(BaseHeuristic):
 
         update_stmt = (
             update(DataItem)
-            .where(DataItem.parents == uid)
+            .where(
+                DataItem.UID.in_(
+                    select(DataItemChildren.data_item_uid).where(
+                        DataItemChildren.parent_data_item_uid == uid
+                    )
+                )
+            )
             .values(
                 item_state=ItemState.DELETED,
                 deleted=True,

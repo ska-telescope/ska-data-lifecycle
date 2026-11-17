@@ -5,5 +5,8 @@ dependencies:
 - name: ska-db-migrations
   repository: https://artefact.skao.int/repository/helm-internal
   version: 0.9.1
-digest: sha256:515a16773c4afe23e9a8814a3d6ae98cec9e7902c8474873af8536b9ad8b0778
-generated: "2026-07-06T12:38:57.749803+08:00"
+- name: ska-tango-devices
+  repository: https://artefact.skao.int/repository/helm-internal
+  version: 0.18.1
+digest: sha256:354b613147cef1e1f7d49136defac8ee89a7c85cca9a7f921a207f29e524d130
+generated: "2026-11-10T11:49:43.793746+08:00"

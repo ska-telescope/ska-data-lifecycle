@@ -54,13 +54,10 @@ spec:
             - name: dlm-configmap
               mountPath: "/home/ska-dlm/.dlm"
               readOnly: true
-      volumes:
-      - name: dlm-configmap
-        configMap:
-          name: {{ include "ska-dlm.fullname" . }}-configmap
       initContainers:
         - name: wait-for-postgres
-          image: postgres:17.4
+          image: "{{ .Values.postgres_client.image }}:{{ .Values.postgres_client.version }}"
+          imagePullPolicy: {{ .Values.postgres_client.imagePullPolicy }}
           command:
             - sh
             - -c

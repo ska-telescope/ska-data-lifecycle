@@ -72,9 +72,16 @@ class PostgRESTAccess(contextlib.AbstractContextManager):
         """Close the underlying requests session."""
         self._session.close()
 
-    def insert(self, table: str, *, json: object | None) -> list[dict]:
+    def insert(
+        self,
+        table: str,
+        *,
+        json: object | None,
+        params: dict | list | None = None,
+        headers: dict | None = None,
+    ) -> list[dict]:
         """Perform an insertion query, returning the JSON-encoded result as an object."""
-        return self._query(table, "POST", json=json)
+        return self._query(table, "POST", params=params, json=json, headers=headers)
 
     def update(
         self, table: str, *, json: object | None, params: dict | list | None = None
@@ -95,7 +102,7 @@ class PostgRESTAccess(contextlib.AbstractContextManager):
         table: str,
         method: str,
         params: dict | list | None = None,
-        json: dict | None = None,
+        json: object | None = None,
         **kwargs,
     ) -> list[dict]:
         url = f"{self.api_url}/{table}"
