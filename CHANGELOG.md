@@ -1,8 +1,5 @@
 # Version History
 
-<<<<<<< CHANGELOG.md
-
-=======
 ## Development
 
 * Make postgres client OCI image configurable
