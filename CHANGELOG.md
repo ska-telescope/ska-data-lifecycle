@@ -1,5 +1,11 @@
 # Version History
 
+## 2.5.0
+
+### Removed
+
+* Removed changes made to create-tables.sql after introduction of Liquibase, as already-executed changesets cannot be modified (MD5 mismatch)
+
 ## 2.4.0
 
 ### Updated
