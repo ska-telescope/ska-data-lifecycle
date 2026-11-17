@@ -56,7 +56,8 @@ docker-pre-test:
 	docker compose --file tests/testrunner.docker-compose.yaml -p tests build
 
 docker-do-test:
-	docker compose --file tests/testrunner.docker-compose.yaml -p tests run dlm_testrunner
+	docker compose --file tests/testrunner.docker-compose.yaml -p tests \
+		run --rm --entrypoint="pytest --with-integration --env docker --auth 1" dlm_testrunner
 
 docker-post-test:
 	docker compose --file tests/testrunner.docker-compose.yaml -p tests down

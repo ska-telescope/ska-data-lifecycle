@@ -174,10 +174,54 @@ class DLMMetrics(Device):
                     _check_http_health,
                     os.getenv("DLM_POSTGREST_URL", "http://dlm_postgrest:3000/"),
                 )
+                self._update_health(
+                    "rclone",
+                    _check_rclone_health,
+                    os.getenv("DLM_RCLONE_URL", "https://dlm_rclone:5572/"),
+                )
+                # self._update_health(
+                #     "heuristics",
+                #     _check_http_health,
+                #     os.getenv("DLM_HEURISTICS_URL", "http://dlm_heuristics:80/"),
+                # No HTTP endpoint. Could add a tiny HTTP server to the existing heuristics
+                # daemon, running alongside heuristic_process_loop()
+                # )
+                self._update_health(
+                    "storage",
+                    _check_http_health,
+                    os.getenv("DLM_STORAGE_URL", "http://dlm_storage:80/") + "openapi.json",
+                )
+                self._update_health(
+                    "migration",
+                    _check_http_health,
+                    os.getenv("DLM_MIGRATION_URL", "http://dlm_migration:80/") + "openapi.json",
+                )
+                self._update_health(
+                    "ingest",
+                    _check_http_health,
+                    os.getenv("DLM_INGEST_URL", "http://dlm_ingest:80/") + "openapi.json",
+                )
+                self._update_health(
+                    "request",
+                    _check_http_health,
+                    os.getenv("DLM_REQUEST_URL", "http://dlm_request:80/") + "openapi.json",
+                )
+                self._update_health(
+                    "rabbitmq",  # Will this fail if the management API requires authentication?
+                    _check_http_health,
+                    os.getenv("DLM_RABBITMQ_URL", "http://rabbitmq:15672/"),
+                )
 
                 # Temporary logging for development.
                 logger.info("PostgreSQL HealthState: %s", self._postgres_health_state.name)
                 logger.info("PostgREST HealthState: %s", self._postgrest_health_state.name)
+                logger.info("rclone HealthState: %s", self._rclone_health_state.name)
+                logger.info("heuristics HealthState: %s", self._heuristics_health_state.name)
+                logger.info("storage HealthState: %s", self._storage_health_state.name)
+                logger.info("migration HealthState: %s", self._migration_health_state.name)
+                logger.info("ingest HealthState: %s", self._ingest_health_state.name)
+                logger.info("request HealthState: %s", self._request_health_state.name)
+                logger.info("rabbitmq HealthState: %s", self._rabbitmq_health_state.name)
                 logger.info("")
 
                 self._stop_event.wait(self._health_check_interval)
@@ -197,6 +241,17 @@ class DLMMetrics(Device):
 def _check_http_health(url: str) -> None:
     """Check whether an HTTP service is responding successfully (synchronous HTTP request)."""
     response = requests.get(url, timeout=5)
+    response.raise_for_status()
+
+
+def _check_rclone_health(url: str) -> None:
+    """Check whether Rclone's Remote Control API is responding."""
+    response = requests.post(
+        f"{url.rstrip('/')}/rc/noop",
+        json={"my_key": "my_value"},
+        timeout=5,
+        verify=False,
+    )
     response.raise_for_status()
 
 

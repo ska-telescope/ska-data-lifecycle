@@ -41,31 +41,31 @@ def test_dlm_metrics(tango_context):
     assert device.state() == DevState.ON
 
 
-def test_postgres_health_state(tango_context):
-    """Verify that the Tango device reports PostgreSQL as healthy."""
-    timeout = time.monotonic() + 10  # allows test to finish as soon as the condition is satisfied
+@pytest.mark.parametrize(
+    "service_name",
+    [
+        "postgres",
+        "postgrest",
+        "rclone",
+        # "heuristics", # TODO: Heuristics daemon runs as a background process w/o an HTTP endpoint
+        "storage",
+        "migration",
+        "ingest",
+        "request",
+        "rabbitmq",
+    ],
+)
+def test_service_health_state(tango_context, service_name):
+    """Verify that the Tango device reports each service as healthy."""
+    attribute_name = f"{service_name}HealthState"
+    timeout = time.monotonic() + 10
 
     while time.monotonic() < timeout:
-        health_state = tango_context.postgresHealthState
-        logger.debug("PostgreSQL HealthState: %s", HealthState(health_state).name)
+        health_state = getattr(tango_context, attribute_name)
+        logger.debug("%s HealthState: %s", service_name, HealthState(health_state).name)
 
         if health_state == HealthState.OK:
             return
         time.sleep(0.5)
 
-    assert tango_context.postgresHealthState == HealthState.OK
-
-
-def test_postgrest_health_state(tango_context):
-    """Verify that the Tango device reports Postgrest as healthy."""
-    timeout = time.monotonic() + 10  # allows test to finish as soon as the condition is satisfied
-
-    while time.monotonic() < timeout:
-        health_state = tango_context.postgrestHealthState
-        logger.debug("Postgrest HealthState: %s", HealthState(health_state).name)
-
-        if health_state == HealthState.OK:
-            return
-        time.sleep(0.5)
-
-    assert tango_context.postgrestHealthState == HealthState.OK
+    assert getattr(tango_context, attribute_name) == HealthState.OK
