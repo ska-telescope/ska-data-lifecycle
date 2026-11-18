@@ -21,6 +21,13 @@ services:
       PGUSER: "ska_dlm_admin"
       PGPASSWORD: "password"
       PGDATABASE: "ska_dlm_testing"
+      DLM_POSTGREST_URL: "http://dlm_postgrest:3000/"
+      DLM_RCLONE_URL: "https://dlm_rclone:5572/"
+      DLM_STORAGE_URL: "http://dlm_storage:80/"
+      DLM_MIGRATION_URL: "http://dlm_migration:80/"
+      DLM_INGEST_URL: "http://dlm_ingest:80/"
+      DLM_REQUEST_URL: "http://dlm_request:80/"
+      DLM_RABBITMQ_URL: "http://rabbitmq:15672/"
     networks:
       - dlm_network
     depends_on:

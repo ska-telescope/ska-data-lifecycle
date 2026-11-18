@@ -172,44 +172,45 @@ class DLMMetrics(Device):
                 self._update_health(
                     "postgrest",
                     _check_http_health,
-                    os.getenv("DLM_POSTGREST_URL", "http://dlm_postgrest:3000/"),
+                    os.getenv("DLM_POSTGREST_URL", "http://ska-dlm-postgrest:80/"),
                 )
                 self._update_health(
                     "rclone",
                     _check_rclone_health,
-                    os.getenv("DLM_RCLONE_URL", "https://dlm_rclone:5572/"),
+                    os.getenv("DLM_RCLONE_URL", "http://ska-dlm-rclone:80/"),
                 )
-                # self._update_health(
-                #     "heuristics",
-                #     _check_http_health,
-                #     os.getenv("DLM_HEURISTICS_URL", "http://dlm_heuristics:80/"),
-                # No HTTP endpoint. Could add a tiny HTTP server to the existing heuristics
+                # TODO: Implement a health check for the heuristics daemon.
+                # It has no HTTP endpoint. Could add a tiny HTTP server to the existing heuristics
                 # daemon, running alongside heuristic_process_loop()
                 # )
                 self._update_health(
                     "storage",
                     _check_http_health,
-                    os.getenv("DLM_STORAGE_URL", "http://dlm_storage:80/") + "openapi.json",
+                    os.getenv("DLM_STORAGE_URL", "http://ska-dlm-storage:80/").rstrip("/")
+                    + "/openapi.json",
                 )
                 self._update_health(
                     "migration",
                     _check_http_health,
-                    os.getenv("DLM_MIGRATION_URL", "http://dlm_migration:80/") + "openapi.json",
+                    os.getenv("DLM_MIGRATION_URL", "http://ska-dlm-migration:80/").rstrip("/")
+                    + "/openapi.json",
                 )
                 self._update_health(
                     "ingest",
                     _check_http_health,
-                    os.getenv("DLM_INGEST_URL", "http://dlm_ingest:80/") + "openapi.json",
+                    os.getenv("DLM_INGEST_URL", "http://ska-dlm-ingest:80/").rstrip("/")
+                    + "/openapi.json",
                 )
                 self._update_health(
                     "request",
                     _check_http_health,
-                    os.getenv("DLM_REQUEST_URL", "http://dlm_request:80/") + "openapi.json",
+                    os.getenv("DLM_REQUEST_URL", "http://ska-dlm-request:80/").rstrip("/")
+                    + "/openapi.json",
                 )
                 self._update_health(
                     "rabbitmq",  # Will this fail if the management API requires authentication?
                     _check_http_health,
-                    os.getenv("DLM_RABBITMQ_URL", "http://rabbitmq:15672/"),
+                    os.getenv("DLM_RABBITMQ_URL", "http://ska-dlm-rabbitmq:15672/"),
                 )
 
                 # Temporary logging for development.
