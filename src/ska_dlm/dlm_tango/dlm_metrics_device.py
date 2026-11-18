@@ -131,6 +131,7 @@ class DLMMetrics(Device):
         self._migrations_in_progress = float("nan")  # Use AttrQuality.ATTR_INVALID instead?
 
         self.set_state(DevState.ON)  # means the Tango device itself is operational.
+        print("DLM Tango device initialised successfully!", flush=True)  # temp
 
         self._health_check_interval = int(os.getenv("DLM_METRICS_LOOP_INTERVAL", "10"))
         if self._health_check_interval <= 0:
