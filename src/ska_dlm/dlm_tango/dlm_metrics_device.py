@@ -110,7 +110,7 @@ class DLMMetrics(Device):
         super().init_device()
         print(f"Connecting to Tango database at {os.getenv('TANGO_HOST')}...", flush=True)
 
-        self._health_check_interval = int(os.getenv("DLM_METRICS_LOOP_INTERVAL", "10"))
+        self._health_check_interval = int(os.getenv("POLL_INTERVAL", "10"))
 
         # initialise all attributes:
         self._postgres_health_state = HealthState.UNKNOWN
@@ -125,17 +125,17 @@ class DLMMetrics(Device):
         self._rabbitmq_health_state = HealthState.UNKNOWN
         self._outbox_health_state = HealthState.UNKNOWN
         # can't use _check_http_health() for Outbox, because there's no HTTP endpoint to contact
-        self._dlm_health_state = HealthState.UNKNOWN  # "degraded" if any service is down.
-        self._storage_endpoints = ["dlm-archive", "local"]
-        self._storage_used_pct = [float("nan"), float("nan")]
+        self._dlm_health_state = HealthState.UNKNOWN  # TODO: "degraded" if any service is down.
+        self._storage_endpoints = ["dlm-archive", "local"]  # TODO
+        self._storage_used_pct = [float("nan"), float("nan")]  # TODO
         self._migrations_in_progress = float("nan")  # Use AttrQuality.ATTR_INVALID instead?
 
         self.set_state(DevState.ON)  # means the Tango device itself is operational.
         print("DLM Tango device initialised successfully!", flush=True)  # temp
 
-        self._health_check_interval = int(os.getenv("DLM_METRICS_LOOP_INTERVAL", "10"))
+        self._health_check_interval = int(os.getenv("POLL_INTERVAL", "10"))
         if self._health_check_interval <= 0:
-            raise ValueError("DLM_METRICS_LOOP_INTERVAL must be positive")
+            raise ValueError("POLL_INTERVAL must be positive")
 
         # Allow the monitoring loop to be stopped when the Tango device shuts down:
         self._stop_event = Event()
