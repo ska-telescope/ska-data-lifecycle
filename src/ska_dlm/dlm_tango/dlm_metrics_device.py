@@ -8,13 +8,14 @@ from threading import Event, Thread, current_thread
 
 import requests
 from ska_control_model import HealthState
-from sqlalchemy import text
+from sqlalchemy import func, select, text
 from sqlalchemy.engine import URL
-from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from tango import DevState, EnsureOmniThread
 from tango.server import Device, attribute
 
 from ska_dlm import __version__
+from ska_dlm.dlm_db import Migration
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -23,7 +24,7 @@ logging.basicConfig(level=logging.INFO)
 class DLMMetrics(Device):
     """Tango device exposing DLM service health information."""
 
-    # pylint: disable=invalid-name, too-many-instance-attributes
+    # pylint: disable=invalid-name, too-many-instance-attributes, attribute-defined-outside-init
 
     @attribute
     def version(self) -> str:
@@ -51,8 +52,13 @@ class DLMMetrics(Device):
         return self._postgrest_health_state
 
     @attribute
-    def heuristicsHealthState(self) -> HealthState:
-        """Return the health of the DLM heuristics service."""
+    def heuristicsHealthState(self) -> HealthState:  # TODO (no HTTP endpoint)
+        """Return the health of the DLM heuristics service.
+
+        # TODO: Implement a health check for the heuristics daemon.
+        # It has no HTTP endpoint. Could add a tiny HTTP server to the existing heuristics
+        # daemon, running alongside heuristic_process_loop() ?
+        """
         return self._heuristics_health_state
 
     @attribute
@@ -81,7 +87,7 @@ class DLMMetrics(Device):
         return self._rabbitmq_health_state
 
     @attribute
-    def outboxHealthState(self) -> HealthState:
+    def outboxHealthState(self) -> HealthState:  # TODO (no HTTP endpoint)
         """Return the health of the DLM outbox service."""
         return self._outbox_health_state
 
@@ -90,12 +96,12 @@ class DLMMetrics(Device):
         """Return the overall health of the DLM subsystem."""
         return self._dlm_health_state
 
-    @attribute(max_dim_x=100)
+    @attribute(max_dim_x=100)  # TODO
     def storageEndPoints(self) -> list[str]:
         """Return a list of storage endpoints registered in the database."""
         return self._storage_endpoints
 
-    @attribute(max_dim_x=100)
+    @attribute(max_dim_x=100)  # TODO
     def storageUsedPct(self) -> list[float]:
         """Return the percentage of storage capacity used for each storage endpoint."""
         return self._storage_used_pct
@@ -109,8 +115,6 @@ class DLMMetrics(Device):
         """Initialise the Tango device. WIP."""
         super().init_device()
         print(f"Connecting to Tango database at {os.getenv('TANGO_HOST')}...", flush=True)
-
-        self._health_check_interval = int(os.getenv("POLL_INTERVAL", "10"))
 
         # initialise all attributes:
         self._postgres_health_state = HealthState.UNKNOWN
@@ -159,16 +163,40 @@ class DLMMetrics(Device):
         setattr(self, f"_{service_name.lower()}_health_state", state)
 
     def _health_update_loop(self):
-        """Periodically update the health of DLM services (WIP).
+        """Run the asynchronous monitoring loop in a dedicated background thread.
 
-        Run health checks in a single background thread. Service URLs are read
-        from environment variables supplied via Helm, falling back to Docker
-        Compose service names when the variables are not set.
+        Create a single asyncio event loop for the lifetime of the thread, allowing the async
+        database engine to be reused safely.
         """
         with EnsureOmniThread():
+            asyncio.run(self._async_health_update_loop())
+
+    async def _async_health_update_loop(self):
+        """Periodically update DLM service health and database metrics.
+
+        Create the asynchronous SQLAlchemy engine and session factory once, outside the polling
+        loop, rather than establishing a new engine on every iteration.
+        Reuse them for all database checks.
+        Run the existing synchronous HTTP health checks in the same monitoring thread.
+        Dispose of the database engine when monitoring stops.
+
+        Service URLs are supplied through environment variables, with defaults corresponding to the
+        DLM service names.
+        """
+        url = URL.create(
+            "postgresql+asyncpg",
+            username=os.environ["PGUSER"],
+            password=os.environ["PGPASSWORD"],
+            host=os.environ["PGHOST"],
+            port=int(os.getenv("PGPORT", "5432")),
+            database=os.environ["PGDATABASE"],
+        )
+
+        engine = create_async_engine(url, connect_args={"timeout": 5})
+        async_session_factory = async_sessionmaker(engine, expire_on_commit=False)
+        try:
             while not self._stop_event.is_set():
-                # Make the Postgres check synchronous from the caller's perspective:
-                self._update_health("postgres", lambda: asyncio.run(_check_postgres_connection()))
+                await self._update_database_metrics(async_session_factory)
 
                 self._update_health(
                     "postgrest",
@@ -180,10 +208,6 @@ class DLMMetrics(Device):
                     _check_rclone_health,
                     os.getenv("DLM_RCLONE_URL", "http://ska-dlm-rclone:80/"),
                 )
-                # TODO: Implement a health check for the heuristics daemon.
-                # It has no HTTP endpoint. Could add a tiny HTTP server to the existing heuristics
-                # daemon, running alongside heuristic_process_loop()
-                # )
                 self._update_health(
                     "storage",
                     _check_http_health,
@@ -224,9 +248,42 @@ class DLMMetrics(Device):
                 logger.info("ingest HealthState: %s", self._ingest_health_state.name)
                 logger.info("request HealthState: %s", self._request_health_state.name)
                 logger.info("rabbitmq HealthState: %s", self._rabbitmq_health_state.name)
-                logger.info("")
+                logger.info("No. of migrations in progress: %s\n", self._migrations_in_progress)
 
-                self._stop_event.wait(self._health_check_interval)
+                self._stop_event.wait(self._health_check_interval)  # blocks the event loop while
+                # waiting. But that's acceptable for now because this event loop is dedicated to
+                # sequential monitoring and no other asynchronous tasks are scheduled on it.
+
+        finally:
+            await engine.dispose()
+
+    async def _update_database_metrics(self, async_session_factory):
+        """Update PostgreSQL health and the number of active migrations.
+
+        Use separate sessions from the shared asynchronous engine for each query.
+        This allows the migration count to fail independently of the PostgreSQL connectivity check.
+        Sessions are automatically closed after use.
+        If PostgreSQL is unreachable, mark its health as FAILED and the migration count as NaN.
+        """
+        try:
+            async with async_session_factory() as session:
+                await _check_postgres_connection(session)
+
+            self._postgres_health_state = HealthState.OK
+
+        except Exception as exc:  # pylint: disable=broad-exception-caught
+            logger.warning("PostgreSQL health check failed: %s", exc)
+            self._postgres_health_state = HealthState.FAILED
+            self._migrations_in_progress = float("nan")
+            return
+
+        try:
+            async with async_session_factory() as session:
+                self._migrations_in_progress = float(await _count_active_migrations(session))
+
+        except Exception as exc:  # pylint: disable=broad-exception-caught
+            logger.warning("Failed to count active migrations: %s", exc)
+            self._migrations_in_progress = float("nan")
 
     def delete_device(self):
         """Stop background tasks when the Tango device shuts down."""
@@ -257,25 +314,22 @@ def _check_rclone_health(url: str) -> None:
     response.raise_for_status()
 
 
-async def _check_postgres_connection():
-    """Verify that the PostgreSQL connection works. WIP."""
-    engine = None
-    try:
-        url = URL.create(
-            "postgresql+asyncpg",
-            username=os.environ["PGUSER"],
-            password=os.environ["PGPASSWORD"],
-            host=os.environ["PGHOST"],
-            port=int(os.getenv("PGPORT", "5432")),
-            database=os.environ["PGDATABASE"],
-        )
+async def _check_postgres_connection(session: AsyncSession):
+    """Verify PostgreSQL connectivity using an existing asynchronous session.
 
-        engine = create_async_engine(url, connect_args={"timeout": 5})
-        # if the connection fails, the exception propagates to the caller.
-        async with engine.connect() as connection:
-            # verify the DB is operational without accessing or modifying any data
-            await connection.execute(text("SELECT 1"))
+    Execute a simple query without modifying database records.
+    Connection and session management are handled by the caller.
+    """
+    await session.execute(text("SELECT 1"))
 
-    finally:
-        if engine is not None:  # Ensure the SQLAlchemy engine is disposed of
-            await engine.dispose()
+
+async def _count_active_migrations(session: AsyncSession) -> int:
+    """An asynchronous method that queries PostgreSQL and returns the number of active migrations.
+
+    Receives a session and executes the query.
+    """
+    stmt = select(func.count(Migration.migration_id)).where(  # pylint: disable=not-callable
+        Migration.complete.is_(False)
+    )
+    result = await session.execute(stmt)
+    return result.scalar_one()

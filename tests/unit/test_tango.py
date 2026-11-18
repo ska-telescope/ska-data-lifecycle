@@ -5,13 +5,14 @@
 import json
 import logging
 import time
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from tango import DevState
 from tango.test_context import DeviceTestContext
 
 from ska_dlm import __version__
-from ska_dlm.dlm_tango.dlm_metrics_device import DLMMetrics, HealthState
+from ska_dlm.dlm_tango.dlm_metrics_device import DLMMetrics, HealthState, _count_active_migrations
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)  # temp
@@ -69,3 +70,17 @@ def test_service_health_state(tango_context, service_name):
         time.sleep(0.5)
 
     assert getattr(tango_context, attribute_name) == HealthState.OK
+
+
+@pytest.mark.asyncio
+async def test_count_active_migrations():
+    """Verify that the number of active migrations is returned from the database query."""
+    session = AsyncMock()
+    result = MagicMock()
+    result.scalar_one.return_value = 3  # Simulate a query result containing 3 active migrations
+    session.execute.return_value = result
+
+    count = await _count_active_migrations(session)
+
+    assert count == 3
+    session.execute.assert_awaited_once()
