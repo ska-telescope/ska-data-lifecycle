@@ -18,8 +18,8 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)  # temp
 
 
-@pytest.fixture(name="tango_context")
-def tango_context_fixture():
+@pytest.fixture(name="dlm_metrics_device")
+def dlm_metrics_device_fixture():
     """Create a Tango test device.
 
     Starts a temporary Tango device server for the duration of the test. It does not require
@@ -29,15 +29,15 @@ def tango_context_fixture():
         DLMMetrics,
         device_name="dlm/metrics/0",
         process=True,
-    ) as context:
-        yield context
+    ) as dlm_metrics_device:  # returns a device proxy object to the tango device
+        yield dlm_metrics_device
 
 
-def test_dlm_metrics(tango_context):
+def test_dlm_metrics(dlm_metrics_device):
     """Verify that the DLM Tango device initialises, and exposes the DLM release version."""
-    device = tango_context
+    device = dlm_metrics_device
 
-    version_info = json.loads(tango_context.version)
+    version_info = json.loads(dlm_metrics_device.version)
     assert version_info == {"version": __version__}
     assert device.state() == DevState.ON
 
@@ -56,20 +56,20 @@ def test_dlm_metrics(tango_context):
         "rabbitmq",
     ],
 )
-def test_service_health_state(tango_context, service_name):
+def test_service_health_state(dlm_metrics_device, service_name):
     """Verify that the Tango device reports each service as healthy."""
     attribute_name = f"{service_name}HealthState"
     timeout = time.monotonic() + 10
 
     while time.monotonic() < timeout:
-        health_state = getattr(tango_context, attribute_name)
+        health_state = getattr(dlm_metrics_device, attribute_name)
         logger.debug("%s HealthState: %s", service_name, HealthState(health_state).name)
 
         if health_state == HealthState.OK:
             return
         time.sleep(0.5)
 
-    assert getattr(tango_context, attribute_name) == HealthState.OK
+    assert getattr(dlm_metrics_device, attribute_name) == HealthState.OK
 
 
 @pytest.mark.asyncio
