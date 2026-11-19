@@ -120,6 +120,9 @@ class DLMMetrics(Device):
         super().init_device()
         logger.debug("Connecting to Tango database at %s...", os.getenv("TANGO_HOST"))
 
+        self._stop_event = Event()  # initially unset (equivalent to False)
+        self._health_thread: Thread | None = None  # initialise background monitoring thread
+
         # initialise all attributes:
         self._postgres_health_state = HealthState.UNKNOWN
         self._postgrest_health_state = HealthState.UNKNOWN
@@ -136,9 +139,6 @@ class DLMMetrics(Device):
         self._storage_endpoints = ["dlm-archive", "local"]  # TODO
         self._storage_used_pct = [float("nan"), float("nan")]  # TODO
         self._migrations_in_progress = float("nan")  # Use AttrQuality.ATTR_INVALID instead?
-
-        # Allow the monitoring loop to be stopped when the Tango device shuts down:
-        self._stop_event = Event()
 
         # Run periodic health checks in a background thread without blocking the Tango device:
         self._health_thread = Thread(
@@ -280,10 +280,9 @@ class DLMMetrics(Device):
 
     def delete_device(self):
         """Stop background tasks when the Tango device shuts down."""
-        if hasattr(self, "_stop_event"):
-            self._stop_event.set()
+        self._stop_event.set()  # set to True – the next time the loop checks is_set(), it exits.
 
-        if hasattr(self, "_health_thread"):
+        if self._health_thread is not None:
             if self._health_thread is not current_thread():
                 self._health_thread.join(timeout=10)
 
