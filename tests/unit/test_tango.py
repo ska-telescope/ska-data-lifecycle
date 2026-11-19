@@ -5,7 +5,7 @@
 import json
 import logging
 import time
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from tango import DevState
@@ -84,3 +84,30 @@ async def test_count_active_migrations():
 
     assert count == 3
     session.execute.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_migration_count_failure_does_not_affect_postgres_health():
+    """Verify that a failed migration query does not mark PostgreSQL as unhealthy."""
+    device = MagicMock()
+    session = AsyncMock()
+    session_factory = MagicMock()
+    session_factory.return_value.__aenter__ = AsyncMock(return_value=session)
+    session_factory.return_value.__aexit__ = AsyncMock(return_value=None)
+
+    with (
+        patch(
+            "ska_dlm.dlm_tango.dlm_metrics_device._check_postgres_connection",
+            new_callable=AsyncMock,  # mock _check_postgres_connection() to succeed
+        ) as check_postgres,
+        patch(
+            "ska_dlm.dlm_tango.dlm_metrics_device._count_active_migrations",
+            new_callable=AsyncMock,
+            side_effect=Exception("Migration query failed"),  # mock migration query to fail
+        ),
+    ):
+        await DLMMetrics._update_database_metrics(device, session_factory)
+
+    check_postgres.assert_awaited_once_with(session)
+    assert device._postgres_health_state == HealthState.OK
+    assert str(device._migrations_in_progress) == "nan"

@@ -118,8 +118,7 @@ class DLMMetrics(Device):
     def init_device(self):
         """Initialise the Tango device. WIP."""
         super().init_device()
-        logger.debug("Connecting to Tango database at {os.getenv('TANGO_HOST')}...")
-        logger.info("Health check polling interval: %d ms", self.polling_interval)  # temp
+        logger.debug("Connecting to Tango database at %s...", os.getenv("TANGO_HOST"))
 
         # initialise all attributes:
         self._postgres_health_state = HealthState.UNKNOWN
@@ -256,30 +255,28 @@ class DLMMetrics(Device):
     async def _update_database_metrics(self, async_session_factory):
         """Update PostgreSQL health and the number of active migrations.
 
-        Use separate sessions from the shared asynchronous engine for each query.
-        This allows the migration count to fail independently of the PostgreSQL connectivity check.
-        Sessions are automatically closed after use.
+        Use a single session for both queries.
         If PostgreSQL is unreachable, mark its health as FAILED and the migration count as NaN.
+        If only the migration count fails, leave PostgreSQL health as OK.
         """
-        try:
-            async with async_session_factory() as session:
+        async with async_session_factory() as session:
+            try:
                 await _check_postgres_connection(session)
 
-            self._postgres_health_state = HealthState.OK
+            except Exception as exc:  # pylint: disable=broad-exception-caught
+                logger.warning("PostgreSQL health check failed: %s", exc)
+                self._postgres_health_state = HealthState.FAILED
+                self._migrations_in_progress = float("nan")
 
-        except Exception as exc:  # pylint: disable=broad-exception-caught
-            logger.warning("PostgreSQL health check failed: %s", exc)
-            self._postgres_health_state = HealthState.FAILED
-            self._migrations_in_progress = float("nan")
-            return
+            else:
+                self._postgres_health_state = HealthState.OK
 
-        try:
-            async with async_session_factory() as session:
-                self._migrations_in_progress = float(await _count_active_migrations(session))
+                try:
+                    self._migrations_in_progress = float(await _count_active_migrations(session))
 
-        except Exception as exc:  # pylint: disable=broad-exception-caught
-            logger.warning("Failed to count active migrations: %s", exc)
-            self._migrations_in_progress = float("nan")
+                except Exception as exc:  # pylint: disable=broad-exception-caught
+                    logger.warning("Failed to count active migrations: %s", exc)
+                    self._migrations_in_progress = float("nan")
 
     def delete_device(self):
         """Stop background tasks when the Tango device shuts down."""
