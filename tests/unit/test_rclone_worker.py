@@ -8,8 +8,7 @@ import pytest
 from ska_dlm import embedded_rclone
 from ska_dlm.common_types import ItemState, PhaseType
 from ska_dlm.dlm_db import DataItem
-from ska_dlm.dlm_migration import dlm_migration_requests
-from ska_dlm.dlm_migration import rclone_worker
+from ska_dlm.dlm_migration import dlm_migration_requests, rclone_worker
 from ska_dlm.dlm_migration.rclone_worker import (
     _copy_request,
     _destination_uri,
@@ -493,9 +492,7 @@ async def test_recovery_cleans_and_resubmits_with_fresh_rclone_identifiers(monke
 
     monkeypatch.setattr(rclone_worker, "_cleanup_partial_destination", cleanup)
 
-    assert (
-        await _recover_owned_migrations(lambda: recovery_session, object(), "worker-1") == 1
-    )
+    assert await _recover_owned_migrations(lambda: recovery_session, object(), "worker-1") == 1
 
     assert cleaned == [migration]
     assert "migration.host_id = :host_id_1" in str(recovery_session.statement)

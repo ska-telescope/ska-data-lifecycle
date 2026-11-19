@@ -420,9 +420,7 @@ async def _copy_data_item(  # noqa: C901
             .limit(1)
         )
         if active_migration_id is not None:
-            raise UnmetPreconditionForOperation(
-                "Data item already has an active migration"
-            )
+            raise UnmetPreconditionForOperation("Data item already has an active migration")
         if source_item.storage_id is None:
             raise UnmetPreconditionForOperation("Data item is not associated with a storage")
 
