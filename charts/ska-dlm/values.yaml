@@ -210,6 +210,18 @@ rclone:
       type: kv-v2
       path: ""
 
+rcloneWorker:
+  component: rclone-worker
+  subsystem: data-lifecycle-management
+  image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
+  version: "07256191"
+  imagePullPolicy: Always
+  replicas: 1
+  pollInterval: 10
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+
 rabbitmq: # internal message queue between DLM server and client
   enabled: true
   component: rabbitmq

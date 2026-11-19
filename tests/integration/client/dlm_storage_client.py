@@ -10,7 +10,7 @@ from ska_dlm.common_types import (
     StorageInterface,
     StorageType,
 )
-from ska_dlm.typer_types import JsonObjectArg, JsonObjectOption
+from ska_dlm.typer_types import JsonObjectOption
 from tests.integration.client.exception_handler import dlm_raise_for_status
 
 STORAGE_URL = ""
@@ -190,27 +190,6 @@ def create_storage_config(
     )
     dlm_raise_for_status(response)
     return response.json()
-
-
-def create_rclone_config(config: JsonObjectArg) -> bool:
-    """
-    Create a new rclone backend configuration entry on the rclone server.
-
-    Parameters
-    ----------
-    config
-        a dictionary containing the configuration
-
-    Returns
-    -------
-    bool
-    """
-    headers = {"Authorization": f"Bearer {TOKEN}"}
-    response = requests.post(
-        f"{STORAGE_URL}/storage/rclone_config", json=config, headers=headers, timeout=60
-    )
-    dlm_raise_for_status(response)
-    return bool(response.text)
 
 
 # pylint: disable=unused-argument

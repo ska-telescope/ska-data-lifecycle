@@ -62,8 +62,6 @@ def setup_storage(storage: dict):
     if not store_config:
         dlm_storage_client.create_storage_config(storage_id=store, config=storage["config"])
 
-    dlm_storage_client.create_rclone_config(config=storage["config"])
-
 
 def register_item(migration: dict):
     """Register data item."""

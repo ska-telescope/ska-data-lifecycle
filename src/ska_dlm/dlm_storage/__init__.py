@@ -3,7 +3,6 @@
 from .dlm_storage_requests import (
     check_item_on_storage,
     check_storage_access,
-    create_rclone_config,
     create_storage_config,
     delete_data_item_payload,
     delete_uids,
@@ -29,5 +28,4 @@ __all__ = [
     "query_storage",
     "rclone_access",
     "rclone_about",
-    "create_rclone_config",
 ]

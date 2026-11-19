@@ -30,7 +30,7 @@ def test_location_init(request):
 
 
 def test_initialise_storage_config(request):
-    """Add a new location, storage and configuration to the rclone server."""
+    """Add a new location, storage and configuration to the database."""
     location = dlm_storage.query_location("MyHost")
     if location:
         location_id = location[0]["location_id"]
@@ -49,8 +49,6 @@ def test_initialise_storage_config(request):
     assert len(uuid) == 36
     config_id = dlm_storage.create_storage_config(storage_id=uuid, config=config)
     assert len(config_id) == 36
-    # configure rclone
-    assert dlm_storage.create_rclone_config(config) is True
 
     def cleanup():
         DB.delete(CONFIG.DLM.storage_config_table, params={"config_id": f"eq.{config_id}"})

@@ -256,7 +256,7 @@ class TestMigration:
 
         migration = Migration(
             job_id=123,
-            oid=uuid.uuid4(),
+            uid=uuid.uuid4(),
             url="test-url",
             source_storage_id=source_storage.storage_id,
             destination_storage_id=dest_storage.storage_id,
@@ -441,7 +441,7 @@ class TestRelationships:
 
         migration = Migration(
             job_id=456,
-            oid=uuid.uuid4(),
+            uid=uuid.uuid4(),
             url="migration-url",
             source_storage_id=source.storage_id,
             destination_storage_id=dest.storage_id,

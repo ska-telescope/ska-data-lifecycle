@@ -1,13 +1,42 @@
-
 -- SQL script for release 2.5
 
 --changeset dlm:2.5-release
 
 --- Migration changes
 
---- NOTE: 
---- Using uid and oid which assumes its all on the same storage system. 
---- Migration does not currently support cross storage system references using oids.
+ALTER TABLE dlm.migration
+    ADD COLUMN IF NOT EXISTS uid uuid,
+    ADD COLUMN IF NOT EXISTS destination_uid uuid,
+    ADD COLUMN IF NOT EXISTS destination_path varchar,
+    ADD COLUMN IF NOT EXISTS execution_id uuid,
+    ADD COLUMN IF NOT EXISTS host_id varchar;
+
+UPDATE dlm.migration AS migration
+SET uid = (
+    SELECT data_item.uid
+    FROM dlm.data_item AS data_item
+    WHERE data_item.oid = migration.oid
+      AND data_item.storage_id = migration.source_storage_id
+    ORDER BY data_item.uid_creation, data_item.uid
+    LIMIT 1
+)
+WHERE migration.uid IS NULL;
+
+UPDATE dlm.migration AS migration
+SET destination_uid = (
+    SELECT data_item.uid
+    FROM dlm.data_item AS data_item
+    WHERE data_item.oid = migration.oid
+      AND data_item.storage_id = migration.destination_storage_id
+    ORDER BY data_item.uid_creation, data_item.uid
+    LIMIT 1
+)
+WHERE migration.destination_uid IS NULL;
+
+ALTER TABLE dlm.migration
+    ALTER COLUMN job_id DROP NOT NULL,
+    ALTER COLUMN url DROP NOT NULL,
+    DROP COLUMN oid;
 
 CREATE TABLE IF NOT EXISTS dlm.data_item_children (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,

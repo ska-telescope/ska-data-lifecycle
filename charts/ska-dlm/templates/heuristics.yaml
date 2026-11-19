@@ -135,11 +135,32 @@ spec:
               value: "postgresql+asyncpg://$(PGUSER):$(PGPASSWORD)@$(PGHOST)/$(PGDATABASE)"
             - name: DLM_HEURISTIC_POLL_INTERVAL
               value: {{ .Values.heuristics.pollInterval | default 10 | quote }}
+            - name: DLM_RCLONE_SSH_KEY_PATH
+              value: {{ printf "%sid_rsa" .Values.rclone.keyPath | quote }}
           volumeMounts:
             - name: dlm-configmap
               mountPath: "/home/ska-dlm/.dlm"
               readOnly: true
+            - name: shared-storage
+              mountPath: {{ .Values.rclone.mountPath | quote }}
+            {{- with .Values.rclone.secret }}
+            {{- if .enabled }}
+            - name: rclone-secret
+              mountPath: {{ .mountPoint }}
+              readOnly: true
+            {{- end }}
+            {{- end }}
       volumes:
         - name: dlm-configmap
           configMap:
             name: {{ include "ska-dlm.fullname" . }}-configmap
+        - name: shared-storage
+          persistentVolumeClaim:
+            claimName: {{ .Values.global.sharedpvc.pvc.name }}
+        {{- with .Values.rclone.secret }}
+        {{- if .enabled }}
+        - name: rclone-secret
+          secret:
+            secretName: {{ include "ska-dlm.rclone.secret.name" $ }}
+        {{- end }}
+        {{- end }}

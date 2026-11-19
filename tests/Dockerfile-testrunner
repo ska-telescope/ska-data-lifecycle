@@ -1,6 +1,14 @@
+FROM golang:1.26-bookworm AS librclone
+ARG RCLONE_VERSION=1.75.1
+RUN go mod download github.com/rclone/rclone@v${RCLONE_VERSION} \
+    && cd /go/pkg/mod/github.com/rclone/rclone@v${RCLONE_VERSION} \
+    && go build --buildmode=c-shared -o /usr/local/lib/librclone.so ./librclone
+
 FROM python:3.12
 
 RUN apt-get update && apt-get install -y rclone iputils-ping
+COPY --from=librclone /usr/local/lib/librclone.so /usr/local/lib/librclone.so
+ENV DLM_RCLONE_LIBRARY_PATH=/usr/local/lib/librclone.so
 RUN pip install pytest requests_mock kubernetes docker
 
 ARG POETRY_VERSION=2.5.1

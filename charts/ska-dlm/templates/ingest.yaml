@@ -79,6 +79,8 @@ spec:
                 name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
                 key: PGPORT
                 optional: true
+          - name: DLM_RCLONE_SSH_KEY_PATH
+            value: {{ printf "%sid_rsa" .Values.rclone.keyPath | quote }}
         ports:
         - containerPort: 80
           name: http-port
@@ -96,7 +98,26 @@ spec:
         - name: dlm-configmap
           mountPath: "/home/ska-dlm/.dlm"
           readOnly: true
+        - name: shared-storage
+          mountPath: {{ .Values.rclone.mountPath | quote }}
+        {{- with .Values.rclone.secret }}
+        {{- if .enabled }}
+        - name: rclone-secret
+          mountPath: {{ .mountPoint }}
+          readOnly: true
+        {{- end }}
+        {{- end }}
       volumes:
       - name: dlm-configmap
         configMap:
           name: {{ include "ska-dlm.fullname" . }}-configmap
+      - name: shared-storage
+        persistentVolumeClaim:
+          claimName: {{ .Values.global.sharedpvc.pvc.name }}
+      {{- with .Values.rclone.secret }}
+      {{- if .enabled }}
+      - name: rclone-secret
+        secret:
+          secretName: {{ include "ska-dlm.rclone.secret.name" $ }}
+      {{- end }}
+      {{- end }}

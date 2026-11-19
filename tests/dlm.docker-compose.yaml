@@ -12,18 +12,43 @@ services:
     entrypoint: uvicorn ska_dlm.dlm_migration.dlm_migration_requests:rest --host 0.0.0.0 --port 80
     environment:
       - VIRTUAL_HOST=dlm_migration.localhost
+      - DLM_MIGRATION_DATABASE_URL=postgresql+asyncpg://ska_dlm_admin:password@dlm_db:5432/ska_dlm_testing
     ports:
       - 8004:80
     depends_on:
-      - nginx-proxy
-      - dlm_postgrest
-      - dlm_rclone
-      - dlm_gateway
+      dlm_db:
+        condition: service_healthy
+      dlm_migrations:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost/openapi.json')"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - dlm_network
+
+  dlm_rclone_worker:
+    platform: linux/amd64
+    image: dlm_rclone_worker
+    restart: unless-stopped
+    build:
+      context: ..
+      dockerfile: tests/Dockerfile-dlm-compose
+    entrypoint: ["python", "-m", "ska_dlm.dlm_migration.rclone_worker"]
+    environment:
+      DLM_RCLONE_WORKER_DATABASE_URL: "postgresql+asyncpg://ska_dlm_admin:password@dlm_db:5432/ska_dlm_testing"
+      DLM_RCLONE_WORKER_POLL_INTERVAL: "10"
+      DLM_RCLONE_SSH_KEY_PATH: "/dlm/.ssh/id_rsa"
+    volumes:
+      - shared-tmpfs:/dlm
+    depends_on:
+      dlm_db:
+        condition: service_healthy
+      dlm_migrations:
+        condition: service_completed_successfully
+      dlm_rclone:
+        condition: service_healthy
     networks:
       - dlm_network
 
@@ -36,6 +61,7 @@ services:
       dockerfile: tests/Dockerfile-dlm-compose
     environment:
       VIRTUAL_HOST: "dlm_storage.localhost"
+      DLM_RCLONE_SSH_KEY_PATH: "/dlm/.ssh/id_rsa"
       SSH_PUBLIC_KEY_PATH: "/dlm/.ssh/id_rsa.pub"
       LOCATION_CONFIG: "/home/ska-dlm/.dlm/location-config.json"
       STORAGE_CONFIG: "/home/ska-dlm/.dlm/storage-config.json"
@@ -102,10 +128,12 @@ services:
       PGUSER: "ska_dlm_admin"
       PGPASSWORD: "password"
       PGDATABASE: "ska_dlm_testing"
+      DLM_RCLONE_SSH_KEY_PATH: "/dlm/.ssh/id_rsa"
     ports:
       - 8001:80
     volumes:
       - shared-tmpfs:/data
+      - shared-tmpfs:/dlm
     depends_on:
       - nginx-proxy
       - dlm_postgrest
@@ -129,11 +157,16 @@ services:
     environment:
       DLM_HEURISTIC_DATABASE_URL: "postgresql+asyncpg://ska_dlm_admin:password@dlm_db:5432/ska_dlm_testing"
       DLM_HEURISTIC_POLL_INTERVAL: "10"
+      DLM_RCLONE_SSH_KEY_PATH: "/dlm/.ssh/id_rsa"
       VIRTUAL_HOST: "dlm_heuristics.localhost"
+    volumes:
+      - shared-tmpfs:/dlm
     depends_on:
       nginx-proxy:
         condition: service_healthy
       dlm_db:
+        condition: service_healthy
+      dlm_rclone:
         condition: service_healthy
       dlm_migrations:
         condition: service_completed_successfully

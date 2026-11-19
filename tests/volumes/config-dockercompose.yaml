@@ -16,6 +16,3 @@ DLM:
 
 REST:
   base_url: "http://dlm_postgrest:3000"
-
-RCLONE:
-  - "https://dlm_rclone:5572"

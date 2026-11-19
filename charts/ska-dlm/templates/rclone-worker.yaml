@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "ska-dlm.fullname" . }}-rclone-worker
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "ska-dlm.rclone-worker.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.rcloneWorker.replicas }}
+  serviceName: {{ include "ska-dlm.fullname" . }}-rclone-worker-headless
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      component: {{ .Values.rcloneWorker.component }}
+      subsystem: {{ .Values.rcloneWorker.subsystem }}
+  template:
+    metadata:
+      labels:
+        {{- include "ska-dlm.rclone-worker.labels" . | nindent 8 }}
+    spec:
+      {{- with .Values.rcloneWorker.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: rclone-worker
+        image: {{ .Values.rcloneWorker.image }}:{{ .Values.rcloneWorker.version }}
+        imagePullPolicy: {{ .Values.rcloneWorker.imagePullPolicy }}
+        command: ["python", "-m", "ska_dlm.dlm_migration.rclone_worker"]
+        env:
+          {{- range $envvar_name := tuple "PGUSER" "PGPASSWORD" "PGHOST" "PGDATABASE" }}
+          - name: {{ $envvar_name }}
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
+                key: {{ $envvar_name }}
+          {{- end }}
+          - name: PGPORT
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "ska-dlm.postgrest.db-auth-secret-name" $ }}
+                key: PGPORT
+                optional: true
+          - name: DLM_RCLONE_WORKER_DATABASE_URL
+            value: "postgresql+asyncpg://$(PGUSER):$(PGPASSWORD)@$(PGHOST)/$(PGDATABASE)"
+          - name: DLM_RCLONE_WORKER_POLL_INTERVAL
+            value: {{ .Values.rcloneWorker.pollInterval | quote }}
+          - name: DLM_RCLONE_SSH_KEY_PATH
+            value: {{ printf "%sid_rsa" .Values.rclone.keyPath | quote }}
+          - name: DLM_RCLONE_WORKER_ID
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+        volumeMounts:
+        - name: dlm-configmap
+          mountPath: "/home/ska-dlm/.dlm"
+          readOnly: true
+        - name: shared-storage
+          mountPath: "/dlm"
+        {{- with .Values.rclone.secret }}
+        {{- if .enabled }}
+        - name: rclone-secret
+          mountPath: {{ .mountPoint }}
+          readOnly: true
+        {{- end }}
+        {{- end }}
+      volumes:
+      - name: dlm-configmap
+        configMap:
+          name: {{ include "ska-dlm.fullname" . }}-configmap
+      - name: shared-storage
+        persistentVolumeClaim:
+          claimName: {{ .Values.global.sharedpvc.pvc.name }}
+      {{- with .Values.rclone.secret }}
+      {{- if .enabled }}
+      - name: rclone-secret
+        secret:
+          secretName: {{ include "ska-dlm.rclone.secret.name" $ }}
+      {{- end }}
+      {{- end }}

@@ -350,9 +350,13 @@ class Migration(Base):
     __table_args__ = {"schema": "dlm"}
 
     migration_id = Column(BigInteger, primary_key=True)
-    job_id = Column(BigInteger, nullable=False)
-    oid = Column(UUID(as_uuid=True), nullable=False)
-    url = Column(String, nullable=False)
+    job_id = Column(BigInteger, nullable=True)
+    uid = Column(UUID(as_uuid=True), nullable=True)
+    destination_uid = Column(UUID(as_uuid=True), nullable=True)
+    destination_path = Column(String, nullable=True)
+    execution_id = Column(UUID(as_uuid=True), nullable=True)
+    host_id = Column(String, nullable=True)
+    url = Column(String, nullable=True)
     source_storage_id = Column(
         UUID(as_uuid=True), ForeignKey("dlm.storage.storage_id"), nullable=False
     )

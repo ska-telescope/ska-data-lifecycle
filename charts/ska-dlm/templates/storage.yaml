@@ -96,6 +96,8 @@ spec:
             value: "/etc/location-config.json"
           - name: SSH_PUBLIC_KEY_PATH
             value: {{ .Values.rclone.keyPath }}/id_rsa.pub
+          - name: DLM_RCLONE_SSH_KEY_PATH
+            value: {{ printf "%sid_rsa" .Values.rclone.keyPath | quote }}
         ports:
         - containerPort: 80
           name: http-port
@@ -123,6 +125,17 @@ spec:
           readOnly: true
         - name: shared-storage
           mountPath: {{ .Values.storage.mountPath | quote }}
+        {{- if ne .Values.rclone.mountPath .Values.storage.mountPath }}
+        - name: shared-storage
+          mountPath: {{ .Values.rclone.mountPath | quote }}
+        {{- end }}
+        {{- with .Values.rclone.secret }}
+        {{- if .enabled }}
+        - name: rclone-secret
+          mountPath: {{ .mountPoint }}
+          readOnly: true
+        {{- end }}
+        {{- end }}
       volumes:
       - name: dlm-configmap
         configMap:
@@ -136,3 +149,10 @@ spec:
       - name: shared-storage
         persistentVolumeClaim:
           claimName: {{ .Values.global.sharedpvc.pvc.name }}
+      {{- with .Values.rclone.secret }}
+      {{- if .enabled }}
+      - name: rclone-secret
+        secret:
+          secretName: {{ include "ska-dlm.rclone.secret.name" $ }}
+      {{- end }}
+      {{- end }}

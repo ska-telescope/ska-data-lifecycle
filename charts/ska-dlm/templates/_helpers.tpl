@@ -122,6 +122,16 @@ intent: production
 {{- end -}}
 
 {{/*
+Rclone worker labels
+*/}}
+{{- define "ska-dlm.rclone-worker.labels" -}}
+{{- include "ska-dlm.labels" . }}
+component: {{ .Values.rcloneWorker.component }}
+subsystem: {{ .Values.rcloneWorker.subsystem }}
+intent: production
+{{- end -}}
+
+{{/*
 Gateway labels
 */}}
 {{- define "ska-dlm.gateway.labels" -}}

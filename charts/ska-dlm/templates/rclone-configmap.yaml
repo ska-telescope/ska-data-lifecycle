@@ -5,10 +5,12 @@ metadata:
 data:
   rclone-start.sh: |-
     #!/bin/bash
-    if [[ ! -f {{ .Values.rclone.keyPath }}/id_rsa.pub ]]; then
+    if [[ ! -f {{ .Values.rclone.keyPath }}/id_rsa.pub || ! -f {{ .Values.rclone.keyPath }}/id_rsa ]]; then
       mkdir -p {{ .Values.rclone.keyPath }}
       yes n | ssh-keygen -t rsa -b 4096 -f {{ .Values.rclone.keyPath }}/id_rsa -N '' || true
     fi
+    chown 0:1000 {{ .Values.rclone.keyPath }}/id_rsa
+    chmod 640 {{ .Values.rclone.keyPath }}/id_rsa
     mkdir -p /root/.ssh
     chmod 700 -R /root/.ssh
     cp -p {{ .Values.rclone.keyPath }}/id_rsa /root/.ssh/id_rsa 2>/dev/null

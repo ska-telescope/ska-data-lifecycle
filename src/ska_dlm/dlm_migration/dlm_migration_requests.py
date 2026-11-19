@@ -1,30 +1,23 @@
 # pylint: disable=too-many-arguments,too-many-locals,too-many-positional-arguments
-# pylint: disable=too-many-branches,too-many-statements
 """DLM Migration API module."""
 
-import asyncio
 import logging
 import os
-import posixpath
-import random
 import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime
-from functools import partial
 from typing import Annotated
 
-import requests
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from requests import Request
-from sqlalchemy import func, or_, select, update
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import aliased, sessionmaker
 
 import ska_dlm
-from ska_dlm.common_types import ItemState
-from ska_dlm.dlm_outbox.outbox import add_outbox_event
+from ska_dlm.common_types import ConfigType, ItemState
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
 from ska_dlm.exceptions import (
     DatabaseOperationError,
@@ -36,13 +29,7 @@ from ska_dlm.fastapi_utils import decode_bearer, fastapi_auto_annotate
 from ska_dlm.typer_types import JsonObjectOption
 from ska_dlm.typer_utils import dump_short_stacktrace
 
-from .. import CONFIG
-from ..data_item import delete_data_item_entry, set_state
-from ..dlm_db import DataItem, Migration, Storage
-from ..dlm_ingest import init_data_item
-from ..dlm_ingest.dlm_ingest_requests import ItemType
-from ..dlm_request import query_data_item
-from ..dlm_storage import check_item_on_storage, get_storage_config, query_storage
+from ..dlm_db import DataItem, Migration, Storage, StorageConfig
 
 # Configure logging
 logging.basicConfig(
@@ -70,9 +57,6 @@ MIGRATION_DATABASE_URL = os.getenv(
 @asynccontextmanager
 async def app_lifespan(app: FastAPI):
     """Lifespan hook for startup and shutdown."""
-    if len(CONFIG.RCLONE) == 0:
-        raise ValueError("No Rclone URLs")
-
     migration_engine = create_async_engine(
         MIGRATION_DATABASE_URL,
         future=True,
@@ -90,22 +74,8 @@ async def app_lifespan(app: FastAPI):
     )
     app.state.async_engine = migration_engine
     app.state.async_session_factory = migration_session_factory
-
-    task = asyncio.create_task(
-        _poll_status_loop(
-            interval=CONFIG.DLM.migration_manager.polling_interval,
-            async_session_factory=migration_session_factory,
-        )
-    )
     yield
     logger.info("shutting down")
-    task.cancel()
-    try:
-        await task
-    except asyncio.CancelledError:
-        pass
-    except Exception:  # pylint: disable=broad-except
-        logger.exception("Unexpected error shutting down")
     await migration_engine.dispose()
 
 
@@ -166,45 +136,6 @@ def _open_migration_session() -> AsyncSession:
     return rest.state.async_session_factory()  # type: ignore[attr-defined]
 
 
-async def _query_job_status(url: str, job_id: int):
-    request_url = f"{url}/job/status"
-    post_data = {"jobid": job_id}
-
-    loop = asyncio.get_event_loop()
-    logger.info("rclone request: %s, %s", request_url, post_data)
-    request = await loop.run_in_executor(
-        None, partial(requests.post, request_url, post_data, timeout=1800, verify=False)
-    )
-    return request.json()
-
-
-async def _query_core_stats(url: str, group_id: str):
-    request_url = f"{url}/core/stats"
-    post_data = {"group": group_id}
-
-    loop = asyncio.get_event_loop()
-    logger.info("rclone request: %s, %s", request_url, post_data)
-    request = await loop.run_in_executor(
-        None, partial(requests.post, request_url, post_data, timeout=1800, verify=False)
-    )
-    return request.json()
-
-
-async def _poll_status_loop(interval: int, async_session_factory: sessionmaker):
-    """Periodically wake up and poll migration status."""
-    while True:
-        try:
-            async with async_session_factory() as session:
-                await _update_migration_statuses(session)
-        except asyncio.CancelledError:
-            break
-        except OSError:
-            logger.exception("Failed to poll migration job statuses")
-        except Exception:  # pylint: disable=broad-except
-            logger.exception("Unexpected error polling migration job statuses")
-        await asyncio.sleep(interval)
-
-
 # pylint: disable=unused-argument
 @rest.exception_handler(IOError)
 def ioerror_exception_handler(request: Request, exc: IOError):
@@ -213,132 +144,6 @@ def ioerror_exception_handler(request: Request, exc: IOError):
         status_code=500,
         content={"exec": "IOError", "message": f"{str(exc)}"},
     )
-
-
-def rclone_copy(
-    url: str,
-    src_fs: str,
-    src_remote: str,
-    src_root_dir: str,
-    dst_fs: str,
-    dst_remote: str,
-    dest_root_dir: str,
-    item_type: str,
-):
-    """Copy a file from one place to another."""
-    # if the item is a measurement set then use the copy directory command
-
-    dest_abs_path = posixpath.normpath(posixpath.join(dest_root_dir, dst_remote.lstrip("/")))
-    if item_type == ItemType.CONTAINER:
-        request_url = f"{url}/sync/copy"
-        post_data = {
-            "srcFs": f"{src_fs}{src_root_dir}/{src_remote}",
-            "dstFs": f"{dst_fs}{dest_abs_path}",
-            "no-check-dest": "true",
-            "s3-no-check-bucket": "true",
-            "_async": "true",
-        }
-    else:
-        request_url = f"{url}/operations/copyfile"
-        post_data = {
-            "srcFs": f"{src_fs}{src_root_dir}",
-            "srcRemote": src_remote,
-            "dstFs": dst_fs,
-            "dstRemote": dest_abs_path,
-            "s3-no-check-bucket": "true",
-            "_async": "true",
-        }
-
-    command = f"{request_url} {str(post_data)}"
-
-    logger.info("rclone command: %s", command)
-    request = requests.post(request_url, post_data, timeout=1800, verify=False)
-    logger.info("Response status code: %s", request.status_code)
-    return request.status_code, request.json(), command
-
-
-async def _update_migration_statuses(session: AsyncSession):
-    """
-    Update the migration job status in the database for all pending rclone jobs.
-
-    This is performed by querying the rclone service instances.
-
-    Parameters
-    ----------
-    session : AsyncSession
-        Async SQLAlchemy session used for the update.
-
-    Raises
-    ------
-    IOError
-        Error contacting database or rclone services.
-    """
-    result = await session.execute(select(Migration).where(Migration.complete.is_(False)))
-    migrations = result.scalars().all()
-
-    if len(migrations) > 0:
-        logger.info("number of outstanding migrations: %s", len(migrations))
-
-    for migration in migrations:
-        # Want to try block so we go through each migration record to the end of the list
-        try:
-            # get details for this migration
-            migration_id = migration.migration_id
-            job_id = migration.job_id
-            url = migration.url
-            logger.info("migration %s: %s", migration_id, job_id)
-
-            migration_complete = False
-            # query rclone for job/status
-            status_json = await _query_job_status(url, job_id)
-            stats_json = await _query_core_stats(url, status_json["group"])
-
-            if status_json["finished"] is True:
-                migration_complete = True
-                # Get record for remote data item
-                dest_data_item = query_data_item(
-                    oid=migration.oid, storage_id=migration.destination_storage_id
-                )
-
-                if dest_data_item:
-                    if status_json["success"] is True:
-                        logging.info(
-                            "Migration %s success, data item %s",
-                            migration_id,
-                            dest_data_item[0]["uid"],
-                        )
-                        set_state(uid=dest_data_item[0]["uid"], state=ItemState.READY)
-                    else:
-                        # delete remote data item if there is a transfer problem
-                        logging.info(
-                            "Migration %s failed, deleting data item %s",
-                            migration_id,
-                            dest_data_item[0]["uid"],
-                        )
-                        delete_data_item_entry(uid=dest_data_item[0]["uid"])
-
-            stmt = (
-                update(Migration)
-                .where(Migration.migration_id == migration_id)
-                .values(
-                    job_status=status_json,
-                    job_stats=stats_json,
-                    complete=migration_complete,
-                    completion_date=func.now(),  # pylint: disable=not-callable
-                )
-                .returning(Migration)
-            )
-            migration_obj = await session.scalar(stmt)
-
-            await add_outbox_event(
-                session=session,
-                event_type="dlm.migration.update",
-                payload=_migration_to_dict(migration_obj),
-            )
-
-            await session.commit()
-        except Exception as e:  # pylint: disable=broad-except
-            logging.exception(e)
 
 
 @cli.command()
@@ -377,16 +182,6 @@ async def query_migrations(
 
     source_storage = aliased(Storage)
     destination_storage = aliased(Storage)
-    source_data_item_uid = (
-        select(DataItem.UID)
-        .where(
-            (DataItem.OID == Migration.oid) & (DataItem.storage_id == Migration.source_storage_id)
-        )
-        .order_by(DataItem.UID_creation, DataItem.UID)
-        .limit(1)
-        .correlate(Migration)
-        .scalar_subquery()
-    )
     stmt = (
         select(
             Migration,
@@ -399,7 +194,7 @@ async def query_migrations(
             destination_storage,
             Migration.destination_storage_id == destination_storage.storage_id,
         )
-        .join(DataItem, DataItem.UID == source_data_item_uid)
+        .outerjoin(DataItem, DataItem.UID == Migration.uid)
     )
     if username:
         stmt = stmt.where(Migration.user == username)
@@ -471,45 +266,6 @@ async def _get_migration_record(migration_id: int, session: AsyncSession) -> lis
     return [_migration_to_dict(item) for item in migrations]
 
 
-async def _create_migration_record(
-    session: AsyncSession,
-    job_id,
-    oid,
-    url,
-    source_storage_id,
-    destination_storage_id,
-    authorization,
-    command,
-    migration_metadata,
-    origin,
-):
-    # decode the username from the authorization
-    username = None
-    user_info = decode_bearer(authorization)
-    if user_info:
-        username = user_info.get("preferred_username", None)
-        if username is None:
-            raise ValueError("Username not found in profile")
-
-    # add migration to DB
-    record = Migration(
-        job_id=job_id,
-        oid=oid,
-        url=url,
-        source_storage_id=source_storage_id,
-        destination_storage_id=destination_storage_id,
-        user=username,
-        command=command,
-        migration_metadata=migration_metadata,
-        origin=origin,
-    )
-    session.add(record)
-    await session.flush()
-    await session.refresh(record)
-    await session.commit()
-    return _migration_to_dict(record)
-
-
 @cli.command()
 @rest.post("/migration/copy_data_item", response_model=dict)
 async def copy_data_item(  # noqa: C901
@@ -526,11 +282,9 @@ async def copy_data_item(  # noqa: C901
     """Copy a data_item from source to destination.
 
     Steps
-    (1) get the current storage_id(s) of the item
-    (2) convert one (first) storage_id to a configured rclone backend
-    (3) initialise the new item with the same OID on the new storage
-    (4) use the rclone copy command to copy it to the new location
-    (5) add record to the migration table
+    (1) lock the source data item and resolve its source/destination storage configuration
+    (2) create a pending migration while preventing concurrent copies of the source item
+    (3) return the destination UID and migration ID for asynchronous tracking
 
     Parameters
     ----------
@@ -557,7 +311,7 @@ async def copy_data_item(  # noqa: C901
     Returns
     -------
     dict
-        uid: The uid of the new item copy.
+        uid: The uid reserved for the new item copy.
         migration_id: Migration ID used to check current migration status of copy.
 
     Raises
@@ -626,126 +380,131 @@ async def _copy_data_item(  # noqa: C901
     migration_metadata: JsonObjectOption = None,
     origin: str | None = None,
 ) -> dict:
-    """Copy a data_item from source to destination."""
-    logger.info("DEBUG _copy_data_item migration_metadata: %r", migration_metadata)
-
+    """Create a queued migration for a data item."""
     if not item_name and not oid and not uid:
         raise InvalidQueryParameters("Either item_name or OID or UID has to be provided!")
-    orig_item = query_data_item(item_name, oid, uid)
-    if orig_item:
-        orig_item = orig_item[0]
-    else:
-        raise UnmetPreconditionForOperation("No data item found for copying")
-    # (1)
-    item_name = orig_item["item_name"]
-    storages = check_item_on_storage(item_name)
-    # we pick the first data_item returned record for now
-    if storages:
-        storage = storages[0]
-    else:
-        raise UnmetPreconditionForOperation("Data item not in specified storage")
-    # (2)
-    s_config = get_storage_config(storage_id=storage["storage_id"])
-    if not s_config:
-        raise UnmetPreconditionForOperation("No configuration for source storage found!")
+    if not destination_name and not destination_id:
+        raise UnmetPreconditionForOperation("A destination storage name or ID is required.")
 
-    s_config = s_config[0]
-    source_root_path = s_config.get("root_path", "/")
-    source = {"backend": f"{s_config['name']}:{source_root_path}", "path": storage["uri"]}
-    if not path:
-        path = storage["uri"]
+    source_filter = (
+        DataItem.UID == uuid.UUID(uid)
+        if uid
+        else DataItem.OID == uuid.UUID(oid)
+        if oid
+        else DataItem.item_name == item_name
+    )
+    username = None
+    user_info = decode_bearer(authorization)
+    if user_info:
+        username = user_info.get("preferred_username")
+        if username is None:
+            raise ValueError("Username not found in profile")
 
-    destination = None
-    if destination_name:
-        destination = query_storage(storage_name=destination_name)
-    elif destination_id:
-        destination = query_storage(storage_id=destination_id)
-
-    if not destination:
-        raise UnmetPreconditionForOperation(
-            f"Unable to get ID of destination storage: {destination_name}."
+    transaction = session.begin_nested() if session.in_transaction() else session.begin()
+    async with transaction:
+        source_item = await session.scalar(
+            select(DataItem)
+            .where(source_filter)
+            .order_by(DataItem.UID_creation, DataItem.UID)
+            .limit(1)
+            .with_for_update()
         )
-    dest_id = destination[0]["storage_id"]
-    dest_phase = destination[0]["storage_phase"]
-
-    d_config = get_storage_config(storage_id=dest_id)
-    if not d_config:
-        raise UnmetPreconditionForOperation("Unable to get configuration for destination storage!")
-    d_config = d_config[0]
-    dest_root_path = d_config.get("root_path", "/")
-    dest = {"backend": f"{d_config['name']}:{dest_root_path}", "path": path}
-
-    source_storage = query_storage(storage_id=storage["storage_id"])
-    if not source_storage:
-        raise UnmetPreconditionForOperation(
-            f"Unable to get source storage: {storage['storage_id']}."
-        )
-
-    # (3)
-    init_item = {
-        "item_name": item_name,
-        "oid": orig_item["oid"],
-        "storage_id": dest_id,
-        "item_type": orig_item["item_type"],
-        "target_phase": orig_item["target_phase"],
-        "uid_expiration": orig_item["uid_expiration"],
-        "oid_expiration": orig_item["oid_expiration"],
-        "uid_phase": dest_phase,
-        "metadata": orig_item["metadata"],
-        "item_size": orig_item["item_size"],
-        "decompressed_size": orig_item["decompressed_size"],
-        "uri": path,
-    }
-
-    # Initalising with default INITIALISED
-    new_item_uid = init_data_item(json_data=init_item)
-
-    try:
-        # (4) copy item to the new location
-        # TODO(yan-xxx) abstract the actual function called away to allow for different
-        # mechanisms to perform the copy. Also needs to be a non-blocking call
-        # scheduling a job for dlm_migration service.
-        logger.info("source: %s", source)
-        logger.info("destination: %s", dest)
-
-        # get random Rclone instance to deal with copy
-        url = random.choice(CONFIG.RCLONE)
-
-        status_code, content, command = rclone_copy(
-            url,
-            source["backend"],
-            source["path"],
-            source_storage[0]["root_directory"],
-            dest["backend"],
-            dest["path"],
-            destination[0]["root_directory"],
-            orig_item["item_type"],
-        )
-
-        if status_code != 200:
-            logger.error(
-                "rclone_copy failed with status_code: %s, content: %s", status_code, content
+        if source_item is None:
+            raise UnmetPreconditionForOperation("No data item found for copying")
+        active_migration_id = await session.scalar(
+            select(Migration.migration_id)
+            .where(
+                Migration.uid == source_item.UID,
+                Migration.complete.is_(False),
             )
-            raise OSError("rclone copy request failed.")
-
-        # (5) add row to migration table
-        # NOTE: temporarily use server_id='rclone0' until we actually have multiple rclone servers
-        record = await _create_migration_record(
-            session,
-            content["jobid"],
-            orig_item["oid"],
-            url,
-            source_storage[0]["storage_id"],
-            dest_id,
-            authorization,
-            command,
-            migration_metadata,
-            origin,
+            .limit(1)
         )
-        await session.commit()
+        if active_migration_id is not None:
+            raise UnmetPreconditionForOperation(
+                "Data item already has an active migration"
+            )
+        if source_item.storage_id is None:
+            raise UnmetPreconditionForOperation("Data item is not associated with a storage")
 
-        return {"uid": new_item_uid, "migration_id": record["migration_id"]}
-    except Exception:
-        # if there is any error, delete data item and raise exception
-        delete_data_item_entry(uid=new_item_uid)
-        raise
+        source_storage = aliased(Storage)
+        destination_storage = aliased(Storage)
+        source_config = aliased(StorageConfig)
+        destination_config = aliased(StorageConfig)
+        destination_filter = (
+            destination_storage.storage_name == destination_name
+            if destination_name
+            else destination_storage.storage_id == uuid.UUID(destination_id)
+        )
+        storage_stmt = (
+            select(source_storage, source_config, destination_storage, destination_config)
+            .join(source_config, source_config.storage_id == source_storage.storage_id)
+            .join(
+                destination_storage,
+                destination_filter,
+            )
+            .join(
+                destination_config,
+                destination_config.storage_id == destination_storage.storage_id,
+            )
+            .where(source_storage.storage_id == source_item.storage_id)
+            .where(source_config.config_type == ConfigType.RCLONE)
+            .where(destination_config.config_type == ConfigType.RCLONE)
+            .order_by(source_config.config_date, destination_config.config_date)
+            .limit(1)
+        )
+        storage_result = (await session.execute(storage_stmt)).first()
+        if storage_result is None:
+            raise UnmetPreconditionForOperation(
+                "Unable to resolve source/destination storage and Rclone configuration"
+            )
+        (
+            source_storage_row,
+            source_config_row,
+            destination_storage_row,
+            destination_config_row,
+        ) = storage_result
+
+        destination_path = path or source_item.uri
+        if not destination_path:
+            raise UnmetPreconditionForOperation("Data item has no URI to copy")
+        destination_uid = uuid.uuid4()
+        migration = Migration(
+            uid=source_item.UID,
+            destination_uid=destination_uid,
+            destination_path=destination_path,
+            source_storage_id=source_storage_row.storage_id,
+            destination_storage_id=destination_storage_row.storage_id,
+            user=username or "SKA",
+            command=None,
+            migration_metadata=migration_metadata,
+            origin=origin,
+        )
+        destination_values = {
+            attribute.key: getattr(source_item, attribute.key)
+            for attribute in DataItem.__mapper__.column_attrs
+            if attribute.key not in {"UID", "UID_creation", "UID_deletion"}
+        }
+        destination_values.update(
+            UID=destination_uid,
+            UID_deletion=None,
+            storage_id=destination_storage_row.storage_id,
+            UID_phase=destination_storage_row.storage_phase,
+            item_state=ItemState.INITIALISED,
+            uri=destination_path,
+            parents=None,
+            children=None,
+        )
+        session.add(DataItem(**destination_values))
+        session.add(migration)
+        await session.flush()
+        await session.refresh(migration)
+
+        logger.info(
+            "Queued migration %s from storage %s to %s using Rclone configurations %s and %s",
+            migration.migration_id,
+            source_storage_row.storage_id,
+            destination_storage_row.storage_id,
+            source_config_row.config_id,
+            destination_config_row.config_id,
+        )
+        return {"uid": str(destination_uid), "migration_id": migration.migration_id}

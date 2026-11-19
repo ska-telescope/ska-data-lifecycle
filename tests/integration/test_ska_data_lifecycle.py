@@ -42,6 +42,7 @@ METADATA_RECEIVED = {
 
 def _clear_database():
     DB.delete(CONFIG.DLM.migration_table)
+    DB.delete("data_item_children")
     DB.delete(CONFIG.DLM.dlm_table)
 
 
@@ -235,17 +236,21 @@ def test_copy(env: DlmTestClient):
 
     assert len(migration_record) == 1
     assert migration_record[0]["destination_storage_id"] == dest_id
+    assert migration_record[0]["uid"] == uid
     assert migration_record[0]["complete"] is True
+    assert isinstance(migration_record[0]["job_id"], int)
     assert migration_record[0]["job_status"]["finished"] is True
+    assert migration_record[0]["job_status"]["success"] is True
     assert migration_record[0]["job_stats"]["bytes"] == RCLONE_TEST_FILE_SIZE
 
     # Check the data item has been set to READY
     dest_data_item = env.data_item_requests.query_data_item(
-        oid=migration_record[0]["oid"], storage_id=migration_record[0]["destination_storage_id"]
+        uid=migration_record[0]["destination_uid"]
     )
     assert dest_data_item[0]["item_state"] == "READY"
     assert dest_data_item[0]["item_size"] == RCLONE_TEST_FILE_SIZE
     assert dest_data_item[0]["decompressed_size"] == RCLONE_TEST_FILE_SIZE
+    assert env.data_item_requests.query_data_item(uid=uid)[0]["item_state"] == "READY"
 
     # Test the filter on query migrations
     destination_storage_id = migration_record[0]["destination_storage_id"]
@@ -279,10 +284,11 @@ async def test_increase_oid_phase_heuristic(env, request):  # pylint: disable=to
     original_archive_root = archive_storage["root_directory"]
 
     oid = None
+    uid = None
 
     def cleanup():
         if oid:
-            DB.delete(CONFIG.DLM.migration_table, params={"oid": f"eq.{oid}"})
+            DB.delete(CONFIG.DLM.migration_table, params={"uid": f"eq.{uid}"})
             DB.delete(CONFIG.DLM.dlm_table, params={"oid": f"eq.{oid}"})
         DB.update(
             CONFIG.DLM.storage_table,
@@ -365,11 +371,13 @@ def test_copy_failed(env: DlmTestClient):
     )
     assert RCLONE_TEST_FILE_CONTENT == env.get_rclone_local_file_content(RCLONE_TEST_FILE_PATH)
 
-    __get_migration(copy_item_record)
+    migration_record = __get_migration(copy_item_record)
 
     data_item_record = env.data_item_requests.query_data_item(uid=copy_item_record["uid"])
     # check remote data item was removed on a failed copy
     assert not data_item_record
+    assert migration_record[0]["job_status"]["success"] is False
+    assert env.data_item_requests.query_data_item(uid=uid)[0]["item_state"] == "READY"
 
 
 @pytest.mark.integration_test
@@ -436,6 +444,14 @@ def test_copy_container(env):
     assert result[0]["complete"] is True
     assert result[0]["job_status"]["finished"] is True
     assert result[0]["job_stats"]["bytes"] == len(file1_data) + len(file2_data)
+    destination_items = env.data_item_requests.query_data_item(storage_id=dest_id)
+    assert len(destination_items) == 4
+    assert all(item["item_state"] == "READY" for item in destination_items)
+    copied_root = next(
+        item for item in destination_items if item["uid"] == result[0]["destination_uid"]
+    )
+    copied_dir = next(item for item in destination_items if item["item_name"] == "container/dir1")
+    assert copied_dir["parents"] == copied_root["uid"]
 
 
 @pytest.mark.integration_test

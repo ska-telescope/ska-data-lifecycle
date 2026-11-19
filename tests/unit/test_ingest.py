@@ -117,9 +117,10 @@ class _FakeSession:
         return _FakeResult(self.inserted_ids)
 
 
-def test_register_data_item(caplog, mock_init_data_item, mock_update_data_item):
+def test_register_data_item(caplog, mocker, mock_init_data_item, mock_update_data_item):
     """Test the registration of a data item with provided client metadata."""
     caplog.set_level(logging.INFO)
+    mocker.patch("ska_dlm.dlm_ingest.dlm_ingest_requests.query_data_item", return_value=[])
 
     metadata = {"execution_block": "eb123"}  # Client-provided metadata
     item_name = "test-item"

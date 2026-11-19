@@ -3,15 +3,12 @@
 import json
 import logging
 import os
-import random
 from contextlib import asynccontextmanager
+from threading import Lock
 
-import requests
-import urllib3
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, PlainTextResponse
 from pydantic import BaseModel
-from urllib3.exceptions import InsecureRequestWarning
 
 import ska_dlm
 from ska_dlm.common_types import (
@@ -25,6 +22,7 @@ from ska_dlm.common_types import (
 )
 from ska_dlm.dlm_db.db_access import DB
 from ska_dlm.dlm_request.dlm_request_requests import query_exists
+from ska_dlm.embedded_rclone import Rclone, RcloneException, rclone_config_for_process
 from ska_dlm.exception_handling_typer import ExceptionHandlingTyper
 from ska_dlm.fastapi_utils import fastapi_auto_annotate
 from ska_dlm.typer_types import JsonObjectArg, JsonObjectOption
@@ -40,9 +38,7 @@ from ..exceptions import (
 )
 
 logger = logging.getLogger(__name__)
-
-# disable the rclone https warnings.
-urllib3.disable_warnings(InsecureRequestWarning)
+_rclone_lock = Lock()
 
 
 @asynccontextmanager
@@ -250,8 +246,6 @@ def _setup_storage(storage: dict):
     if not store_config:
         create_storage_config(storage_id=store, config=storage["config"])
         logging.info("Storage configuration for %s created.", {storage["name"]})
-
-    create_rclone_config(config=storage["config"])
 
 
 # @cli.command() TODO: This CLI call only works on the storage container.
@@ -462,7 +456,6 @@ def create_storage_config(
     ------
     UnmetPreconditionForOperation
         Neither storage_id nor storage_name is specified.
-        Configuring the rclone server failed.
     ValueError
         if config_type is not a valid enum value from ConfigType
     """
@@ -482,9 +475,7 @@ def create_storage_config(
         "config": config,
         "config_type": config_type,
     }
-    if create_rclone_config(config):
-        return DB.insert(CONFIG.DLM.storage_config_table, json=post_data)[0]["config_id"]
-    raise UnmetPreconditionForOperation("Configuring rclone server failed!")
+    return DB.insert(CONFIG.DLM.storage_config_table, json=post_data)[0]["config_id"]
 
 
 @cli.command()
@@ -515,10 +506,16 @@ def get_storage_config(
     ValueError
         if config_type is not a valid enum value from ConfigType
     """
+    try:
+        config_type = ConfigType(config_type)
+    except ValueError as exc:
+        raise ValueError(
+            f"Invalid config type {config_type}. Must be one of {[e.value for e in ConfigType]}"
+        ) from exc
+
     params = {}
     if not storage_name and not storage_id:
-        # raise UnmetPreconditionForOperation("Either storage_name or storage_id is required.")
-        params = {"limit": 1000}
+        params = {"limit": 1000, "config_type": f"eq.{config_type.value}"}
     elif storage_name:
         storage = query_storage(storage_name=storage_name)
         if storage:
@@ -526,12 +523,6 @@ def get_storage_config(
         else:
             raise UnmetPreconditionForOperation(f"Can't get storage_id for {storage_name}")
 
-    try:
-        ConfigType(config_type)  # Check that the input is a valid enum
-    except ValueError as exc:
-        raise ValueError(
-            f"Invalid config type {config_type}. Must be one of {[e.value for e in ConfigType]}"
-        ) from exc
     if not params:
         params = {
             "limit": 1000,
@@ -540,43 +531,6 @@ def get_storage_config(
         }
     result = DB.select(CONFIG.DLM.storage_config_table, params=params)
     return [entry["config"] for entry in result] if result else []
-
-
-@cli.command()
-@rest.post("/storage/rclone_config", response_model=bool)
-def create_rclone_config(config: JsonObjectArg) -> bool:
-    """Create a new rclone backend configuration entry on the rclone server.
-
-    Parameters
-    ----------
-    config
-        a json string containing the configuration
-
-    Returns
-    -------
-    bool
-        True if configuration is successful
-    """
-    logger.info("Got config: %s", CONFIG)
-    # NOTE: root_path is not a standard rclone config param, but
-    # we are using it and rclone ignores it's existence.
-    # It should be / by default, which is also enforced in other
-    # parts of the code.
-    config["root_path"] = config.get("root_path", "/")
-    for url in CONFIG.RCLONE:
-        request_url = f"{url}/config/create"
-        logger.info("Creating new rclone config: %s %s", request_url, config)
-        request = requests.post(
-            request_url,
-            json=config,
-            headers={"Content-type": "application/json"},
-            timeout=10,
-            verify=False,
-        )
-        logger.info("Response status code: %s", request.status_code)
-        if request.status_code != 200:
-            return False
-    return True
 
 
 @cli.command()
@@ -616,8 +570,34 @@ def check_storage_access(
     return has_access
 
 
+def _rclone_config_for_volume(volume: str) -> dict:
+    """Load the backend configuration matching a Rclone volume from the database."""
+    backend_name = volume.partition(":")[0]
+    configs = get_storage_config()
+    matches = [config for config in configs if config.get("name") == backend_name]
+    if len(matches) != 1:
+        raise UnmetPreconditionForOperation(
+            f"Expected one Rclone configuration for backend {backend_name!r}, found {len(matches)}"
+        )
+    return rclone_config_for_process(matches[0])
+
+
+def _rclone_rpc(volume: str, method: str, **parameters) -> dict:
+    """Load the backend from the database and invoke one embedded Rclone operation."""
+    config = _rclone_config_for_volume(volume)
+    with _rclone_lock:
+        rclone = Rclone()
+        try:
+            rclone.rpc("config/create", **config)
+            return rclone.rpc(method, **parameters)
+        finally:
+            rclone.close()
+
+
 @rest.get("/storage/rclone_access", response_model=tuple[bool, dict | None])
-def rclone_access(volume: str, remote_file_path: str = "", timeout=1) -> tuple[bool, dict | None]:
+def rclone_access(
+    volume: str, remote_file_path: str = "", timeout=1  # pylint: disable=unused-argument
+) -> tuple[bool, dict | None]:
     """Check configured backend or explicit filepath is accessible and return its file stats.
 
     Parameters
@@ -627,33 +607,30 @@ def rclone_access(volume: str, remote_file_path: str = "", timeout=1) -> tuple[b
     remote_file_path
         Remote file path, by default ""
     timeout
-        Number of seconds for the ssh connection to wait default 1s
+        Retained for API compatibility; embedded calls use backend-configured timeouts.
 
     Returns
     -------
     tuple[bool, dict | None]
         True if accessable, and the rclone file stats as json.
     """
-    url = random.choice(CONFIG.RCLONE)
-    request_url = f"{url}/operations/stat"
-    post_data = {
-        "fs": volume,
-        "remote": remote_file_path,
-        "s3-no-check-bucket": True,
-    }
-    logger.debug("rclone access check: %s, %s", request_url, post_data)
     try:
-        request = requests.post(request_url, post_data, timeout=timeout, verify=False)
-    except requests.exceptions.ReadTimeout:
-        logger.warning(
-            "rclone unable to access url %s. Please check rclone container logs.", request_url
+        response = _rclone_rpc(
+            volume,
+            "operations/stat",
+            fs=volume,
+            remote=remote_file_path,
+            **{"s3-no-check-bucket": True},
         )
+    except (RcloneException, UnmetPreconditionForOperation):
+        logger.warning("Rclone cannot access %s:%s", volume, remote_file_path, exc_info=True)
         return False, None
 
-    if request.status_code != 200 or not request.json()["item"]:
-        logger.warning("rclone can not access: %s, %s", request.status_code, request.json())
+    item = response.get("item")
+    if not item:
+        logger.warning("Rclone cannot access %s:%s: %s", volume, remote_file_path, response)
         return False, None
-    return True, request.json()["item"]
+    return True, item
 
 
 @rest.get("/storage/rclone_about", response_model=dict)
@@ -676,19 +653,11 @@ def rclone_about(volume: str) -> dict:
     RuntimeError
         If the rclone server returns a non-success HTTP status code.
     """
-    url = random.choice(CONFIG.RCLONE)
-    request_url = f"{url}/operations/about"
-    post_data = {"fs": volume}
-    response = {"total": -1}  # default response
-    logger.debug("rclone usage query: %s, %s", request_url, post_data)
-    request = requests.post(request_url, post_data, timeout=10, verify=False)
-    if request.status_code != 200:
-        logger.warning("rclone about request failed with status code %s", request.status_code)
-    elif not isinstance(response, dict):
-        logger.warning("rclone about response was not a dict")
-    else:
-        response = request.json()
-    return response
+    try:
+        return _rclone_rpc(volume, "operations/about", fs=volume)
+    except (RcloneException, UnmetPreconditionForOperation):
+        logger.warning("Rclone about request failed for %s", volume, exc_info=True)
+        return {"total": -1}
 
 
 def rclone_delete(volume: str, fpath: str, item_type: str = "file") -> bool:
@@ -712,16 +681,11 @@ def rclone_delete(volume: str, fpath: str, item_type: str = "file") -> bool:
     if not has_access:
         logger.error("Can't access %s on %s!", fpath, volume)
         return False
-    url = random.choice(CONFIG.RCLONE)
-    if item_type.lower() == "container":
-        request_url = f"{url}/operations/purge"
-    else:
-        request_url = f"{url}/operations/deletefile"
-    post_data = {"fs": volume, "remote": fpath}
-    logger.info("rclone deletion: %s, %s", request_url, post_data)
-    request = requests.post(request_url, data=post_data, timeout=10, verify=False)
-    if request.status_code != 200:
-        logger.info("Error response status code: %s", request.status_code)
+    method = "operations/purge" if item_type.lower() == "container" else "operations/deletefile"
+    try:
+        _rclone_rpc(volume, method, fs=volume, remote=fpath)
+    except (RcloneException, UnmetPreconditionForOperation):
+        logger.warning("Rclone failed to delete %s from %s", fpath, volume, exc_info=True)
         return False
     return True
 
