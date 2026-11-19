@@ -5,14 +5,15 @@ import json
 import logging
 import os
 from threading import Event, Thread, current_thread
+from typing import cast
 
 import requests
 from ska_control_model import HealthState
 from sqlalchemy import func, select, text
 from sqlalchemy.engine import URL
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from tango import DevState, EnsureOmniThread
-from tango.server import Device, attribute
+from tango import ArgType, DevState, EnsureOmniThread
+from tango.server import Device, attribute, device_property
 
 from ska_dlm import __version__
 from ska_dlm.dlm_db import Migration
@@ -111,35 +112,31 @@ class DLMMetrics(Device):
         """Return the number of migrations currently in progress."""
         return self._migrations_in_progress
 
+    polling_interval = device_property(dtype=ArgType.DevULong, default_value=10000)
+    """Polling interval in milliseconds. Default 10000."""
+
     def init_device(self):
         """Initialise the Tango device. WIP."""
         super().init_device()
-        print(f"Connecting to Tango database at {os.getenv('TANGO_HOST')}...", flush=True)
+        logger.debug("Connecting to Tango database at {os.getenv('TANGO_HOST')}...")
+        logger.info("Health check polling interval: %d ms", self.polling_interval)  # temp
 
         # initialise all attributes:
         self._postgres_health_state = HealthState.UNKNOWN
         self._postgrest_health_state = HealthState.UNKNOWN
         self._rclone_health_state = HealthState.UNKNOWN
-        self._heuristics_health_state = HealthState.UNKNOWN
+        self._heuristics_health_state = HealthState.UNKNOWN  # TODO: no HTTP endpoint
         self._storage_health_state = HealthState.UNKNOWN
         self._migration_health_state = HealthState.UNKNOWN
-        # can migration cover rabbitmq/outbox? migration is degraded if rabbitmq/outbox is down
+        # TODO: migration is degraded if rabbitmq/outbox is down
         self._ingest_health_state = HealthState.UNKNOWN
         self._request_health_state = HealthState.UNKNOWN
         self._rabbitmq_health_state = HealthState.UNKNOWN
-        self._outbox_health_state = HealthState.UNKNOWN
-        # can't use _check_http_health() for Outbox, because there's no HTTP endpoint to contact
+        self._outbox_health_state = HealthState.UNKNOWN  # TODO: no HTTP endpoint
         self._dlm_health_state = HealthState.UNKNOWN  # TODO: "degraded" if any service is down.
         self._storage_endpoints = ["dlm-archive", "local"]  # TODO
         self._storage_used_pct = [float("nan"), float("nan")]  # TODO
         self._migrations_in_progress = float("nan")  # Use AttrQuality.ATTR_INVALID instead?
-
-        self.set_state(DevState.ON)  # means the Tango device itself is operational.
-        print("DLM Tango device initialised successfully!", flush=True)  # temp
-
-        self._health_check_interval = int(os.getenv("POLL_INTERVAL", "10"))
-        if self._health_check_interval <= 0:
-            raise ValueError("POLL_INTERVAL must be positive")
 
         # Allow the monitoring loop to be stopped when the Tango device shuts down:
         self._stop_event = Event()
@@ -150,6 +147,7 @@ class DLMMetrics(Device):
             daemon=True,
         )
         self._health_thread.start()
+        self.set_state(DevState.ON)  # Tango device is operational
 
     def _update_health(self, service_name: str, check, *args):
         """Run a health check, update the corresponding state, and log any failures."""
@@ -250,9 +248,7 @@ class DLMMetrics(Device):
                 logger.info("rabbitmq HealthState: %s", self._rabbitmq_health_state.name)
                 logger.info("No. of migrations in progress: %s\n", self._migrations_in_progress)
 
-                self._stop_event.wait(self._health_check_interval)  # blocks the event loop while
-                # waiting. But that's acceptable for now because this event loop is dedicated to
-                # sequential monitoring and no other asynchronous tasks are scheduled on it.
+                self._stop_event.wait(cast(int, self.polling_interval) / 1000)
 
         finally:
             await engine.dispose()
