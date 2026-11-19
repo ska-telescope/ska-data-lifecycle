@@ -86,6 +86,7 @@ async def test_count_active_migrations():
     session.execute.assert_awaited_once()
 
 
+# pylint: disable=protected-access
 @pytest.mark.asyncio
 async def test_migration_count_failure_does_not_affect_postgres_health():
     """Verify that a failed migration query does not mark PostgreSQL as unhealthy."""
