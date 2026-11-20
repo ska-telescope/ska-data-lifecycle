@@ -176,6 +176,35 @@ For further details, refer to the `rclone configuration docs <https://rclone.org
 
 If your destination storage isn't known to DLM, first initialise it (using the method above). Then initiate a migration:
 
+.. warning::
+
+   The worker first copies into a migration-specific staging path and verifies
+   the bytes against a source snapshot before publishing. Existing destination
+   paths are not overwritten: the migration fails and leaves the staged data
+   for operator inspection if the final path already exists. The source must
+   remain immutable through verification; later external changes are not
+   prevented. Database transactions do not make storage operations atomic or
+   guarantee exactly-once execution.
+
+   A failed or interrupted copy can leave partial destination data. The worker
+   does not delete it automatically because it cannot establish ownership.
+   Migrations marked ``reconciliation_required`` are not automatically
+   retried: stop any old worker and inspect the destination before manually
+   reconciling the record. For legacy jobs from the old Rclone daemon, stop
+   that daemon before inspecting the payload and manually retrying.
+
+   S3 migrations may opt into indefinite automatic full-copy retries by setting
+   the destination Rclone S3 configuration parameter
+   ``leave_parts_on_error`` to ``true``. Retries reuse the same staging object
+   and stop if the source bytes have changed. Rclone 1.75.1 does not resume
+   previously uploaded multipart parts on a new operation, so retries restart
+   the object transfer; preserved multipart parts can incur storage charges.
+   Configure an S3 lifecycle rule to abort incomplete multipart uploads. SFTP
+   partial uploads are not retried automatically. Stop/scale down the
+   ``dlm_rclone_worker`` to pause retries; it resumes them after restart. To
+   keep a migration stopped across restarts, set
+   ``job_status.reconciliation_required`` to ``true`` for that migration.
+
 .. code-block:: python
 
    migration_params = {

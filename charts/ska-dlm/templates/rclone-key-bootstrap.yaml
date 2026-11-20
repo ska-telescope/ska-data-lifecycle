@@ -64,10 +64,10 @@ spec:
     spec:
       restartPolicy: Never
       serviceAccountName: {{ include "ska-dlm.ssh-key-bootstrap.name" . }}
-      containers:
-        - name: create-key-secret
-          image: "{{ .Values.sshKey.bootstrap.image }}:{{ .Values.sshKey.bootstrap.version }}"
-          imagePullPolicy: {{ .Values.sshKey.bootstrap.imagePullPolicy }}
+      initContainers:
+        - name: check-key-secret
+          image: "{{ .Values.sshKey.bootstrap.kubectl.image }}:{{ .Values.sshKey.bootstrap.kubectl.version }}"
+          imagePullPolicy: {{ .Values.sshKey.bootstrap.kubectl.imagePullPolicy }}
           command: ["/bin/sh", "-ec"]
           args:
             - |
@@ -82,17 +82,8 @@ spec:
                   exit 1
                 fi
                 echo "SSH key Secret already exists; leaving it unchanged"
-                exit 0
+                touch /keys/existing
               fi
-
-              umask 077
-              key_dir="$(mktemp -d)"
-              trap 'rm -rf "$key_dir"' EXIT
-              ensure-rclone-ssh-key "$key_dir"
-              kubectl create secret generic "$SSH_KEY_SECRET_NAME" \
-                --namespace "$POD_NAMESPACE" \
-                --from-file=id_rsa="$key_dir/id_rsa" \
-                --from-file=id_rsa.pub="$key_dir/id_rsa.pub"
           env:
             - name: SSH_KEY_SECRET_NAME
               value: {{ include "ska-dlm.ssh-key-secret.name" . | quote }}
@@ -100,3 +91,49 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+          volumeMounts:
+            - name: keys
+              mountPath: /keys
+        - name: generate-key
+          image: "{{ .Values.sshKey.bootstrap.sshKeygen.image }}:{{ .Values.sshKey.bootstrap.sshKeygen.version }}"
+          imagePullPolicy: {{ .Values.sshKey.bootstrap.sshKeygen.imagePullPolicy }}
+          command: ["/bin/sh", "-ec"]
+          args:
+            - |
+              if [ -e /keys/existing ]; then
+                exit 0
+              fi
+              umask 077
+              ssh-keygen -q -t rsa -b 4096 -N '' -f /keys/id_rsa
+              test -s /keys/id_rsa && test -s /keys/id_rsa.pub
+          volumeMounts:
+            - name: keys
+              mountPath: /keys
+      containers:
+        - name: create-key-secret
+          image: "{{ .Values.sshKey.bootstrap.kubectl.image }}:{{ .Values.sshKey.bootstrap.kubectl.version }}"
+          imagePullPolicy: {{ .Values.sshKey.bootstrap.kubectl.imagePullPolicy }}
+          command: ["/bin/sh", "-ec"]
+          args:
+            - |
+              if [ -e /keys/existing ]; then
+                exit 0
+              fi
+              kubectl create secret generic "$SSH_KEY_SECRET_NAME" \
+                --namespace "$POD_NAMESPACE" \
+                --from-file=id_rsa=/keys/id_rsa \
+                --from-file=id_rsa.pub=/keys/id_rsa.pub
+          env:
+            - name: SSH_KEY_SECRET_NAME
+              value: {{ include "ska-dlm.ssh-key-secret.name" . | quote }}
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          volumeMounts:
+            - name: keys
+              mountPath: /keys
+      volumes:
+        - name: keys
+          emptyDir:
+            medium: Memory

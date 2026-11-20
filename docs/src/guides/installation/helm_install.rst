@@ -58,7 +58,7 @@ A pre-install/pre-upgrade Job creates an RSA SSH key pair in a Kubernetes Secret
 
 * ``sshKey.secretName``: Optional Secret name. Defaults to ``<fullname>-rclone-ssh-key``.
 * ``sshKey.mountPath``: Read-only mount path for ``id_rsa`` and ``id_rsa.pub``.
-* ``sshKey.bootstrap.image`` and ``sshKey.bootstrap.version``: Image used by the bootstrap Job; it must include ``ssh-keygen`` and ``kubectl``.
+* ``sshKey.bootstrap.kubectl`` and ``sshKey.bootstrap.sshKeygen``: Images and versions for the bootstrap Job. The first must contain ``kubectl`` and a shell; the second must contain ``ssh-keygen`` and a shell.
 * ``global.sharedpvc.mountPath``: Mount path for the shared DLM data PVC (defaults to ``/dlm``).
 
 The Secret is mounted read-only with mode ``0440``. The key-consuming workloads default to ``fsGroup: 1000``; configure their pod-level security contexts if your runtime uses different IDs:

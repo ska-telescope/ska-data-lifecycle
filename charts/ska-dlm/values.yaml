@@ -199,9 +199,14 @@ sshKey:
   secretName: ""
   mountPath: "/run/dlm-rclone-ssh"
   bootstrap:
-    image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-key-bootstrap
-    version: "2.4.0"
-    imagePullPolicy: Always
+    kubectl:
+      image: alpine/k8s
+      version: "1.30.14"
+      imagePullPolicy: IfNotPresent
+    sshKeygen:
+      image: linuxserver/openssh-server
+      version: "version-9.9_p2-r0"
+      imagePullPolicy: IfNotPresent
 
 rcloneWorker:
   component: rclone-worker

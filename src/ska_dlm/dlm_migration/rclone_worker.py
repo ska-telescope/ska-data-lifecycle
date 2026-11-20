@@ -1,6 +1,10 @@
 """Worker that dispatches and tracks Rclone-backed data-item migrations."""
 
+# pylint: disable=too-many-lines
+
 import asyncio
+import hashlib
+import json
 import logging
 import os
 import posixpath
@@ -9,7 +13,7 @@ import uuid
 from datetime import datetime
 from typing import Any, Protocol
 
-from sqlalchemy import and_, delete, or_, select
+from sqlalchemy import and_, or_, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -31,6 +35,7 @@ from .dlm_migration_requests import _migration_to_dict
 
 logger = logging.getLogger(__name__)
 _BATCH_SIZE = 50
+_S3_RETRY_CONFIG_KEY = "leave_parts_on_error"
 
 
 class RcloneRPCClient(Protocol):  # pylint: disable=too-few-public-methods
@@ -72,6 +77,198 @@ def _rclone_backend(config: dict) -> str:
 def _storage_remote_path(root_directory: str, remote_path: str) -> str:
     """Resolve a storage-relative path beneath its configured root directory."""
     return posixpath.normpath(posixpath.join(root_directory or "/", remote_path.lstrip("/")))
+
+
+def _migration_stage_path(destination_path: str, destination_uid: uuid.UUID) -> str:
+    """Return a stable, migration-owned sibling path for retries."""
+    return f"{destination_path.rstrip('/')}.dlm-staging-{destination_uid.hex}"
+
+
+def _s3_retry_enabled(config: dict) -> bool:
+    """Return whether an S3 backend explicitly opted into automatic retries."""
+    parameters = config.get("parameters")
+    return (
+        config.get("type") == "s3"
+        and isinstance(parameters, dict)
+        and parameters.get(_S3_RETRY_CONFIG_KEY) is True
+    )
+
+
+def _content_fingerprint(rclone: RcloneRPCClient, fs_path: str, *, is_container: bool) -> str:
+    """Hash every file's bytes and relative path without trusting backend hashes."""
+    result = rclone.rpc(
+        "operations/hashsum",
+        fs=fs_path,
+        hashType="SHA-256",
+        # Download bytes to avoid trusting backend-provided checksums or metadata.
+        download=True,
+    )
+    hashes = result.get("hashsum")
+    if not isinstance(hashes, list) or not all(isinstance(item, str) for item in hashes):
+        raise ValueError(f"Rclone could not verify content at {fs_path}")
+    normalized = []
+    for item in hashes:
+        digest, separator, path = item.partition("  ")
+        if not separator or not digest:
+            raise ValueError(f"Rclone returned an invalid content hash for {fs_path}")
+        # Container paths distinguish files; a standalone file's remote name is immaterial.
+        normalized.append((path if is_container else "", digest))
+    # Sort before hashing so Rclone's result order does not affect the snapshot.
+    payload = json.dumps(sorted(normalized), separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
+# pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals
+def _verify_and_publish(
+    rclone: RcloneRPCClient,
+    source_config: dict,
+    destination_config: dict,
+    source_storage_root: str,
+    source_uri: str,
+    destination_storage_root: str,
+    destination_uri: str,
+    staging_uri: str,
+    item_type: str,
+    source_fingerprint: str,
+) -> None:
+    """Verify source and staged bytes, then publish only to an absent destination."""
+    source_fs = _rclone_backend(source_config)
+    destination_fs = _rclone_backend(destination_config)
+    source_path = _storage_remote_path(source_storage_root, source_uri)
+    destination_path = _storage_remote_path(destination_storage_root, destination_uri)
+    staging_path = _storage_remote_path(destination_storage_root, staging_uri)
+    is_container = item_type == "container"
+
+    rclone.rpc("config/create", **rclone_config_for_process(source_config))
+    rclone.rpc("config/create", **rclone_config_for_process(destination_config))
+    current_source_fingerprint = _content_fingerprint(
+        rclone, f"{source_fs}{source_path}", is_container=is_container
+    )
+    if current_source_fingerprint != source_fingerprint:
+        raise ValueError("Source content changed during migration; refusing to publish")
+
+    destination_info = rclone.rpc("operations/stat", fs=destination_fs, remote=destination_path)
+    stage_info = rclone.rpc("operations/stat", fs=destination_fs, remote=staging_path)
+    if stage_info.get("item") is None:
+        if destination_info.get("item") is not None:
+            # A previous attempt may have moved the stage before crashing; accept only
+            # the exact snapshot, never an unrelated object at the final path.
+            published_fingerprint = _content_fingerprint(
+                rclone, f"{destination_fs}{destination_path}", is_container=is_container
+            )
+            if published_fingerprint == source_fingerprint:
+                return
+            raise ValueError("Destination exists but does not match the migration snapshot")
+        raise ValueError("Verified migration staging data is missing")
+    staged_fingerprint = _content_fingerprint(
+        rclone, f"{destination_fs}{staging_path}", is_container=is_container
+    )
+    if staged_fingerprint != source_fingerprint:
+        raise ValueError("Staged content does not match the source snapshot")
+    if destination_info.get("item") is not None:
+        # Rclone cannot provide a portable atomic no-clobber move across backends.
+        raise ValueError(
+            "Destination already exists; overwrite is not supported because replacement "
+            "cannot be guaranteed crash-safe"
+        )
+
+    if is_container:
+        rclone.rpc(
+            "sync/move",
+            srcFs=f"{destination_fs}{staging_path}",
+            dstFs=f"{destination_fs}{destination_path}",
+        )
+    else:
+        rclone.rpc(
+            "operations/movefile",
+            srcFs=destination_fs,
+            srcRemote=staging_path,
+            dstFs=destination_fs,
+            dstRemote=destination_path,
+        )
+
+
+# pylint: disable=too-many-locals
+async def _submit_s3_retry(
+    session: AsyncSession,
+    migration: Migration,
+    rclone: Rclone,
+    worker_id: str,
+    worker_state: dict,
+) -> bool:
+    """Retry an opted-in S3 transfer against the same staging object."""
+    source_item = await _lock_source_item(session, migration)
+    if source_item is None:
+        return False
+    try:
+        (
+            source_storage,
+            source_config,
+            destination_storage,
+            destination_config,
+        ) = await _load_copy_context(session, migration)
+        source_config_data = source_config.config
+        destination_config_data = destination_config.config
+        if not _s3_retry_enabled(destination_config_data):
+            return False
+
+        source_fingerprint = worker_state.get("source_fingerprint")
+        staging_path = worker_state.get("staging_path")
+        if not isinstance(source_fingerprint, str) or not isinstance(staging_path, str):
+            raise ValueError("S3 retry is missing its source snapshot or staging path")
+        source_path = (
+            f"{_rclone_backend(source_config_data)}"
+            f"{_storage_remote_path(source_storage.root_directory or '/', source_item.uri or '')}"
+        )
+        current_fingerprint = await asyncio.to_thread(
+            _content_fingerprint,
+            rclone,
+            source_path,
+            is_container=source_item.item_type == "container",
+        )
+        if current_fingerprint != source_fingerprint:
+            raise ValueError("Source content changed between retries; refusing to continue")
+
+        # This resubmits a full copy to the stable staging key; Rclone does not resume
+        # the previous multipart upload.
+        execution_id = uuid.uuid4()
+        job_id, command = await asyncio.to_thread(
+            _execute_rclone_copy,
+            rclone,
+            source_config_data,
+            destination_config_data,
+            _rclone_backend(source_config_data),
+            source_item.uri or "",
+            source_storage.root_directory or "/",
+            _rclone_backend(destination_config_data),
+            staging_path,
+            destination_storage.root_directory or "/",
+            source_item.item_type,
+            str(execution_id),
+        )
+        worker_state = {**worker_state, "retry_count": worker_state.get("retry_count", 0) + 1}
+        migration.job_id = job_id
+        migration.execution_id = execution_id
+        migration.host_id = worker_id
+        migration.command = command
+        migration.job_status = {"finished": False, "_dlm_worker": worker_state}
+        migration.job_stats = None
+        logger.warning(
+            "Retrying failed S3 migration %s against its existing staging key (attempt %s)",
+            migration.migration_id,
+            worker_state["retry_count"] + 1,
+        )
+        return True
+    except (OSError, RcloneException, RuntimeError, TypeError, ValueError) as exc:
+        logger.exception("Unable to safely retry S3 migration %s", migration.migration_id)
+        migration.job_id = None
+        migration.job_status = {
+            "finished": False,
+            "reconciliation_required": True,
+            "error": f"S3 retry stopped: {exc}",
+            "_dlm_worker": worker_state,
+        }
+        return False
 
 
 # pylint: disable=too-many-arguments,too-many-positional-arguments
@@ -209,6 +406,7 @@ async def _load_source_tree(
             edges.add((parent_uid, child_uid))
             if child_uid not in items:
                 new_uids.add(child_uid)
+        # Read the legacy parents column as well while older rows may still use it.
         legacy_children = await session.execute(
             select(DataItem.UID, DataItem.parents)
             .where(DataItem.parents.in_(frontier))
@@ -253,6 +451,7 @@ async def _create_destination_tree(
         source_uid: destination_root_uid if source_uid == source_item.UID else uuid.uuid4()
         for source_uid in source_items
     }
+    # Keep the UID reserved when the migration was requested; derive child UIDs separately.
     existing_destination = await session.scalar(
         select(DataItem).where(DataItem.UID == destination_root_uid).with_for_update()
     )
@@ -311,88 +510,51 @@ async def _lock_source_item(session: AsyncSession, migration: Migration) -> Data
     return source_item
 
 
+async def _load_copy_context(session: AsyncSession, migration: Migration):
+    """Load source and destination storage configurations for one migration."""
+    source_storage = aliased(Storage)
+    destination_storage = aliased(Storage)
+    source_config = aliased(StorageConfig)
+    destination_config = aliased(StorageConfig)
+    config_rows = (
+        await session.execute(
+            select(
+                source_storage,
+                source_config,
+                destination_storage,
+                destination_config,
+            )
+            .join(source_config, source_config.storage_id == source_storage.storage_id)
+            .join(
+                destination_storage,
+                destination_storage.storage_id == migration.destination_storage_id,
+            )
+            .join(
+                destination_config,
+                destination_config.storage_id == destination_storage.storage_id,
+            )
+            .where(source_storage.storage_id == migration.source_storage_id)
+            .where(source_config.config_type == ConfigType.RCLONE)
+            .where(destination_config.config_type == ConfigType.RCLONE)
+            .order_by(source_config.config_date, destination_config.config_date)
+            .limit(1)
+        )
+    ).first()
+    if config_rows is None:
+        raise ValueError("Storage Rclone configuration not found")
+    return config_rows
+
+
 async def _cleanup_partial_destination(
     session: AsyncSession, migration: Migration, rclone: Rclone
 ) -> None:
-    """Best-effort removal of partial transfer data and any legacy destination rows."""
-    destination_config = await session.scalar(
-        select(StorageConfig)
-        .where(
-            StorageConfig.storage_id == migration.destination_storage_id,
-            StorageConfig.config_type == ConfigType.RCLONE,
-        )
-        .order_by(StorageConfig.config_date)
-        .limit(1)
+    """Preserve destinations whose ownership cannot be established."""
+    del session, rclone
+    logger.warning(
+        "Migration %s may have left partial data at %s; manual inspection is required",
+        migration.migration_id,
+        migration.destination_path,
     )
-    destination_storage = await session.scalar(
-        select(Storage).where(Storage.storage_id == migration.destination_storage_id)
-    )
-    if (
-        destination_config is not None
-        and destination_storage is not None
-        and migration.destination_path
-    ):
-        try:
-            config = destination_config.config
-            fs = _rclone_backend(config)
-            operation = "purge" if await _source_is_container(session, migration) else "deletefile"
-            await asyncio.to_thread(
-                rclone.rpc,
-                "config/create",
-                **rclone_config_for_process(config),
-            )
-            try:
-                await asyncio.to_thread(
-                    rclone.rpc,
-                    f"operations/{operation}",
-                    fs=fs,
-                    remote=_storage_remote_path(
-                        destination_storage.root_directory or "/",
-                        migration.destination_path,
-                    ),
-                )
-            except RcloneException:
-                if operation != "purge":
-                    raise
-                await asyncio.to_thread(
-                    rclone.rpc,
-                    "operations/deletefile",
-                    fs=fs,
-                    remote=_storage_remote_path(
-                        destination_storage.root_directory or "/",
-                        migration.destination_path,
-                    ),
-                )
-        except (OSError, RcloneException, TypeError, ValueError):
-            logger.exception(
-                "Failed to clean up partial Rclone destination for migration %s",
-                migration.migration_id,
-            )
-
-    if migration.destination_uid is None:
-        return
-    destination_items, _ = await _load_source_tree(session, migration.destination_uid)
-    destination_uids = list(destination_items)
-    if destination_uids:
-        await session.execute(
-            delete(DataItemChildren).where(
-                or_(
-                    DataItemChildren.parent_data_item_uid.in_(destination_uids),
-                    DataItemChildren.data_item_uid.in_(destination_uids),
-                )
-            )
-        )
-        await session.execute(delete(DataItem).where(DataItem.UID.in_(destination_uids)))
-
-
-async def _source_is_container(session: AsyncSession, migration: Migration) -> bool:
-    """Return whether the source item is a container."""
-    for item_uid in (migration.uid, migration.destination_uid):
-        if item_uid is not None:
-            item = await session.scalar(select(DataItem).where(DataItem.UID == item_uid))
-            if item is not None:
-                return item.item_type == "container"
-    return False
 
 
 async def _finish_migration(
@@ -424,7 +586,42 @@ async def _finish_migration(
             raise ValueError(
                 f"Destination storage {migration.destination_storage_id} no longer exists"
             )
-        await _create_destination_tree(session, migration, source_item, destination_storage)
+        worker_state = status_json.get("_dlm_worker", {})
+        try:
+            if not isinstance(worker_state, dict):
+                raise ValueError("Migration worker state is invalid")
+            (
+                source_storage_row,
+                source_config_row,
+                _,
+                destination_config_row,
+            ) = await _load_copy_context(session, migration)
+            staging_path = worker_state.get("staging_path")
+            source_fingerprint = worker_state.get("source_fingerprint")
+            if not isinstance(staging_path, str) or not isinstance(source_fingerprint, str):
+                raise ValueError("Migration staging or source snapshot is missing")
+            # Publication may be replayed after a crash; _verify_and_publish recognizes
+            # an already-moved destination only when its bytes match this snapshot.
+            await asyncio.to_thread(
+                _verify_and_publish,
+                rclone,
+                source_config_row.config,
+                destination_config_row.config,
+                source_storage_row.root_directory or "/",
+                source_item.uri or "",
+                destination_storage.root_directory or "/",
+                migration.destination_path or source_item.uri or "",
+                staging_path,
+                source_item.item_type,
+                source_fingerprint,
+            )
+        except (OSError, RcloneException, TypeError, ValueError) as exc:
+            status_json = dict(status_json)
+            status_json.update(success=False, error=str(exc))
+            migration.job_status = status_json
+            success = False
+        if success:
+            await _create_destination_tree(session, migration, source_item, destination_storage)
     else:
         await _cleanup_partial_destination(session, migration, rclone)
     await add_outbox_event(
@@ -449,6 +646,12 @@ async def _migration_ids(session_factory, worker_id: str) -> list[int]:
                     and_(
                         Migration.job_id.is_not(None),
                         Migration.host_id == worker_id,
+                        Migration.job_status["reconciliation_required"].as_boolean().is_not(True),
+                    ),
+                    and_(
+                        Migration.job_id.is_not(None),
+                        Migration.host_id.is_(None),
+                        Migration.execution_id.is_(None),
                     ),
                 )
             )
@@ -459,7 +662,8 @@ async def _migration_ids(session_factory, worker_id: str) -> list[int]:
 
 
 async def _recover_owned_migrations(session_factory, rclone: Rclone, worker_id: str) -> int:
-    """Clean up and requeue this worker's migrations after an Rclone restart."""
+    """Requeue resumable S3 stages and quarantine other uncertain jobs."""
+    del rclone
     async with session_factory() as session:
         async with session.begin():
             migrations = (
@@ -474,17 +678,126 @@ async def _recover_owned_migrations(session_factory, rclone: Rclone, worker_id: 
                 )
             ).all()
             for migration in migrations:
-                await _cleanup_partial_destination(session, migration, rclone)
-                migration.job_id = None
-                migration.execution_id = None
-                migration.host_id = None
-                migration.command = None
-                migration.job_status = None
-                migration.job_stats = None
+                status = dict(migration.job_status or {})
+                worker_state = status.get("_dlm_worker", {})
+                # Resume only copies with an owned stage or a durable publish intent.
+                # Other in-flight jobs have an ambiguous external outcome.
+                if _can_resume_worker_state(status, worker_state):
+                    migration.job_id = None
+                    migration.execution_id = None
+                    migration.host_id = None
+                    migration.command = None
+                    migration.job_stats = None
+                    migration.job_status = {
+                        "finished": False,
+                        "_dlm_worker": worker_state,
+                    }
+                    continue
+                status["reconciliation_required"] = True
+                status["error"] = (
+                    "Worker restarted with an unfinished job; stop any old worker and "
+                    "inspect its destination before manually reconciling this migration"
+                )
+                migration.job_status = status
             return len(migrations)
 
 
-# pylint: disable=too-many-locals,too-many-return-statements
+def _can_resume_worker_state(status: dict, worker_state: Any) -> bool:
+    """Return whether persisted staging metadata makes a migration resumable."""
+    return (
+        status.get("reconciliation_required") is not True
+        and isinstance(worker_state, dict)
+        and isinstance(worker_state.get("staging_path"), str)
+        and isinstance(worker_state.get("source_fingerprint"), str)
+        and (
+            worker_state.get("s3_retry_enabled") is True
+            or worker_state.get("publication_pending") is True
+        )
+    )
+
+
+# pylint: disable=too-many-return-statements
+async def _dispatch_active_job(
+    session: AsyncSession,
+    migration: Migration,
+    rclone: Rclone,
+    worker_id: str,
+    migration_id: int,
+) -> bool:
+    """Poll a claimed job, retry it when allowed, or persist its terminal state."""
+    if migration.execution_id is None:
+        await _finish_migration(
+            session,
+            migration,
+            rclone,
+            {
+                "finished": True,
+                "success": False,
+                "error": "Rclone job has no execution ID",
+            },
+            None,
+            success=False,
+        )
+        return True
+
+    worker_state = (migration.job_status or {}).get("_dlm_worker", {})
+    stored_status = migration.job_status or {}
+    if stored_status.get("finished") is True:
+        status_json, stats_json = stored_status, migration.job_stats
+    else:
+        try:
+            status_json, stats_json = await asyncio.to_thread(
+                _poll_rclone_job,
+                rclone,
+                migration.job_id,
+                str(migration.execution_id),
+            )
+        except (RcloneException, OSError, RuntimeError, TypeError, ValueError):
+            logger.exception(
+                "Failed to poll Rclone job %s for migration %s",
+                migration.job_id,
+                migration_id,
+            )
+            return False
+
+    migration.job_status = status_json
+    migration.job_stats = stats_json
+    if not status_json["finished"]:
+        status_json["_dlm_worker"] = worker_state
+        migration.job_status = status_json
+        return True
+    if (
+        status_json.get("success") is True
+        and isinstance(worker_state, dict)
+        and worker_state.get("publication_pending") is not True
+    ):
+        # Commit intent in this iteration before the next one touches destination data.
+        worker_state = {**worker_state, "publication_pending": True}
+        status_json["_dlm_worker"] = worker_state
+        migration.job_status = status_json
+        return True
+    if (
+        status_json.get("success") is not True
+        and isinstance(worker_state, dict)
+        and worker_state.get("s3_retry_enabled") is True
+    ):
+        if await _submit_s3_retry(session, migration, rclone, worker_id, worker_state):
+            return True
+        if migration.job_status.get("reconciliation_required"):
+            return True
+
+    status_json["_dlm_worker"] = worker_state
+    await _finish_migration(
+        session,
+        migration,
+        rclone,
+        status_json,
+        stats_json,
+        success=status_json.get("success") is True,
+    )
+    return True
+
+
 async def _dispatch_migration(
     session_factory,
     migration_id: int,
@@ -494,6 +807,8 @@ async def _dispatch_migration(
     """Submit queued migrations and poll Rclone jobs owned by this worker."""
     async with session_factory() as session:
         async with session.begin():
+            # Locking with skip_locked lets another worker claim a different migration
+            # instead of blocking behind this one.
             migration = await session.scalar(
                 select(Migration)
                 .where(
@@ -508,6 +823,11 @@ async def _dispatch_migration(
                             Migration.job_id.is_not(None),
                             Migration.host_id == worker_id,
                         ),
+                        and_(
+                            Migration.job_id.is_not(None),
+                            Migration.host_id.is_(None),
+                            Migration.execution_id.is_(None),
+                        ),
                     ),
                 )
                 .with_for_update(skip_locked=True)
@@ -515,114 +835,7 @@ async def _dispatch_migration(
             if migration is None:
                 return False
 
-            if migration.job_id is not None:
-                if migration.execution_id is None:
-                    await _finish_migration(
-                        session,
-                        migration,
-                        rclone,
-                        {
-                            "finished": True,
-                            "success": False,
-                            "error": "Rclone job has no execution ID",
-                        },
-                        None,
-                        success=False,
-                    )
-                    return True
-                try:
-                    status_json, stats_json = await asyncio.to_thread(
-                        _poll_rclone_job,
-                        rclone,
-                        migration.job_id,
-                        str(migration.execution_id),
-                    )
-                except (
-                    RcloneException,
-                    OSError,
-                    RuntimeError,
-                    TypeError,
-                    ValueError,
-                ) as exc:
-                    logger.exception(
-                        "Failed to poll Rclone job %s for migration %s",
-                        migration.job_id,
-                        migration_id,
-                    )
-                    status_json = dict(exc.output) if isinstance(exc, RcloneException) else {}
-                    status_json.update(finished=True, success=False, error=str(exc))
-                    await _finish_migration(
-                        session,
-                        migration,
-                        rclone,
-                        status_json,
-                        None,
-                        success=False,
-                    )
-                    return True
-
-                migration.job_status = status_json
-                migration.job_stats = stats_json
-                if not status_json["finished"]:
-                    return True
-                await _finish_migration(
-                    session,
-                    migration,
-                    rclone,
-                    status_json,
-                    stats_json,
-                    success=status_json.get("success") is True,
-                )
-                return True
-
-            source_item = None
-            if migration.uid is not None:
-                source_item = await session.scalar(
-                    select(DataItem).where(DataItem.UID == migration.uid).with_for_update()
-                )
-            if source_item is None:
-                await _finish_migration(
-                    session,
-                    migration,
-                    rclone,
-                    {"finished": True, "success": False, "error": "Source data item not found"},
-                    None,
-                    success=False,
-                )
-                return True
-
-            source_storage = aliased(Storage)
-            destination_storage = aliased(Storage)
-            source_config = aliased(StorageConfig)
-            destination_config = aliased(StorageConfig)
-            config_rows = (
-                await session.execute(
-                    select(
-                        source_storage,
-                        source_config,
-                        destination_storage,
-                        destination_config,
-                    )
-                    .join(
-                        source_config,
-                        source_config.storage_id == source_storage.storage_id,
-                    )
-                    .join(
-                        destination_storage,
-                        destination_storage.storage_id == migration.destination_storage_id,
-                    )
-                    .join(
-                        destination_config,
-                        destination_config.storage_id == destination_storage.storage_id,
-                    )
-                    .where(source_storage.storage_id == migration.source_storage_id)
-                    .where(source_config.config_type == ConfigType.RCLONE)
-                    .where(destination_config.config_type == ConfigType.RCLONE)
-                    .order_by(source_config.config_date, destination_config.config_date)
-                    .limit(1)
-                )
-            ).first()
-            if config_rows is None:
+            if migration.job_id is not None and migration.host_id is None:
                 await _finish_migration(
                     session,
                     migration,
@@ -630,62 +843,205 @@ async def _dispatch_migration(
                     {
                         "finished": True,
                         "success": False,
-                        "error": "Storage Rclone configuration not found",
+                        "error": (
+                            "Legacy Rclone daemon job has no worker owner. Stop the old daemon, "
+                            "inspect its payload, and manually retry the migration."
+                        ),
                     },
                     None,
                     success=False,
                 )
                 return True
 
-            (
-                source_storage_row,
-                source_config_row,
-                destination_storage_row,
-                destination_config_row,
-            ) = config_rows
-            source_config_data = source_config_row.config
-            destination_config_data = destination_config_row.config
-            execution_id = uuid.uuid4()
-            migration.execution_id = execution_id
-            migration.host_id = worker_id
+            if (migration.job_status or {}).get("reconciliation_required"):
+                return False
 
-            try:
-                job_id, command = await asyncio.to_thread(
-                    _execute_rclone_copy,
-                    rclone,
-                    source_config_data,
-                    destination_config_data,
-                    _rclone_backend(source_config_data),
-                    source_item.uri or "",
-                    source_storage_row.root_directory or "/",
-                    _rclone_backend(destination_config_data),
-                    migration.destination_path or source_item.uri or "",
-                    destination_storage_row.root_directory or "/",
-                    source_item.item_type,
-                    str(execution_id),
+            if migration.job_id is not None:
+                return await _dispatch_active_job(
+                    session, migration, rclone, worker_id, migration_id
                 )
-                migration.job_id = job_id
-                migration.command = command
-                migration.job_status = {"finished": False}
-            except (
-                RcloneException,
-                OSError,
-                RuntimeError,
-                TypeError,
-                ValueError,
-            ) as exc:
-                logger.exception("Failed to submit migration %s to Rclone", migration_id)
-                status_json = dict(exc.output) if isinstance(exc, RcloneException) else {}
-                status_json.update(finished=True, success=False, error=str(exc))
-                await _finish_migration(
-                    session,
-                    migration,
-                    rclone,
-                    status_json,
-                    None,
-                    success=False,
+
+            return await _dispatch_queued_migration(
+                session, migration, rclone, worker_id, migration_id
+            )
+
+
+async def _dispatch_queued_migration(
+    session: AsyncSession,
+    migration: Migration,
+    rclone: Rclone,
+    worker_id: str,
+    migration_id: int,
+) -> bool:
+    """Prepare a staged copy and submit it to Rclone."""
+    source_item = None
+    if migration.uid is not None:
+        source_item = await session.scalar(
+            select(DataItem).where(DataItem.UID == migration.uid).with_for_update()
+        )
+    if source_item is None:
+        await _finish_migration(
+            session,
+            migration,
+            rclone,
+            {"finished": True, "success": False, "error": "Source data item not found"},
+            None,
+            success=False,
+        )
+        return True
+
+    worker_state = dict((migration.job_status or {}).get("_dlm_worker", {}))
+    if worker_state.get("publication_pending") is True:
+        await _finish_migration(
+            session,
+            migration,
+            rclone,
+            {"finished": True, "success": True, "_dlm_worker": worker_state},
+            migration.job_stats,
+            success=True,
+        )
+        return True
+
+    try:
+        config_rows = await _load_copy_context(session, migration)
+    except ValueError:
+        await _finish_migration(
+            session,
+            migration,
+            rclone,
+            {
+                "finished": True,
+                "success": False,
+                "error": "Storage Rclone configuration not found",
+            },
+            None,
+            success=False,
+        )
+        return True
+
+    (
+        source_storage_row,
+        source_config_row,
+        destination_storage_row,
+        destination_config_row,
+    ) = config_rows
+    source_config_data = source_config_row.config
+    destination_config_data = destination_config_row.config
+    destination_path = migration.destination_path or source_item.uri or ""
+    if not destination_path or migration.destination_uid is None:
+        await _finish_migration(
+            session,
+            migration,
+            rclone,
+            {
+                "finished": True,
+                "success": False,
+                "error": "Destination path or UID missing",
+            },
+            None,
+            success=False,
+        )
+        return True
+
+    stage_path = worker_state.get("staging_path") or _migration_stage_path(
+        destination_path, migration.destination_uid
+    )
+    try:
+        await asyncio.to_thread(
+            rclone.rpc,
+            "config/create",
+            **rclone_config_for_process(source_config_data),
+        )
+        await asyncio.to_thread(
+            rclone.rpc,
+            "config/create",
+            **rclone_config_for_process(destination_config_data),
+        )
+        source_fingerprint = worker_state.get("source_fingerprint")
+        if source_fingerprint is None:
+            # Never adopt a leftover stage unless its ownership and source snapshot
+            # were persisted by this migration.
+            stage_info = await asyncio.to_thread(
+                rclone.rpc,
+                "operations/stat",
+                fs=_rclone_backend(destination_config_data),
+                remote=_storage_remote_path(
+                    destination_storage_row.root_directory or "/", stage_path
+                ),
+            )
+            if stage_info.get("item") is not None:
+                raise ValueError(
+                    "Migration staging path already exists without a saved owner record"
                 )
-            return True
+            source_remote_path = _storage_remote_path(
+                source_storage_row.root_directory or "/", source_item.uri or ""
+            )
+            source_fs_path = f"{_rclone_backend(source_config_data)}{source_remote_path}"
+            source_fingerprint = await asyncio.to_thread(
+                _content_fingerprint,
+                rclone,
+                source_fs_path,
+                is_container=source_item.item_type == "container",
+            )
+        worker_state.update(
+            staging_path=stage_path,
+            source_fingerprint=source_fingerprint,
+            s3_retry_enabled=_s3_retry_enabled(destination_config_data),
+            retry_count=worker_state.get("retry_count", 0),
+        )
+        migration.job_status = {"_dlm_worker": worker_state}
+    except (OSError, RcloneException, RuntimeError, TypeError, ValueError) as exc:
+        await _finish_migration(
+            session,
+            migration,
+            rclone,
+            {
+                "finished": True,
+                "success": False,
+                "error": f"Unable to prepare migration staging: {exc}",
+            },
+            None,
+            success=False,
+        )
+        return True
+
+    execution_id = uuid.uuid4()
+    migration.execution_id = execution_id
+    migration.host_id = worker_id
+    try:
+        job_id, command = await asyncio.to_thread(
+            _execute_rclone_copy,
+            rclone,
+            source_config_data,
+            destination_config_data,
+            _rclone_backend(source_config_data),
+            source_item.uri or "",
+            source_storage_row.root_directory or "/",
+            _rclone_backend(destination_config_data),
+            stage_path,
+            destination_storage_row.root_directory or "/",
+            source_item.item_type,
+            str(execution_id),
+        )
+        migration.job_id = job_id
+        migration.command = command
+        migration.job_status = {"finished": False, "_dlm_worker": worker_state}
+    except (RcloneException, OSError, RuntimeError, TypeError, ValueError) as exc:
+        logger.exception("Failed to submit migration %s to Rclone", migration_id)
+        # A lost RPC response may hide a successful submission, so quarantine instead
+        # of launching a duplicate copy.
+        status_json = dict(exc.output) if isinstance(exc, RcloneException) else {}
+        status_json.update(
+            finished=False,
+            reconciliation_required=True,
+            error=(
+                f"Rclone submission outcome is uncertain: {exc}. "
+                "Stop the worker and inspect the destination before manual reconciliation."
+            ),
+            _dlm_worker=worker_state,
+        )
+        migration.job_status = status_json
+    return True
 
 
 async def _run_worker_iteration(session_factory, rclone: Rclone, worker_id: str) -> bool:

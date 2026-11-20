@@ -7,6 +7,9 @@ From within your DLM directory, start the DLM services first, e.g., by running::
   docker compose -f tests/testrunner.docker-compose.yaml -p dlm-test-services build
   docker compose -f tests/testrunner.docker-compose.yaml -p dlm-test-services up -d
 
+When running Compose in the foreground, the ``nginx-proxy`` log stream is omitted
+from the combined output. Proxy logs remain available with
+``docker compose -f tests/testrunner.docker-compose.yaml -p dlm-test-services logs nginx-proxy``.
 
 The following sections describe how to **register** and **migrate** a data item from within a DLM server without the RESTful interface. This can be performed either on a developer machine after installing the ``ska-data-lifecycle`` package, or via a remote session to a DLM server instance.
 
