@@ -14,20 +14,20 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       DATABASE_URL: "postgresql+asyncpg://ska_dlm_admin:password@dlm_db:5432/ska_dlm_testing"
-      RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672/"
+      RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672" # AMQP connection for publishing and consuming messages
       DO_AUTH: "1"
       PGHOST: "dlm_db"
       PGPORT: "5432"
       PGUSER: "ska_dlm_admin"
       PGPASSWORD: "password"
       PGDATABASE: "ska_dlm_testing"
-      DLM_POSTGREST_URL: "http://dlm_postgrest:3000/"
-      DLM_RCLONE_URL: "https://dlm_rclone:5572/"
-      DLM_STORAGE_URL: "http://dlm_storage:80/"
-      DLM_MIGRATION_URL: "http://dlm_migration:80/"
-      DLM_INGEST_URL: "http://dlm_ingest:80/"
-      DLM_REQUEST_URL: "http://dlm_request:80/"
-      DLM_RABBITMQ_URL: "http://rabbitmq:15672/"
+      DLM_POSTGREST_URL: "http://dlm_postgrest:3000"
+      DLM_RCLONE_URL: "https://dlm_rclone:5572"
+      DLM_STORAGE_URL: "http://dlm_storage:80"
+      DLM_MIGRATION_URL: "http://dlm_migration:80"
+      DLM_INGEST_URL: "http://dlm_ingest:80"
+      DLM_REQUEST_URL: "http://dlm_request:80"
+      DLM_RABBITMQ_URL: "http://rabbitmq:15672" # HTTP connection to RabbitMQ's Management API
     networks:
       - dlm_network
     depends_on:

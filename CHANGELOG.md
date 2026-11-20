@@ -2,6 +2,7 @@
 
 ## Development
 
+* The Tango device polls the number of migrations in progress.
 * Added basic HTTP-based health checks to the DLM Tango device for Rclone, PostgREST, Storage, Migration, Ingest, Request, and RabbitMQ, and a simple PostgreSQL connectivity check.
 * Removed changes made to create-tables.sql after introduction of Liquibase, as already-executed changesets cannot be modified (MD5 mismatch)
 * Make postgres client OCI image configurable

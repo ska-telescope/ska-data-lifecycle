@@ -198,54 +198,54 @@ class DLMMetrics(Device):
                 self._update_health(
                     "postgrest",
                     _check_http_health,
-                    os.getenv("DLM_POSTGREST_URL", "http://ska-dlm-postgrest:80/"),
+                    os.getenv("DLM_POSTGREST_URL", "http://ska-dlm-postgrest:80").rstrip("/"),
                 )
                 self._update_health(
                     "rclone",
                     _check_rclone_health,
-                    os.getenv("DLM_RCLONE_URL", "http://ska-dlm-rclone:80/"),
+                    os.getenv("DLM_RCLONE_URL", "http://ska-dlm-rclone:80").rstrip("/"),
                 )
                 self._update_health(
                     "storage",
                     _check_http_health,
-                    os.getenv("DLM_STORAGE_URL", "http://ska-dlm-storage:80/").rstrip("/")
+                    os.getenv("DLM_STORAGE_URL", "http://ska-dlm-storage:80").rstrip("/")
                     + "/openapi.json",
                 )
                 self._update_health(
                     "migration",
                     _check_http_health,
-                    os.getenv("DLM_MIGRATION_URL", "http://ska-dlm-migration:80/").rstrip("/")
+                    os.getenv("DLM_MIGRATION_URL", "http://ska-dlm-migration:80").rstrip("/")
                     + "/openapi.json",
                 )
                 self._update_health(
                     "ingest",
                     _check_http_health,
-                    os.getenv("DLM_INGEST_URL", "http://ska-dlm-ingest:80/").rstrip("/")
+                    os.getenv("DLM_INGEST_URL", "http://ska-dlm-ingest:80").rstrip("/")
                     + "/openapi.json",
                 )
                 self._update_health(
                     "request",
                     _check_http_health,
-                    os.getenv("DLM_REQUEST_URL", "http://ska-dlm-request:80/").rstrip("/")
+                    os.getenv("DLM_REQUEST_URL", "http://ska-dlm-request:80").rstrip("/")
                     + "/openapi.json",
                 )
                 self._update_health(
                     "rabbitmq",  # Will this fail if the management API requires authentication?
                     _check_http_health,
-                    os.getenv("DLM_RABBITMQ_URL", "http://ska-dlm-rabbitmq:15672/"),
+                    os.getenv("DLM_RABBITMQ_URL", "http://ska-dlm-rabbitmq:15672/").rstrip("/"),
                 )
 
-                # Temporary logging for development.
-                logger.info("PostgreSQL HealthState: %s", self._postgres_health_state.name)
-                logger.info("PostgREST HealthState: %s", self._postgrest_health_state.name)
-                logger.info("rclone HealthState: %s", self._rclone_health_state.name)
-                logger.info("heuristics HealthState: %s", self._heuristics_health_state.name)
-                logger.info("storage HealthState: %s", self._storage_health_state.name)
-                logger.info("migration HealthState: %s", self._migration_health_state.name)
-                logger.info("ingest HealthState: %s", self._ingest_health_state.name)
-                logger.info("request HealthState: %s", self._request_health_state.name)
-                logger.info("rabbitmq HealthState: %s", self._rabbitmq_health_state.name)
-                logger.info("No. of migrations in progress: %s\n", self._migrations_in_progress)
+                # Logging the attributes. Can remove later.
+                logger.debug("PostgreSQL HealthState: %s", self._postgres_health_state.name)
+                logger.debug("PostgREST HealthState: %s", self._postgrest_health_state.name)
+                logger.debug("rclone HealthState: %s", self._rclone_health_state.name)
+                logger.debug("heuristics HealthState: %s", self._heuristics_health_state.name)
+                logger.debug("storage HealthState: %s", self._storage_health_state.name)
+                logger.debug("migration HealthState: %s", self._migration_health_state.name)
+                logger.debug("ingest HealthState: %s", self._ingest_health_state.name)
+                logger.debug("request HealthState: %s", self._request_health_state.name)
+                logger.debug("rabbitmq HealthState: %s", self._rabbitmq_health_state.name)
+                logger.debug("No. of migrations in progress: %s\n", self._migrations_in_progress)
 
                 self._stop_event.wait(cast(int, self.polling_interval) / 1000)
 
