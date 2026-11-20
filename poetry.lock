@@ -268,7 +268,7 @@ version = "1.2.0"
 description = "Backport of asyncio.Runner, a context manager that controls event loop life cycle."
 optional = false
 python-versions = "<3.11,>=3.8"
-groups = ["main"]
+groups = ["test"]
 markers = "python_version == \"3.10\""
 files = [
     {file = "backports_asyncio_runner-1.2.0-py3-none-any.whl", hash = "sha256:0da0a936a8aeb554eccb426dc55af3ba63bcdc69fa1a600b5bb305413a4477b5"},
@@ -3710,7 +3710,7 @@ version = "1.4.0"
 description = "Pytest support for asyncio"
 optional = false
 python-versions = ">=3.10"
-groups = ["main"]
+groups = ["test"]
 files = [
     {file = "pytest_asyncio-1.4.0-py3-none-any.whl", hash = "sha256:933ca923a23075a87fb7070c0ec272a6848489824d887c85c812670932835aa1"},
     {file = "pytest_asyncio-1.4.0.tar.gz", hash = "sha256:c6c0d2259945122819f171a32ecea2c349ead889ee28176caaf492143424be42"},
@@ -5724,4 +5724,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.10, <4"
-content-hash = "529ac29f25e193229c3000ef6827a6242b38759ad880fc17a2675f0d2f7f047c"
+content-hash = "fdedc33c1c297d02778457b05a3ab96d58f8df78eeee1d42c1b9b178cd6cb3ea"
