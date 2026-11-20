@@ -75,6 +75,7 @@ spec:
       labels:
         {{- include "ska-dlm.postgrest.labels" . | nindent 8 }}
     spec:
+      {{- include "ska-dlm.nodeSelector" . | nindent 6 }}
       serviceAccountName: {{ printf "%s-postgrest" .Release.Name }}
       initContainers:
       {{- if index .Values "ska-db-migrations" "job" "enabled" }}

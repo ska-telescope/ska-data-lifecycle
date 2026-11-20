@@ -34,6 +34,7 @@ spec:
       labels:
         {{- include "ska-dlm.archive.labels" . | nindent 8 }}
     spec:
+      {{- include "ska-dlm.nodeSelector" . | nindent 6 }}
       {{- with .Values.archive.securityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}

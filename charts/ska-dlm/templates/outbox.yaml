@@ -17,6 +17,7 @@ spec:
       labels:
         {{- include "ska-dlm.outbox.labels" . | nindent 8 }}
     spec:
+      {{- include "ska-dlm.nodeSelector" . | nindent 6 }}
       containers:
         - name: outbox
           image: {{ .Values.outbox.image }}:{{ .Values.outbox.version }}

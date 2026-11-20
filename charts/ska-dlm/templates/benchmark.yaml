@@ -46,6 +46,7 @@ spec:
       labels:
         {{- include "ska-dlm.benchmark.labels" . | nindent 8 }}
     spec:
+      {{- include "ska-dlm.nodeSelector" . | nindent 6 }}
       containers:
       - name: benchmark
         image: {{ .Values.benchmark.image }}:{{ .Values.benchmark.version }}

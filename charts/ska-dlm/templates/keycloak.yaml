@@ -39,6 +39,7 @@ spec:
       labels:
         {{- include "ska-dlm.keycloak.labels" . | nindent 8 }}
     spec:
+      {{- include "ska-dlm.nodeSelector" . | nindent 6 }}
       containers:
       - name: keycloak
         image: {{ .Values.keycloak.image }}:{{ .Values.keycloak.version }}

@@ -29,9 +29,11 @@ spec:
       labels:
         app: postgresql
     spec:
+      {{- include "ska-dlm.nodeSelector" . | nindent 6 }}
       containers:
         - name: postgres
           image: "{{ .Values.postgresql.image }}:{{ .Values.postgresql.version }}"
+          imagePullPolicy: {{ .Values.postgresql.imagePullPolicy }}
           ports:
             - containerPort: 5432
           env:

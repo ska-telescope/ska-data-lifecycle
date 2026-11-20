@@ -34,6 +34,7 @@ spec:
       labels:
         {{- include "ska-dlm.heuristics.labels" . | nindent 8 }}
     spec:
+      {{- include "ska-dlm.nodeSelector" . | nindent 6 }}
       serviceAccountName: {{ printf "%s-postgrest" .Release.Name }}
       initContainers:
       # Have to use index as ska-db-migrations has a "-" which throws an error when using the dot notation

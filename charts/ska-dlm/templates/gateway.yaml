@@ -35,6 +35,7 @@ spec:
       labels:
         {{- include "ska-dlm.gateway.labels" . | nindent 8 }}
     spec:
+      {{- include "ska-dlm.nodeSelector" . | nindent 6 }}
       containers:
       - name: gateway
         image: {{ .Values.gateway.image }}:{{ .Values.gateway.version }}
