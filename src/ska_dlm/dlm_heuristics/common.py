@@ -41,6 +41,7 @@ class BaseHeuristic(ABC):
         HeuristicResult
             The result of the heuristic execution
         """
+        raise NotImplementedError
 
     @classmethod
     def success_result(cls, message: str = "", data: Optional[dict] = None) -> HeuristicResult:

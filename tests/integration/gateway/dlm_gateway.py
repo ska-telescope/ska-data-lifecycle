@@ -46,6 +46,7 @@ class Provider:
         Response
             Bearer token
         """
+        raise NotImplementedError
 
     @abstractmethod
     async def has_scope(self, token: str, permission: str) -> Any:
@@ -63,6 +64,7 @@ class Provider:
         Any
             True if has permissions, otherwise False
         """
+        raise NotImplementedError
 
     @abstractmethod
     async def token_by_username_password(self, username: str, password: str) -> dict:
@@ -80,6 +82,7 @@ class Provider:
         dict
             Structure containing tokens
         """
+        raise NotImplementedError
 
     @abstractmethod
     async def auth_callback(self, request: Request) -> str:
@@ -95,10 +98,12 @@ class Provider:
         str
             Bearer token
         """
+        raise NotImplementedError
 
     @abstractmethod
     async def validate_token(self, token: str):
         """Validate client session token/cookie."""
+        raise NotImplementedError
 
 
 # pylint: disable=too-many-instance-attributes

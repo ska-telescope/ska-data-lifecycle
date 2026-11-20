@@ -202,13 +202,14 @@ def test_copy_request_builds_container_rpc():
 def test_execute_rclone_copy_creates_remotes_and_submits_embedded_async_job():
     """Embedded RPC registers both backends and returns an asynchronous job ID."""
 
-    class FakeRclone:
+    class FakeRclone:  # pylint: disable=too-few-public-methods
         """Record embedded RPC calls and return test transfer statistics."""
 
         def __init__(self):
             self.calls = []
 
         def rpc(self, method, **parameters):
+            """Record the call and return a job ID for file copies."""
             self.calls.append((method, parameters))
             if method == "operations/copyfile":
                 return {"jobid": 42}
@@ -264,13 +265,14 @@ def test_execute_rclone_copy_creates_remotes_and_submits_embedded_async_job():
 def test_poll_rclone_job_reads_status_and_grouped_stats(status, expected_calls, expected_stats):
     """Polls an embedded job and only loads stats after it finishes."""
 
-    class FakeRclone:
+    class FakeRclone:  # pylint: disable=too-few-public-methods
         """Return a configured status and grouped stats."""
 
         def __init__(self):
             self.calls = []
 
         def rpc(self, method, **parameters):
+            """Record the call and return the configured status or stats."""
             self.calls.append((method, parameters))
             return status if method == "job/status" else {"bytes": 15}
 
@@ -294,7 +296,7 @@ def test_embedded_rclone_binding_frees_rpc_response(monkeypatch, status_code, ex
     """The ctypes wrapper frees every librclone response, including RPC errors."""
     calls = []
 
-    class FakeFunction:
+    class FakeFunction:  # pylint: disable=too-few-public-methods
         """Callable with the attributes ctypes uses for function signatures."""
 
         def __init__(self, callback):
@@ -305,21 +307,27 @@ def test_embedded_rclone_binding_frees_rpc_response(monkeypatch, status_code, ex
         def __call__(self, *args):
             return self.callback(*args)
 
-    class FakeLibrary:
+    class FakeLibrary:  # pylint: disable=too-few-public-methods
         """Provide the exported librclone functions."""
 
         def __init__(self):
+            # pylint: disable-next=invalid-name
             self.RcloneRPC = FakeFunction(self.rpc)
+            # pylint: disable-next=invalid-name
             self.RcloneFreeString = FakeFunction(lambda value: calls.append(("free", value)))
+            # pylint: disable-next=invalid-name
             self.RcloneInitialize = FakeFunction(lambda: calls.append(("initialize",)))
+            # pylint: disable-next=invalid-name
             self.RcloneFinalize = FakeFunction(lambda: calls.append(("finalize",)))
 
         @staticmethod
         def rpc(_method, _parameters):
+            """Return a populated ctypes response structure."""
+            # pylint: disable=protected-access
             response = embedded_rclone._RcloneRPCResult()
             body = b'{"error":"bad request"}' if status_code != 200 else b'{"ok":true}'
-            response.Output = embedded_rclone._RcloneRPCString(body)
-            response.Status = status_code
+            setattr(response, "Output", embedded_rclone._RcloneRPCString(body))
+            setattr(response, "Status", status_code)
             return response
 
     library = FakeLibrary()
@@ -468,13 +476,14 @@ async def test_recovery_cleans_and_resubmits_with_fresh_rclone_identifiers(monke
                 )
             )
 
-    class FakeRclone:
+    class FakeRclone:  # pylint: disable=too-few-public-methods
         """Return an Rclone job ID and capture the asynchronous copy request."""
 
         def __init__(self):
             self.calls = []
 
         def rpc(self, method, **parameters):
+            """Capture the copy request and provide a job ID."""
             self.calls.append((method, parameters))
             return {"jobid": 1} if method == "operations/copyfile" else {}
 

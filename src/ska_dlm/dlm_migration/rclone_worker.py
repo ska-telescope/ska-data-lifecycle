@@ -33,12 +33,12 @@ logger = logging.getLogger(__name__)
 _BATCH_SIZE = 50
 
 
-class RcloneRPCClient(Protocol):
+class RcloneRPCClient(Protocol):  # pylint: disable=too-few-public-methods
     """The embedded Rclone RPC surface used by the migration worker."""
 
     def rpc(self, method: str, **parameters: Any) -> dict[str, Any]:
         """Invoke an Rclone remote-control method."""
-        ...
+        ...  # pylint: disable=unnecessary-ellipsis
 
 
 def _migration_database_url() -> str:
@@ -102,7 +102,7 @@ def _copy_request(
     }
 
 
-# pylint: disable=too-many-arguments,too-many-positional-arguments
+# pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals
 def _execute_rclone_copy(
     rclone: RcloneRPCClient,
     source_config: dict,
@@ -484,7 +484,7 @@ async def _recover_owned_migrations(session_factory, rclone: Rclone, worker_id: 
             return len(migrations)
 
 
-# pylint: disable=too-many-locals
+# pylint: disable=too-many-locals,too-many-return-statements
 async def _dispatch_migration(
     session_factory,
     migration_id: int,

@@ -9,6 +9,7 @@ global:
     domainName: "sdhp.stfc.skao.int"  # external ingress domain; required for whitelisting redirects
   development: true  # true for local deployment (to trigger gateway & keycloak)
   storageClass: "localdisk"  # existing storage class
+  nodeSelector: {}
   cluster_domain: cluster.local # the internal Kubernetes DNS domain, used for communication between services inside the cluster
   operator: false # The SKA Tango operator
   tango_host: tango-databaseds:10000 # Tango database to connect to. Must be always be configured. <service_name>.<namespace>:port
@@ -43,7 +44,7 @@ ingest:
   component: ingest
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: "07256191"
+  version: e1a190c0
   imagePullPolicy: Always
   replicas: 1
 
@@ -51,7 +52,7 @@ storage:
   component: storage
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: "07256191"
+  version: e1a190c0
   imagePullPolicy: Always
   replicas: 1
   securityContext: {}
@@ -96,7 +97,7 @@ migration:
   component: migration
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: "07256191"
+  version: e1a190c0
   imagePullPolicy: Always
   replicas: 1
 
@@ -104,7 +105,7 @@ request:
   component: request
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: "07256191"
+  version: e1a190c0
   imagePullPolicy: Always
   replicas: 1
 
@@ -143,7 +144,7 @@ heuristics:
   component: heuristics
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: "07256191"
+  version: e1a190c0
   imagePullPolicy: Always
   replicas: 1
 
@@ -166,6 +167,7 @@ postgresql:
   enabled: true  # whether to deploy a local 'test' DB instead of connecting to an existing DB
   image: postgres
   version: "17-bookworm"
+  imagePullPolicy: IfNotPresent
 
   auth:
   # Used for local PostgreSQL bootstrap when postgresql.enabled=true
@@ -191,7 +193,7 @@ rclone:
   component: rclone
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-rclone
-  version: "608e5ef5"
+  version: e1a190c0
   imagePullPolicy: Always
   replicas: 1
   securityContext: {}
@@ -214,7 +216,7 @@ rcloneWorker:
   component: rclone-worker
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: "07256191"
+  version: e1a190c0
   imagePullPolicy: Always
   replicas: 1
   pollInterval: 10
@@ -248,7 +250,7 @@ outbox:
   component: outbox
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle
-  version: "07256191"
+  version: e1a190c0
   imagePullPolicy: Always
   replicas: 1
   rabbitmq:
@@ -262,7 +264,7 @@ gateway:
   component: gateway
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-test-gateway
-  version: "608e5ef5"
+  version: e1a190c0
   imagePullPolicy: Always
   replicas: 1
   secret:
@@ -273,7 +275,7 @@ keycloak:
   component: keycloak
   subsystem: data-lifecycle-management
   image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-test-keycloak
-  version: "608e5ef5"
+  version: e1a190c0
   imagePullPolicy: Always
   replicas: 1
   use_https: true
