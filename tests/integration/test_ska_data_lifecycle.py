@@ -192,17 +192,15 @@ def __get_migration(record, count=100):
     while True:
         # check that a query for all migrations returns the details of this single migration
         migration_record = get_migration_record(record["migration_id"])
-        if (
-            migration_record[0]["job_status"] is None
-            or migration_record[0]["job_status"]["finished"] is False
-        ):
+        # Rclone can finish copying to staging before DLM publishes the result.
+        if not migration_record[0]["complete"]:
             total_count += 1
             time.sleep(0.5)
         else:
             break
 
         if total_count == count:
-            raise TimeoutError("Did not get migration record.")
+            raise TimeoutError(f"Migration did not complete: {migration_record[0]['job_status']}")
 
     return migration_record
 
@@ -240,7 +238,7 @@ def test_copy(env: DlmTestClient):
     assert migration_record[0]["complete"] is True
     assert isinstance(migration_record[0]["job_id"], int)
     assert migration_record[0]["job_status"]["finished"] is True
-    assert migration_record[0]["job_status"]["success"] is True
+    assert migration_record[0]["job_status"]["success"] is True, migration_record[0]["job_status"]
     assert migration_record[0]["job_stats"]["bytes"] == RCLONE_TEST_FILE_SIZE
 
     # Check the data item has been set to READY
@@ -346,12 +344,13 @@ async def test_increase_oid_phase_heuristic(env, request):  # pylint: disable=to
     assert migration_record[0]["origin"] == "IncreaseOidPhaseHeuristic"
     assert migration_record[0]["complete"] is True
     assert migration_record[0]["job_status"]["finished"] is True
+    assert migration_record[0]["job_status"]["success"] is True, migration_record[0]["job_status"]
     assert migration_record[0]["job_stats"]["bytes"] == RCLONE_TEST_FILE_SIZE
 
 
 @pytest.mark.integration_test
 def test_copy_failed(env: DlmTestClient):
-    """Check the data item is removed from db on rclone failure."""
+    """Keep the reserved destination unpublished on Rclone failure."""
     # NOTE: this test will not work without requests being made via a gateway
 
     if isinstance(env, DlmTestClientLocal):
@@ -362,8 +361,7 @@ def test_copy_failed(env: DlmTestClient):
     uid = env.ingest_requests.register_data_item(
         item_name="/my/ingest/test/item2", uri=TEST_URI, storage_name="local"
     )
-    # Copy to an invalid path to trigger a failure in rclone
-    # and check the data item is removed from the database
+    # Copy to an invalid path to trigger a failure in Rclone.
     assert len(uid) == 36
     dest = "/root/testfile_copy"
     copy_item_record = env.migration_requests.copy_data_item(
@@ -374,8 +372,8 @@ def test_copy_failed(env: DlmTestClient):
     migration_record = __get_migration(copy_item_record)
 
     data_item_record = env.data_item_requests.query_data_item(uid=copy_item_record["uid"])
-    # check remote data item was removed on a failed copy
-    assert not data_item_record
+    assert len(data_item_record) == 1
+    assert data_item_record[0]["item_state"] == "INITIALISED"
     assert migration_record[0]["job_status"]["success"] is False
     assert env.data_item_requests.query_data_item(uid=uid)[0]["item_state"] == "READY"
 
@@ -433,7 +431,7 @@ def test_copy_container(env):
     )
     assert len(file2_uid) == 36
 
-    dest = f"{ROOT_DIRECTORY2}"
+    dest = f"{ROOT_DIRECTORY2}/container-copy"
     result = env.migration_requests.copy_data_item(uid=uid_root, destination_id=dest_id, path=dest)
 
     # check that a query for all migrations returns the details of this single migration
@@ -443,6 +441,7 @@ def test_copy_container(env):
     assert result[0]["destination_storage_id"] == dest_id
     assert result[0]["complete"] is True
     assert result[0]["job_status"]["finished"] is True
+    assert result[0]["job_status"]["success"] is True, result[0]["job_status"]
     assert result[0]["job_stats"]["bytes"] == len(file1_data) + len(file2_data)
     destination_items = env.data_item_requests.query_data_item(storage_id=dest_id)
     assert len(destination_items) == 4
