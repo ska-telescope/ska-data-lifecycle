@@ -83,15 +83,15 @@ oci-image-build-gateway:
   script:
     make oci-build-gateway CAR_OCI_REGISTRY_HOST=${CI_REGISTRY}/${CI_PROJECT_NAMESPACE}/${CI_PROJECT_NAME}
 
-oci-image-build-rclone:
+oci-image-build-rclone-key-bootstrap:
   extends:
     - .image_builder_template
   stage: build
   variables:
-    OCI_IMAGE: ska-data-lifecycle-rclone
-    OCI_IMAGE_FILE_PATH: tests/Dockerfile-rclone
+    OCI_IMAGE: ska-data-lifecycle-key-bootstrap
+    OCI_IMAGE_FILE_PATH: tests/Dockerfile-rclone-key-bootstrap
   script:
-    make oci-build-rclone CAR_OCI_REGISTRY_HOST=${CI_REGISTRY}/${CI_PROJECT_NAMESPACE}/${CI_PROJECT_NAME}
+    make oci-build-rclone-key-bootstrap CAR_OCI_REGISTRY_HOST=${CI_REGISTRY}/${CI_PROJECT_NAMESPACE}/${CI_PROJECT_NAME}
 
 oci-image-build-benchmark:
   extends:
@@ -153,7 +153,7 @@ k8s-test:
     - poetry config virtualenvs.create $POETRY_CONFIG_VIRTUALENVS_CREATE
     - poetry install --with=test
   script:
-    - make k8s-install-chart
+    - make k8s-install-chart K8S_CHART_PARAMS="$K8S_CHART_PARAMS --set sshKey.bootstrap.version=$(poetry version -s)-dev.c${CI_COMMIT_SHORT_SHA}"
     - make k8s-test
   environment:
     action: access

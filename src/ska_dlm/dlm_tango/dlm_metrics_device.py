@@ -34,7 +34,7 @@ class DLMMetrics(Device):
 
     @attribute
     def rcloneHealthState(self) -> HealthState:
-        """Return the health of the DLM rclone service."""
+        """Return the health of Rclone-backed storage and migration operations."""
         return self._rclone_health_state
 
     @attribute

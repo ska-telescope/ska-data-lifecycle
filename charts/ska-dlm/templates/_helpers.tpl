@@ -119,16 +119,6 @@ intent: production
 {{- end -}}
 
 {{/*
-RClone labels
-*/}}
-{{- define "ska-dlm.rclone.labels" -}}
-{{- include "ska-dlm.labels" . }}
-component: {{ .Values.rclone.component }}
-subsystem: {{ .Values.rclone.subsystem }}
-intent: production
-{{- end -}}
-
-{{/*
 Rclone worker labels
 */}}
 {{- define "ska-dlm.rclone-worker.labels" -}}
@@ -169,14 +159,17 @@ intent: production
 {{- end -}}
 
 {{/*
-Rclone secret name
+Rclone SSH key Secret name
 */}}
-{{- define "ska-dlm.rclone.secret.name" -}}
-{{- if .Values.rclone.secret.vault.enabled }}
-{{- include "ska-dlm.fullname" . }}-rclone-secret-vso
-{{- else -}}
-{{- .Values.rclone.secret.name -}}
+{{- define "ska-dlm.ssh-key-secret.name" -}}
+{{- default (printf "%s-rclone-ssh-key" (include "ska-dlm.fullname" .) | trunc 63 | trimSuffix "-") .Values.sshKey.secretName -}}
 {{- end -}}
+
+{{/*
+Rclone SSH key bootstrap resource name
+*/}}
+{{- define "ska-dlm.ssh-key-bootstrap.name" -}}
+{{- printf "%s-rclone-key-bootstrap" (include "ska-dlm.fullname" .) | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{/*

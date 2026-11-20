@@ -54,30 +54,22 @@ Shared volume
 --------------
 
 In order for data to be shared between pods, ensure that the PVC ``global.sharedpvc`` is instantiated.
-RClone generates an SSH key pair which it shares with the Storage Manager via ``global.sharedpvc`` so it can be distributed to storage endpoints via the REST endpoint ``get_ssh_public_key``.
+A pre-install/pre-upgrade Job creates an RSA SSH key pair in a Kubernetes Secret if the configured Secret does not already exist. Storage, ingest, heuristics, the migration worker, and the archive mount the Secret; the Storage API exposes the public key through ``get_ssh_public_key``. The pair is no longer stored on ``global.sharedpvc``. Existing PVC keys are not imported, so external SFTP endpoints must authorize the newly generated public key.
 
-Workloads that mount this shared volume (``storage``, ``rclone``, ``rabbitmq``, and ``archive``) can configure a pod-level ``securityContext`` (for example, setting ``fsGroup`` and ``fsGroupChangePolicy``) to manage file access and permissions across pods:
+* ``sshKey.secretName``: Optional Secret name. Defaults to ``<fullname>-rclone-ssh-key``.
+* ``sshKey.mountPath``: Read-only mount path for ``id_rsa`` and ``id_rsa.pub``.
+* ``sshKey.bootstrap.image`` and ``sshKey.bootstrap.version``: Image used by the bootstrap Job; it must include ``ssh-keygen`` and ``kubectl``.
+* ``global.sharedpvc.mountPath``: Mount path for the shared DLM data PVC (defaults to ``/dlm``).
+
+The Secret is mounted read-only with mode ``0440``. The key-consuming workloads default to ``fsGroup: 1000``; configure their pod-level security contexts if your runtime uses different IDs:
 
 * ``storage.securityContext``
-* ``rclone.securityContext``
-* ``rabbitmq.securityContext``
+* ``ingest.securityContext``
+* ``heuristics.securityContext``
+* ``rcloneWorker.securityContext``
 * ``archive.securityContext``
 
-Rclone Helm Chart ``secret`` values
-------------------------------------
-
-* ``secret.enabled``: If ``true``, enable rclone secrets.
-* ``secret.name``: Name of an existing secret created externally. Used only if ``secret.vault.enabled`` is ``false`` and the value is not empty.
-* ``secret.mountPoint``: Secrets mount point in the rclone pod.
-* ``secret.ssl_cert_name``: Name of the SSL cert secret located in ``mountPoint``. If empty, SSL will be disabled.
-* ``secret.ssl_key_name``: Name of the SSL key secret located in ``mountPoint``. If empty, SSL will be disabled.
-* ``secret.vault``:
-
-   * ``enabled``: If ``true``, use Vault to populate the secret. ``secret.enabled`` must also be ``true``.
-   * ``mount``: Vault root.
-   * ``type``: Vault engine type (defaults to ``kv-v2``).
-   * ``path``: Vault path.
-
+Key rotation is a coordinated manual operation, not an automatic process. On Kubernetes, delete the configured Secret and run a Helm upgrade to generate a replacement. In Docker Compose, stop the services and remove the project-scoped ``rclone-ssh-keys`` volume. In either case, update remote SFTP ``authorized_keys`` with the replacement public key and restart the archive and DLM workloads before relying on the new key.
 
 Pgweb
 ------

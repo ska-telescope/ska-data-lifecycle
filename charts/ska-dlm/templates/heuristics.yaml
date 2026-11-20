@@ -35,6 +35,10 @@ spec:
         {{- include "ska-dlm.heuristics.labels" . | nindent 8 }}
     spec:
       {{- include "ska-dlm.nodeSelector" . | nindent 6 }}
+      {{- with .Values.heuristics.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       serviceAccountName: {{ printf "%s-postgrest" .Release.Name }}
       initContainers:
       # Have to use index as ska-db-migrations has a "-" which throws an error when using the dot notation
@@ -137,20 +141,16 @@ spec:
             - name: DLM_HEURISTIC_POLL_INTERVAL
               value: {{ .Values.heuristics.pollInterval | default 10 | quote }}
             - name: DLM_RCLONE_SSH_KEY_PATH
-              value: {{ printf "%sid_rsa" .Values.rclone.keyPath | quote }}
+              value: {{ printf "%s/id_rsa" .Values.sshKey.mountPath | quote }}
           volumeMounts:
             - name: dlm-configmap
               mountPath: "/home/ska-dlm/.dlm"
               readOnly: true
             - name: shared-storage
-              mountPath: {{ .Values.rclone.mountPath | quote }}
-            {{- with .Values.rclone.secret }}
-            {{- if .enabled }}
-            - name: rclone-secret
-              mountPath: {{ .mountPoint }}
+              mountPath: {{ .Values.global.sharedpvc.mountPath | quote }}
+            - name: rclone-ssh-key
+              mountPath: {{ .Values.sshKey.mountPath | quote }}
               readOnly: true
-            {{- end }}
-            {{- end }}
       volumes:
         - name: dlm-configmap
           configMap:
@@ -158,10 +158,7 @@ spec:
         - name: shared-storage
           persistentVolumeClaim:
             claimName: {{ .Values.global.sharedpvc.pvc.name }}
-        {{- with .Values.rclone.secret }}
-        {{- if .enabled }}
-        - name: rclone-secret
+        - name: rclone-ssh-key
           secret:
-            secretName: {{ include "ska-dlm.rclone.secret.name" $ }}
-        {{- end }}
-        {{- end }}
+            secretName: {{ include "ska-dlm.ssh-key-secret.name" . }}
+            defaultMode: 0440

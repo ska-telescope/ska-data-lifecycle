@@ -22,8 +22,7 @@ class DlmTestClientDocker(DlmTestClient):
     Test client for a deployment where all services and tests run from
     inside docker.
 
-    This requires the rclone path is hosted on shared filesystem
-    mount with the test runtime.
+    The test runtime and DLM storage service must share the backend filesystem.
     """
 
     def __init__(self):

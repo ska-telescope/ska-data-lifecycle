@@ -12,7 +12,7 @@ from tests.test_env import DlmTestClient
 
 logger = logging.getLogger(__name__)
 
-RCLONE_DEPLOYMENT = "dlm_rclone"
+STORAGE_CONTAINER = "dlm_storage"
 
 
 class DlmTestClientLocal(DlmTestClient):
@@ -74,17 +74,17 @@ class DlmTestClientLocal(DlmTestClient):
 
     @override
     def write_rclone_file_content(self, rclone_path: str, content: str):
-        """Write the given text to a file local to rclone container."""
+        """Write the given text to the shared test storage."""
         os.makedirs(f"/tmp/{os.path.dirname(rclone_path)}", exist_ok=True)
         with open(f"/tmp/{rclone_path}", "w", encoding="ascii") as file:
             file.write(content)
 
-        self._copy_to(f"/tmp/{rclone_path}", f"{RCLONE_DEPLOYMENT}:{rclone_path}")
+        self._copy_to(f"/tmp/{rclone_path}", f"{STORAGE_CONTAINER}:{rclone_path}")
 
     @override
     def get_rclone_local_file_content(self, rclone_path: str) -> str:
-        """Get the text content of a file local to rclone container."""
-        self._copy_from(f"{RCLONE_DEPLOYMENT}:{rclone_path}", f"/tmp/{rclone_path}.tar")
+        """Get the text content of a file in the shared test storage."""
+        self._copy_from(f"{STORAGE_CONTAINER}:{rclone_path}", f"/tmp/{rclone_path}.tar")
 
         with tarfile.open(f"/tmp/{rclone_path}.tar") as file:
             file.extractall("/tmp", filter="data")
@@ -95,12 +95,12 @@ class DlmTestClientLocal(DlmTestClient):
     @override
     def clear_rclone_data(self, path: str):
         """Delete all data from path."""
-        container = self.client.containers.get(RCLONE_DEPLOYMENT)
+        container = self.client.containers.get(STORAGE_CONTAINER)
         container.exec_run(["/bin/sh", "-c", f"rm -rf {path}/*"])
 
     def create_rclone_directory(self, path: str, mode: int = 0o777):
-        """Create rclone directory."""
-        container = self.client.containers.get(RCLONE_DEPLOYMENT)
+        """Create a directory in the shared test storage."""
+        container = self.client.containers.get(STORAGE_CONTAINER)
         container.exec_run(f"mkdir -p {path}")
         container.exec_run(f"chmod {oct(mode)} {path}")
 

@@ -18,7 +18,7 @@ from tests.test_env import DlmTestClient
 logger = logging.getLogger(__name__)
 
 NAMESPACE = os.getenv("KUBE_NAMESPACE")
-RCLONE_DEPLOYMENT = "ska-dlm-rclone"
+STORAGE_DEPLOYMENT = "ska-dlm-storage"
 
 
 class DlmTestClientK8s(DlmTestClient):
@@ -73,8 +73,8 @@ class DlmTestClientK8s(DlmTestClient):
 
     @override
     def write_rclone_file_content(self, rclone_path: str, content: str):
-        """Write the given text to a file local to rclone."""
-        pod_name = self._get_pod_name(RCLONE_DEPLOYMENT)
+        """Write the given text to the shared test storage."""
+        pod_name = self._get_pod_name(STORAGE_DEPLOYMENT)
         stream.stream(
             self.core_api.connect_get_namespaced_pod_exec,
             pod_name,
@@ -89,8 +89,8 @@ class DlmTestClientK8s(DlmTestClient):
 
     @override
     def get_rclone_local_file_content(self, rclone_path: str) -> str:
-        """Get the text content of a file local to rclone"""
-        pod_name = self._get_pod_name(RCLONE_DEPLOYMENT)
+        """Get the text content of a file in the shared test storage."""
+        pod_name = self._get_pod_name(STORAGE_DEPLOYMENT)
         content = stream.stream(
             self.core_api.connect_get_namespaced_pod_exec,
             pod_name,
@@ -103,7 +103,7 @@ class DlmTestClientK8s(DlmTestClient):
     @override
     def clear_rclone_data(self, path: str):
         """Delete all local rclone data."""
-        pod_name = self._get_pod_name(RCLONE_DEPLOYMENT)
+        pod_name = self._get_pod_name(STORAGE_DEPLOYMENT)
         output = stream.stream(
             self.core_api.connect_get_namespaced_pod_exec,
             pod_name,
@@ -115,7 +115,7 @@ class DlmTestClientK8s(DlmTestClient):
 
     def create_rclone_directory(self, path: str, mode: int = 0o777):
         """Create rclone directory."""
-        pod_name = self._get_pod_name(RCLONE_DEPLOYMENT)
+        pod_name = self._get_pod_name(STORAGE_DEPLOYMENT)
         output = stream.stream(
             self.core_api.connect_get_namespaced_pod_exec,
             pod_name,

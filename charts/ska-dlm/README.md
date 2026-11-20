@@ -45,32 +45,26 @@ Database authentication details for PostgREST are provided via a Kubernetes 'Sec
 
 In order for data to be shared between pods, it's important to ensure that the PVC `global.sharedpvc` is instantiated.
 
-RClone generates an SSH key pair which it shares with the Storage Manager via `global.sharedpvc` so it can be distributed to storage end points via the REST endpoint `get_ssh_public_key`. The storage service and migration workers use embedded Rclone and load backend configurations from the database.
+A Helm pre-install/pre-upgrade Job creates an RSA SSH key pair in a Kubernetes Secret if the configured Secret does not already exist. Storage, ingest, heuristics, the migration worker, and the archive mount that Secret; the storage service exposes its public key through `get_ssh_public_key`. The pair is no longer stored on `global.sharedpvc`. Existing PVC keys are not imported, so external SFTP endpoints must authorize the newly generated public key.
 
-Workloads that mount this shared volume (`storage`, `rclone`, `rabbitmq`, and `archive`) can configure a pod-level `securityContext` (for example, setting `fsGroup` and `fsGroupChangePolicy`) to manage file access and permissions across pods:
+* `sshKey.secretName`: Optional Secret name. Defaults to `<fullname>-rclone-ssh-key`.
+* `sshKey.mountPath`: Read-only mount path for `id_rsa` and `id_rsa.pub`.
+* `sshKey.bootstrap.image` and `sshKey.bootstrap.version`: Image used by the bootstrap Job; it must include `ssh-keygen` and `kubectl`.
+* `global.sharedpvc.mountPath`: Mount path for the shared DLM data PVC; defaults to `/dlm`.
+
+The Secret is mounted read-only with mode `0440`. The key-consuming workloads default to `fsGroup: 1000`; configure their pod-level security contexts if your runtime uses different IDs:
 
 * `storage.securityContext`
-* `rclone.securityContext`
-* `rabbitmq.securityContext`
+* `ingest.securityContext`
+* `heuristics.securityContext`
+* `rcloneWorker.securityContext`
 * `archive.securityContext`
 
-## Rclone Helm Chart `secret` values
-
- * `secret`:
-    * `enabled`: if `true`, then enable rclone secrets.
-    * `name`: name of an existing secret created by an external mechanism. This will only be used if `secret.vault.enabled` is `false` and it's not empty.
-    * `mountPoint`: secrets mount point in rclone, storage, and migration-worker pods.
-    * `ssl_cert_name`: name of the SSL cert secret that exists in the directory `mountPoint`. If empty then SSL will be disabled.
-    * `ssl_key_name`: name of the SSL key secret that exists in the directory `mountPoint`. If empty then SSL will be disabled.
-    * `vault`:
-        * `enabled`: if `true`, then use the vault to populate the secret. `secret.enabled` must also `true`.
-        * `mount`: vault root.
-        * `type`: vault engine type, defaults to `kv-v2`
-        * `path`: vault path.
+Key rotation is a coordinated manual operation, not an automatic process. On Kubernetes, delete the configured Secret and run a Helm upgrade to generate a replacement. In Docker Compose, stop the services and remove the project-scoped `rclone-ssh-keys` volume. In either case, update remote SFTP `authorized_keys` with the replacement public key and restart the archive and DLM workloads before relying on the new key.
 
 ## Rclone Migration Worker
 
-The storage service and `rcloneWorker` StatefulSet embed Rclone through its `librclone` C API and Python `ctypes` binding. They load backend configuration from the database and execute operations locally; no remote Rclone RC config-push endpoint is required. The worker submits copies asynchronously, polls their job status, then finalizes the destination data-item records. Each StatefulSet replica has a stable worker ID across Pod replacement. On startup, it attempts to clean up partial outputs and resubmits unfinished migrations assigned to that worker with fresh Rclone job IDs. Set `rcloneWorker.image` and `rcloneWorker.version` to configure the worker image independently of the migration service; `rcloneWorker.imagePullPolicy` controls image pulls. Set `rcloneWorker.replicas` to run multiple workers; database row locking lets workers share the queue safely. `rcloneWorker.pollInterval` controls the interval between queue scans. Storage and worker pods mount the shared storage and Rclone secret so configured backend credentials, including SSH keys, are available locally.
+The storage service and `rcloneWorker` StatefulSet embed Rclone through its `librclone` C API and Python `ctypes` binding. They load backend configuration from the database and execute operations locally; no remote Rclone RC config-push endpoint is required. The worker submits copies asynchronously, polls their job status, then finalizes the destination data-item records. Each StatefulSet replica has a stable worker ID across Pod replacement. On startup, it attempts to clean up partial outputs and resubmits unfinished migrations assigned to that worker with fresh Rclone job IDs. Set `rcloneWorker.image` and `rcloneWorker.version` to configure the worker image independently of the migration service; `rcloneWorker.imagePullPolicy` controls image pulls. Set `rcloneWorker.replicas` to run multiple workers; database row locking lets workers share the queue safely. `rcloneWorker.pollInterval` controls the interval between queue scans. Storage and worker pods mount the shared data PVC at `global.sharedpvc.mountPath` and mount the SSH key Secret separately for SSH endpoints.
 
 For Docker Compose, scale the worker service with `docker compose -f tests/dlm.docker-compose.yaml up --scale dlm_rclone_worker=2`. The worker uses `restart: unless-stopped`, which restarts a failed container with its existing worker identity; removing and recreating a scaled container gives it a new identity and does not recover its prior migrations.
 

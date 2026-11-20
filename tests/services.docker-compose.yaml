@@ -77,48 +77,28 @@ services:
     networks:
       - dlm_network
 
-  dlm_rclone:
-    image: dlm_rclone
-    container_name: dlm_rclone
+  rclone-key-init:
+    image: dlm_rclone_key_bootstrap
     build:
-       context: ..
-       dockerfile: tests/Dockerfile-rclone
-    ports:
-      - 5572:5572
-    entrypoint: ["/bin/sh","-c"]
+      context: ..
+      dockerfile: tests/Dockerfile-rclone-key-bootstrap
+    entrypoint: ["/bin/sh", "-ec"]
     command:
-    - |
-        mkdir -p /root/.ssh /dlm/.ssh/
-        if [ -f /dlm/.ssh/id_rsa ] && [ -f /dlm/.ssh/id_rsa.pub ]; then
-          cp /dlm/.ssh/id_rsa /root/.ssh/id_rsa
-          cp /dlm/.ssh/id_rsa.pub /root/.ssh/id_rsa.pub
+      - |
+        mkdir -p /keys
+        if [ -s /keys/id_rsa ] && [ -s /keys/id_rsa.pub ]; then
+          echo "SSH key pair already exists; leaving it unchanged"
+        elif [ -e /keys/id_rsa ] || [ -e /keys/id_rsa.pub ]; then
+          echo "Incomplete SSH key pair in rclone-ssh-keys volume" >&2
+          exit 1
         else
-          yes n | ssh-keygen -t rsa -b 4096 -f /root/.ssh/id_rsa -N '' || true
-          cp /root/.ssh/id_rsa /dlm/.ssh/
-          cp /root/.ssh/id_rsa.pub /dlm/.ssh/
-          chown 1000:1000 /dlm/.ssh/id_rsa
-          chmod 640 /dlm/.ssh/id_rsa
+          ensure-rclone-ssh-key /keys
         fi
-        eval "$(ssh-agent -s)"
-        ssh-add /root/.ssh/id_rsa
-        rclone rcd \
-        --rc-serve \
-        --rc-addr \
-        :5572 \
-        --rc-no-auth \
-        --rc-web-gui \
-        --rc-job-expire-duration=43200s \
-        --rc-web-gui-no-open-browser \
-        --rc-key=/etc/ssl/private/selfsigned.key \
-        --rc-cert=/etc/ssl/certs/selfsigned.cert \
-        /
-    healthcheck:
-      test: ["CMD", "wget", "--no-check-certificate", "--post-data='{\"my_key\": \"my_value\"}'", "-qO-", "https://localhost:5572/rc/noop"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
+        chown 0:1000 /keys/id_rsa
+        chmod 640 /keys/id_rsa
+        chmod 644 /keys/id_rsa.pub
     volumes:
-      - shared-tmpfs:/dlm
+      - rclone-ssh-keys:/keys
     networks:
       - dlm_network
 
@@ -135,17 +115,18 @@ services:
       - USER_NAME=dlm
       - PASSWORD_ACCESS=false
       - PUBLIC_KEY_ACCESS=true
-      - PUBLIC_KEY_FILE=/dlm/.ssh/id_rsa.pub
+      - PUBLIC_KEY_FILE=/run/dlm-rclone-ssh/id_rsa.pub
     healthcheck:
-      test: ["CMD", "wget", "--no-check-certificate", "--post-data='{\"my_key\": \"my_value\"}'", "-qO-", "https://dlm_rclone:5572/rc/noop"]
+      test: ["CMD-SHELL", "bash -c 'echo >/dev/tcp/127.0.0.1/2222'"]
       interval: 5s
       timeout: 5s
       retries: 10
     depends_on:
-      dlm_rclone:
-        condition: service_healthy
+      rclone-key-init:
+        condition: service_completed_successfully
     volumes:
       - shared-tmpfs:/dlm
+      - rclone-ssh-keys:/run/dlm-rclone-ssh:ro
     networks:
       - dlm_network
 
@@ -247,11 +228,18 @@ services:
         KEYCLOAK_ADMIN: "admin"
         KEYCLOAK_ADMIN_PASSWORD: "affirm-monoxide-earthling"
     healthcheck:
+        # The management port uses TLS; probe the test realm on the internal HTTP listener.
         test:
-          [
-            "CMD-SHELL",
-            'exec 3<>/dev/tcp/localhost/9000; echo -e "GET /health/ready HTTP/1.1\nhost: localhost:9000\n" >&3; timeout --preserve-status 1 cat <&3 | grep -m 1 status | grep -m 1 UP; ERROR=$?; exec 3<&-; exec 3>&-; exit $ERROR'
-          ]
+          - CMD
+          - bash
+          - -ec
+          - |
+            exec 3<>/dev/tcp/127.0.0.1/8080
+            printf 'GET /realms/test/.well-known/openid-configuration HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3
+            if ! head -n 1 <&3 | grep -q '^HTTP/1[.]1 200 '; then
+              echo 'Keycloak test realm discovery did not return HTTP 200' >&2
+              exit 1
+            fi
         interval: 5s
         timeout: 5s
         retries: 10
@@ -290,3 +278,4 @@ volumes:
       type: "tmpfs"
       device: "tmpfs"
       o: "mode=1777,uid=1000,gid=1000"
+  rclone-ssh-keys:

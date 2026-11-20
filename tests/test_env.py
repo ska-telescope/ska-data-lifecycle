@@ -8,22 +8,22 @@ class DlmTestClient:
     """
     Test client helper class for a test environment.
 
-    Exposes a client DLM services and rclone.
+    Exposes clients for DLM services and shared test storage.
     """
 
     @abstractmethod
     def write_rclone_file_content(self, rclone_path: str, content: str):
-        """Write the given text to a file local to rclone."""
+        """Write the given text to the shared test storage."""
         raise NotImplementedError
 
     @abstractmethod
     def get_rclone_local_file_content(self, rclone_path: str) -> str:
-        """Get the text content of a file local to rclone."""
+        """Get the text content of a file in the shared test storage."""
         raise NotImplementedError
 
     @abstractmethod
     def clear_rclone_data(self, path: str):
-        """Delete all rclone local data."""
+        """Delete data in the shared test storage."""
         raise NotImplementedError
 
     @abstractmethod

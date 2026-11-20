@@ -98,9 +98,9 @@ oci-build-benchmark:
 	make oci-build OCI_IMAGE=ska-data-lifecycle-benchmark \
 	OCI_IMAGE_FILE_PATH=scripts/Dockerfile-benchmark
 
-oci-build-rclone:
-	make oci-build OCI_IMAGE=ska-data-lifecycle-rclone \
-	OCI_IMAGE_FILE_PATH=tests/Dockerfile-rclone
+oci-build-rclone-key-bootstrap:
+	make oci-build OCI_IMAGE=ska-data-lifecycle-key-bootstrap \
+	OCI_IMAGE_FILE_PATH=tests/Dockerfile-rclone-key-bootstrap
 
 oci-build-migrations:
 	make oci-build OCI_IMAGE=ska-data-lifecycle-migrations \

@@ -18,6 +18,7 @@ global:
     # Shared PVC that can be mounted by multiple pods.
     # Default behaviour assumes the shared PVC is pre-provisioned (e.g. by CI/cluster tooling),
     # to avoid Helm upgrade failures due to immutable PVC fields.
+    mountPath: "/dlm"
     pv:
       create: false  # PV is cluster-scoped; do not create via Helm by default
       name: shared
@@ -47,6 +48,8 @@ ingest:
   version: e1a190c0
   imagePullPolicy: Always
   replicas: 1
+  securityContext:
+    fsGroup: 1000
 
 storage:
   component: storage
@@ -55,7 +58,8 @@ storage:
   version: e1a190c0
   imagePullPolicy: Always
   replicas: 1
-  securityContext: {}
+  securityContext:
+    fsGroup: 1000
   mountPath: "/dlm"
 
   locations: # Location endpoints (can list multiple)
@@ -147,6 +151,8 @@ heuristics:
   version: e1a190c0
   imagePullPolicy: Always
   replicas: 1
+  securityContext:
+    fsGroup: 1000
 
 ska-db-migrations:
   engine: liquibase
@@ -189,28 +195,13 @@ postgresql:
 
 # ------ Supporting infrastructure ------
 
-rclone:
-  component: rclone
-  subsystem: data-lifecycle-management
-  image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-rclone
-  version: e1a190c0
-  imagePullPolicy: Always
-  replicas: 1
-  securityContext: {}
-  keyPath: "/dlm/users/dlm/.ssh/"
-  mountPath: "/dlm"
-
-  secret:
-    enabled: false
-    name: ""
-    mountPoint: "/secrets/"
-    ssl_key_name: ""
-    ssl_cert_name: ""
-    vault:
-      enabled: false
-      mount: ""
-      type: kv-v2
-      path: ""
+sshKey:
+  secretName: ""
+  mountPath: "/run/dlm-rclone-ssh"
+  bootstrap:
+    image: registry.gitlab.com/ska-telescope/ska-data-lifecycle/ska-data-lifecycle-key-bootstrap
+    version: "2.4.0"
+    imagePullPolicy: Always
 
 rcloneWorker:
   component: rclone-worker
@@ -223,6 +214,7 @@ rcloneWorker:
   securityContext:
     runAsUser: 1000
     runAsGroup: 1000
+    fsGroup: 1000
 
 rabbitmq: # internal message queue between DLM server and client
   enabled: true
@@ -386,6 +378,7 @@ archive:
   version: "latest"
   imagePullPolicy: Always
   replicas: 1
-  securityContext: {}
+  securityContext:
+    fsGroup: 1000
   pvcName: "shared"
   mountPath: "/dlm"

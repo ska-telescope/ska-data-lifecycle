@@ -35,6 +35,10 @@ spec:
         {{- include "ska-dlm.ingest.labels" . | nindent 8 }}
     spec:
       {{- include "ska-dlm.nodeSelector" . | nindent 6 }}
+      {{- with .Values.ingest.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       initContainers:
         - name: wait-for-postgrest
           image: busybox:1.36
@@ -81,7 +85,7 @@ spec:
                 key: PGPORT
                 optional: true
           - name: DLM_RCLONE_SSH_KEY_PATH
-            value: {{ printf "%sid_rsa" .Values.rclone.keyPath | quote }}
+            value: {{ printf "%s/id_rsa" .Values.sshKey.mountPath | quote }}
         ports:
         - containerPort: 80
           name: http-port
@@ -100,14 +104,10 @@ spec:
           mountPath: "/home/ska-dlm/.dlm"
           readOnly: true
         - name: shared-storage
-          mountPath: {{ .Values.rclone.mountPath | quote }}
-        {{- with .Values.rclone.secret }}
-        {{- if .enabled }}
-        - name: rclone-secret
-          mountPath: {{ .mountPoint }}
+          mountPath: {{ .Values.global.sharedpvc.mountPath | quote }}
+        - name: rclone-ssh-key
+          mountPath: {{ .Values.sshKey.mountPath | quote }}
           readOnly: true
-        {{- end }}
-        {{- end }}
       volumes:
       - name: dlm-configmap
         configMap:
@@ -115,10 +115,7 @@ spec:
       - name: shared-storage
         persistentVolumeClaim:
           claimName: {{ .Values.global.sharedpvc.pvc.name }}
-      {{- with .Values.rclone.secret }}
-      {{- if .enabled }}
-      - name: rclone-secret
+      - name: rclone-ssh-key
         secret:
-          secretName: {{ include "ska-dlm.rclone.secret.name" $ }}
-      {{- end }}
-      {{- end }}
+          secretName: {{ include "ska-dlm.ssh-key-secret.name" . }}
+          defaultMode: 0440
