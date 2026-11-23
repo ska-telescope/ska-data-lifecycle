@@ -2,6 +2,8 @@
 
 ## Development
 
+* Upgraded the base image and dependencies to address CVE's (SDR-1762).
+* Enabled security scanning jobs on all CI branch pushes.
 * The Tango device polls the number of migrations in progress.
 * Added basic HTTP-based health checks to the DLM Tango device for Rclone, PostgREST, Storage, Migration, Ingest, Request, and RabbitMQ, and a simple PostgreSQL connectivity check.
 * Removed changes made to create-tables.sql after introduction of Liquibase, as already-executed changesets cannot be modified (MD5 mismatch)
