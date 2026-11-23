@@ -16,8 +16,9 @@ FROM artefact.skao.int/ska-python-ubuntu24:1.1.5 AS runtime
 
 RUN apt-get update && apt-get install -y rclone
 
-# Best practice not to run as root
+# Create the ska-dlm user with a home directory and Bash as the login shell
 RUN useradd -ms /bin/bash ska-dlm
+# Best practice: run as a non-root user
 USER ska-dlm
 
 # Copy all Python packages & console scripts to the runtime container
