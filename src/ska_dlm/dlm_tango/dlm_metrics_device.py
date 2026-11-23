@@ -16,7 +16,7 @@ from tango import ArgType, DevState, EnsureOmniThread
 from tango.server import Device, attribute, device_property
 
 from ska_dlm import __version__
-from ska_dlm.dlm_db import Migration
+from ska_dlm.dlm_db import Migration, Storage
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -92,17 +92,17 @@ class DLMMetrics(Device):
         """Return the health of the DLM outbox service."""
         return self._outbox_health_state
 
-    @attribute
+    @attribute  # TODO: if any of the services are down, dlmHealthState is DEGRADED.
     def dlmHealthState(self) -> HealthState:
         """Return the overall health of the DLM subsystem."""
         return self._dlm_health_state
 
-    @attribute(max_dim_x=100)  # TODO
+    @attribute(max_dim_x=100)
     def storageEndPoints(self) -> list[str]:
         """Return a list of storage endpoints registered in the database."""
         return self._storage_endpoints
 
-    @attribute(max_dim_x=100)  # TODO
+    @attribute(max_dim_x=100)  # TODO (storageUsedPct is not yet implemented)
     def storageUsedPct(self) -> list[float]:
         """Return the percentage of storage capacity used for each storage endpoint."""
         return self._storage_used_pct
@@ -136,7 +136,7 @@ class DLMMetrics(Device):
         self._rabbitmq_health_state = HealthState.UNKNOWN
         self._outbox_health_state = HealthState.UNKNOWN  # TODO: no HTTP endpoint
         self._dlm_health_state = HealthState.UNKNOWN  # TODO: "degraded" if any service is down.
-        self._storage_endpoints = ["dlm-archive", "local"]  # TODO
+        self._storage_endpoints = []
         self._storage_used_pct = [float("nan"), float("nan")]  # TODO
         self._migrations_in_progress = float("nan")  # Use AttrQuality.ATTR_INVALID instead?
 
@@ -245,7 +245,8 @@ class DLMMetrics(Device):
                 logger.info("ingest HealthState: %s", self._ingest_health_state.name)
                 logger.info("request HealthState: %s", self._request_health_state.name)
                 logger.info("rabbitmq HealthState: %s", self._rabbitmq_health_state.name)
-                logger.info("No. of migrations in progress: %s\n", self._migrations_in_progress)
+                logger.info("No. of migrations in progress: %s", self._migrations_in_progress)
+                logger.info("All storage endpoints: %s\n", self._storage_endpoints)
 
                 self._stop_event.wait(cast(int, self.polling_interval) / 1000)
 
@@ -266,7 +267,9 @@ class DLMMetrics(Device):
             except Exception as exc:  # pylint: disable=broad-exception-caught
                 logger.warning("PostgreSQL health check failed: %s", exc)
                 self._postgres_health_state = HealthState.FAILED
+                # reset attributes:
                 self._migrations_in_progress = float("nan")
+                self._storage_endpoints = []
 
             else:
                 self._postgres_health_state = HealthState.OK
@@ -277,6 +280,13 @@ class DLMMetrics(Device):
                 except Exception as exc:  # pylint: disable=broad-exception-caught
                     logger.warning("Failed to count active migrations: %s", exc)
                     self._migrations_in_progress = float("nan")
+
+                try:
+                    self._storage_endpoints = await _read_storage_endpoints(session)
+
+                except Exception as exc:  # pylint: disable=broad-exception-caught
+                    logger.warning("Failed to read storage endpoints: %s", exc)
+                    self._storage_endpoints = []
 
     def delete_device(self):
         """Stop background tasks when the Tango device shuts down."""
@@ -316,7 +326,7 @@ async def _check_postgres_connection(session: AsyncSession):
 
 
 async def _count_active_migrations(session: AsyncSession) -> int:
-    """An asynchronous method that queries PostgreSQL and returns the number of active migrations.
+    """Query PostgreSQL and returns the number of active migrations.
 
     Receives a session and executes the query.
     """
@@ -325,3 +335,13 @@ async def _count_active_migrations(session: AsyncSession) -> int:
     )
     result = await session.execute(stmt)
     return result.scalar_one()
+
+
+async def _read_storage_endpoints(session: AsyncSession) -> list[str]:
+    """Query PostgreSQL and returns the names of all storage endpoints.
+
+    Receives a session and executes the query.
+    """
+    stmt = select(Storage.storage_name).order_by(Storage.storage_name)
+    result = await session.execute(stmt)
+    return list(result.scalars().all())
