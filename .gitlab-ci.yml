@@ -301,3 +301,11 @@ k8s-test:
 #   tags:
 #     - ska-k8srunner-dp
 #   needs: []
+
+gemnasium-python-dependency_scanning:
+  stage: scan
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+      when: on_success
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: on_success
