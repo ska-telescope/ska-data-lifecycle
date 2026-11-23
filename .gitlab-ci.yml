@@ -302,6 +302,16 @@ k8s-test:
 #     - ska-k8srunner-dp
 #   needs: []
 
+container_scanning: # Run container scanning on ordinary branch pushes, including branches with open MRs
+  stage: scan
+  rules:
+    - if: '$CONTAINER_SCANNING_DISABLED == "true" || $CONTAINER_SCANNING_DISABLED == "1"'
+      when: never
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+      when: on_success
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: on_success
+
 gemnasium-python-dependency_scanning:
   stage: scan
   rules:
