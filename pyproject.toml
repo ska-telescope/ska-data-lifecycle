@@ -41,17 +41,15 @@ pyyaml = "^6.0.1"
 python-benedict = "^0.33.2"
 inflect = "^7.0.0"
 ipython = "^8.20.0"
-typer = "^0.12.5"
+typer = ">=0.12.5,<1.0"
 rich = "^13.0"
 fastapi = "^0.111.0"
 overrides = "^7.7.0"
 docstring-parser = "^0.16"
-pyjwt = "2.9.0"
+pyjwt = "^2.9"
 msal = "1.31.0"
 locust = "^2.37.11"
-click = "<=8.1.7"
 aio-pika = "^9.6.2"
-aiosqlite = "^0.22.1"
 numpy = [
     { version="~2.2.6", python="~3.10" },
     { version="~2.4.6", python="~3.11" },
@@ -80,6 +78,7 @@ kubernetes = "^29.0.0"
 docker = "^7.1.0"
 python-keycloak = "^4.2.0"
 requests-mock = "^1.12.1"
+aiosqlite = "^0.22.1"
 
 [tool.poetry.group.docs.dependencies]
 sphinx = "^7.3.7"

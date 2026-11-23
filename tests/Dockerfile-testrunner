@@ -1,10 +1,14 @@
-FROM python:3.12
+FROM artefact.skao.int/ska-build-python-ubuntu24:1.1.5
 
 RUN apt-get update && apt-get install -y rclone iputils-ping
-RUN pip install pytest requests_mock kubernetes docker
 
 ARG POETRY_VERSION=2.5.1
-RUN pip install poetry==${POETRY_VERSION}
+
+# Install Poetry in its own virtual environment
+RUN python3.12 -m venv /opt/poetry \
+    && /opt/poetry/bin/pip install poetry==${POETRY_VERSION}
+
+ENV PATH="/opt/poetry/bin:${PATH}"
 
 RUN mkdir -p /data
 
@@ -13,6 +17,7 @@ WORKDIR /app
 # cache external dependencies
 COPY pyproject.toml poetry.lock ./
 RUN poetry config virtualenvs.in-project true \
+    && poetry env use python3.12 \
     && poetry install --only main,test --no-root
 
 COPY ./ ./
@@ -24,4 +29,5 @@ ENV DO_AUTH=${DO_AUTH}
 ENV PATH="/app/.venv/bin:${PATH}"
 
 COPY ./tests/volumes/config-dockercompose.yaml /root/.dlm/config.yaml
-ENTRYPOINT pytest --env docker --auth ${DO_AUTH}
+
+ENTRYPOINT ["sh", "-c", "exec pytest --env docker --auth \"$DO_AUTH\""]
