@@ -200,6 +200,15 @@ Note that the public key must be put in the ``authorized_keys`` on the end point
                     "region": "ap-southeast-2",
                     "location_constraint": "ap-southeast-2"}
 
+Tango device
+----------------
+
+TODO: DMAN-354
+
+To deploy the Tango device DLMMetrics:
+
+  * Set ``tango.enabled`` : ``true``
+
 
 API Gateway
 ----------------

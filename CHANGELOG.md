@@ -2,6 +2,9 @@
 
 ## Development
 
+* The Tango device polls the number of migrations in progress.
+* Added basic HTTP-based health checks to the DLM Tango device for Rclone, PostgREST, Storage, Migration, Ingest, Request, and RabbitMQ, and a simple PostgreSQL connectivity check.
+* Removed changes made to create-tables.sql after introduction of Liquibase, as already-executed changesets cannot be modified (MD5 mismatch)
 * Make postgres client OCI image configurable
 * Add initial Tango monitoring infrastructure, including the DLMMetrics device with placeholder attributes.
 * Add data-item parent/child relationships and retrieval of container children.
@@ -9,7 +12,6 @@
 * Added `get_storage_endpoints` to storage service.
 * Added joins to `query_migrations` to get more information about storage and data item.
 * Fixed migration service `copy_data_item` HTTP endpoint to return meaningful status codes on error.
-* Removed changes made to create-tables.sql after introduction of Liquibase, as already-executed changesets cannot be modified (MD5 mismatch)
 
 ## 2.4.0
 
