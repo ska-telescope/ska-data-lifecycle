@@ -69,7 +69,10 @@ class DLMMetrics(Device):
 
     @attribute
     def migrationHealthState(self) -> HealthState:
-        """Return the health of the DLM migration service."""
+        """Return the health of the DLM migration service.
+
+        TODO: in addition, if rabbitmq or outbox is down, migration is DEGRADED.
+        """
         return self._migration_health_state
 
     @attribute
@@ -127,18 +130,17 @@ class DLMMetrics(Device):
         self._postgres_health_state = HealthState.UNKNOWN
         self._postgrest_health_state = HealthState.UNKNOWN
         self._rclone_health_state = HealthState.UNKNOWN
-        self._heuristics_health_state = HealthState.UNKNOWN  # TODO: no HTTP endpoint
+        self._heuristics_health_state = HealthState.UNKNOWN
         self._storage_health_state = HealthState.UNKNOWN
         self._migration_health_state = HealthState.UNKNOWN
-        # TODO: migration is degraded if rabbitmq/outbox is down
         self._ingest_health_state = HealthState.UNKNOWN
         self._request_health_state = HealthState.UNKNOWN
         self._rabbitmq_health_state = HealthState.UNKNOWN
-        self._outbox_health_state = HealthState.UNKNOWN  # TODO: no HTTP endpoint
-        self._dlm_health_state = HealthState.UNKNOWN  # TODO: "degraded" if any service is down.
+        self._outbox_health_state = HealthState.UNKNOWN
+        self._dlm_health_state = HealthState.UNKNOWN
         self._storage_endpoints = []
-        self._storage_used_pct = [float("nan"), float("nan")]  # TODO
-        self._migrations_in_progress = float("nan")  # Use AttrQuality.ATTR_INVALID instead?
+        self._storage_used_pct = [float("nan"), float("nan")]
+        self._migrations_in_progress = float("nan")
 
         # Run periodic health checks in a background thread without blocking the Tango device:
         self._health_thread = Thread(

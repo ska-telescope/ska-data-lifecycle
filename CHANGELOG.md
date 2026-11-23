@@ -2,6 +2,7 @@
 
 ## Development
 
+* The Tango device reads all the storage endpoints in the database.
 * Upgraded the base image and dependencies to address CVE's (SDR-1762).
 * Enabled security scanning jobs on all CI branch pushes.
 * The Tango device polls the number of migrations in progress.

@@ -88,6 +88,29 @@ async def test_count_active_migrations():
 
 # pylint: disable=protected-access
 @pytest.mark.asyncio
+async def test_postgres_health_failure():
+    """Verify that a failed PostgreSQL health check results in failed database metrics."""
+    device = MagicMock()
+    session = AsyncMock()
+    session_factory = MagicMock()
+    session_factory.return_value.__aenter__ = AsyncMock(return_value=session)
+    session_factory.return_value.__aexit__ = AsyncMock(return_value=None)
+
+    with patch(  # mock _check_postgres_connection() to fail
+        "ska_dlm.dlm_tango.dlm_metrics_device._check_postgres_connection",
+        new_callable=AsyncMock,
+        side_effect=Exception("PostgreSQL connection failed"),
+    ) as check_postgres:
+        await DLMMetrics._update_database_metrics(device, session_factory)
+
+    check_postgres.assert_awaited_once_with(session)
+    assert device._postgres_health_state == HealthState.FAILED
+    assert str(device._migrations_in_progress) == "nan"
+    assert device._storage_endpoints == []
+
+
+# pylint: disable=protected-access
+@pytest.mark.asyncio
 async def test_migration_count_failure_does_not_affect_postgres_health():
     """Verify that a failed migration query does not mark PostgreSQL as unhealthy."""
     device = MagicMock()
@@ -112,3 +135,38 @@ async def test_migration_count_failure_does_not_affect_postgres_health():
     check_postgres.assert_awaited_once_with(session)
     assert device._postgres_health_state == HealthState.OK
     assert str(device._migrations_in_progress) == "nan"
+    assert device._storage_endpoints == []
+
+
+# pylint: disable=protected-access
+@pytest.mark.asyncio
+async def test_storage_endpoint_failure_does_not_affect_postgres_health():
+    """Verify that a failed query for storage endpoints does not mark PostgreSQL as unhealthy."""
+    device = MagicMock()
+    session = AsyncMock()
+    session_factory = MagicMock()
+    session_factory.return_value.__aenter__ = AsyncMock(return_value=session)
+    session_factory.return_value.__aexit__ = AsyncMock(return_value=None)
+
+    with (
+        patch(
+            "ska_dlm.dlm_tango.dlm_metrics_device._check_postgres_connection",
+            new_callable=AsyncMock,  # mock _check_postgres_connection() to succeed
+        ) as check_postgres,
+        patch(
+            "ska_dlm.dlm_tango.dlm_metrics_device._count_active_migrations",
+            new_callable=AsyncMock,  # mock _count_active_migrations to succeed
+            return_value=3,
+        ),
+        patch(
+            "ska_dlm.dlm_tango.dlm_metrics_device._read_storage_endpoints",
+            new_callable=AsyncMock,
+            side_effect=Exception("Storage query failed"),  # mock storage query to fail
+        ),
+    ):
+        await DLMMetrics._update_database_metrics(device, session_factory)
+
+    check_postgres.assert_awaited_once_with(session)
+    assert device._postgres_health_state == HealthState.OK
+    assert device._migrations_in_progress == 3.0
+    assert device._storage_endpoints == []
