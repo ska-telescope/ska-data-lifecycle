@@ -4,6 +4,7 @@
 
 import json
 import logging
+import math
 import time
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -105,7 +106,7 @@ async def test_postgres_health_failure():
 
     check_postgres.assert_awaited_once_with(session)
     assert device._postgres_health_state == HealthState.FAILED
-    assert str(device._migrations_in_progress) == "nan"
+    assert math.isnan(device._migrations_in_progress)
     assert device._storage_endpoints == []
 
 
@@ -134,7 +135,7 @@ async def test_migration_count_failure_does_not_affect_postgres_health():
 
     check_postgres.assert_awaited_once_with(session)
     assert device._postgres_health_state == HealthState.OK
-    assert str(device._migrations_in_progress) == "nan"
+    assert math.isnan(device._migrations_in_progress)
     assert device._storage_endpoints == []
 
 

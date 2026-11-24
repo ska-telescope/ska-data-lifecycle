@@ -155,8 +155,8 @@ class DLMMetrics(Device):
         try:
             check(*args)  # calls the function passed in as check, using any args passed in
             state = HealthState.OK
-        except Exception as exc:  # pylint: disable=broad-exception-caught
-            logger.warning("%s health check failed: %s", service_name, exc)
+        except Exception:  # pylint: disable=broad-exception-caught
+            logger.exception("%s health check failed.", service_name)
             state = HealthState.FAILED
 
         setattr(self, f"_{service_name.lower()}_health_state", state)
@@ -266,8 +266,8 @@ class DLMMetrics(Device):
             try:
                 await _check_postgres_connection(session)
 
-            except Exception as exc:  # pylint: disable=broad-exception-caught
-                logger.warning("PostgreSQL health check failed: %s", exc)
+            except Exception:  # pylint: disable=broad-exception-caught
+                logger.exception("PostgreSQL health check failed.")
                 self._postgres_health_state = HealthState.FAILED
                 # reset attributes:
                 self._migrations_in_progress = float("nan")
@@ -279,15 +279,15 @@ class DLMMetrics(Device):
                 try:
                     self._migrations_in_progress = float(await _count_active_migrations(session))
 
-                except Exception as exc:  # pylint: disable=broad-exception-caught
-                    logger.warning("Failed to count active migrations: %s", exc)
+                except Exception:  # pylint: disable=broad-exception-caught
+                    logger.exception("Failed to count active migrations.")
                     self._migrations_in_progress = float("nan")
 
                 try:
                     self._storage_endpoints = await _read_storage_endpoints(session)
 
-                except Exception as exc:  # pylint: disable=broad-exception-caught
-                    logger.warning("Failed to read storage endpoints: %s", exc)
+                except Exception:  # pylint: disable=broad-exception-caught
+                    logger.exception("Failed to read storage endpoints.")
                     self._storage_endpoints = []
 
     def delete_device(self):
