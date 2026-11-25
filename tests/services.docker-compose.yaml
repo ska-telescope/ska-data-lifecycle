@@ -126,7 +126,7 @@ services:
       rclone-key-init:
         condition: service_completed_successfully
     volumes:
-      - shared-tmpfs:/dlm
+      - data:/dlm
       - rclone-ssh-keys:/run/dlm-rclone-ssh:ro
     networks:
       - dlm_network
@@ -272,11 +272,6 @@ networks:
     name: dlm_network
 
 volumes:
-  shared-tmpfs:
-    name: shared-tmpfs
-    driver: local
-    driver_opts:
-      type: "tmpfs"
-      device: "tmpfs"
-      o: "mode=1777,uid=1000,gid=1000"
+  data:
+    name: data
   rclone-ssh-keys:

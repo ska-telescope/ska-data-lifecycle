@@ -41,7 +41,7 @@ services:
       DLM_RCLONE_WORKER_POLL_INTERVAL: "10"
       DLM_RCLONE_SSH_KEY_PATH: "/run/dlm-rclone-ssh/id_rsa"
     volumes:
-      - shared-tmpfs:/dlm
+      - data:/dlm
       - rclone-ssh-keys:/run/dlm-rclone-ssh:ro
     depends_on:
       dlm_db:
@@ -70,7 +70,7 @@ services:
     ports:
       - 8003:80
     volumes:
-      - shared-tmpfs:/dlm
+      - data:/dlm
       - rclone-ssh-keys:/run/dlm-rclone-ssh:ro
     depends_on:
       nginx-proxy:
@@ -139,8 +139,8 @@ services:
     ports:
       - 8001:80
     volumes:
-      - shared-tmpfs:/data
-      - shared-tmpfs:/dlm
+      - data:/data
+      - data:/dlm
       - rclone-ssh-keys:/run/dlm-rclone-ssh:ro
     depends_on:
       nginx-proxy:
@@ -172,7 +172,7 @@ services:
       DLM_RCLONE_SSH_KEY_PATH: "/run/dlm-rclone-ssh/id_rsa"
       VIRTUAL_HOST: "dlm_heuristics.localhost"
     volumes:
-      - shared-tmpfs:/dlm
+      - data:/dlm
       - rclone-ssh-keys:/run/dlm-rclone-ssh:ro
     depends_on:
       nginx-proxy:

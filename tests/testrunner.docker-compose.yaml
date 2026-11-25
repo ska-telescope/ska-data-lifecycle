@@ -10,7 +10,7 @@ services:
        context: ..
        dockerfile: tests/Dockerfile-testrunner
     volumes:
-      - shared-tmpfs:/dlm
+      - data:/dlm
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       DATABASE_URL: "postgresql+asyncpg://ska_dlm_admin:password@dlm_db:5432/ska_dlm_testing"

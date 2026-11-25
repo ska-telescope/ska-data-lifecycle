@@ -84,6 +84,7 @@ storage:
           port: 22
           user: root
           key_file: "/root/.ssh/id_rsa"
+          known_hosts_file: "none"
 
     - name: local
       location: SKA-DEV

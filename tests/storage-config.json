@@ -25,7 +25,8 @@
         "host": "dlm_archive",
         "port": 2222,
         "user": "dlm",
-        "key_file": "/root/.ssh/id_rsa"
+        "key_file": "/root/.ssh/id_rsa",
+        "known_hosts_file": "none"
       }
     }
   }
