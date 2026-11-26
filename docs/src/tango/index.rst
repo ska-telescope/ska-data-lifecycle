@@ -13,7 +13,7 @@ The device exposes the following attributes:
   - ``postgresHealthState``
   - ``postgrestHealthState``
   - ``rcloneHealthState``
-  - ``heuristicsHealthState`` (_TODO_)
+  - ``heuristicsHealthState`` (TODO)
   - ``storageHealthState``
   - ``migrationHealthState``
   - ``ingestHealthState``

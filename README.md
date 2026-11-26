@@ -154,4 +154,4 @@ DLM also provides a Helm chart that is tested weekly through the SKA GitLab test
   make k8s-test
 ```
 
-For more information see [helm chart README.md](./charts/ska-dlm/README.md)
+More information on how to configure the ska-dlm helm chart is given in the [helm chart README.md](./charts/ska-dlm/README.md) and on [ReadTheDocs](https://developer.skao.int/projects/ska-data-lifecycle/en/latest/guides/installation/helm_install.html).

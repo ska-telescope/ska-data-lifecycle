@@ -188,6 +188,16 @@ Alternatively, one can specifiy the location of the key file by using `key_file`
 
 Note that the public key must be put in the `authorized_keys` on the end point.
 
+
+## Tango device
+
+To deploy the Tango device DLMMetrics:
+
+  * Set ``tango.enabled`` : ``true``
+
+Then review the other Tango configurations described in [RTD](https://developer.skao.int/projects/ska-data-lifecycle/en/latest/guides/installation/helm_install.html#tango-device-configuration).
+
+
 ## API Gateway
 
 To install the OAuth API gateway:
