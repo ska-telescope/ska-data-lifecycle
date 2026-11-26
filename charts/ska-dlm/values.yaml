@@ -277,8 +277,8 @@ ska-tango-devices:
   devices:
     DLMMetrics:
       dlm/metrics/0: # match pattern '^[a-z0-9-]+/[a-z0-9-]+/[a-z0-9-.]+$'
-        LoggingLevelDefault: 4 # 4=INFO, 5=DEBUG
         polling_interval: 10000 # in milliseconds
+        LoggingLevelDefault: 4 # 4=INFO, 5=DEBUG
   deviceServerTypes:
     DLMMetrics:
       metadata:

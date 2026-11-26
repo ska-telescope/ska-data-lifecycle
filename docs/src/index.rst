@@ -26,3 +26,11 @@ For high-level design details, see the `Solution Intent page <https://confluence
    :caption: Heuristics
 
    heuristics/index
+
+.. toctree::
+   :maxdepth: 2
+   :caption: SKA DLM Modules and API
+
+   overview/index
+   api/index
+   tango/index

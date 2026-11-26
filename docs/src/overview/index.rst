@@ -109,3 +109,8 @@ The SKA-DLM provides four different ways of interacting with it, which can be us
     - A python library, exposing plain python functions (see :ref:`python api`).
     - A Command Line Interface (CLI) (see :ref:`cli api`).
     - REST interfaces to each of the managers (see :ref:`rest api`).
+
+Tango Device
+-------------
+
+DLM also provides a :doc:`Tango device <../tango/index>` for monitoring the health and operational status of the subsystem.

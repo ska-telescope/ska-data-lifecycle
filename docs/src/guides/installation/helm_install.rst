@@ -200,14 +200,92 @@ Note that the public key must be put in the ``authorized_keys`` on the end point
                     "region": "ap-southeast-2",
                     "location_constraint": "ap-southeast-2"}
 
-Tango device
-----------------
 
-TODO: DMAN-354
+.. _tango-helm-configuration:
 
-To deploy the Tango device DLMMetrics:
+Tango Device Configuration
+--------------------------
 
-  * Set ``tango.enabled`` : ``true``
+DLM provides a Tango device (``DLMMetrics``) for monitoring the DLM subsystem, including service health, storage endpoints, and migrations in progress. The Tango device is deployed using the ``ska-tango-devices`` Helm subchart (which in turn depends on the `ska-tango-util
+<https://gitlab.com/ska-telescope/ska-tango-charts/-/tree/main/charts/ska-tango-util>`_ Helm library chart).
+
+**Configurations in the parent chart (**\ ``ska-dlm``\ **):**
+
+The configurations for deploying the Tango device ``DLMMetrics`` are listed below, in logical order rather than in order of appearance in ``values.yaml``:
+
+  * Set ``tango.enabled``: ``true`` to enable deployment of the ``DLMMetrics`` Tango device.
+  * ``global.operator``: Whether to use the SKA Tango Operator to manage the deployment of the Tango device. The ``ska-tango-devices`` chart supports both operator and operator-less deployments.
+
+    - If ``true``, the Helm chart generates a ``DeviceServer`` custom resource, and the Tango Operator manages the deployment of the device server. This requires the Tango Operator to be available in the Kubernetes cluster.
+    - If ``false``, the Helm chart generates the Kubernetes resources required to deploy the device server directly, without relying on the Tango Operator.
+
+  * ``tango.database.enabled``: Whether DLM should deploy its own Tango database or connect to an existing one.
+  * ``global.tango_host``: Address of the Tango database to connect to. This must be configured whenever the Tango device is enabled.
+
+    - If ``tango.database.enabled`` is ``true``, set this to ``tango-databaseds:10000``.
+    - If ``tango.database.enabled`` is ``false``, specify the address of an existing Tango database (``<service_name>.<namespace>:<port>``).
+
+**Configuration in the** ``ska-tango-devices`` **subchart**
+
+The following settings, configured under ``ska-tango-devices`` in the ska-dlm values file, are those that a DLM deployer is most likely to need to configure or override. For a full list of available configuration options, refer to the `ska-tango-devices README <https://gitlab.com/ska-telescope/ska-tango-devices/-/blob/main/README.md>`_.
+
+* ``devices``: Defines the configuration properties of individual Tango devices, grouped by Tango device class.
+
+  - ``DLMMetrics``: Tango device class, containing the configuration of each device of this class, keyed by device name.
+
+    - ``dlm/metrics/0``: Tango device name, following the naming convention ``domain/family/member``. The following properties are configured for this device:
+
+      - ``polling_interval``: Interval between DLM metrics updates, in milliseconds. Defaults to ``10000`` (10 seconds).
+      - ``LoggingLevelDefault``: Default Tango logging level (e.g. ``4`` for INFO or ``5`` for DEBUG).
+
+* ``deviceServerTypes``: Defines how each type of device server is deployed (image, environment variables, resources, etc.).
+
+  - ``DLMMetrics``: The device server type.
+
+    - ``image``: Container image used to deploy the Tango device server.
+    - ``device_classes``: ``- 'ska_dlm.dlm_tango.dlm_metrics_device.DLMMetrics'``
+    - ``env``: Environment variables, including the DLM service URLs used for health monitoring:
+
+      - ``DLM_IMAGE``: DLM container image reported by the Tango device. E.g., artefact.skao.int/ska-data-lifecycle:2.5.0
+
+      The following service URLs must correspond to the Kubernetes service names and ports of the deployed DLM instance. Check these carefully because the defaults will likely need to be overridden.
+
+      - ``DLM_POSTGREST_URL``: PostgREST service URL.
+      - ``DLM_RCLONE_URL``: rclone service URL.
+      - ``DLM_HEURISTICS_URL``: Heuristics service URL (not yet implemented in release 2.5.0).
+      - ``DLM_STORAGE_URL``: DLM storage service URL.
+      - ``DLM_MIGRATION_URL``: DLM migration service URL.
+      - ``DLM_INGEST_URL``: DLM ingest service URL.
+      - ``DLM_REQUEST_URL``: DLM request service URL.
+      - ``DLM_RABBITMQ_URL``: RabbitMQ management HTTP endpoint (port ``15672``).
+
+  - ``secrets``: [WIP, `MR !39 <https://gitlab.com/ska-telescope/ska-tango-devices/-/merge_requests/39>`_]. Kubernetes secret containing the PostgreSQL connection details required to connect to the dlm database. The PostgreSQL credentials are injected as environment variables. The following environment variables must be populated from the secret:
+
+    - ``PGHOST``: PostgreSQL hostname.
+    - ``PGPORT``: PostgreSQL port.
+    - ``PGUSER``: PostgreSQL username.
+    - ``PGPASSWORD``: PostgreSQL password.
+    - ``PGDATABASE``: PostgreSQL database name.
+
+  - ``resources``: CPU and memory requests and limits for the Tango device.
+  - ``livenessProbe`` and ``readinessProbe``: Configuration of the Tango device's Kubernetes health probes.
+
+* ``deviceServers``: Defines the device server instances to deploy and the Tango devices hosted by each instance. Keep the default configuration given in the values file:
+
+
+.. code-block:: shell
+
+  deviceServers:
+    DLMMetrics: # References the device server type defined under deviceServerTypes.DLMMetrics.
+      metrics-device: # Name of the device server instance.
+        expose: true # Expose the device server through a Kubernetes Service.
+        devices: # Specifies the Tango devices hosted by this device server, grouped by Tango device class.
+          DLMMetrics: # Tango device class, containing a list of device names to instantiate for this class.
+            - dlm/metrics/0 # Tango device name. This must match the device name configured under ``devices.DLMMetrics``.
+
+
+If ``global.operator`` is ``true``, the subchart generates a ``DeviceServer`` custom resource for the Tango Operator to manage.
+Otherwise, the subchart generates the Kubernetes deployment resources directly.
 
 
 API Gateway
