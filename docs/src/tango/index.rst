@@ -22,6 +22,7 @@ The device exposes the following attributes:
 
 * ``storageEndPoints``: List of registered storage endpoints.
 * ``migrationsInProgress``: Number of migrations currently in progress.
+
 .. * ``storageUsedPct``: Percentage of storage capacity used at each endpoint. (TODO)
 .. * ``dlmHealthState``: Overall health state of the DLM subsystem. (TODO)
 

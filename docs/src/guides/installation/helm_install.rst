@@ -247,6 +247,7 @@ The following settings, configured under ``ska-tango-devices`` in the ska-dlm va
     - ``env``: Environment variables, including the DLM service URLs used for health monitoring:
 
       - ``DLM_IMAGE``: DLM container image reported by the Tango device. E.g., artefact.skao.int/ska-data-lifecycle:2.5.0
+
       The following service URLs must correspond to the Kubernetes service names and ports of the deployed DLM instance. Check these carefully because the defaults will likely need to be overridden.
 
       - ``DLM_POSTGREST_URL``: PostgREST service URL.
