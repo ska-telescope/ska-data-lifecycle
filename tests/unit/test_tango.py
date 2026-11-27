@@ -5,8 +5,8 @@
 import json
 
 import pytest
-from tango import DevState  # pylint: disable=import-error
-from tango.test_context import DeviceTestContext  # pylint: disable=import-error
+from tango import DevState
+from tango.test_context import DeviceTestContext
 
 from ska_dlm import __version__
 from ska_dlm.dlm_tango.dlm_metrics_device import DLMMetrics, HealthState

@@ -8,8 +8,8 @@ import os
 from ska_control_model import HealthState
 from sqlalchemy.engine import URL
 from sqlalchemy.ext.asyncio import create_async_engine
-from tango import DevState  # pylint: disable=import-error
-from tango.server import Device, attribute  # pylint: disable=import-error
+from tango import DevState
+from tango.server import Device, attribute
 
 from ska_dlm import __version__
 
@@ -113,7 +113,6 @@ class DLMMetrics(Device):
         print(f"Connecting to Tango database at {os.getenv('TANGO_HOST')}...", flush=True)
 
         # Placeholder values, TODO: DMAN-324
-        # pylint: disable=attribute-defined-outside-init
         self._rclone_health_state = HealthState.UNKNOWN
         self._postgres_health_state = HealthState.UNKNOWN
         self._postgrest_health_state = HealthState.UNKNOWN
