@@ -3,6 +3,7 @@
 
 import logging
 import os
+import posixpath
 import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -12,7 +13,7 @@ from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from requests import Request
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import aliased, sessionmaker
 
@@ -127,6 +128,18 @@ def _migration_to_dict(migration: Migration) -> dict:
         attr.columns[0].name: _serialize_value(getattr(migration, attr.key))
         for attr in migration.__mapper__.column_attrs
     }
+
+
+def _storage_remote_path(root_directory: str, remote_path: str) -> str:
+    """Resolve a storage-relative path beneath its configured root directory."""
+    return posixpath.normpath(posixpath.join(root_directory or "/", remote_path.lstrip("/")))
+
+
+def _destination_paths_overlap(left: str, right: str, root_directory: str) -> bool:
+    """Detect identical or nested destination paths on one storage."""
+    left_path = _storage_remote_path(root_directory, left)
+    right_path = _storage_remote_path(root_directory, right)
+    return posixpath.commonpath((left_path, right_path)) in (left_path, right_path)
 
 
 def _open_migration_session() -> AsyncSession:
@@ -465,6 +478,26 @@ async def _copy_data_item(  # noqa: C901
         destination_path = path or source_item.uri
         if not destination_path:
             raise UnmetPreconditionForOperation("Data item has no URI to copy")
+        lock_key = int.from_bytes(destination_storage_row.storage_id.bytes[:8], "big", signed=True)
+        await session.execute(select(func.pg_advisory_xact_lock(lock_key)))
+        reserved_paths = (
+            await session.scalars(
+                select(Migration.destination_path).where(
+                    Migration.destination_storage_id == destination_storage_row.storage_id,
+                    Migration.complete.is_(False),
+                )
+            )
+        ).all()
+        if any(
+            not reserved_path
+            or _destination_paths_overlap(
+                destination_path, reserved_path, destination_storage_row.root_directory or "/"
+            )
+            for reserved_path in reserved_paths
+        ):
+            raise UnmetPreconditionForOperation(
+                "Destination path overlaps an active migration or an unknown legacy destination"
+            )
         destination_uid = uuid.uuid4()
         migration = Migration(
             uid=source_item.UID,

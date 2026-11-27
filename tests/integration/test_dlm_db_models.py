@@ -1,10 +1,12 @@
 """Unit tests for DLM SQLAlchemy models."""
 
+import asyncio
 import os
 import uuid
 from collections.abc import AsyncGenerator
 
 import pytest
+from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -25,6 +27,9 @@ from ska_dlm.dlm_db import (
     StorageInterface,
     StorageType,
 )
+from ska_dlm.dlm_migration.dlm_migration_requests import _copy_data_item
+from ska_dlm.dlm_migration.rclone_worker import _source_tree_fingerprint
+from ska_dlm.exceptions import UnmetPreconditionForOperation
 
 
 def test_table_names():
@@ -36,6 +41,153 @@ def test_table_names():
     assert DataItem.__tablename__ == "data_item"
     assert DataItemChildren.__tablename__ == "data_item_children"
     assert Migration.__tablename__ == "migration"
+
+
+@pytest.mark.integration_test
+@pytest.mark.asyncio
+@pytest.mark.parametrize("relationship", ["legacy", "association"])
+async def test_source_tree_snapshot_blocks_concurrent_children(engine, relationship):
+    """Source snapshots prevent phantom children until the transaction commits."""
+    factory = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
+    root_uid = uuid.uuid4()
+    child_uid = uuid.uuid4()
+    ready = asyncio.Event()
+    writer_task = None
+
+    async def insert_child():
+        async with factory() as db_session:
+            async with db_session.begin():
+                ready.set()
+                if relationship == "legacy":
+                    db_session.add(
+                        DataItem(
+                            UID=child_uid, parents=root_uid, uri="/root/child", item_type="file"
+                        )
+                    )
+                else:
+                    db_session.add(
+                        DataItemChildren(parent_data_item_uid=root_uid, data_item_uid=child_uid)
+                    )
+                await db_session.flush()
+
+    try:
+        async with factory() as db_session:
+            async with db_session.begin():
+                db_session.add(DataItem(UID=root_uid, uri="/root", item_type="container"))
+                if relationship == "association":
+                    db_session.add(DataItem(UID=child_uid, uri="/root/child", item_type="file"))
+
+        async with factory() as db_session:
+            async with db_session.begin():
+                initial = await _source_tree_fingerprint(db_session, root_uid)
+                writer_task = asyncio.create_task(insert_child())
+                await ready.wait()
+                with pytest.raises(asyncio.TimeoutError):
+                    await asyncio.wait_for(asyncio.shield(writer_task), timeout=0.2)
+
+        await asyncio.wait_for(writer_task, timeout=5)
+        async with factory() as db_session:
+            async with db_session.begin():
+                changed = await _source_tree_fingerprint(db_session, root_uid)
+        assert changed != initial
+    finally:
+        if writer_task is not None and not writer_task.done():
+            writer_task.cancel()
+            await asyncio.gather(writer_task, return_exceptions=True)
+        async with factory() as db_session:
+            async with db_session.begin():
+                await db_session.execute(
+                    delete(DataItemChildren).where(
+                        DataItemChildren.parent_data_item_uid == root_uid
+                    )
+                )
+                await db_session.execute(
+                    delete(DataItem).where(DataItem.UID.in_([root_uid, child_uid]))
+                )
+
+
+@pytest.mark.integration_test
+@pytest.mark.asyncio
+async def test_concurrent_migrations_reserve_overlapping_destinations(engine):
+    """Competing migration requests cannot reserve overlapping paths on one storage."""
+    factory = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
+    location_id, source_id, destination_id = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
+    source_uids = [uuid.uuid4(), uuid.uuid4()]
+
+    async def request_copy(source_uid, path):
+        async with factory() as db_session:
+            try:
+                return await _copy_data_item(
+                    db_session, uid=str(source_uid), destination_id=str(destination_id), path=path
+                )
+            except UnmetPreconditionForOperation as exc:
+                return exc
+
+    try:
+        async with factory() as db_session:
+            async with db_session.begin():
+                db_session.add(
+                    Location(
+                        location_id=location_id,
+                        location_name=f"migration-test-{location_id}",
+                        location_type=LocationType.LOCAL_DEV,
+                    )
+                )
+                await db_session.flush()
+                db_session.add_all(
+                    [
+                        Storage(
+                            storage_id=storage_id,
+                            location_id=location_id,
+                            storage_name=f"migration-test-{storage_id}",
+                            storage_type=StorageType.FILESYSTEM,
+                            storage_interface=StorageInterface.POSIX,
+                            root_directory="/",
+                        )
+                        for storage_id in (source_id, destination_id)
+                    ]
+                )
+                await db_session.flush()
+                db_session.add_all(
+                    [
+                        StorageConfig(
+                            storage_id=storage_id,
+                            config_type=ConfigType.RCLONE,
+                            config={"name": str(storage_id), "type": "alias", "parameters": {}},
+                        )
+                        for storage_id in (source_id, destination_id)
+                    ]
+                    + [
+                        DataItem(UID=uid, storage_id=source_id, uri=f"/source/{uid}")
+                        for uid in source_uids
+                    ]
+                )
+        results = await asyncio.gather(
+            request_copy(source_uids[0], "/destination"),
+            request_copy(source_uids[1], "/destination/child"),
+        )
+        assert sum(isinstance(result, dict) for result in results) == 1
+        assert sum(isinstance(result, UnmetPreconditionForOperation) for result in results) == 1
+    finally:
+        async with factory() as db_session:
+            async with db_session.begin():
+                await db_session.execute(
+                    delete(Migration).where(Migration.destination_storage_id == destination_id)
+                )
+                await db_session.execute(
+                    delete(DataItem).where(DataItem.storage_id.in_([source_id, destination_id]))
+                )
+                await db_session.execute(
+                    delete(StorageConfig).where(
+                        StorageConfig.storage_id.in_([source_id, destination_id])
+                    )
+                )
+                await db_session.execute(
+                    delete(Storage).where(Storage.storage_id.in_([source_id, destination_id]))
+                )
+                await db_session.execute(
+                    delete(Location).where(Location.location_id == location_id)
+                )
 
 
 @pytest.fixture(name="engine")
